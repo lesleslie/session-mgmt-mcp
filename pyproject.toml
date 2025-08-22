@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "session-mgmt-mcp"
+version = "0.1.0"
+description = "MCP server for Claude session management with automatic initialization, checkpoints, and cleanup"
+requires-python = ">=3.13"
+authors = [
+    {name = "Les Leslie", email = "les@wedgwoodwebworks.com"}
+]
+keywords = ["mcp", "claude", "session-management", "ai", "tooling"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring"
+]
+dependencies = [
+    "fastmcp>=2.0.0",
+    "aiofiles>=24.1.0", 
+    "aiohttp>=3.12.14",
+    "duckdb>=0.9.0",
+    "numpy>=1.24.0",
+    "onnxruntime>=1.16.0",
+    "transformers>=4.35.0",
+    "tokenizers>=0.15.0"
+]
+readme = "README.md"
+license = {text = "BSD-3-CLAUSE"}
+
+[dependency-groups]
+dev = [
+    "crackerjack",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/lesleslie/session-mgmt-mcp"
+"Repository" = "https://github.com/lesleslie/session-mgmt-mcp"
+
+[project.scripts]
+session-mgmt-mcp = "session_mgmt_mcp.server:main"
+session-mgmt = "session_mgmt_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["session_mgmt_mcp"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "session_mgmt_mcp/__init__.py"

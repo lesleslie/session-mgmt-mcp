@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "session-management": {
+      "command": "uvx",
+      "args": ["session-mgmt-mcp", "--start-server"],
+      "env": {}
+    }
+  }
+}
