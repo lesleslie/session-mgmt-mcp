@@ -156,6 +156,14 @@ except ImportError as e:
     print(f"Serverless mode import failed: {e}", file=sys.stderr)
     SERVERLESS_MODE_AVAILABLE = False
 
+# Import Crackerjack integration tools
+try:
+    from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+    CRACKERJACK_INTEGRATION_AVAILABLE = True
+except ImportError as e:
+    print(f"Crackerjack integration import failed: {e}", file=sys.stderr)
+    CRACKERJACK_INTEGRATION_AVAILABLE = False
+
 class SessionPermissionsManager:
     """Manages session permissions to avoid repeated prompts for trusted operations"""
     
@@ -578,6 +586,64 @@ File activity is scored based on:
 - Project context
 
 Use this to quickly see what you're currently working on and resume interrupted tasks.
+""",
+    "crackerjack-run": """# Execute Crackerjack Command
+
+Execute a Crackerjack command and parse the output for insights.
+
+This command will:
+- Execute any Crackerjack command (test, lint, format, etc.)
+- Parse test results, lint issues, coverage data, and security findings
+- Extract memory insights from command output
+- Track execution history and performance metrics
+- Provide structured feedback on code quality
+
+Examples:
+- /crackerjack-run test -- Run all tests
+- /crackerjack-run lint -- Check code quality
+- /crackerjack-run coverage -- Generate coverage report
+- /crackerjack-run security -- Run security scan
+
+Use this to integrate code quality checks directly into your development workflow.
+""",
+    "crackerjack-history": """# Crackerjack Results History
+
+Get recent Crackerjack command execution history with parsed results.
+
+This command will:
+- Show recent Crackerjack command executions
+- Display test results, lint issues, and coverage trends
+- Filter by command type or time period
+- Highlight performance changes and quality metrics
+- Track project health over time
+
+Use this to monitor project quality trends and identify recurring issues.
+""",
+    "crackerjack-metrics": """# Quality Metrics Dashboard
+
+Get quality metrics trends from Crackerjack execution history.
+
+This command will:
+- Display test pass rates and coverage trends
+- Show lint issue patterns and code quality scores
+- Track security findings and vulnerability trends
+- Provide quality trend analysis with recommendations
+- Generate comprehensive project health reports
+
+Use this to get insights into your project's overall quality and identify areas for improvement.
+""",
+    "crackerjack-patterns": """# Test Failure Pattern Analysis
+
+Analyze test failure patterns and trends for debugging insights.
+
+This command will:
+- Identify frequently failing tests and common error patterns
+- Analyze test stability scores and duration trends
+- Highlight problematic files and modules
+- Provide debugging recommendations based on failure patterns
+- Track test health and reliability metrics
+
+Use this to proactively identify and fix recurring test issues before they become problems.
 """
 }
 
@@ -634,6 +700,27 @@ async def get_session_search_summary_prompt() -> str:
 async def get_session_reflection_stats_prompt() -> str:
     """Get statistics about the reflection database and conversation memory."""
     return SESSION_COMMANDS["reflection-stats"]
+
+# Register Crackerjack prompts
+@mcp.prompt("crackerjack-run")
+async def get_crackerjack_run_prompt() -> str:
+    """Execute a Crackerjack command and parse the output for insights."""
+    return SESSION_COMMANDS["crackerjack-run"]
+
+@mcp.prompt("crackerjack-history")
+async def get_crackerjack_history_prompt() -> str:
+    """Get recent Crackerjack command execution history with parsed results."""
+    return SESSION_COMMANDS["crackerjack-history"]
+
+@mcp.prompt("crackerjack-metrics")
+async def get_crackerjack_metrics_prompt() -> str:
+    """Get quality metrics trends from Crackerjack execution history."""
+    return SESSION_COMMANDS["crackerjack-metrics"]
+
+@mcp.prompt("crackerjack-patterns")
+async def get_crackerjack_patterns_prompt() -> str:
+    """Analyze test failure patterns and trends for debugging insights."""
+    return SESSION_COMMANDS["crackerjack-patterns"]
 
 # Global instances
 permissions_manager = SessionPermissionsManager(claude_dir)
@@ -1329,6 +1416,11 @@ async def health_check() -> Dict[str, Any]:
         health_status['errors'].append(f"Permissions system issue: {e}")
         health_status['overall_healthy'] = False
     
+    # Crackerjack integration health
+    health_status['checks']['crackerjack_integration'] = "✅ Available" if CRACKERJACK_INTEGRATION_AVAILABLE else "⚠️ Not Available"
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        health_status['warnings'].append("Crackerjack integration not available - quality monitoring disabled")
+    
     # Log health check results
     session_logger.info("Health check completed", 
                        overall_healthy=health_status['overall_healthy'],
@@ -1403,6 +1495,17 @@ async def status(working_directory: Optional[str] = None) -> str:
     output.append("• end - Complete cleanup")
     output.append("• status - This status report with health checks")
     output.append("• permissions - Manage trusted operations")
+    
+    # Crackerjack Integration Status
+    if CRACKERJACK_INTEGRATION_AVAILABLE:
+        output.append("\n🔧 Crackerjack Integration:")
+        output.append("• execute_crackerjack_command - Run Crackerjack with parsing")
+        output.append("• get_crackerjack_results_history - View recent results")
+        output.append("• get_crackerjack_quality_metrics - Quality trends")
+        output.append("• analyze_crackerjack_test_patterns - Test failure analysis")
+        output.append("💡 Use /crackerjack-run, /crackerjack-history, /crackerjack-metrics, /crackerjack-patterns")
+    else:
+        output.append("\n⚠️ Crackerjack Integration: Not available")
     
     return "\n".join(output)
 
@@ -3621,6 +3724,763 @@ async def vote_on_reflection(
         return "❌ Team knowledge tools not available"
     except Exception as e:
         return f"❌ Error voting on reflection: {e}"
+
+# Natural Language Scheduling Tools
+@mcp.tool()
+async def create_natural_reminder(
+    title: str,
+    time_expression: str,
+    description: str = "",
+    user_id: str = "default",
+    project_id: Optional[str] = None,
+    notification_method: str = "session"
+) -> str:
+    """Create reminder from natural language time expression"""
+    try:
+        from .natural_scheduler import create_natural_reminder as _create_natural_reminder
+        reminder_id = await _create_natural_reminder(title, time_expression, description, user_id, project_id, notification_method)
+        
+        if reminder_id:
+            output = []
+            output.append("⏰ Natural reminder created successfully!")
+            output.append(f"🆔 Reminder ID: {reminder_id}")
+            output.append(f"📝 Title: {title}")
+            output.append(f"📄 Description: {description}")
+            output.append(f"🕐 When: {time_expression}")
+            output.append(f"👤 User: {user_id}")
+            if project_id:
+                output.append(f"📁 Project: {project_id}")
+            output.append(f"📢 Notification: {notification_method}")
+            output.append("🎯 Reminder will trigger automatically at the scheduled time")
+            return "\n".join(output)
+        else:
+            return f"❌ Failed to parse time expression: '{time_expression}'\n💡 Try formats like 'in 30 minutes', 'tomorrow at 9am', 'every day at 5pm'"
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available. Install: pip install python-dateutil schedule python-crontab"
+    except Exception as e:
+        return f"❌ Error creating reminder: {e}"
+
+@mcp.tool()
+async def list_user_reminders(
+    user_id: str = "default",
+    project_id: Optional[str] = None
+) -> str:
+    """List pending reminders for user/project"""
+    try:
+        from .natural_scheduler import list_user_reminders as _list_user_reminders
+        reminders = await _list_user_reminders(user_id, project_id)
+        
+        if not reminders:
+            output = []
+            output.append("📋 No pending reminders found")
+            output.append(f"👤 User: {user_id}")
+            if project_id:
+                output.append(f"📁 Project: {project_id}")
+            output.append("💡 Use 'create_natural_reminder' to set up time-based reminders")
+            return "\n".join(output)
+        
+        output = []
+        output.append(f"⏰ Found {len(reminders)} pending reminders")
+        output.append(f"👤 User: {user_id}")
+        if project_id:
+            output.append(f"📁 Project: {project_id}")
+        output.append("=" * 50)
+        
+        for i, reminder in enumerate(reminders, 1):
+            output.append(f"\n#{i}")
+            output.append(f"🆔 ID: {reminder['id']}")
+            output.append(f"📝 Title: {reminder['title']}")
+            if reminder['description']:
+                output.append(f"📄 Description: {reminder['description']}")
+            output.append(f"🔄 Type: {reminder['reminder_type'].replace('_', ' ').title()}")
+            output.append(f"📊 Status: {reminder['status'].replace('_', ' ').title()}")
+            output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
+            output.append(f"📅 Created: {reminder['created_at']}")
+            if reminder.get('recurrence_rule'):
+                output.append(f"🔁 Recurrence: {reminder['recurrence_rule']}")
+            if reminder.get('context_triggers'):
+                output.append(f"🎯 Triggers: {', '.join(reminder['context_triggers'])}")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error listing reminders: {e}"
+
+@mcp.tool()
+async def cancel_user_reminder(
+    reminder_id: str
+) -> str:
+    """Cancel a specific reminder"""
+    try:
+        from .natural_scheduler import cancel_user_reminder as _cancel_user_reminder
+        success = await _cancel_user_reminder(reminder_id)
+        
+        if success:
+            output = []
+            output.append("❌ Reminder cancelled successfully!")
+            output.append(f"🆔 Reminder ID: {reminder_id}")
+            output.append("🚫 The reminder will no longer trigger")
+            output.append("💡 You can create a new reminder if needed")
+            return "\n".join(output)
+        else:
+            return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists."
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error cancelling reminder: {e}"
+
+@mcp.tool()
+async def check_due_reminders() -> str:
+    """Check for reminders that are due now"""
+    try:
+        from .natural_scheduler import check_due_reminders as _check_due_reminders
+        due_reminders = await _check_due_reminders()
+        
+        if not due_reminders:
+            return "✅ No reminders are currently due\n⏰ All scheduled reminders are in the future"
+        
+        output = []
+        output.append(f"🚨 {len(due_reminders)} reminders are DUE NOW!")
+        output.append("=" * 50)
+        
+        for i, reminder in enumerate(due_reminders, 1):
+            output.append(f"\n🔥 #{i} OVERDUE")
+            output.append(f"🆔 ID: {reminder['id']}")
+            output.append(f"📝 Title: {reminder['title']}")
+            if reminder['description']:
+                output.append(f"📄 Description: {reminder['description']}")
+            output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
+            output.append(f"👤 User: {reminder['user_id']}")
+            if reminder.get('project_id'):
+                output.append(f"📁 Project: {reminder['project_id']}")
+            
+            # Calculate how overdue
+            try:
+                from datetime import datetime
+                scheduled = datetime.fromisoformat(reminder['scheduled_for'].replace('Z', '+00:00'))
+                now = datetime.now()
+                overdue = now - scheduled
+                if overdue.total_seconds() > 0:
+                    hours = int(overdue.total_seconds() // 3600)
+                    minutes = int((overdue.total_seconds() % 3600) // 60)
+                    if hours > 0:
+                        output.append(f"⏱️ Overdue: {hours}h {minutes}m")
+                    else:
+                        output.append(f"⏱️ Overdue: {minutes}m")
+            except Exception:
+                output.append("⏱️ Overdue: calculation failed")
+        
+        output.append("\n💡 These reminders should be processed by the background scheduler")
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error checking due reminders: {e}"
+
+@mcp.tool()
+async def start_reminder_service() -> str:
+    """Start the background reminder service"""
+    try:
+        from .natural_scheduler import start_reminder_service as _start_reminder_service, register_session_notifications
+        
+        # Register default session notifications
+        register_session_notifications()
+        
+        # Start the service
+        _start_reminder_service()
+        
+        output = []
+        output.append("🚀 Natural reminder service started!")
+        output.append("⏰ Background scheduler is now active")
+        output.append("🔍 Checking for due reminders every minute")
+        output.append("📢 Session notifications are registered")
+        output.append("💡 Reminders will automatically trigger at their scheduled times")
+        output.append("🛑 Use 'stop_reminder_service' to stop the background service")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error starting reminder service: {e}"
+
+@mcp.tool()
+async def stop_reminder_service() -> str:
+    """Stop the background reminder service"""
+    try:
+        from .natural_scheduler import stop_reminder_service as _stop_reminder_service
+        _stop_reminder_service()
+        
+        output = []
+        output.append("🛑 Natural reminder service stopped")
+        output.append("❌ Background scheduler is no longer active")
+        output.append("⚠️ Existing reminders will not trigger automatically")
+        output.append("🚀 Use 'start_reminder_service' to restart the service")
+        output.append("💡 You can still check due reminders manually with 'check_due_reminders'")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error stopping reminder service: {e}"
+
+# Smart Interruption Management Tools  
+@mcp.tool()
+async def start_interruption_monitoring(
+    working_directory: str = ".",
+    watch_files: bool = True
+) -> str:
+    """Start smart interruption monitoring with context switch detection"""
+    try:
+        from .interruption_manager import start_interruption_monitoring as _start_interruption_monitoring
+        await _start_interruption_monitoring(working_directory, watch_files)
+        
+        output = []
+        output.append("🛡️ Smart interruption monitoring started!")
+        output.append(f"📁 Working directory: {working_directory}")
+        output.append(f"📄 File watching: {'enabled' if watch_files else 'disabled'}")
+        output.append("👁️ Focus tracking: active")
+        output.append("💾 Auto-save: enabled (30s threshold)")
+        output.append("🔄 Context preservation: automatic")
+        output.append("💡 Your work context will be automatically preserved during interruptions")
+        output.append("🛑 Use 'stop_interruption_monitoring' to disable")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Interruption management tools not available. Install: pip install psutil watchdog"
+    except Exception as e:
+        return f"❌ Error starting interruption monitoring: {e}"
+
+@mcp.tool()
+async def stop_interruption_monitoring() -> str:
+    """Stop interruption monitoring"""
+    try:
+        from .interruption_manager import stop_interruption_monitoring as _stop_interruption_monitoring
+        _stop_interruption_monitoring()
+        
+        output = []
+        output.append("🛑 Interruption monitoring stopped")
+        output.append("❌ Focus tracking: disabled")
+        output.append("❌ File watching: disabled") 
+        output.append("❌ Auto-save: disabled")
+        output.append("⚠️ Context preservation is now manual only")
+        output.append("🚀 Use 'start_interruption_monitoring' to restart")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error stopping interruption monitoring: {e}"
+
+@mcp.tool()
+async def create_session_context(
+    user_id: str,
+    project_id: Optional[str] = None,
+    working_directory: str = "."
+) -> str:
+    """Create new session context for interruption management"""
+    try:
+        from .interruption_manager import create_session_context as _create_session_context
+        session_id = await _create_session_context(user_id, project_id, working_directory)
+        
+        output = []
+        output.append("🎯 Session context created successfully!")
+        output.append(f"🆔 Session ID: {session_id}")
+        output.append(f"👤 User: {user_id}")
+        if project_id:
+            output.append(f"📁 Project: {project_id}")
+        output.append(f"📂 Working directory: {working_directory}")
+        output.append("💾 Context will be automatically preserved on interruptions")
+        output.append("🔄 Session state is now being tracked")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error creating session context: {e}"
+
+@mcp.tool()
+async def preserve_current_context(
+    session_id: Optional[str] = None,
+    force: bool = False
+) -> str:
+    """Manually preserve current session context"""
+    try:
+        from .interruption_manager import preserve_current_context as _preserve_current_context
+        success = await _preserve_current_context(session_id, force)
+        
+        if success:
+            output = []
+            output.append("💾 Session context preserved successfully!")
+            if session_id:
+                output.append(f"🆔 Session ID: {session_id}")
+            output.append(f"🔧 Preservation type: {'forced' if force else 'automatic'}")
+            output.append("📸 Context snapshot created")
+            output.append("🗜️ Data compressed for storage")
+            output.append("✅ Recovery is now possible if interruption occurs")
+            return "\n".join(output)
+        else:
+            return "❌ Failed to preserve context. Check that a session context exists."
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error preserving context: {e}"
+
+@mcp.tool()
+async def restore_session_context(
+    session_id: str
+) -> str:
+    """Restore session context from snapshot"""
+    try:
+        from .interruption_manager import restore_session_context as _restore_session_context
+        context_data = await _restore_session_context(session_id)
+        
+        if context_data:
+            output = []
+            output.append("🔄 Session context restored successfully!")
+            output.append(f"🆔 Session ID: {session_id}")
+            output.append(f"👤 User: {context_data['user_id']}")
+            if context_data.get('project_id'):
+                output.append(f"📁 Project: {context_data['project_id']}")
+            output.append(f"📂 Working directory: {context_data['working_directory']}")
+            output.append(f"📊 Interruption count: {context_data['interruption_count']}")
+            output.append(f"🔄 Recovery attempts: {context_data['recovery_attempts']}")
+            output.append(f"⏱️ Focus duration: {context_data['focus_duration']:.1f}s")
+            if context_data.get('open_files'):
+                output.append(f"📄 Open files: {len(context_data['open_files'])}")
+            output.append("✅ Context is now active and being monitored")
+            return "\n".join(output)
+        else:
+            return f"❌ Failed to restore context for session {session_id}. Check that the session exists and has preserved data."
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error restoring context: {e}"
+
+@mcp.tool()
+async def get_interruption_history(
+    user_id: str,
+    hours: int = 24
+) -> str:
+    """Get recent interruption history for user"""
+    try:
+        from .interruption_manager import get_interruption_history as _get_interruption_history
+        history = await _get_interruption_history(user_id, hours)
+        
+        if not history:
+            output = []
+            output.append("📋 No interruptions found")
+            output.append(f"👤 User: {user_id}")
+            output.append(f"🕐 Time range: last {hours} hours")
+            output.append("✅ Your work sessions have been uninterrupted!")
+            return "\n".join(output)
+        
+        output = []
+        output.append(f"📊 Found {len(history)} interruptions in the last {hours} hours")
+        output.append(f"👤 User: {user_id}")
+        output.append("=" * 50)
+        
+        # Group by type for summary
+        by_type = {}
+        total_duration = 0
+        auto_saved_count = 0
+        
+        for event in history:
+            event_type = event['event_type']
+            by_type[event_type] = by_type.get(event_type, 0) + 1
+            if event.get('duration'):
+                total_duration += event['duration']
+            if event.get('auto_saved'):
+                auto_saved_count += 1
+        
+        output.append("📈 Summary:")
+        for event_type, count in by_type.items():
+            type_name = event_type.replace('_', ' ').title()
+            output.append(f"  • {type_name}: {count}")
+        
+        output.append(f"💾 Auto-saved interruptions: {auto_saved_count}/{len(history)}")
+        if total_duration > 0:
+            output.append(f"⏱️ Total focus time: {total_duration:.1f}s")
+        
+        # Show recent events
+        output.append("\n🕐 Recent interruptions:")
+        for i, event in enumerate(history[:5], 1):
+            event_type = event['event_type'].replace('_', ' ').title()
+            timestamp = event['timestamp']
+            auto_saved = "💾" if event.get('auto_saved') else "📝"
+            duration_info = f" ({event['duration']:.1f}s)" if event.get('duration') else ""
+            output.append(f"  {i}. {auto_saved} {event_type}{duration_info} - {timestamp}")
+        
+        if len(history) > 5:
+            output.append(f"  ... and {len(history) - 5} more")
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error getting interruption history: {e}"
+
+@mcp.tool()
+async def get_interruption_statistics(
+    user_id: str
+) -> str:
+    """Get comprehensive interruption and context preservation statistics"""
+    try:
+        from .interruption_manager import get_interruption_statistics as _get_interruption_statistics
+        stats = await _get_interruption_statistics(user_id)
+        
+        output = []
+        output.append(f"📊 Interruption Management Statistics")
+        output.append(f"👤 User: {user_id}")
+        output.append("=" * 50)
+        
+        # Session statistics
+        sessions = stats.get('sessions', {})
+        if sessions:
+            output.append("🎯 Session Management:")
+            output.append(f"  • Total sessions: {sessions.get('total_sessions', 0)}")
+            output.append(f"  • Preserved sessions: {sessions.get('preserved_sessions', 0)}")
+            output.append(f"  • Restored sessions: {sessions.get('restored_sessions', 0)}")
+            avg_restore = sessions.get('avg_restore_count', 0)
+            output.append(f"  • Average restore count: {avg_restore:.1f}")
+        
+        # Interruption statistics
+        interruptions = stats.get('interruptions', {})
+        if interruptions:
+            total_interruptions = interruptions.get('total', 0)
+            output.append(f"\n⚡ Interruption Summary:")
+            output.append(f"  • Total interruptions: {total_interruptions}")
+            
+            by_type = interruptions.get('by_type', [])
+            if by_type:
+                output.append("  • By type:")
+                for type_stat in by_type:
+                    type_name = type_stat.get('event_type', '').replace('_', ' ').title()
+                    count = type_stat.get('type_count', 0)
+                    auto_saved = type_stat.get('auto_saved_interruptions', 0)
+                    avg_duration = type_stat.get('avg_duration', 0)
+                    
+                    output.append(f"    - {type_name}: {count}")
+                    if auto_saved > 0:
+                        output.append(f"      (💾 {auto_saved} auto-saved)")
+                    if avg_duration:
+                        output.append(f"      (⏱️ avg: {avg_duration:.1f}s)")
+        
+        # Snapshot statistics  
+        snapshots = stats.get('snapshots', {})
+        if snapshots:
+            total_snapshots = snapshots.get('total_snapshots', 0)
+            total_size = snapshots.get('total_size', 0)
+            avg_size = snapshots.get('avg_size', 0)
+            
+            output.append(f"\n📸 Context Snapshots:")
+            output.append(f"  • Total snapshots: {total_snapshots}")
+            if total_size:
+                size_mb = total_size / (1024 * 1024)
+                output.append(f"  • Total storage: {size_mb:.2f} MB")
+            if avg_size:
+                avg_kb = avg_size / 1024
+                output.append(f"  • Average size: {avg_kb:.1f} KB")
+        
+        # Calculate efficiency metrics
+        if sessions and interruptions:
+            preservation_rate = (sessions.get('preserved_sessions', 0) / max(sessions.get('total_sessions', 1), 1)) * 100
+            auto_save_rate = 0
+            if by_type:
+                total_auto_saved = sum(t.get('auto_saved_interruptions', 0) for t in by_type)
+                auto_save_rate = (total_auto_saved / max(total_interruptions, 1)) * 100
+            
+            output.append(f"\n📈 Efficiency Metrics:")
+            output.append(f"  • Context preservation rate: {preservation_rate:.1f}%")
+            output.append(f"  • Auto-save success rate: {auto_save_rate:.1f}%")
+        
+        if not any([sessions, interruptions.get('total', 0), snapshots.get('total_snapshots', 0)]):
+            output = ["📊 No interruption management data found", f"👤 User: {user_id}", "💡 Start using interruption monitoring to see statistics"]
+        
+        return "\n".join(output)
+        
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error getting statistics: {e}"
+
+# =====================================
+# Crackerjack Integration MCP Tools
+# =====================================
+
+@mcp.tool()
+async def execute_crackerjack_command(
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300
+) -> str:
+    """Execute a Crackerjack command and parse the output for insights"""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available"
+    
+    try:
+        integration = CrackerjackIntegration()
+        args_list = args.split() if args else []
+        result = await integration.execute_crackerjack_command(
+            command, args_list, working_directory, timeout
+        )
+        
+        output = [f"🔧 Crackerjack {command} execution complete"]
+        output.append(f"📁 Working directory: {working_directory}")
+        output.append(f"⏱️  Duration: {result.duration:.2f}s")
+        output.append(f"🎯 Exit code: {result.exit_code}")
+        
+        if result.parsed_results:
+            output.append(f"\n📊 Parsed Results:")
+            for key, value in result.parsed_results.items():
+                if isinstance(value, dict) and value:
+                    output.append(f"  • {key}: {len(value)} items")
+                elif isinstance(value, (int, float)):
+                    output.append(f"  • {key}: {value}")
+                elif value:
+                    output.append(f"  • {key}: {value}")
+        
+        if result.memory_insights:
+            output.append(f"\n💡 Memory Insights:")
+            for insight in result.memory_insights[:3]:  # Show top 3
+                output.append(f"  • {insight}")
+        
+        if result.exit_code != 0 and result.stderr:
+            output.append(f"\n❌ Error output:")
+            output.append(f"  {result.stderr[:200]}...")
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error executing Crackerjack command: {e}"
+
+@mcp.tool()
+async def get_crackerjack_results_history(
+    working_directory: str = ".",
+    command_filter: str = "",
+    days: int = 7
+) -> str:
+    """Get recent Crackerjack command execution history"""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available"
+    
+    try:
+        integration = CrackerjackIntegration()
+        results = await integration.get_recent_crackerjack_results(
+            working_directory, command_filter, days
+        )
+        
+        if not results:
+            return f"📋 No Crackerjack results found in the last {days} days"
+        
+        output = [f"📋 Crackerjack Results History (last {days} days)"]
+        output.append(f"📁 Directory: {working_directory}")
+        if command_filter:
+            output.append(f"🔍 Filter: {command_filter}")
+        
+        for result in results[:10]:  # Show last 10 results
+            status = "✅" if result.get('exit_code', 1) == 0 else "❌"
+            command = result.get('command', 'unknown')
+            timestamp = result.get('timestamp', '')
+            duration = result.get('duration', 0)
+            
+            output.append(f"\n{status} {command} ({timestamp})")
+            output.append(f"   ⏱️  {duration:.2f}s")
+            
+            # Show key metrics if available
+            parsed = result.get('parsed_results', {})
+            if parsed:
+                if 'test_summary' in parsed:
+                    summary = parsed['test_summary']
+                    passed = summary.get('passed', 0)
+                    failed = summary.get('failed', 0)
+                    output.append(f"   🧪 Tests: {passed} passed, {failed} failed")
+                
+                if 'lint_issues' in parsed:
+                    issues = len(parsed['lint_issues'])
+                    if issues > 0:
+                        output.append(f"   🔍 Lint: {issues} issues")
+                
+                if 'coverage_percentage' in parsed:
+                    coverage = parsed['coverage_percentage']
+                    output.append(f"   📊 Coverage: {coverage}%")
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error getting Crackerjack history: {e}"
+
+@mcp.tool()
+async def get_crackerjack_quality_metrics(
+    working_directory: str = ".",
+    days: int = 30
+) -> str:
+    """Get quality metrics trends from Crackerjack execution history"""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available"
+    
+    try:
+        integration = CrackerjackIntegration()
+        metrics = await integration.get_quality_metrics_history(
+            working_directory, days
+        )
+        
+        if not metrics:
+            return f"📊 No quality metrics found in the last {days} days"
+        
+        output = [f"📊 Quality Metrics Trends (last {days} days)"]
+        output.append(f"📁 Directory: {working_directory}")
+        
+        # Test metrics
+        test_data = metrics.get('test_metrics', {})
+        if test_data:
+            latest_tests = test_data.get('latest', {})
+            trends = test_data.get('trends', {})
+            
+            output.append(f"\n🧪 Test Metrics:")
+            if latest_tests:
+                passed = latest_tests.get('passed', 0)
+                failed = latest_tests.get('failed', 0)
+                total = passed + failed
+                pass_rate = (passed / max(total, 1)) * 100
+                output.append(f"  • Latest: {passed}/{total} passed ({pass_rate:.1f}%)")
+            
+            if trends.get('pass_rate_trend'):
+                trend = trends['pass_rate_trend']
+                direction = "📈" if trend > 0 else "📉" if trend < 0 else "➡️"
+                output.append(f"  • Pass rate trend: {direction} {trend:+.1f}%")
+        
+        # Coverage metrics
+        coverage_data = metrics.get('coverage_metrics', {})
+        if coverage_data:
+            latest = coverage_data.get('latest', 0)
+            trend = coverage_data.get('trend', 0)
+            direction = "📈" if trend > 0 else "📉" if trend < 0 else "➡️"
+            
+            output.append(f"\n📊 Coverage Metrics:")
+            output.append(f"  • Latest coverage: {latest}%")
+            output.append(f"  • Coverage trend: {direction} {trend:+.1f}%")
+        
+        # Lint metrics
+        lint_data = metrics.get('lint_metrics', {})
+        if lint_data:
+            latest = lint_data.get('latest_issues', 0)
+            trend = lint_data.get('issues_trend', 0)
+            direction = "📈" if trend > 0 else "📉" if trend < 0 else "➡️"
+            
+            output.append(f"\n🔍 Code Quality:")
+            output.append(f"  • Latest lint issues: {latest}")
+            output.append(f"  • Issues trend: {direction} {trend:+.0f}")
+        
+        # Security metrics
+        security_data = metrics.get('security_metrics', {})
+        if security_data:
+            latest = security_data.get('latest_issues', 0)
+            severity = security_data.get('highest_severity', 'none')
+            
+            output.append(f"\n🔒 Security Metrics:")
+            output.append(f"  • Latest security issues: {latest}")
+            if severity != 'none':
+                output.append(f"  • Highest severity: {severity}")
+        
+        if not any([test_data, coverage_data, lint_data, security_data]):
+            output = [f"📊 No quality metrics available for {working_directory}", 
+                     "💡 Run some Crackerjack commands to start tracking metrics"]
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error getting quality metrics: {e}"
+
+@mcp.tool()
+async def analyze_crackerjack_test_patterns(
+    working_directory: str = ".",
+    days: int = 7
+) -> str:
+    """Analyze test failure patterns and trends"""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available"
+    
+    try:
+        integration = CrackerjackIntegration()
+        patterns = await integration.get_test_failure_patterns(days)
+        
+        if not patterns:
+            return f"🧪 No test failure patterns found in the last {days} days"
+        
+        output = [f"🧪 Test Failure Pattern Analysis (last {days} days)"]
+        output.append(f"📁 Directory: {working_directory}")
+        
+        frequent_failures = patterns.get('frequent_failures', [])
+        if frequent_failures:
+            output.append(f"\n🔥 Most Frequent Failures:")
+            for failure in frequent_failures[:5]:
+                test_name = failure.get('test_name', 'unknown')
+                count = failure.get('failure_count', 0)
+                last_error = failure.get('latest_error_type', 'unknown')
+                output.append(f"  • {test_name} ({count}x) - {last_error}")
+        
+        error_types = patterns.get('error_type_distribution', {})
+        if error_types:
+            output.append(f"\n📊 Error Type Distribution:")
+            for error_type, count in sorted(error_types.items(), key=lambda x: x[1], reverse=True)[:5]:
+                output.append(f"  • {error_type}: {count} occurrences")
+        
+        trends = patterns.get('trends', {})
+        if trends:
+            output.append(f"\n📈 Trends:")
+            
+            stability = trends.get('stability_score', 0)
+            stability_emoji = "🟢" if stability > 80 else "🟡" if stability > 60 else "🔴"
+            output.append(f"  • Test stability: {stability_emoji} {stability:.1f}%")
+            
+            avg_duration = trends.get('average_test_duration', 0)
+            if avg_duration > 0:
+                output.append(f"  • Average test duration: {avg_duration:.1f}s")
+            
+            if trends.get('most_problematic_files'):
+                files = trends['most_problematic_files'][:3]
+                output.append(f"  • Most problematic files:")
+                for file_path in files:
+                    output.append(f"    - {file_path}")
+        
+        recommendations = []
+        if frequent_failures and len(frequent_failures) > 3:
+            recommendations.append("Consider investigating the most frequent test failures")
+        
+        if error_types.get('AssertionError', 0) > error_types.get('ImportError', 0) * 2:
+            recommendations.append("High assertion failures suggest logic issues in tests or code")
+        
+        if trends.get('stability_score', 100) < 70:
+            recommendations.append("Test stability is below 70% - consider test environment review")
+        
+        if recommendations:
+            output.append(f"\n💡 Recommendations:")
+            for rec in recommendations:
+                output.append(f"  • {rec}")
+        
+        if not any([frequent_failures, error_types, trends]):
+            output = [f"🧪 No test failure patterns to analyze", 
+                     f"📁 Directory: {working_directory}",
+                     "💡 Run tests with failures to enable pattern analysis"]
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error analyzing test patterns: {e}"
 
 def main():
     """Main entry point for the MCP server"""
