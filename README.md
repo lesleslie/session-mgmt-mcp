@@ -77,7 +77,7 @@ Once configured, the following slash commands become available in Claude Code:
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.13+
 - MCP library (`pip install mcp`)
 - Global Claude workspace at `~/Projects/claude/`
 - UV package manager (recommended)

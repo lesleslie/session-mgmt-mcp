@@ -29,7 +29,18 @@ dependencies = [
     "numpy>=1.24.0",
     "onnxruntime>=1.16.0",
     "transformers>=4.35.0",
-    "tokenizers>=0.15.0"
+    "tokenizers>=0.15.0",
+    # Phase 1 dependencies
+    "python-dateutil>=2.8.0",
+    # Phase 2 dependencies  
+    "watchdog>=3.0.0",
+    "google-generativeai>=0.3.0",
+    "openai>=1.0.0",
+    "redis>=5.0.0",
+    "boto3>=1.26.0",
+    # Phase 3 dependencies
+    "schedule>=1.2.0",
+    "python-crontab>=3.0.0"
 ]
 readme = "README.md"
 license = {text = "BSD-3-CLAUSE"}
@@ -55,3 +66,6 @@ allow-direct-references = true
 
 [tool.hatch.version]
 path = "session_mgmt_mcp/__init__.py"
+
+[tool.uv.sources]
+crackerjack = { path = "../crackerjack", editable = true }
