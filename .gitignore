@@ -2,3 +2,4 @@
 /dist/
 /.venv/
 /.claude/
+/session_mgmt_mcp/__pycache__/

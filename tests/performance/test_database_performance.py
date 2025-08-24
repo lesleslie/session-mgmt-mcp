@@ -1,26 +1,170 @@
 """
-Performance tests for database operations in session-mgmt-mcp.
+Advanced performance tests for database operations in session-mgmt-mcp.
 
-Tests performance characteristics of:
-- Reflection storage and retrieval
-- Database query optimization
-- Concurrent access patterns
-- Memory usage patterns
-- Large dataset handling
+Tests performance characteristics with comprehensive metrics and regression detection:
+- Reflection storage and retrieval with baseline comparison
+- Database query optimization and index performance
+- Concurrent access patterns under various loads
+- Memory usage patterns and leak detection
+- Large dataset handling with scalability analysis
+- Performance regression detection and alerting
 """
 
 import pytest
 import asyncio
 import time
 import tempfile
+import json
 from pathlib import Path
 from datetime import datetime, timedelta
+from dataclasses import dataclass, asdict
 import statistics
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
+from typing import Dict, List, Any, Optional
 
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 from tests.fixtures.data_factories import ReflectionDataFactory, LargeDatasetFactory
+
+
+@dataclass
+class PerformanceMetric:
+    """Structured performance metric with context and thresholds"""
+    name: str
+    value: float
+    unit: str
+    timestamp: str
+    context: Dict[str, Any]
+    baseline: Optional[float] = None
+    threshold: Optional[float] = None
+    
+    @property
+    def meets_threshold(self) -> bool:
+        """Check if metric meets performance threshold"""
+        return self.threshold is None or self.value <= self.threshold
+    
+    @property
+    def regression_ratio(self) -> Optional[float]:
+        """Calculate regression ratio vs baseline"""
+        if self.baseline is None:
+            return None
+        return (self.value - self.baseline) / self.baseline if self.baseline > 0 else None
+
+
+class AdvancedPerformanceTracker:
+    """Enhanced performance tracker with baseline comparison and detailed metrics"""
+    
+    def __init__(self, baseline_file: Optional[Path] = None):
+        self.baseline_file = baseline_file or Path("performance_baseline.json")
+        self.metrics: List[PerformanceMetric] = []
+        self.baseline_data = self._load_baseline()
+        self.start_time = None
+        self.start_memory = None
+    
+    def _load_baseline(self) -> Dict[str, Any]:
+        """Load baseline performance data"""
+        if self.baseline_file.exists():
+            try:
+                with open(self.baseline_file) as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, OSError):
+                return {}
+        return {}
+    
+    def start(self):
+        """Start performance tracking"""
+        import psutil
+        process = psutil.Process()
+        self.start_time = time.perf_counter()
+        self.start_memory = process.memory_info().rss / 1024 / 1024  # MB
+    
+    def record_metric(self, metric: PerformanceMetric):
+        """Record a performance metric"""
+        # Add baseline if available
+        baseline_key = f"{metric.context.get('test_name', 'unknown')}.{metric.name}"
+        baseline_value = self.baseline_data.get(baseline_key)
+        if baseline_value is not None:
+            metric.baseline = baseline_value
+        
+        self.metrics.append(metric)
+    
+    def stop(self) -> Dict[str, Any]:
+        """Stop tracking and return comprehensive metrics"""
+        import psutil
+        process = psutil.Process()
+        end_time = time.perf_counter()
+        end_memory = process.memory_info().rss / 1024 / 1024  # MB
+        
+        return {
+            'duration': end_time - self.start_time,
+            'memory_delta': end_memory - self.start_memory,
+            'peak_memory': end_memory,
+            'metrics': [asdict(m) for m in self.metrics]
+        }
+    
+    def analyze_regressions(self, tolerance: float = 0.2) -> Dict[str, Any]:
+        """Analyze performance regressions with detailed reporting"""
+        analysis = {
+            'regressions': [],
+            'improvements': [],
+            'threshold_violations': [],
+            'summary': {
+                'total_metrics': len(self.metrics),
+                'regressions_count': 0,
+                'improvements_count': 0,
+                'violations_count': 0,
+                'overall_status': 'PASS'
+            }
+        }
+        
+        for metric in self.metrics:
+            # Check threshold violations
+            if not metric.meets_threshold:
+                analysis['threshold_violations'].append({
+                    'name': metric.name,
+                    'value': metric.value,
+                    'threshold': metric.threshold,
+                    'unit': metric.unit,
+                    'context': metric.context
+                })
+                analysis['summary']['violations_count'] += 1
+                analysis['summary']['overall_status'] = 'FAIL'
+            
+            # Check regression vs baseline
+            regression_ratio = metric.regression_ratio
+            if regression_ratio is not None:
+                if regression_ratio > tolerance:
+                    analysis['regressions'].append({
+                        'name': metric.name,
+                        'baseline': metric.baseline,
+                        'current': metric.value,
+                        'regression_percent': regression_ratio * 100,
+                        'unit': metric.unit,
+                        'context': metric.context
+                    })
+                    analysis['summary']['regressions_count'] += 1
+                elif regression_ratio < -tolerance:
+                    analysis['improvements'].append({
+                        'name': metric.name,
+                        'baseline': metric.baseline,
+                        'current': metric.value,
+                        'improvement_percent': -regression_ratio * 100,
+                        'unit': metric.unit,
+                        'context': metric.context
+                    })
+                    analysis['summary']['improvements_count'] += 1
+        
+        return analysis
+    
+    def save_baseline(self):
+        """Save current metrics as new baseline"""
+        baseline_data = {}
+        for metric in self.metrics:
+            key = f"{metric.context.get('test_name', 'unknown')}.{metric.name}"
+            baseline_data[key] = metric.value
+        
+        with open(self.baseline_file, 'w') as f:
+            json.dump(baseline_data, f, indent=2)
 
 @pytest.mark.performance
 class TestReflectionDatabasePerformance:
