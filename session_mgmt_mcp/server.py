@@ -1613,6 +1613,44 @@ async def reflect_on_past(
         return "\n".join(output)
         
     except Exception as e:
+        # If connection failed, try to cleanup and retry once
+        if "'NoneType' object has no attribute" in str(e) or "Could not set lock" in str(e):
+            try:
+                from session_mgmt_mcp.reflection_tools import cleanup_reflection_database
+                cleanup_reflection_database()
+                db = await get_reflection_database()
+                current_proj = project or get_current_project()
+                
+                results = await db.search_conversations(
+                    query=query,
+                    limit=limit,
+                    min_score=min_score,
+                    project=current_proj
+                )
+                
+                if not results:
+                    return f"🔍 No conversations found matching '{query}' (minimum similarity: {min_score})"
+                
+                output = []
+                output.append(f"🔍 Found {len(results)} conversations matching '{query}'")
+                output.append(f"📊 Project: {current_proj or 'All projects'}")
+                output.append(f"🎯 Similarity threshold: {min_score}")
+                output.append("")
+                
+                for i, result in enumerate(results, 1):
+                    score = result.get('score', 0)
+                    timestamp = result.get('timestamp', 'Unknown time')
+                    content_preview = result.get('content', '')[:200] + "..." if len(result.get('content', '')) > 200 else result.get('content', '')
+                    
+                    output.append(f"📝 Result {i} (similarity: {score:.3f})")
+                    output.append(f"📅 {timestamp}")
+                    output.append(f"💬 {content_preview}")
+                    output.append("")
+                
+                return "\n".join(output)
+            except Exception as retry_e:
+                return f"❌ Error searching conversations (retry failed): {retry_e}"
+        
         return f"❌ Error searching conversations: {e}"
 
 @mcp.tool()
@@ -1639,6 +1677,26 @@ async def store_reflection(
         return "\n".join(output)
         
     except Exception as e:
+        # If connection failed, try to cleanup and retry once
+        if "'NoneType' object has no attribute 'execute'" in str(e):
+            try:
+                from session_mgmt_mcp.reflection_tools import cleanup_reflection_database
+                cleanup_reflection_database()
+                db = await get_reflection_database()
+                reflection_id = await db.store_reflection(content, tags)
+                
+                output = []
+                output.append("💾 Reflection stored successfully! (after connection reset)")
+                output.append(f"🆔 ID: {reflection_id}")
+                output.append(f"📝 Content: {content[:100]}...")
+                if tags:
+                    output.append(f"🏷️ Tags: {', '.join(tags)}")
+                output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                
+                return "\n".join(output)
+            except Exception as retry_e:
+                return f"❌ Error storing reflection (retry failed): {retry_e}"
+        
         return f"❌ Error storing reflection: {e}"
 
 @mcp.tool()
@@ -1891,6 +1949,27 @@ async def search_by_concept(
         
     except Exception as e:
         return f"❌ Error searching by concept: {e}"
+
+@mcp.tool()
+async def reset_reflection_database() -> str:
+    """Reset the reflection database connection to fix lock issues"""
+    if not REFLECTION_TOOLS_AVAILABLE:
+        return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
+    
+    try:
+        from session_mgmt_mcp.reflection_tools import cleanup_reflection_database, get_reflection_database
+        
+        # Clean up existing instance
+        cleanup_reflection_database()
+        
+        # Test new connection
+        db = await get_reflection_database()
+        stats = await db.get_stats()
+        
+        return f"✅ Reflection database reset successfully!\n📊 Stats: {stats}"
+        
+    except Exception as e:
+        return f"❌ Error resetting database: {e}"
 
 @mcp.tool()
 async def reflection_stats() -> str:

@@ -1,155 +1,149 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
-name = "session-mgmt-mcp"
-version = "0.1.0"
-description = "MCP server for Claude session management with automatic initialization, checkpoints, and cleanup"
-requires-python = ">=3.13"
-authors = [
-    {name = "Les Leslie", email = "les@wedgwoodwebworks.com"}
-]
-keywords = ["mcp", "claude", "session-management", "ai", "tooling"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: System :: Monitoring"
-]
-dependencies = [
-    "fastmcp>=2.0.0",
-    "aiofiles>=24.1.0", 
-    "aiohttp>=3.12.14",
-    "duckdb>=0.9.0",
-    "numpy>=1.24.0",
-    "onnxruntime>=1.16.0",
-    "transformers>=4.35.0",
-    "tokenizers>=0.15.0",
-    "python-dateutil>=2.8.0",
-    "watchdog>=3.0.0",
-    "google-generativeai>=0.3.0",
-    "openai>=1.0.0",
-    "redis>=5.0.0",
-    "boto3>=1.26.0",
-    "schedule>=1.2.0",
-    "python-crontab>=3.0.0"
-]
-readme = "README.md"
-license = {text = "BSD-3-CLAUSE"}
-
 [dependency-groups]
 dev = [
     "crackerjack",
-    # Core Testing Framework
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-cov>=4.0.0",
-    "pytest-mock>=3.12.0",
-    "pytest-xdist>=3.5.0",  # Parallel test execution
-    "pytest-benchmark>=4.0.0",
-    "pytest-timeout>=2.2.0",
-    "pytest-randomly>=3.15.0",
-    "pytest-clarity>=1.0.1",
-    # Property-Based Testing
-    "hypothesis>=6.90.0",
-    # Test Data and Fixtures
-    "factory-boy>=3.3.0",
-    "faker>=22.0.0",
-    "freezegun>=1.4.0",
-    # Database Testing
-    "pytest-postgresql>=6.0.0",
-    "pytest-redis>=3.1.0",
-    # Async Testing Utilities
-    "aioresponses>=0.7.6",
-    # Performance Testing
-    "memory-profiler>=0.61.0",
-    "psutil>=5.9.0",
-    "locust>=2.20.0",
-    # Security Testing
-    "bandit>=1.7.5",
-    "safety>=3.0.0",
-    # Mock and Test Utilities
-    "responses>=0.24.0",
-    "vcrpy>=5.1.0",
-    "testcontainers>=3.7.0",
-    # Code Quality
-    "mypy>=1.8.0",
-    "flake8>=7.0.0",
-    "black>=23.12.0",
-    "isort>=5.13.0",
-    # Coverage and Reporting
-    "coverage[toml]>=7.4.0",
-    "pytest-html>=4.1.0",
-    "pytest-json-report>=1.5.0",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/lesleslie/session-mgmt-mcp"
-"Repository" = "https://github.com/lesleslie/session-mgmt-mcp"
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+fix = true
+unsafe-fixes = true
+show-fixes = true
+output-format = "full"
 
-[project.scripts]
-session-mgmt-mcp = "session_mgmt_mcp.server:main"
-session-mgmt = "session_mgmt_mcp.server:main"
+[tool.ruff.format]
+docstring-code-format = true
 
-[tool.hatch.build.targets.wheel]
-packages = ["session_mgmt_mcp"]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.version]
-path = "session_mgmt_mcp/__init__.py"
-
-[tool.uv.sources]
-crackerjack = { path = "../crackerjack", editable = true }
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-addopts = [
-    "-ra",
-    "--strict-markers",
-    "--strict-config",
-    "--cov=session_mgmt_mcp",
-    "--cov-report=term-missing:skip-covered",
-    "--cov-report=html:htmlcov",
-    "--cov-report=xml:coverage.xml",
-    "--cov-fail-under=85",
-    "--junitxml=pytest-results.xml",
-    "--tb=short",
-    "-p no:warnings",
-    "--asyncio-mode=auto",
+[tool.ruff.lint]
+extend-select = [
+    "C901",
+    "F",
+    "I",
+    "UP",
 ]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-asyncio_mode = "auto"
-markers = [
-    "unit: Unit tests for individual components",
-    "integration: Integration tests for MCP tools and database",
-    "mcp: MCP server specific tests",
-    "database: Database operation tests",
-    "performance: Performance and load tests",
-    "security: Security and permission tests",
-    "slow: Slow running tests (>5 seconds)",
-    "smoke: Smoke tests for basic functionality",
-    "regression: Regression tests for known issues",
-    "api: API endpoint tests",
-    "auth: Authentication and authorization tests",
-    "external: Tests requiring external services",
-    "memory: Memory usage and leak tests",
-    "concurrent: Concurrency and thread safety tests",
-    "filesystem: File system operation tests",
+ignore = [
+    "E402",
+    "F821",
 ]
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-    "ignore:.*unclosed.*:ResourceWarning",
+fixable = [
+    "ALL",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
+
+[tool.pyright]
+verboseOutput = true
+include = [
+    "crackerjack",
+]
+exclude = [
+    "scratch",
+    ".venv",
+    "build",
+    "dist",
+    "tests/*",
+    "examples/*",
+    "crackerjack/mcp/*",
+    "crackerjack/plugins/*",
+]
+extraPaths = [
+    ".venv/lib/python3.13/site-packages/",
+]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = "warning"
+reportOptionalCall = "warning"
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = false
+reportUnknownArgumentType = "warning"
+reportInvalidTypeForm = "warning"
+reportUnknownLambdaType = "warning"
+reportUnknownParameterType = "warning"
+reportPrivateUsage = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUnnecessaryComparison = "warning"
+reportConstantRedefinition = "warning"
+pythonVersion = "3.13"
+
+[tool.bandit]
+target = [
+    "crackerjack",
+]
+skips = [
+    "B101",
+    "B110",
+    "B112",
+    "B404",
+    "B603",
+    "B607",
+]
+exclude_dirs = [
+    "tests/data",
+]
+
+[tool.vulture]
+min_confidence = 86
+paths = [
+    "crackerjack",
+]
+ignore_names = [
+    "cls",
+]
+
+[tool.refurb]
+enable_all = true
+quiet = true
+python_version = "3.13"
+
+[tool.complexipy]
+default_pattern = "**/*.py"
+exclude_patterns = [
+    "**/tests/**",
+    "**/test_*.py",
+]
+max_complexity = 15
+
+[tool.codespell]
+skip = "*/data/*"
+quiet-level = 3
+ignore-words-list = "crate,uptodate,nd,nin"
+
+[tool.creosote]
+paths = [
+    "crackerjack",
+]
+deps-file = "pyproject.toml"
+exclude-deps = [
+    "hatchling",
+    "pre-commit",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
+    "pytest-benchmark",
+    "pyfiglet",
+    "pyyaml",
+    "uv",
+    "tomli-w",
+    "google-crc32c",
+    "pytest-timeout",
+    "keyring",
+    "inflection",
+    "pydantic-settings",
+    "pyleak",
+    "bandit",
+    "vulture",
+    "pyright",
+    "creosote",
+    "refurb",
+    "complexipy",
+    "codespell",
+    "fastapi",
+    "fastmcp",
+    "uvicorn",
+    "websockets",
+    "watchdog",
+    "ruff",
 ]

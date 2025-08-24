@@ -42,14 +42,38 @@ class ReflectionDatabase:
         self.onnx_session: Optional[ort.InferenceSession] = None
         self.tokenizer = None
         self.embedding_dim = 384  # all-MiniLM-L6-v2 dimension
+    
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with cleanup"""
+        self.close()
+    
+    def close(self):
+        """Close database connection"""
+        if self.conn:
+            try:
+                self.conn.close()
+            except Exception:
+                pass  # Ignore errors during cleanup
+            finally:
+                self.conn = None
+    
+    def __del__(self):
+        """Destructor to ensure cleanup"""
+        self.close()
         
     async def initialize(self):
         """Initialize database and embedding models"""
         if not DUCKDB_AVAILABLE:
             raise ImportError("DuckDB not available. Install with: pip install duckdb")
         
-        # Initialize DuckDB connection
+        # Initialize DuckDB connection with appropriate settings for concurrency
         self.conn = duckdb.connect(self.db_path)
+        # DuckDB doesn't use SQLite-style PRAGMA commands
+        # DuckDB handles concurrency automatically with MVCC
         
         # Initialize ONNX embedding model
         if ONNX_AVAILABLE:
@@ -397,6 +421,13 @@ async def get_reflection_database() -> ReflectionDatabase:
         _reflection_db = ReflectionDatabase()
         await _reflection_db.initialize()
     return _reflection_db
+
+def cleanup_reflection_database():
+    """Clean up global reflection database instance"""
+    global _reflection_db
+    if _reflection_db:
+        _reflection_db.close()
+        _reflection_db = None
 
 def get_current_project() -> Optional[str]:
     """Get current project name from working directory"""
