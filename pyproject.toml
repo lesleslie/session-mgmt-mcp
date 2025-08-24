@@ -107,3 +107,49 @@ path = "session_mgmt_mcp/__init__.py"
 
 [tool.uv.sources]
 crackerjack = { path = "../crackerjack", editable = true }
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=session_mgmt_mcp",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=85",
+    "--junitxml=pytest-results.xml",
+    "--tb=short",
+    "-p no:warnings",
+    "--asyncio-mode=auto",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests for MCP tools and database",
+    "mcp: MCP server specific tests",
+    "database: Database operation tests",
+    "performance: Performance and load tests",
+    "security: Security and permission tests",
+    "slow: Slow running tests (>5 seconds)",
+    "smoke: Smoke tests for basic functionality",
+    "regression: Regression tests for known issues",
+    "api: API endpoint tests",
+    "auth: Authentication and authorization tests",
+    "external: Tests requiring external services",
+    "memory: Memory usage and leak tests",
+    "concurrent: Concurrency and thread safety tests",
+    "filesystem: File system operation tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*unclosed.*:ResourceWarning",
+]
