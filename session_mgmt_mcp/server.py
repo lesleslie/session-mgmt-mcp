@@ -300,12 +300,18 @@ This command will:
 - Validate current task completion status
 - Provide recommendations for workflow improvements
 - Create checkpoint for session recovery if needed
+- **Analyze context usage and recommend /compact when beneficial**
 - Perform strategic compaction and cleanup (replaces disabled auto-compact):
   • DuckDB reflection database optimization (VACUUM/ANALYZE)
   • Session log cleanup (retain last 10 files)
   • Temporary file cleanup (cache files, .DS_Store, old coverage files)
   • Git repository optimization (gc --auto, prune remote branches)
   • UV package cache cleanup
+
+**RECOMMENDED WORKFLOW:**
+1. Run /session-mgmt:checkpoint for comprehensive analysis
+2. If checkpoint recommends context compaction, run: `/compact`
+3. Continue with optimized session context
 
 Use this periodically during long coding sessions to maintain optimal productivity and system performance.
 """,
@@ -1126,6 +1132,72 @@ def _generate_quality_recommendations(score: int, project_context: Dict, permiss
     
     return recommendations
 
+def should_suggest_compact() -> tuple[bool, str]:
+    """
+    Determine if compacting would be beneficial and provide reasoning.
+    Returns (should_compact, reason)
+    """
+    # Heuristics for when compaction might be needed:
+    # 1. Large projects with many files
+    # 2. Active development (recent git activity)
+    # 3. Complex task sequences
+    # 4. Session duration indicators
+    
+    try:
+        current_dir = Path(os.environ.get('PWD', Path.cwd()))
+        
+        # Count significant files in project as a complexity indicator
+        file_count = 0
+        for file_path in current_dir.rglob('*'):
+            if (file_path.is_file() and 
+                not any(part.startswith('.') for part in file_path.parts) and
+                file_path.suffix in {'.py', '.js', '.ts', '.jsx', '.tsx', '.go', '.rs', '.java', '.cpp', '.c', '.h'}):
+                file_count += 1
+                if file_count > 50:  # Stop counting after threshold
+                    break
+        
+        # Large project heuristic
+        if file_count > 50:
+            return True, f"Large codebase with 50+ source files detected - context compaction recommended"
+        
+        # Check for active development via git
+        git_dir = current_dir / ".git"
+        if git_dir.exists():
+            try:
+                # Check number of recent commits as activity indicator
+                result = subprocess.run(
+                    ["git", "log", "--oneline", "-20", "--since='24 hours ago'"],
+                    capture_output=True, text=True, cwd=current_dir, timeout=5
+                )
+                if result.returncode == 0:
+                    recent_commits = len([line for line in result.stdout.strip().split('\n') if line.strip()])
+                    if recent_commits >= 3:
+                        return True, f"High development activity ({recent_commits} commits in 24h) - compaction recommended"
+                
+                # Check for large number of modified files
+                status_result = subprocess.run(
+                    ["git", "status", "--porcelain"],
+                    capture_output=True, text=True, cwd=current_dir, timeout=5
+                )
+                if status_result.returncode == 0:
+                    modified_files = len([line for line in status_result.stdout.strip().split('\n') if line.strip()])
+                    if modified_files >= 10:
+                        return True, f"Many modified files ({modified_files}) detected - context optimization beneficial"
+                        
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+        
+        # Check for common patterns suggesting complex session
+        if (current_dir / "tests").exists() and (current_dir / "pyproject.toml").exists():
+            return True, "Python project with tests detected - compaction may improve focus"
+        
+        # Default to not suggesting unless we have clear indicators
+        return False, "Context appears manageable - compaction not immediately needed"
+        
+    except Exception:
+        # If we can't determine, err on the side of suggesting compaction for safety
+        return True, "Unable to assess context complexity - compaction may be beneficial as a precaution"
+
 async def perform_strategic_compaction() -> List[str]:
     """
     Perform strategic compaction and optimization tasks
@@ -1293,16 +1365,27 @@ async def perform_strategic_compaction() -> List[str]:
     except Exception as e:
         results.append(f"⚠️ UV: Cache cleanup failed - {str(e)[:50]}")
     
-    # 6. CONVERSATION COMPACTION - The key missing piece!
+    # 6. CONTEXT COMPACTION ANALYSIS - The key missing piece!
     try:
-        results.append("\n🔄 Performing conversation compaction...")
+        should_compact, reason = should_suggest_compact()
         
-        # This is what actually clears the "Context low" warning
-        # We need to tell Claude to compact the conversation context
+        results.append("\n🔍 Context Compaction Analysis")
+        results.append(f"📊 {reason}")
         
-        # Add conversation compaction indicator
-        results.append("📝 Conversation context optimization recommended")
-        results.append("🔄 Context compaction should be applied automatically")
+        if should_compact:
+            results.append("")
+            results.append("🔄 RECOMMENDATION: Run /compact to optimize context")
+            results.append("📝 Benefits of compaction:")
+            results.append("   • Improved response speed and accuracy")
+            results.append("   • Better focus on current development context")  
+            results.append("   • Reduced memory usage for complex sessions")
+            results.append("   • Cleaner conversation flow")
+            results.append("")
+            results.append("💡 WORKFLOW: After this checkpoint completes, run: /compact")
+            results.append("🔄 Context compaction should be applied for optimal performance")
+        else:
+            results.append("✅ Context appears well-optimized for current session")
+        
         results.append("💡 This checkpoint includes intelligent conversation summarization")
         
         # Since we can't directly call /compact from within MCP, we'll recommend it
