@@ -318,38 +318,77 @@ class ReflectionDatabase:
         limit: int = 5,
         min_score: float = 0.7
     ) -> List[Dict[str, Any]]:
-        """Search stored reflections by semantic similarity"""
-        if not (ONNX_AVAILABLE and self.onnx_session):
-            return []  # No semantic search available
-            
-        query_embedding = await self.get_embedding(query)
+        """Search stored reflections by semantic similarity with text fallback"""
+        if ONNX_AVAILABLE and self.onnx_session:
+            # Try semantic search first
+            try:
+                query_embedding = await self.get_embedding(query)
+                
+                sql = """
+                    SELECT 
+                        id, content, embedding, tags, timestamp, metadata,
+                        array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
+                    FROM reflections
+                    WHERE embedding IS NOT NULL
+                    ORDER BY score DESC
+                    LIMIT ?
+                """
+                
+                results = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: self.conn.execute(sql, [query_embedding, limit]).fetchall()
+                )
+                
+                semantic_results = [
+                    {
+                        "content": row[1],
+                        "score": float(row[6]),
+                        "tags": row[3] if row[3] else [],
+                        "timestamp": row[4],
+                        "metadata": json.loads(row[5]) if row[5] else {}
+                    }
+                    for row in results
+                    if float(row[6]) >= min_score
+                ]
+                
+                # If semantic search found results, return them
+                if semantic_results:
+                    return semantic_results
+                    
+            except Exception as e:
+                print(f"Semantic search failed, falling back to text search: {e}")
         
-        sql = """
-            SELECT 
-                id, content, embedding, tags, timestamp, metadata,
-                array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
-            FROM reflections
-            WHERE embedding IS NOT NULL
-            ORDER BY score DESC
-            LIMIT ?
-        """
+        # Fallback to text search for reflections
+        search_terms = query.lower().split()
+        sql = "SELECT id, content, tags, timestamp, metadata FROM reflections ORDER BY timestamp DESC"
         
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(sql, [query_embedding, limit]).fetchall()
+            lambda: self.conn.execute(sql).fetchall()
         )
         
-        return [
-            {
-                "content": row[1],
-                "score": float(row[6]),
-                "tags": row[3] if row[3] else [],
-                "timestamp": row[4],
-                "metadata": json.loads(row[5]) if row[5] else {}
-            }
-            for row in results
-            if float(row[6]) >= min_score
-        ]
+        # Simple text matching score for reflections
+        matches = []
+        for row in results:
+            content_lower = row[1].lower()
+            tags_lower = ' '.join(row[2] if row[2] else []).lower()
+            combined_text = f"{content_lower} {tags_lower}"
+            
+            # Calculate match score
+            score = sum(1 for term in search_terms if term in combined_text) / len(search_terms)
+            
+            if score > 0:  # At least one term matches
+                matches.append({
+                    "content": row[1],
+                    "score": score,
+                    "tags": row[2] if row[2] else [],
+                    "timestamp": row[3],
+                    "metadata": json.loads(row[4]) if row[4] else {}
+                })
+        
+        # Sort by score and return top matches
+        matches.sort(key=lambda x: x["score"], reverse=True)
+        return matches[:limit]
     
     async def search_by_file(
         self,
