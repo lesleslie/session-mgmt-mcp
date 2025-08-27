@@ -124,7 +124,106 @@ class ReflectionDatabase:
             )
         """)
         
+        # Create project_groups table for multi-project coordination
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_groups (
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                description TEXT,
+                projects VARCHAR[] NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                metadata JSON
+            )
+        """)
+        
+        # Create project_dependencies table for project relationships
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_dependencies (
+                id VARCHAR PRIMARY KEY,
+                source_project VARCHAR NOT NULL,
+                target_project VARCHAR NOT NULL,
+                dependency_type VARCHAR NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                metadata JSON,
+                UNIQUE(source_project, target_project, dependency_type)
+            )
+        """)
+        
+        # Create session_links table for cross-project session coordination
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS session_links (
+                id VARCHAR PRIMARY KEY,
+                source_session_id VARCHAR NOT NULL,
+                target_session_id VARCHAR NOT NULL,
+                link_type VARCHAR NOT NULL,
+                context TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                metadata JSON,
+                UNIQUE(source_session_id, target_session_id, link_type)
+            )
+        """)
+        
+        # Create search_index table for advanced search capabilities
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS search_index (
+                id VARCHAR PRIMARY KEY,
+                content_type VARCHAR NOT NULL,  -- 'conversation', 'reflection', 'file', 'project'
+                content_id VARCHAR NOT NULL,
+                indexed_content TEXT NOT NULL,
+                search_metadata JSON,
+                last_indexed TIMESTAMP DEFAULT NOW(),
+                UNIQUE(content_type, content_id)
+            )
+        """)
+        
+        # Create search_facets table for faceted search
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS search_facets (
+                id VARCHAR PRIMARY KEY,
+                content_type VARCHAR NOT NULL,
+                content_id VARCHAR NOT NULL,
+                facet_name VARCHAR NOT NULL,
+                facet_value VARCHAR NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                INDEX(facet_name, facet_value),
+                INDEX(content_type, content_id)
+            )
+        """)
+        
+        # Create indices for better performance
+        await self._ensure_indices()
+        
         self.conn.commit()
+    
+    async def _ensure_indices(self):
+        """Create indices for better query performance"""
+        indices = [
+            # Existing table indices
+            "CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(project)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_reflections_timestamp ON reflections(timestamp)",
+            
+            # New multi-project indices
+            "CREATE INDEX IF NOT EXISTS idx_project_groups_projects ON project_groups USING GIN(projects)",
+            "CREATE INDEX IF NOT EXISTS idx_project_deps_source ON project_dependencies(source_project)",
+            "CREATE INDEX IF NOT EXISTS idx_project_deps_target ON project_dependencies(target_project)",
+            "CREATE INDEX IF NOT EXISTS idx_session_links_source ON session_links(source_session_id)",
+            "CREATE INDEX IF NOT EXISTS idx_session_links_target ON session_links(target_session_id)",
+            
+            # Search indices
+            "CREATE INDEX IF NOT EXISTS idx_search_index_type ON search_index(content_type)",
+            "CREATE INDEX IF NOT EXISTS idx_search_index_last_indexed ON search_index(last_indexed)",
+            "CREATE INDEX IF NOT EXISTS idx_search_facets_name_value ON search_facets(facet_name, facet_value)",
+        ]
+        
+        for index_sql in indices:
+            try:
+                self.conn.execute(index_sql)
+            except Exception as e:
+                # Some indices might not be supported in all DuckDB versions, continue
+                print(f"Index creation skipped: {e}")
+                pass
     
     async def get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using ONNX model"""

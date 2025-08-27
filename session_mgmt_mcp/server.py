@@ -114,6 +114,30 @@ except ImportError as e:
     print(f"Enhanced search import failed: {e}", file=sys.stderr)
     ENHANCED_SEARCH_AVAILABLE = False
 
+# Import multi-project coordination tools
+try:
+    from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+    MULTI_PROJECT_AVAILABLE = True
+except ImportError as e:
+    print(f"Multi-project coordinator import failed: {e}", file=sys.stderr)
+    MULTI_PROJECT_AVAILABLE = False
+
+# Import advanced search engine
+try:
+    from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
+    ADVANCED_SEARCH_AVAILABLE = True
+except ImportError as e:
+    print(f"Advanced search engine import failed: {e}", file=sys.stderr)
+    ADVANCED_SEARCH_AVAILABLE = False
+
+# Import configuration management
+try:
+    from session_mgmt_mcp.config import get_config
+    CONFIG_AVAILABLE = True
+except ImportError as e:
+    print(f"Configuration management import failed: {e}", file=sys.stderr)
+    CONFIG_AVAILABLE = False
+
 # Import auto-context loading tools
 try:
     from session_mgmt_mcp.context_manager import AutoContextLoader
@@ -731,6 +755,35 @@ async def get_crackerjack_patterns_prompt() -> str:
 # Global instances
 permissions_manager = SessionPermissionsManager(claude_dir)
 current_project = None
+
+# New global instances for multi-project and advanced search
+multi_project_coordinator: Optional[MultiProjectCoordinator] = None
+advanced_search_engine: Optional[AdvancedSearchEngine] = None
+app_config: Optional[Any] = None
+
+async def initialize_new_features():
+    """Initialize multi-project coordination and advanced search features"""
+    global multi_project_coordinator, advanced_search_engine, app_config
+    
+    # Load configuration
+    if CONFIG_AVAILABLE:
+        app_config = get_config()
+    
+    # Initialize reflection database for new features
+    if REFLECTION_TOOLS_AVAILABLE:
+        try:
+            db = await get_reflection_database()
+            
+            # Initialize multi-project coordinator
+            if MULTI_PROJECT_AVAILABLE:
+                multi_project_coordinator = MultiProjectCoordinator(db)
+            
+            # Initialize advanced search engine
+            if ADVANCED_SEARCH_AVAILABLE:
+                advanced_search_engine = AdvancedSearchEngine(db)
+                
+        except Exception as e:
+            print(f"Failed to initialize new features: {e}", file=sys.stderr)
 
 def validate_global_workspace() -> Dict[str, Any]:
     """Enhanced validation of global workspace components"""
@@ -2433,6 +2486,57 @@ async def status(working_directory: Optional[str] = None) -> str:
     output.append("• status - This status report with health checks")
     output.append("• permissions - Manage trusted operations")
     
+    # Token Optimization Status  
+    if TOKEN_OPTIMIZER_AVAILABLE:
+        output.append("\n⚡ Token Optimization:")
+        output.append("• get_cached_chunk - Retrieve chunked response data")
+        output.append("• get_token_usage_stats - Token usage and savings metrics")
+        output.append("• optimize_memory_usage - Consolidate old conversations")
+        output.append("• Built-in response chunking and truncation")
+    
+    # Multi-Project Coordination Status
+    if MULTI_PROJECT_AVAILABLE:
+        output.append("\n🔗 Multi-Project Coordination:")
+        output.append("• create_project_group - Create project groups for coordination")
+        output.append("• add_project_dependency - Define project relationships")
+        output.append("• search_across_projects - Search conversations across related projects")
+        output.append("• get_project_insights - Cross-project activity analysis")
+    
+    # Advanced Search Status
+    if ADVANCED_SEARCH_AVAILABLE:
+        output.append("\n🔍 Advanced Search:")
+        output.append("• advanced_search - Faceted search with filtering")
+        output.append("• search_suggestions - Auto-completion suggestions")
+        output.append("• get_search_metrics - Search activity analytics")
+        output.append("• Built-in full-text indexing and highlighting")
+    
+    # Configuration Management Status
+    if CONFIG_AVAILABLE:
+        output.append("\n⚙️ Configuration:")
+        output.append("• pyproject.toml configuration support")
+        output.append("• Environment variable overrides")
+        output.append("• Configurable database, search, and optimization settings")
+        
+        # Show current optimization stats if available
+        try:
+            from .token_optimizer import get_token_optimizer
+            optimizer = get_token_optimizer()
+            usage_stats = optimizer.get_usage_stats(hours=24)
+            
+            if usage_stats['status'] == 'success' and usage_stats['total_requests'] > 0:
+                savings = usage_stats.get('estimated_cost_savings', {})
+                if savings.get('savings_usd', 0) > 0:
+                    output.append(f"• Last 24h savings: ${savings['savings_usd']:.4f} USD, {savings['estimated_tokens_saved']:,} tokens")
+            
+            cache_size = len(optimizer.chunk_cache)
+            if cache_size > 0:
+                output.append(f"• Active cached chunks: {cache_size}")
+                
+        except Exception:
+            pass  # Don't fail status if optimization stats fail
+    else:
+        output.append("\n❌ Token optimization not available (install tiktoken)")
+
     # Crackerjack Integration Status
     if CRACKERJACK_INTEGRATION_AVAILABLE:
         output.append("\n🔧 Crackerjack Integration:")
@@ -2506,13 +2610,22 @@ async def permissions(
     
     return "\n".join(output)
 
+# Token optimization imports
+try:
+    from .token_optimizer import optimize_search_response, track_token_usage, get_token_optimizer
+    TOKEN_OPTIMIZER_AVAILABLE = True
+except ImportError:
+    TOKEN_OPTIMIZER_AVAILABLE = False
+
 # Reflection Tools
 @mcp.tool()
 async def reflect_on_past(
     query: str,
     limit: int = 5,
     min_score: float = 0.7,
-    project: Optional[str] = None
+    project: Optional[str] = None,
+    optimize_tokens: bool = True,
+    max_tokens: int = 4000
 ) -> str:
     """Search past conversations and store reflections with semantic similarity"""
     if not REFLECTION_TOOLS_AVAILABLE:
@@ -2532,10 +2645,38 @@ async def reflect_on_past(
         if not results:
             return f"🔍 No relevant conversations found for query: '{query}'\n💡 Try adjusting the search terms or lowering min_score."
         
+        # Apply token optimization if available
+        optimization_info = {}
+        if optimize_tokens and TOKEN_OPTIMIZER_AVAILABLE:
+            try:
+                results, optimization_info = await optimize_search_response(
+                    results, 
+                    strategy='prioritize_recent',
+                    max_tokens=max_tokens
+                )
+                
+                # Track usage
+                response_text = f"Found {len(results)} conversations"
+                await track_token_usage(
+                    operation='reflect_on_past',
+                    request_tokens=get_token_optimizer().count_tokens(query),
+                    response_tokens=get_token_optimizer().count_tokens(response_text),
+                    optimization_applied=optimization_info.get('strategy')
+                )
+            except Exception as e:
+                session_logger.warning(f"Token optimization failed: {e}")
+        
         output = []
         output.append(f"🧠 Found {len(results)} relevant conversations for: '{query}'")
         if current_proj:
             output.append(f"📁 Project: {current_proj}")
+        
+        # Show optimization info if applied
+        if optimization_info and optimization_info.get('strategy') != 'none':
+            savings = optimization_info.get('token_savings', {})
+            if savings.get('tokens_saved', 0) > 0:
+                output.append(f"⚡ Token optimization: {savings.get('savings_percentage', 0)}% saved")
+        
         output.append("=" * 50)
         
         for i, result in enumerate(results, 1):
@@ -2942,6 +3083,140 @@ async def reflection_stats() -> str:
         
     except Exception as e:
         return f"❌ Error getting reflection stats: {e}"
+
+# Token Optimization Tools
+@mcp.tool()
+async def get_cached_chunk(
+    cache_key: str,
+    chunk_index: int
+) -> str:
+    """Get a specific chunk from cached chunked response"""
+    if not TOKEN_OPTIMIZER_AVAILABLE:
+        return "❌ Token optimizer not available. Install dependencies: pip install tiktoken"
+    
+    try:
+        from .token_optimizer import get_cached_chunk
+        
+        chunk_data = await get_cached_chunk(cache_key, chunk_index)
+        
+        if not chunk_data:
+            return f"❌ Chunk not found. Cache key '{cache_key}' or chunk {chunk_index} may have expired."
+        
+        output = []
+        output.append(f"📄 Chunk {chunk_data['current_chunk']} of {chunk_data['total_chunks']}")
+        output.append("=" * 50)
+        
+        chunk = chunk_data['chunk']
+        for i, item in enumerate(chunk, 1):
+            timestamp = item.get('timestamp', 'Unknown time')
+            output.append(f"\n#{i}")
+            output.append(f"📅 {timestamp}")
+            output.append(f"💬 {item.get('content', '')[:200]}...")
+        
+        if chunk_data['has_more']:
+            output.append(f"\n💡 More chunks available. Use: get_cached_chunk('{cache_key}', {chunk_data['current_chunk'] + 1})")
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error retrieving cached chunk: {e}"
+
+@mcp.tool() 
+async def get_token_usage_stats(
+    hours: int = 24
+) -> str:
+    """Get token usage statistics and optimization metrics"""
+    if not TOKEN_OPTIMIZER_AVAILABLE:
+        return "❌ Token optimizer not available. Install dependencies: pip install tiktoken"
+    
+    try:
+        from .token_optimizer import get_token_usage_stats
+        
+        stats = await get_token_usage_stats(hours)
+        
+        if stats['status'] == 'no_data':
+            return f"📊 No token usage data available for the last {hours} hours"
+        
+        output = []
+        output.append(f"📊 Token Usage Statistics (Last {hours} hours)")
+        output.append("=" * 50)
+        output.append(f"📈 Total Requests: {stats['total_requests']}")
+        output.append(f"🔤 Total Tokens Used: {stats['total_tokens']:,}")
+        output.append(f"📊 Average Tokens per Request: {stats['average_tokens_per_request']}")
+        
+        if stats.get('optimizations_applied'):
+            output.append("\n⚡ Optimizations Applied:")
+            for strategy, count in stats['optimizations_applied'].items():
+                output.append(f"  • {strategy}: {count} times")
+        
+        cost_savings = stats.get('estimated_cost_savings', {})
+        if cost_savings.get('savings_usd', 0) > 0:
+            output.append(f"\n💰 Estimated Cost Savings:")
+            output.append(f"  • ${cost_savings['savings_usd']:.4f} USD saved")
+            output.append(f"  • {cost_savings['estimated_tokens_saved']:,} tokens saved")
+            output.append(f"  • {cost_savings['requests_optimized']} optimized requests")
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error getting token usage stats: {e}"
+
+@mcp.tool()
+async def optimize_memory_usage(
+    strategy: str = "auto",
+    max_age_days: int = 30,
+    dry_run: bool = True
+) -> str:
+    """Optimize memory usage by consolidating old conversations"""
+    if not TOKEN_OPTIMIZER_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
+        return "❌ Memory optimization requires both token optimizer and reflection tools"
+    
+    try:
+        from .memory_optimizer import MemoryOptimizer
+        
+        db = await get_reflection_database()
+        optimizer = MemoryOptimizer(db)
+        
+        # Set up retention policy based on parameters
+        policy = None
+        if strategy != "auto":
+            policy = {
+                'consolidation_age_days': max_age_days,
+                'importance_threshold': 0.3 if strategy == 'aggressive' else 0.5
+            }
+        
+        results = await optimizer.compress_memory(policy=policy, dry_run=dry_run)
+        
+        if results.get('error'):
+            return f"❌ Memory optimization error: {results['error']}"
+        
+        output = []
+        output.append(f"🧠 Memory Optimization Results {'(DRY RUN)' if dry_run else ''}")
+        output.append("=" * 50)
+        output.append(f"📊 Total Conversations: {results['total_conversations']}")
+        output.append(f"✅ Conversations to Keep: {results['conversations_to_keep']}")
+        output.append(f"📦 Conversations to Consolidate: {results['conversations_to_consolidate']}")
+        output.append(f"🔗 Clusters Created: {results['clusters_created']}")
+        
+        if results.get('space_saved_estimate', 0) > 0:
+            output.append(f"\n💾 Space Optimization:")
+            output.append(f"  • {results['space_saved_estimate']:,} characters saved")
+            output.append(f"  • {results['compression_ratio']:.1%} compression ratio")
+        
+        if results.get('consolidated_summaries'):
+            output.append(f"\n📝 Consolidation Preview:")
+            for i, summary in enumerate(results['consolidated_summaries'][:3], 1):
+                output.append(f"  #{i}: {summary['original_count']} conversations → 1 summary")
+                output.append(f"      Projects: {', '.join(summary['projects'][:2])}")
+                output.append(f"      Summary: {summary['summary'][:100]}...")
+        
+        if dry_run:
+            output.append(f"\n💡 Run with dry_run=False to apply changes")
+        
+        return "\n".join(output)
+        
+    except Exception as e:
+        return f"❌ Error optimizing memory: {e}"
 
 # Enhanced Search Tools (Phase 1)
 
@@ -5641,8 +5916,303 @@ async def auto_compact_prompt() -> str:
     """Automatically trigger conversation compaction with context preservation"""
     return await auto_compact()
 
+# Multi-Project Coordination Tools
+
+@mcp.tool()
+async def create_project_group(
+    name: str,
+    projects: List[str],
+    description: str = ""
+) -> str:
+    """Create a new project group for multi-project coordination"""
+    if not multi_project_coordinator:
+        await initialize_new_features()
+        if not multi_project_coordinator:
+            return "❌ Multi-project coordination not available"
+    
+    try:
+        group = await multi_project_coordinator.create_project_group(
+            name=name,
+            projects=projects,
+            description=description
+        )
+        
+        return f"""✅ **Project Group Created**
+
+**Group:** {group.name}
+**Projects:** {', '.join(group.projects)}
+**Description:** {group.description or 'None'}
+**ID:** {group.id}
+
+The project group is now available for cross-project coordination and knowledge sharing."""
+    
+    except Exception as e:
+        return f"❌ Failed to create project group: {e}"
+
+@mcp.tool()
+async def add_project_dependency(
+    source_project: str,
+    target_project: str,
+    dependency_type: str,
+    description: str = ""
+) -> str:
+    """Add a dependency relationship between projects"""
+    if not multi_project_coordinator:
+        await initialize_new_features()
+        if not multi_project_coordinator:
+            return "❌ Multi-project coordination not available"
+    
+    try:
+        dependency = await multi_project_coordinator.add_project_dependency(
+            source_project=source_project,
+            target_project=target_project,
+            dependency_type=dependency_type,
+            description=description
+        )
+        
+        return f"""✅ **Project Dependency Added**
+
+**Source:** {dependency.source_project}
+**Target:** {dependency.target_project}
+**Type:** {dependency.dependency_type}
+**Description:** {dependency.description or 'None'}
+
+This relationship will be used for cross-project search and coordination."""
+    
+    except Exception as e:
+        return f"❌ Failed to add project dependency: {e}"
+
+@mcp.tool()
+async def search_across_projects(
+    query: str,
+    current_project: str,
+    limit: int = 10
+) -> str:
+    """Search conversations across related projects"""
+    if not multi_project_coordinator:
+        await initialize_new_features()
+        if not multi_project_coordinator:
+            return "❌ Multi-project coordination not available"
+    
+    try:
+        results = await multi_project_coordinator.find_related_conversations(
+            current_project=current_project,
+            query=query,
+            limit=limit
+        )
+        
+        if not results:
+            return f"🔍 No results found for '{query}' across related projects"
+        
+        output = [f"🔍 **Cross-Project Search Results** ({len(results)} found)\n"]
+        
+        for i, result in enumerate(results, 1):
+            project_indicator = "📍 Current" if result['is_current_project'] else f"🔗 {result['source_project']}"
+            
+            output.append(f"""**{i}.** {project_indicator}
+**Score:** {result['score']:.3f}
+**Content:** {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}
+**Timestamp:** {result.get('timestamp', 'Unknown')}
+---""")
+        
+        return '\n'.join(output)
+    
+    except Exception as e:
+        return f"❌ Search failed: {e}"
+
+@mcp.tool()
+async def get_project_insights(
+    projects: List[str],
+    time_range_days: int = 30
+) -> str:
+    """Get cross-project insights and collaboration opportunities"""
+    if not multi_project_coordinator:
+        await initialize_new_features()
+        if not multi_project_coordinator:
+            return "❌ Multi-project coordination not available"
+    
+    try:
+        insights = await multi_project_coordinator.get_cross_project_insights(
+            projects=projects,
+            time_range_days=time_range_days
+        )
+        
+        output = [f"📊 **Cross-Project Insights** (Last {time_range_days} days)\n"]
+        
+        # Project activity
+        if insights['project_activity']:
+            output.append("**📈 Project Activity:**")
+            for project, stats in insights['project_activity'].items():
+                output.append(f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}")
+            output.append("")
+        
+        # Common patterns
+        if insights['common_patterns']:
+            output.append("**🔍 Common Patterns:**")
+            for pattern in insights['common_patterns'][:5]:  # Top 5
+                projects_str = ', '.join(pattern['projects'])
+                output.append(f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})")
+            output.append("")
+        
+        if not insights['project_activity'] and not insights['common_patterns']:
+            output.append("No insights available for the specified time range.")
+        
+        return '\n'.join(output)
+    
+    except Exception as e:
+        return f"❌ Failed to get insights: {e}"
+
+# Advanced Search Tools
+
+@mcp.tool()
+async def advanced_search(
+    query: str,
+    content_type: Optional[str] = None,
+    project: Optional[str] = None,
+    timeframe: Optional[str] = None,
+    sort_by: str = "relevance",
+    limit: int = 10
+) -> str:
+    """Perform advanced search with faceted filtering"""
+    if not advanced_search_engine:
+        await initialize_new_features()
+        if not advanced_search_engine:
+            return "❌ Advanced search not available"
+    
+    try:
+        filters = []
+        
+        # Add content type filter
+        if content_type:
+            from session_mgmt_mcp.advanced_search import SearchFilter
+            filters.append(SearchFilter(
+                field='content_type',
+                operator='eq',
+                value=content_type
+            ))
+        
+        # Add project filter
+        if project:
+            filters.append(SearchFilter(
+                field='project',
+                operator='eq', 
+                value=project
+            ))
+        
+        # Add timeframe filter
+        if timeframe:
+            start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
+            filters.append(SearchFilter(
+                field='timestamp',
+                operator='range',
+                value=(start_time, end_time)
+            ))
+        
+        # Perform search
+        search_results = await advanced_search_engine.search(
+            query=query,
+            filters=filters,
+            sort_by=sort_by,
+            limit=limit,
+            include_highlights=True
+        )
+        
+        results = search_results['results']
+        if not results:
+            return f"🔍 No results found for '{query}'"
+        
+        output = [f"🔍 **Advanced Search Results** ({len(results)} found)\n"]
+        
+        for i, result in enumerate(results, 1):
+            output.append(f"""**{i}.** {result.title}
+**Score:** {result.score:.3f} | **Project:** {result.project or 'Unknown'}
+**Content:** {result.content}
+**Timestamp:** {result.timestamp}""")
+            
+            if result.highlights:
+                output.append(f"**Highlights:** {'; '.join(result.highlights)}")
+            
+            output.append("---")
+        
+        return '\n'.join(output)
+    
+    except Exception as e:
+        return f"❌ Advanced search failed: {e}"
+
+@mcp.tool()
+async def search_suggestions(
+    query: str,
+    field: str = "content",
+    limit: int = 5
+) -> str:
+    """Get search completion suggestions"""
+    if not advanced_search_engine:
+        await initialize_new_features()
+        if not advanced_search_engine:
+            return "❌ Advanced search not available"
+    
+    try:
+        suggestions = await advanced_search_engine.suggest_completions(
+            query=query,
+            field=field,
+            limit=limit
+        )
+        
+        if not suggestions:
+            return f"💡 No suggestions found for '{query}'"
+        
+        output = [f"💡 **Search Suggestions** for '{query}':\n"]
+        
+        for i, suggestion in enumerate(suggestions, 1):
+            output.append(f"{i}. {suggestion['text']} (frequency: {suggestion['frequency']})")
+        
+        return '\n'.join(output)
+    
+    except Exception as e:
+        return f"❌ Failed to get suggestions: {e}"
+
+@mcp.tool()
+async def get_search_metrics(
+    metric_type: str,
+    timeframe: str = "30d"
+) -> str:
+    """Get search and activity metrics"""
+    if not advanced_search_engine:
+        await initialize_new_features()
+        if not advanced_search_engine:
+            return "❌ Advanced search not available"
+    
+    try:
+        metrics = await advanced_search_engine.aggregate_metrics(
+            metric_type=metric_type,
+            timeframe=timeframe
+        )
+        
+        if 'error' in metrics:
+            return f"❌ {metrics['error']}"
+        
+        output = [f"📊 **{metric_type.title()} Metrics** ({timeframe})\n"]
+        
+        for item in metrics['data'][:10]:  # Top 10
+            output.append(f"• **{item['key']}:** {item['value']}")
+        
+        if not metrics['data']:
+            output.append("No data available for the specified timeframe.")
+        
+        return '\n'.join(output)
+    
+    except Exception as e:
+        return f"❌ Failed to get metrics: {e}"
+
 def main():
     """Main entry point for the MCP server"""
+    # Initialize new features on startup
+    import asyncio
+    try:
+        asyncio.run(initialize_new_features())
+    except Exception as e:
+        print(f"Warning: Failed to initialize new features: {e}", file=sys.stderr)
+    
     mcp.run()
 
 if __name__ == "__main__":
