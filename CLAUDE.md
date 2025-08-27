@@ -10,26 +10,11 @@ This is a Claude Session Management MCP (Model Context Protocol) server that pro
 
 ### Installation & Setup
 ```bash
-# Install dependencies using UV (recommended)
-uv sync
-
-# Alternative: Install using pip
-pip install -e .
-
 # Install development dependencies
 uv sync --group dev
-```
 
-### Running the Server
-```bash
 # Run directly as a module
 python -m session_mgmt_mcp.server
-
-# Or use the console script
-session-mgmt-mcp --start-server
-
-# Or use UV to run
-uvx session-mgmt-mcp --start-server
 ```
 
 ### Testing & Development
@@ -61,32 +46,46 @@ python tests/scripts/run_tests.py --verbose --no-cleanup
 # Check MCP server functionality
 python -c "from session_mgmt_mcp.server import mcp; print('MCP server loads successfully')"
 
-# Validate pyproject.toml
-uv build --check
+# Test memory system
+python -c "from session_mgmt_mcp.reflection_tools import ReflectionDatabase; print('Memory system available')"
 ```
 
 ## Architecture Overview
 
 ### Core Components
 
-1. **server.py** (Lines 1-1565): Main MCP server implementation
-   - FastMCP 2.0 server setup and tool registration
+1. **server.py**: Main MCP server implementation
+   - FastMCP server setup and tool registration
    - Session lifecycle management (init, checkpoint, end, status)
    - Permissions management system with trusted operations
    - Global workspace validation and project analysis
    - Git integration for automatic checkpoint commits
 
-2. **reflection_tools.py** (Lines 1-411): Memory & conversation search system
+2. **reflection_tools.py**: Memory & conversation search system
    - DuckDB-based conversation storage with embeddings
    - Local ONNX semantic search (all-MiniLM-L6-v2 model)
    - Reflection storage and retrieval
    - Fallback text search when embeddings unavailable
 
-3. **__init__.py**: Package initialization and version information
+3. **crackerjack_integration.py**: Integration layer with Crackerjack code quality tools
+
+4. **context_manager.py**: Context management and session tracking
+
+5. **memory_optimizer.py**: Memory usage optimization for long-running sessions
+
+6. **team_knowledge.py**: Shared knowledge management across team members
+
+### Additional Components
+
+- **app_monitor.py**: Application monitoring and health checks
+- **interruption_manager.py**: Graceful handling of session interruptions
+- **llm_providers.py**: Integration with various LLM providers
+- **natural_scheduler.py**: Natural language-based task scheduling
+- **search_enhanced.py**: Enhanced search capabilities
+- **serverless_mode.py**: Serverless execution mode support
 
 ### Key Design Patterns
 
-- **Singleton Pattern**: SessionPermissionsManager ensures consistent session state
 - **Database Layer**: ReflectionDatabase manages DuckDB operations with async/await
 - **Graceful Degradation**: System works with reduced functionality if dependencies missing
 - **MCP Tool Registration**: All functions exposed via FastMCP decorators (@mcp.tool(), @mcp.prompt())
@@ -94,7 +93,7 @@ uv build --check
 ### Session Management Workflow
 
 1. **Initialization** (`init` tool):
-   - Validates global workspace at ~/Projects/claude/
+   - Sets up ~/.claude directory structure
    - Syncs UV dependencies and generates requirements.txt
    - Analyzes project context and calculates maturity score
    - Sets up session permissions and auto-checkpoints
@@ -122,24 +121,25 @@ uv build --check
 ```json
 {
   "mcpServers": {
-    "session-management": {
-      "command": "uvx",
-      "args": ["session-mgmt-mcp", "--start-server"],
-      "env": {}
+    "session-mgmt": {
+      "command": "python",
+      "args": ["-m", "session_mgmt_mcp.server"],
+      "cwd": "/path/to/session-mgmt-mcp",
+      "env": {
+        "PYTHONPATH": "/path/to/session-mgmt-mcp"
+      }
     }
   }
 }
 ```
 
-### Global Workspace Dependencies
-The server integrates with the global Claude workspace system:
-- **~/Projects/claude/toolkits/**: Session management and verification toolkits
-- **~/Projects/claude/logs/**: Structured logging output
+### Directory Structure
+The server uses the ~/.claude directory for data storage:
+- **~/.claude/logs/**: Session management logging
 - **~/.claude/data/**: Reflection database storage
 
 ### Environment Variables
 - `PWD`: Used to detect current working directory
-- `PYTHONPATH`: Extended to include global toolkits when available
 
 ## Development Notes
 
@@ -149,17 +149,11 @@ The server integrates with the global Claude workspace system:
 - Optional: `onnxruntime`, `transformers` (for semantic search)
 - Falls back gracefully when optional dependencies unavailable
 
-### Error Handling Strategy
-- Structured logging with context preservation (server.py:26-78)
-- Health checks validate all system components (server.py:1020-1071)
-- Graceful degradation when external services unavailable
-- Permission errors handled with trusted operations system
-
 ### Testing Architecture
 The project uses a comprehensive pytest-based testing framework with four main test categories:
 
 **Test Structure:**
-- **Unit Tests** (`tests/unit/`): Core functionality testing with 85% coverage minimum
+- **Unit Tests** (`tests/unit/`): Core functionality testing
   - Session permissions and lifecycle management
   - Reflection database operations with async/await patterns
   - Mock fixtures for isolated component testing
@@ -186,35 +180,69 @@ The project uses a comprehensive pytest-based testing framework with four main t
 - Performance metrics collection and baseline comparison
 - Mock MCP server creation for isolated testing
 
-### Code Quality Metrics
-The system includes built-in quality scoring based on:
-- Project health indicators (40%): tests, docs, git, dependencies
-- Permissions management (20%): trusted operations count
-- Session management availability (20%): toolkit integration
-- Tool availability (20%): UV package manager, etc.
+## Available MCP Tools
 
-## Common Development Tasks
+### Session Management Tools
+- **`init`** (`mcp__session-mgmt__init`) - Complete session initialization with workspace verification
+- **`checkpoint`** (`mcp__session-mgmt__checkpoint`) - Mid-session quality assessment and optimization
+- **`end`** (`mcp__session-mgmt__end`) - Complete session cleanup with learning capture
+- **`status`** (`mcp__session-mgmt__status`) - Current session status with health checks
+- **`permissions`** (`mcp__session-mgmt__permissions`) - Manage trusted operations
+
+### Memory & Reflection Tools
+- **`reflect_on_past`** (`mcp__session-mgmt__reflect_on_past`) - Search past conversations with semantic similarity
+- **`store_reflection`** (`mcp__session-mgmt__store_reflection`) - Store important insights with tagging
+- **`search_nodes`** (`mcp__session-mgmt__search_nodes`) - Advanced search through stored knowledge
+- **`quick_search`** (`mcp__session-mgmt__quick_search`) - Fast overview search with count and top result
+- **`search_summary`** (`mcp__session-mgmt__search_summary`) - Get aggregated insights without individual results
+- **`get_more_results`** (`mcp__session-mgmt__get_more_results`) - Pagination support for large result sets
+- **`search_by_file`** (`mcp__session-mgmt__search_by_file`) - Find conversations about specific files
+- **`search_by_concept`** (`mcp__session-mgmt__search_by_concept`) - Search for development concepts
+- **`reflection_stats`** (`mcp__session-mgmt__reflection_stats`) - Get statistics about stored knowledge
+
+## Server Architecture Notes
+
+⚠️ **Current Issue**: server.py is 4756 lines - violates clean code principles
+
+### Recommended Modularization
+The server should be refactored into focused modules:
+
+```
+session_mgmt_mcp/
+├── server.py (main FastMCP setup only)
+├── core/
+│   ├── mcp_server.py (FastMCP configuration)
+│   └── session_manager.py (session state)
+├── tools/
+│   ├── session_tools.py (init, checkpoint, end, status)
+│   ├── memory_tools.py (reflect_on_past, store_reflection, etc.)
+│   └── permission_tools.py (permissions management)
+├── utils/
+│   ├── logging.py (SessionLogger)
+│   └── git_operations.py (Git commit functions)
+└── reflection_tools.py (memory database - keep as-is)
+```
+
+## Development Guidelines
 
 ### Adding New MCP Tools
-1. Define function with `@mcp.tool()` decorator in server.py
+1. Define function with `@mcp.tool()` decorator in appropriate tools/ module
 2. Add corresponding prompt with `@mcp.prompt()` for slash command support
-3. Include tool in SESSION_COMMANDS dictionary for documentation
+3. Import and register in main server.py
 4. Update status() tool to report new functionality
+5. Add tests in appropriate test category
 
 ### Extending Memory System
 1. Add new table schemas in reflection_tools.py:_ensure_tables()
 2. Implement storage/retrieval methods in ReflectionDatabase class
-3. Add corresponding MCP tools in server.py
+3. Add corresponding MCP tools in tools/memory_tools.py
 4. Update reflection_stats() to include new metrics
+5. Add performance tests for new operations
 
-### Permission System Extensions
-1. Add new operation constants to SessionPermissionsManager
-2. Update trust_operation() calls in relevant tools
-3. Modify permissions() tool to display new operation types
-4. Update health checks to validate new permissions
+### Testing New Features
+1. Add unit tests for individual functions
+2. Add integration tests for MCP tool workflows
+3. Add performance tests for database operations
+4. Add security tests for input validation
+5. Ensure 85% minimum coverage is maintained
 
-### Testing Framework Extension
-1. **Adding New Test Categories**: Create directory under `tests/`, add marker in `pytest.ini`, update `run_tests.py` options
-2. **Custom Test Fixtures**: Add to `tests/conftest.py` or create module-specific conftest files
-3. **Performance Metrics**: Use `PerformanceTestDataManager` to track custom metrics with baseline comparisons
-4. **Test Data Generation**: Extend data factories in `tests/fixtures/data_factories.py` for new test scenarios

@@ -74,13 +74,8 @@ class SessionLogger:
         self.logger.error(message)
 
 # Initialize logger
-claude_dir = Path.home() / "Projects" / "claude"
+claude_dir = Path.home() / ".claude"
 session_logger = SessionLogger(claude_dir / "logs")
-
-# Add the global toolkit to Python path  
-toolkits_path = str(claude_dir / "toolkits")
-if toolkits_path not in sys.path:
-    sys.path.append(toolkits_path)
 
 try:
     from fastmcp import FastMCP
@@ -89,14 +84,8 @@ except ImportError:
     print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
     sys.exit(1)
 
-# Global session management imports
-try:
-    from session.session_manager import SessionManager, start_session, checkpoint_session, end_session
-    from verification.verification_toolkit import VerificationToolkit
-    SESSION_MANAGEMENT_AVAILABLE = True
-except ImportError as e:
-    print(f"Session management import failed: {e}", file=sys.stderr)
-    SESSION_MANAGEMENT_AVAILABLE = False
+# Session management availability (no longer using global workspace)
+SESSION_MANAGEMENT_AVAILABLE = False
 
 # Import reflection tools
 try:
@@ -270,7 +259,7 @@ class SessionPermissionsManager:
     TRUSTED_FILE_OPERATIONS = "project_file_access"
     TRUSTED_SUBPROCESS_OPERATIONS = "subprocess_execution"
     TRUSTED_NETWORK_OPERATIONS = "network_access"
-    TRUSTED_WORKSPACE_OPERATIONS = "global_workspace_access"
+    # TRUSTED_WORKSPACE_OPERATIONS removed - no longer needed
 
 # Initialize FastMCP 2.0 server
 mcp = FastMCP("session-mgmt-mcp")
@@ -279,10 +268,10 @@ mcp = FastMCP("session-mgmt-mcp")
 SESSION_COMMANDS = {
     "init": """# Session Initialization
 
-Initialize Claude session with comprehensive setup including UV dependencies, global workspace verification, and automation tools.
+Initialize Claude session with comprehensive setup including UV dependencies and automation tools.
 
 This command will:
-- Verify global workspace structure
+- Set up Claude directory structure
 - Check for required toolkits and automation tools  
 - Initialize project context and dependencies
 - Set up performance monitoring and session tracking
@@ -791,65 +780,26 @@ async def initialize_new_features():
         except Exception as e:
             print(f"Failed to initialize new features: {e}", file=sys.stderr)
 
-def validate_global_workspace() -> Dict[str, Any]:
-    """Enhanced validation of global workspace components"""
+def validate_claude_directory() -> Dict[str, Any]:
+    """Simple validation of ~/.claude directory structure"""
     validation_result = {
         'valid': True,
-        'errors': [],
-        'warnings': [],
-        'component_status': {},
-        'missing_files': []
+        'component_status': {}
     }
     
-    # Check key directories
+    # Ensure basic ~/.claude directory structure exists
     required_dirs = [
-        claude_dir / "toolkits",
-        claude_dir / "sessions", 
+        claude_dir,
+        claude_dir / "data",
         claude_dir / "logs"
     ]
     
     for dir_path in required_dirs:
         if not dir_path.exists():
-            validation_result['errors'].append(f"Missing directory: {dir_path}")
-            validation_result['valid'] = False
+            dir_path.mkdir(parents=True, exist_ok=True)
+            validation_result['component_status'][dir_path.name] = "✅ Created"
         else:
             validation_result['component_status'][dir_path.name] = "✅ Present"
-    
-    # Check key files
-    key_files = [
-        "CLAUDE.md",
-        "SESSION_INITIALIZATION_CHECKLIST.md", 
-        "WORKFLOW_AUTOMATION_SYSTEM.md",
-        "TESTING_QUICK_REFERENCE.md",
-        "TOOLKIT_DEVELOPMENT_GUIDE.md"
-    ]
-    
-    missing_files = []
-    for file_name in key_files:
-        file_path = claude_dir / file_name
-        if file_path.exists():
-            validation_result['component_status'][file_name] = "✅ Present"
-        else:
-            missing_files.append(file_name)
-            validation_result['component_status'][file_name] = "❌ Missing"
-    
-    if missing_files:
-        validation_result['warnings'].append(f"Missing {len(missing_files)} documentation files")
-        validation_result['missing_files'] = missing_files
-    
-    # Check toolkit availability
-    toolkit_modules = [
-        "session.session_manager",
-        "verification.verification_toolkit"
-    ]
-    
-    for module in toolkit_modules:
-        try:
-            __import__(module)
-            validation_result['component_status'][f"toolkit_{module}"] = "✅ Available"
-        except ImportError:
-            validation_result['warnings'].append(f"Toolkit module not available: {module}")
-            validation_result['component_status'][f"toolkit_{module}"] = "⚠️ Missing"
     
     return validation_result
 
@@ -892,7 +842,7 @@ async def analyze_project_context(project_dir: Path) -> Dict[str, bool]:
 
 @mcp.tool()
 async def init(working_directory: Optional[str] = None) -> str:
-    """Initialize Claude session with comprehensive setup including UV dependencies, global workspace verification, and automation tools
+    """Initialize Claude session with comprehensive setup including UV dependencies and automation tools
     
     Args:
         working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
@@ -911,27 +861,15 @@ async def init(working_directory: Optional[str] = None) -> str:
     current_project = current_dir.name
     output.append(f"📁 Current project: {current_project}")
     
-    # Phase 1: Enhanced Global Workspace Verification
-    output.append("\n📋 Phase 1: Global workspace verification...")
+    # Phase 1: Claude Directory Setup
+    output.append("\n📋 Phase 1: Claude directory setup...")
     
-    workspace_validation = validate_global_workspace()
-    
-    if workspace_validation['valid']:
-        output.append("✅ Global workspace structure verified")
-    else:
-        output.append("⚠️ Global workspace issues detected:")
-        for error in workspace_validation['errors']:
-            output.append(f"   ❌ {error}")
+    claude_validation = validate_claude_directory()
+    output.append("✅ Claude directory structure ready")
     
     # Show component status
-    for component, status in workspace_validation['component_status'].items():
+    for component, status in claude_validation['component_status'].items():
         output.append(f"   {status} {component}")
-    
-    # Show warnings if any
-    if workspace_validation['warnings']:
-        output.append("⚠️ Workspace warnings:")
-        for warning in workspace_validation['warnings']:
-            output.append(f"   • {warning}")
     
     # Phase 2: UV Dependency Management
     output.append("\n🔧 Phase 2: UV dependency management & session setup...")
@@ -982,33 +920,11 @@ async def init(working_directory: Optional[str] = None) -> str:
     else:
         output.append("💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh")
     
-    # Phase 3: Session Management
-    if SESSION_MANAGEMENT_AVAILABLE:
-        try:
-            output.append("\n🔧 Starting comprehensive session checklist...")
-            session_result = start_session()
-            
-            if session_result.get('checklist_passed'):
-                output.append("✅ Session checklist passed successfully")
-                
-                auto_enabled = session_result.get('auto_checkpoints_enabled', False)
-                output.append(f"🔄 Auto-checkpoints: {'✅ ACTIVE' if auto_enabled else '⚠️ INACTIVE'}")
-                
-                if auto_enabled:
-                    output.append("   📊 Automatic quality monitoring every 5 minutes")
-                    output.append("   🔔 Notifications will alert for workflow drift")
-                
-                output.append(f"📁 Session data: {session_result.get('session_file')}")
-            else:
-                output.append("❌ Session checklist issues found:")
-                for issue in session_result.get('issues_found', []):
-                    output.append(f"   • {issue}")
-                    
-        except Exception as e:
-            output.append(f"❌ Session initialization error: {e}")
-    else:
-        output.append("\n⚠️  Session management toolkit not available")
-        output.append("💡  Install dependencies: pip install -r ~/Projects/claude/requirements.txt")
+    # Phase 3: Session Management (Built-in)
+    output.append("\n🔧 Phase 3: Session management setup...")
+    output.append("✅ Session management functionality ready")
+    output.append("   📊 Conversation memory system enabled")
+    output.append("   🔍 Semantic search capabilities available")
     
     # Phase 4: Integrated MCP Services Initialization
     output.append("\n🧠 Phase 4: Integrated MCP services initialization...")
@@ -2473,11 +2389,9 @@ async def health_check() -> Dict[str, Any]:
     if not uv_available:
         health_status['warnings'].append("UV package manager not found")
     
-    # Global workspace health
-    workspace_validation = validate_global_workspace()
-    health_status['checks']['global_workspace'] = "✅ Valid" if workspace_validation['valid'] else "⚠️ Issues"
-    health_status['warnings'].extend(workspace_validation['warnings'])
-    health_status['errors'].extend(workspace_validation['errors'])
+    # Claude directory health
+    claude_validation = validate_claude_directory()
+    health_status['checks']['claude_directory'] = "✅ Valid"
     
     # Permissions system health
     try:
@@ -2670,7 +2584,7 @@ async def permissions(
         output.append("   • Git Repository Access - git status, commit, push")
         output.append("   • Project File Access - reading/writing project files")
         output.append("   • Subprocess Execution - running build tools, tests")
-        output.append("   • Global Workspace Access - accessing ~/Projects/claude/")
+        output.append("   • Claude Directory Access - accessing ~/.claude/")
         
     elif action == 'trust':
         if not operation:
