@@ -268,16 +268,22 @@ Run this at the start of any coding session for optimal Claude integration.
 """,
     "checkpoint": """# Session Checkpoint
 
-Perform mid-session quality checkpoint with workflow analysis and optimization recommendations.
+Perform mid-session quality checkpoint with workflow analysis, optimization recommendations, and strategic compaction.
 
 This command will:
 - Analyze current session progress and workflow effectiveness
-- Check for performance bottlenecks and optimization opportunities
+- Check for performance bottlenecks and optimization opportunities  
 - Validate current task completion status
 - Provide recommendations for workflow improvements
 - Create checkpoint for session recovery if needed
+- Perform strategic compaction and cleanup (replaces disabled auto-compact):
+  • DuckDB reflection database optimization (VACUUM/ANALYZE)
+  • Session log cleanup (retain last 10 files)
+  • Temporary file cleanup (cache files, .DS_Store, old coverage files)
+  • Git repository optimization (gc --auto, prune remote branches)
+  • UV package cache cleanup
 
-Use this periodically during long coding sessions to maintain optimal productivity.
+Use this periodically during long coding sessions to maintain optimal productivity and system performance.
 """,
     "end": """# Session End
 
@@ -1067,6 +1073,179 @@ def _generate_quality_recommendations(score: int, project_context: Dict, permiss
     
     return recommendations
 
+async def perform_strategic_compaction() -> List[str]:
+    """
+    Perform strategic compaction and optimization tasks
+    Replaces disabled auto-compact functionality with intelligent cleanup
+    """
+    results = []
+    current_dir = Path(os.environ.get('PWD', Path.cwd()))
+    
+    # 1. DuckDB Reflection Database Compaction
+    try:
+        from .reflection_tools import cleanup_reflection_database, get_reflection_database
+        
+        # Get database stats before compaction
+        try:
+            db = await get_reflection_database()
+            stats_before = await db.get_stats()
+            db_size_before = Path(db.db_path).stat().st_size if Path(db.db_path).exists() else 0
+            
+            # Perform database optimization
+            if db.conn:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, 
+                    lambda: db.conn.execute("VACUUM")
+                )
+                await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: db.conn.execute("ANALYZE")
+                )
+                
+            db_size_after = Path(db.db_path).stat().st_size if Path(db.db_path).exists() else 0
+            space_saved = db_size_before - db_size_after
+            
+            if space_saved > 0:
+                results.append(f"🗄️ Database: Optimized reflection DB, saved {space_saved:,} bytes")
+            else:
+                results.append("🗄️ Database: Reflection DB already optimized")
+                
+        except Exception as e:
+            results.append(f"⚠️ Database: Optimization skipped - {str(e)[:50]}")
+            
+    except ImportError:
+        results.append("ℹ️ Database: Reflection tools not available")
+    
+    # 2. Session Log Cleanup (keep last 10 files)
+    try:
+        log_dir = claude_dir / "logs"
+        if log_dir.exists():
+            log_files = sorted(log_dir.glob("session_management_*.log"), key=lambda x: x.stat().st_mtime)
+            if len(log_files) > 10:
+                old_files = log_files[:-10]
+                total_size = sum(f.stat().st_size for f in old_files)
+                for old_file in old_files:
+                    old_file.unlink()
+                results.append(f"📝 Logs: Cleaned {len(old_files)} old files, freed {total_size:,} bytes")
+            else:
+                results.append("📝 Logs: Within retention limit (10 files)")
+        else:
+            results.append("📝 Logs: No log directory found")
+            
+    except Exception as e:
+        results.append(f"⚠️ Logs: Cleanup failed - {str(e)[:50]}")
+    
+    # 3. Temporary File Cleanup
+    try:
+        temp_cleaned = 0
+        temp_size = 0
+        
+        # Clean Python cache files
+        for cache_file in current_dir.rglob("__pycache__"):
+            if cache_file.is_dir():
+                for file in cache_file.iterdir():
+                    temp_size += file.stat().st_size
+                    file.unlink()
+                cache_file.rmdir()
+                temp_cleaned += 1
+                
+        # Clean .DS_Store files on macOS
+        for ds_file in current_dir.rglob(".DS_Store"):
+            temp_size += ds_file.stat().st_size
+            ds_file.unlink()
+            temp_cleaned += 1
+            
+        # Clean pytest cache
+        pytest_cache = current_dir / ".pytest_cache"
+        if pytest_cache.exists():
+            shutil.rmtree(pytest_cache)
+            temp_cleaned += 1
+            
+        # Clean coverage files (keep most recent)
+        coverage_files = sorted(current_dir.glob(".coverage*"), key=lambda x: x.stat().st_mtime)
+        if len(coverage_files) > 3:
+            old_coverage = coverage_files[:-3]
+            for cov_file in old_coverage:
+                temp_size += cov_file.stat().st_size
+                cov_file.unlink()
+                temp_cleaned += 1
+                
+        if temp_cleaned > 0:
+            results.append(f"🧹 Temp files: Cleaned {temp_cleaned} items, freed {temp_size:,} bytes")
+        else:
+            results.append("🧹 Temp files: No cleanup needed")
+            
+    except Exception as e:
+        results.append(f"⚠️ Temp files: Cleanup failed - {str(e)[:50]}")
+    
+    # 4. Git Repository Optimization
+    try:
+        if (current_dir / ".git").exists():
+            # Run git garbage collection
+            gc_result = subprocess.run(
+                ["git", "gc", "--auto"],
+                cwd=current_dir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if gc_result.returncode == 0:
+                # Check repository size
+                git_dir = current_dir / ".git"
+                git_size = sum(f.stat().st_size for f in git_dir.rglob("*") if f.is_file())
+                
+                # Prune remote tracking branches
+                prune_result = subprocess.run(
+                    ["git", "remote", "prune", "origin"],
+                    cwd=current_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=15
+                )
+                
+                results.append(f"📦 Git: Repository optimized ({git_size:,} bytes)")
+                if prune_result.returncode == 0 and prune_result.stdout.strip():
+                    results.append(f"🌿 Git: Pruned stale remote branches")
+            else:
+                results.append("📦 Git: Optimization skipped (no changes)")
+        else:
+            results.append("📦 Git: Not a git repository")
+            
+    except subprocess.TimeoutExpired:
+        results.append("⏱️ Git: Optimization timeout (large repository)")
+    except Exception as e:
+        results.append(f"⚠️ Git: Optimization failed - {str(e)[:50]}")
+    
+    # 5. UV Cache Cleanup (if using UV)
+    try:
+        if shutil.which("uv"):
+            # Clean UV cache
+            cache_result = subprocess.run(
+                ["uv", "cache", "clean"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if cache_result.returncode == 0:
+                results.append("📦 UV: Package cache cleaned")
+            else:
+                results.append("📦 UV: Cache already clean")
+        else:
+            results.append("📦 UV: Not available")
+            
+    except subprocess.TimeoutExpired:
+        results.append("⏱️ UV: Cache cleanup timeout")
+    except Exception as e:
+        results.append(f"⚠️ UV: Cache cleanup failed - {str(e)[:50]}")
+    
+    # Summary
+    total_operations = len([r for r in results if not r.startswith(("ℹ️", "⚠️", "⏱️"))])
+    results.append(f"\n📊 Compaction complete: {total_operations} optimization tasks performed")
+    
+    return results
+
 @mcp.tool()
 async def checkpoint() -> str:
     """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations"""
@@ -1284,6 +1463,15 @@ async def checkpoint() -> str:
             output.append(f"\n⚠️ Git operations error: {e}")
     else:
         output.append("\nℹ️ Not a git repository - skipping commit")
+    
+    # Strategic Auto-Compaction (replacing disabled auto-compact)
+    output.append("\n" + "=" * 50)
+    output.append("📦 Strategic Compaction & Optimization")  
+    output.append("=" * 50)
+    
+    compaction_results = await perform_strategic_compaction()
+    for result in compaction_results:
+        output.append(result)
     
     output.append(f"\n✨ Checkpoint complete - {current_project} session health verified!")
     
