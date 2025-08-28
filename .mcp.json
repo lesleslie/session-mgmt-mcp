@@ -1,10 +1,12 @@
 {
   "mcpServers": {
     "session-mgmt": {
-      "command": "uvx",
+      "command": "python",
       "args": [
-        "session-mgmt-mcp"
+        "-m",
+        "session_mgmt_mcp.server"
       ],
+      "cwd": "/Users/les/Projects/session-mgmt-mcp",
       "env": {}
     },
     "ast-grep": {

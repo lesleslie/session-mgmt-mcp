@@ -23,6 +23,9 @@ try:
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
+    # Create stub for FileSystemEventHandler when watchdog is not available
+    class FileSystemEventHandler:
+        pass
 
 try:
     import psutil
