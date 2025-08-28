@@ -790,8 +790,8 @@ permissions_manager = SessionPermissionsManager(claude_dir)
 current_project = None
 
 # New global instances for multi-project and advanced search
-multi_project_coordinator: Optional[MultiProjectCoordinator] = None
-advanced_search_engine: Optional[AdvancedSearchEngine] = None
+multi_project_coordinator: Optional[Any] = None
+advanced_search_engine: Optional[Any] = None
 app_config: Optional[Any] = None
 
 async def initialize_new_features():
@@ -924,38 +924,48 @@ async def init(working_directory: Optional[str] = None) -> str:
         output.append("🔐 UV operations: ⚠️ Will require permission prompts")
     
     if uv_available:
-        original_cwd = Path.cwd()
-        try:
-            os.chdir(claude_dir)
-            output.append(f"📁 Working in: {claude_dir}")
-            
-            # Trust UV operations if first successful run
-            if not uv_trusted:
-                output.append("🔓 Trusting UV operations for this session...")
-                permissions_manager.trust_operation(permissions_manager.TRUSTED_UV_OPERATIONS, "UV package management operations")
-                output.append("✅ UV operations now trusted - no more prompts needed")
-            
-            # Sync dependencies
-            sync_result = subprocess.run(['uv', 'sync'], capture_output=True, text=True)
-            if sync_result.returncode == 0:
-                output.append("✅ UV sync completed successfully")
+        # Check if current project has pyproject.toml
+        project_has_pyproject = (current_dir / "pyproject.toml").exists()
+        
+        if project_has_pyproject:
+            original_cwd = Path.cwd()
+            try:
+                os.chdir(current_dir)
+                output.append(f"📁 Working in: {current_dir}")
                 
-                # Generate requirements.txt
-                compile_result = subprocess.run(
-                    ['uv', 'pip', 'compile', 'pyproject.toml', '--output-file', 'requirements.txt'],
-                    capture_output=True, text=True
-                )
-                if compile_result.returncode == 0:
-                    output.append("✅ Requirements.txt updated from UV dependencies")
+                # Trust UV operations if first successful run
+                if not uv_trusted:
+                    output.append("🔓 Trusting UV operations for this session...")
+                    permissions_manager.trust_operation(permissions_manager.TRUSTED_UV_OPERATIONS, "UV package management operations")
+                    output.append("✅ UV operations now trusted - no more prompts needed")
+                
+                # Sync dependencies
+                sync_result = subprocess.run(['uv', 'sync'], capture_output=True, text=True)
+                if sync_result.returncode == 0:
+                    output.append("✅ UV sync completed successfully")
+                    
+                    # Generate requirements.txt if needed
+                    if not (current_dir / "requirements.txt").exists():
+                        compile_result = subprocess.run(
+                            ['uv', 'pip', 'compile', 'pyproject.toml', '--output-file', 'requirements.txt'],
+                            capture_output=True, text=True
+                        )
+                        if compile_result.returncode == 0:
+                            output.append("✅ Requirements.txt generated from UV dependencies")
+                        else:
+                            output.append(f"⚠️ Requirements compilation warning: {compile_result.stderr}")
+                    else:
+                        output.append("✅ Requirements.txt already exists")
                 else:
-                    output.append(f"⚠️ Requirements compilation warning: {compile_result.stderr}")
-            else:
-                output.append(f"⚠️ UV sync issues: {sync_result.stderr}")
-                
-        except Exception as e:
-            output.append(f"⚠️ UV operation error: {e}")
-        finally:
-            os.chdir(original_cwd)
+                    output.append(f"⚠️ UV sync issues: {sync_result.stderr}")
+                    
+            except Exception as e:
+                output.append(f"⚠️ UV operation error: {e}")
+            finally:
+                os.chdir(original_cwd)
+        else:
+            output.append("⚠️ No pyproject.toml found - skipping UV operations")
+            output.append("💡 Create pyproject.toml to enable UV dependency management")
     else:
         output.append("💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh")
     
