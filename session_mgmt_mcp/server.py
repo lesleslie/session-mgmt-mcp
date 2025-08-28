@@ -28,7 +28,7 @@ class SessionLogger:
     
     def __init__(self, log_dir: Path):
         self.log_dir = log_dir
-        self.log_dir.mkdir(exist_ok=True)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = log_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
         
         # Configure logger
@@ -778,7 +778,8 @@ async def initialize_new_features():
                 advanced_search_engine = AdvancedSearchEngine(db)
                 
         except Exception as e:
-            print(f"Failed to initialize new features: {e}", file=sys.stderr)
+            # Silently handle optional feature initialization failures
+            pass
 
 def validate_claude_directory() -> Dict[str, Any]:
     """Simple validation of ~/.claude directory structure"""
@@ -960,7 +961,7 @@ async def init(working_directory: Optional[str] = None) -> str:
     output.append(f"🗂️ Project: {current_project}")
     output.append(f"📊 Structure score: {context_score}/{len(project_context)}")
     
-    missing_files = workspace_validation.get('missing_files', [])
+    missing_files = claude_validation.get('missing_files', [])
     if context_score >= len(project_context) // 2 and not missing_files:
         output.append("✅ Ready for productive session - all systems optimal")
     else:
@@ -6208,7 +6209,8 @@ def main():
     try:
         asyncio.run(initialize_new_features())
     except Exception as e:
-        print(f"Warning: Failed to initialize new features: {e}", file=sys.stderr)
+        # Silently handle optional feature initialization failures
+        pass
     
     mcp.run()
 
