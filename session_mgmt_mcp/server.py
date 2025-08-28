@@ -261,6 +261,44 @@ class SessionPermissionsManager:
     TRUSTED_NETWORK_OPERATIONS = "network_access"
     # TRUSTED_WORKSPACE_OPERATIONS removed - no longer needed
 
+
+# Utility Functions
+def _detect_other_mcp_servers() -> Dict[str, bool]:
+    """Detect availability of other MCP servers by checking common paths and processes"""
+    detected = {}
+    
+    # Check for crackerjack MCP server
+    try:
+        # Try to import crackerjack to see if it's available
+        result = subprocess.run(
+            ["crackerjack", "--version"], 
+            capture_output=True, 
+            text=True, 
+            timeout=5
+        )
+        detected['crackerjack'] = result.returncode == 0
+    except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
+        detected['crackerjack'] = False
+    
+    return detected
+
+def _generate_server_guidance(detected_servers: Dict[str, bool]) -> List[str]:
+    """Generate guidance messages based on detected servers"""
+    guidance = []
+    
+    if detected_servers.get('crackerjack', False):
+        guidance.extend([
+            "💡 CRACKERJACK INTEGRATION DETECTED:",
+            "   Enhanced commands available for better development experience:",
+            "   • Use /session-mgmt:crackerjack-run instead of /crackerjack:run",
+            "   • Gets memory, analytics, and intelligent insights automatically",
+            "   • View trends with /session-mgmt:crackerjack-history",
+            "   • Analyze patterns with /session-mgmt:crackerjack-patterns"
+        ])
+    
+    return guidance
+
+
 # Initialize FastMCP 2.0 server
 mcp = FastMCP("session-mgmt-mcp")
 
@@ -975,6 +1013,13 @@ async def init(working_directory: Optional[str] = None) -> str:
         output.append("   ✅ Future operations will have reduced permission prompts")
     else:
         output.append("   💡 Operations will be trusted automatically on first use")
+    
+    # Server Detection and Guidance
+    detected_servers = _detect_other_mcp_servers()
+    server_guidance = _generate_server_guidance(detected_servers)
+    
+    if server_guidance:
+        output.append("\n" + "\n".join(server_guidance))
     
     output.append("\n📋 AVAILABLE MCP TOOLS:")
     output.append("📊 Session Management:")
@@ -2535,14 +2580,28 @@ async def status(working_directory: Optional[str] = None) -> str:
     else:
         output.append("\n❌ Token optimization not available (install tiktoken)")
 
-    # Crackerjack Integration Status
+    # Crackerjack Integration Status with recommendations
     if CRACKERJACK_INTEGRATION_AVAILABLE:
-        output.append("\n🔧 Crackerjack Integration:")
-        output.append("• execute_crackerjack_command - Run Crackerjack with parsing")
-        output.append("• get_crackerjack_results_history - View recent results")
-        output.append("• get_crackerjack_quality_metrics - Quality trends")
-        output.append("• analyze_crackerjack_test_patterns - Test failure analysis")
-        output.append("💡 Use /crackerjack-run, /crackerjack-history, /crackerjack-metrics, /crackerjack-patterns")
+        output.append("\n🔧 Crackerjack Integration (Enhanced):")
+        output.append("\n🎯 RECOMMENDED COMMANDS (Enhanced with Memory & Analytics):")
+        output.append("• /session-mgmt:crackerjack-run <command> - Smart execution with insights")
+        output.append("• /session-mgmt:crackerjack-history - View trends and patterns") 
+        output.append("• /session-mgmt:crackerjack-metrics - Quality metrics over time")
+        output.append("• /session-mgmt:crackerjack-patterns - Test failure analysis")
+        output.append("• /session-mgmt:crackerjack-help - Complete command guide")
+        
+        # Detect if basic crackerjack is also available
+        detected_servers = _detect_other_mcp_servers()
+        if detected_servers.get('crackerjack', False):
+            output.append("\n📋 Basic Commands (Raw Output Only):")
+            output.append("• /crackerjack:run <command> - Simple execution without memory")
+            output.append("💡 Use enhanced commands above for better development experience")
+        
+        output.append("\n🧠 Enhanced Features:")
+        output.append("• Automatic conversation memory integration")
+        output.append("• Quality metrics tracking and trends")
+        output.append("• Intelligent insights and recommendations")
+        output.append("• Test failure pattern detection")
     else:
         output.append("\n⚠️ Crackerjack Integration: Not available")
     
@@ -5555,6 +5614,117 @@ async def execute_crackerjack_command(
         
     except Exception as e:
         return f"❌ Error executing Crackerjack command: {e}"
+
+# Clean Command Aliases
+@mcp.tool()
+async def crackerjack_run(
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300
+) -> str:
+    """Run crackerjack with enhanced analytics (replaces /crackerjack:run)
+    
+    Provides memory integration, intelligent insights, and quality tracking.
+    Use this instead of basic /crackerjack:run for development work.
+    """
+    return await execute_crackerjack_command(command, args, working_directory, timeout)
+
+@mcp.tool() 
+async def crackerjack_history(
+    working_directory: str = ".",
+    command_filter: str = "",
+    days: int = 7
+) -> str:
+    """View crackerjack execution history with trends and patterns"""
+    return await get_crackerjack_results_history(working_directory, command_filter, days)
+
+@mcp.tool()
+async def crackerjack_metrics(
+    working_directory: str = ".",
+    days: int = 30
+) -> str:
+    """Get quality metrics trends from crackerjack execution history"""
+    return await get_crackerjack_quality_metrics(days, working_directory)
+
+@mcp.tool()
+async def crackerjack_patterns(
+    days: int = 7,
+    working_directory: str = "."
+) -> str:
+    """Analyze test failure patterns and trends"""
+    return await analyze_crackerjack_test_patterns(days, working_directory)
+
+@mcp.tool()
+async def crackerjack_help() -> str:
+    """Get comprehensive help for choosing the right crackerjack commands"""
+    output = ["🔧 CRACKERJACK COMMAND GUIDE", "=" * 50]
+    
+    # Check what's available
+    detected_servers = _detect_other_mcp_servers()
+    has_basic_crackerjack = detected_servers.get('crackerjack', False)
+    has_enhanced = CRACKERJACK_INTEGRATION_AVAILABLE
+    
+    if has_enhanced:
+        output.extend([
+            "\n🎯 RECOMMENDED (Enhanced with AI Intelligence):",
+            "• /session-mgmt:crackerjack-run check    - Full analysis with memory integration",
+            "• /session-mgmt:crackerjack-run test     - Test execution with pattern tracking", 
+            "• /session-mgmt:crackerjack-run lint     - Linting with trend analysis",
+            "• /session-mgmt:crackerjack-history      - View execution history and trends",
+            "• /session-mgmt:crackerjack-metrics      - Quality metrics over time",
+            "• /session-mgmt:crackerjack-patterns     - Analyze test failure patterns",
+            "",
+            "🧠 Enhanced Features:",
+            "  ✅ Conversation memory - remembers all results",
+            "  ✅ Intelligent insights - automated analysis",
+            "  ✅ Quality tracking - metrics over time",
+            "  ✅ Pattern detection - identifies recurring issues",
+            "  ✅ Trend analysis - shows improvement/degradation",
+            "  ✅ Cross-session learning - builds knowledge over time"
+        ])
+    
+    if has_basic_crackerjack:
+        output.extend([
+            "\n📋 BASIC (Simple Execution, No Memory):",
+            "• /crackerjack:run check                 - Raw output only",
+            "• /crackerjack:run test                  - Basic test execution", 
+            "• /crackerjack:run lint                  - Simple linting",
+            "",
+            "⚠️ Basic Features:",
+            "  ❌ No conversation memory",
+            "  ❌ No intelligent analysis", 
+            "  ❌ No quality tracking",
+            "  ❌ No pattern detection"
+        ])
+    
+    # Usage recommendations
+    output.extend([
+        "\n💡 USAGE RECOMMENDATIONS:",
+        "",
+        "🚀 For Development Work:",
+        "  → Use enhanced commands (/session-mgmt:crackerjack-*)",
+        "  → Get AI insights and memory integration",
+        "  → Build long-term project intelligence",
+        "",
+        "⚙️ For CI/CD Pipelines:",
+        "  → Use basic commands (/crackerjack:*) if needed",
+        "  → Lighter weight, no persistence requirements",
+        "",
+        "🎯 Quick Start:",
+        "  1. /session-mgmt:crackerjack-run check",
+        "  2. /session-mgmt:crackerjack-history",
+        "  3. /session-mgmt:crackerjack-metrics"
+    ])
+    
+    if not has_enhanced and not has_basic_crackerjack:
+        output.extend([
+            "\n❌ SETUP REQUIRED:",
+            "Neither enhanced nor basic crackerjack is available.",
+            "Install crackerjack to get started with code quality tools."
+        ])
+    
+    return "\n".join(output)
 
 @mcp.tool()
 async def get_crackerjack_results_history(
