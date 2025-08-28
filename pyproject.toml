@@ -1,65 +1,78 @@
 [build-system]
-requires = ["hatchling"]
 build-backend = "hatchling.build"
+requires = [
+    "hatchling",
+]
 
 [project]
 name = "session-mgmt-mcp"
 version = "0.1.0"
 description = "Claude Session Management MCP Server - comprehensive session management functionality for Claude Code"
-authors = [
-    {name = "Les Leslie", email = "les@wedgwoodwebworks.com"}
-]
 readme = "README.md"
+keywords = [
+    "ai",
+    "assistant",
+    "claude",
+    "mcp",
+    "session-management",
+]
 license = "MIT"
+authors = [
+    { name = "Les Leslie", email = "les@wedgwoodwebworks.com" },
+]
 requires-python = ">=3.13"
-keywords = ["mcp", "claude", "session-management", "ai", "assistant"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: System Shells",
     "Topic :: Utilities",
 ]
-
 dependencies = [
-    "fastmcp>=2.0.0",
-    "duckdb>=0.9.0",
-    "numpy>=1.24.0",
-    "tiktoken>=0.5.0",
+    "crackerjack",
+    "duckdb>=0.9",
+    "fastmcp>=2",
+    "numpy>=1.24",
+    "tiktoken>=0.5",
 ]
 
 [project.optional-dependencies]
+dev = [
+    "coverage>=7",
+    "hypothesis>=6.70",
+    "psutil>=5.9",
+    "pytest>=7",
+    "pytest-asyncio>=0.21",
+    "pytest-benchmark>=4",
+    "pytest-cov>=4",
+    "pytest-mock>=3.10",
+    "pytest-timeout>=2.1",
+    "pytest-xdist>=3",
+]
 embeddings = [
     "onnxruntime",
     "transformers",
 ]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
-    "pytest-mock>=3.10.0",
-    "pytest-xdist>=3.0.0",
-    "pytest-timeout>=2.1.0",
-    "pytest-benchmark>=4.0.0",
-    "hypothesis>=6.70.0",
-    "coverage>=7.0.0",
-    "psutil>=5.9.0",
-]
+
+[project.urls]
+Homepage = "https://github.com/lesleslie/session-mgmt-mcp"
+Issues = "https://github.com/lesleslie/session-mgmt-mcp/issues"
+Repository = "https://github.com/lesleslie/session-mgmt-mcp"
 
 [project.scripts]
 session-mgmt-mcp = "session_mgmt_mcp.server:main"
 
-[project.urls]
-Homepage = "https://github.com/lesleslie/session-mgmt-mcp"
-Repository = "https://github.com/lesleslie/session-mgmt-mcp"
-Issues = "https://github.com/lesleslie/session-mgmt-mcp/issues"
-
 [dependency-groups]
 dev = [
     "crackerjack",
+    "fastmcp>=2.11.3",
+    "hypothesis>=6.138.7",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.1",
 ]
 
 [tool.ruff]
@@ -87,24 +100,109 @@ ignore = [
 fixable = [
     "ALL",
 ]
+unfixable = []
+
+[tool.ruff.lint.isort]
+no-lines-before = [
+    "first-party",
+]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 13
 
+[tool.codespell]
+skip = "*/data/*"
+quiet-level = 3
+ignore-words-list = "crate,uptodate,nd,nin"
+
+[tool.pyproject-fmt]
+column_width = 120
+indent = 4
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+timeout = 300
+addopts = "--cov=session_mgmt_mcp --cov-report=term --cov-fail-under=42"
+markers = [
+    "unit: marks test as a unit test",
+    "benchmark: mark test as a benchmark",
+    "integration: marks test as an integration test",
+    "no_leaks: detect asyncio task leaks",
+]
+asyncio_default_fixture_loop_scope = "function"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
+testpaths = [
+    "tests",
+    "session_mgmt_mcp",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
+timeout_method = "thread"
+filterwarnings = [
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
+]
+
+[tool.pytest.benchmark]
+disable_gc = true
+warmup = false
+warmup_iterations = 0
+min_rounds = 1
+max_time = 5.0
+
+[tool.coverage.run]
+branch = false
+source = [
+    "session_mgmt_mcp",
+]
+data_file = ".coverage"
+parallel = false
+omit = [
+    "*/tests/*",
+    "*/site-packages/*",
+    "*/__pycache__/*",
+    "*/__init__.py",
+    "*/_version.py",
+    "*/conftest.py",
+    "*/test_*.py",
+    "*/_test.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError",
+    "def __str__",
+    "@abstractmethod",
+]
+ignore_errors = false
+
 [tool.pyright]
 verboseOutput = true
 include = [
-    "crackerjack",
+    "tests",
+    "session_mgmt_mcp",
 ]
 exclude = [
-    "scratch",
-    ".venv",
     "build",
-    "dist",
     "tests/*",
-    "examples/*",
-    "crackerjack/mcp/*",
     "crackerjack/plugins/*",
+    ".venv",
+    "scratch",
+    "crackerjack/mcp/*",
+    "examples/*",
+    "dist",
 ]
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
@@ -127,14 +225,15 @@ pythonVersion = "3.13"
 
 [tool.bandit]
 target = [
-    "crackerjack",
+    "tests",
+    "session_mgmt_mcp",
 ]
 skips = [
-    "B101",
-    "B110",
     "B112",
     "B404",
     "B603",
+    "B101",
+    "B110",
     "B607",
 ]
 exclude_dirs = [
@@ -144,7 +243,7 @@ exclude_dirs = [
 [tool.vulture]
 min_confidence = 86
 paths = [
-    "crackerjack",
+    "session_mgmt_mcp",
 ]
 ignore_names = [
     "cls",
@@ -163,89 +262,59 @@ exclude_patterns = [
 ]
 max_complexity = 15
 
-[tool.codespell]
-skip = "*/data/*"
-quiet-level = 3
-ignore-words-list = "crate,uptodate,nd,nin"
-
 [tool.creosote]
 paths = [
-    "crackerjack",
+    "session_mgmt_mcp",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "hatchling",
-    "pre-commit",
+    "websockets",
+    "pydantic-settings",
+    "bandit",
+    "uvicorn",
+    "pyright",
     "pytest",
-    "pytest-asyncio",
-    "pytest-cov",
-    "pytest-mock",
+    "watchdog",
     "pytest-xdist",
+    "autotyping",
+    "pre-commit",
+    "fastmcp",
+    "ruff",
+    "vulture",
+    "refurb",
+    "hatchling",
+    "codespell",
+    "pytest-cov",
     "pytest-benchmark",
+    "pytest-timeout",
+    "creosote",
+    "google-crc32c",
+    "complexipy",
+    "pytest-mock",
+    "keyring",
+    "fastapi",
+    "uv",
     "pyfiglet",
     "pyyaml",
-    "uv",
-    "tomli-w",
-    "google-crc32c",
-    "pytest-timeout",
-    "keyring",
-    "inflection",
-    "pydantic-settings",
     "pyleak",
-    "bandit",
-    "vulture",
-    "pyright",
-    "creosote",
-    "refurb",
-    "complexipy",
-    "codespell",
-    "fastapi",
-    "fastmcp",
-    "uvicorn",
-    "websockets",
-    "watchdog",
-    "ruff",
+    "tomli-w",
+    "pytest-asyncio",
+    "inflection",
 ]
 
-# Example session-mgmt-mcp configuration
-# Uncomment and customize as needed
+[tool.uv]
+keyring-provider = "subprocess"
+publish-url = "https://upload.pypi.org/legacy/"
+check-url = "https://pypi.org/simple/"
 
-# [tool.session-mgmt-mcp]
-# # Server settings
-# debug = false
-# server_host = "localhost"
-# server_port = 3000
-# enable_websockets = true
+[tool.uv.sources.crackerjack]
+path = "../crackerjack"
+editable = true
 
-# [tool.session-mgmt-mcp.database]
-# # Database configuration
-# path = "~/.claude/data/reflection.duckdb"
-# connection_timeout = 30
-# enable_multi_project = true
-# enable_full_text_search = true
-
-# [tool.session-mgmt-mcp.search]
-# # Search and embedding settings
-# enable_semantic_search = true
-# embedding_model = "all-MiniLM-L6-v2"
-# enable_faceted_search = true
-# max_facet_values = 50
-
-# [tool.session-mgmt-mcp.token_optimization]
-# # Token optimization settings
-# enable_optimization = true
-# default_max_tokens = 4000
-# preferred_strategy = "auto"
-# track_usage = true
-
-# [tool.session-mgmt-mcp.session]
-# # Session management
-# auto_checkpoint_interval = 1800  # 30 minutes
-# enable_auto_commit = true
-# session_retention_days = 365
-
-# [tool.session-mgmt-mcp.logging]
-# # Logging configuration
-# level = "INFO"
-# enable_file_logging = true
-# log_file_path = "~/.claude/logs/session-mgmt.log"
+[tool.autotyping]
+exclude = [
+    "tests/data/*",
+    "*/conftest.py",
+]
+safe = true
+aggressive = true

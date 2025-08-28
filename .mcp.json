@@ -1,13 +1,12 @@
 {
   "mcpServers": {
     "session-mgmt": {
-      "command": "python",
+      "command": "uvx",
       "args": [
-        "-m",
-        "session_mgmt_mcp.server"
-      ],
-      "cwd": "/Users/les/Projects/session-mgmt-mcp",
-      "env": {}
+        "--from",
+        "/Users/les/Projects/session-mgmt-mcp",
+        "session-mgmt-mcp"
+      ]
     },
     "ast-grep": {
       "command": "uvx",
@@ -61,10 +60,7 @@
     },
     "github": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github@2025.4.8"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-github@latest"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN_USE_GHCLI": "true"
       }
