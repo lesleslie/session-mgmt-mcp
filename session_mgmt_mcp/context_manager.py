@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .reflection_tools import ReflectionDatabase
+from .utils.git_operations import get_worktree_info, list_worktrees
 
 
 class ContextDetector:
@@ -55,6 +56,7 @@ class ContextDetector:
             "current_files": [],
             "recent_files": [],
             "git_info": {},
+            "worktree_info": None,
             "confidence_score": 0.0,
         }
 
@@ -172,6 +174,31 @@ class ContextDetector:
         # Get git information
         context["git_info"] = self._get_git_info(working_path)
 
+        # Get comprehensive worktree information
+        worktree_info = get_worktree_info(working_path)
+        if worktree_info:
+            context["worktree_info"] = {
+                "path": str(worktree_info.path),
+                "branch": worktree_info.branch,
+                "is_main_worktree": worktree_info.is_main_worktree,
+                "is_detached": worktree_info.is_detached,
+                "is_bare": worktree_info.is_bare,
+                "locked": worktree_info.locked,
+                "prunable": worktree_info.prunable,
+            }
+
+            # Get list of all worktrees for cross-worktree context
+            all_worktrees = list_worktrees(working_path)
+            context["all_worktrees"] = [
+                {
+                    "path": str(wt.path),
+                    "branch": wt.branch,
+                    "is_main": wt.is_main_worktree,
+                    "is_current": wt.path == worktree_info.path,
+                }
+                for wt in all_worktrees
+            ]
+
         return context
 
     def _should_ignore_file(self, file_path: Path) -> bool:
@@ -208,12 +235,20 @@ class ContextDetector:
         git_dir = working_path / ".git"
         if git_dir.exists():
             try:
-                # Get current branch
-                head_file = git_dir / "HEAD"
-                if head_file.exists():
-                    head_content = head_file.read_text().strip()
-                    if head_content.startswith("ref: refs/heads/"):
-                        git_info["current_branch"] = head_content.split("/")[-1]
+                # Use new worktree-aware detection
+                worktree_info = get_worktree_info(working_path)
+                if worktree_info:
+                    git_info["current_branch"] = worktree_info.branch
+                    git_info["is_worktree"] = not worktree_info.is_main_worktree
+                    git_info["is_detached"] = worktree_info.is_detached
+                    git_info["worktree_path"] = str(worktree_info.path)
+                else:
+                    # Fallback to old method
+                    head_file = git_dir / "HEAD"
+                    if head_file.exists():
+                        head_content = head_file.read_text().strip()
+                        if head_content.startswith("ref: refs/heads/"):
+                            git_info["current_branch"] = head_content.split("/")[-1]
 
                 # Get remote info (simplified)
                 config_file = git_dir / "config"

@@ -3,3 +3,4 @@
 /.venv/
 /.claude/
 /session_mgmt_mcp/__pycache__/
+/.hypothesis/

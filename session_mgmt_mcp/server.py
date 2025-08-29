@@ -3139,9 +3139,50 @@ async def _add_health_status_info(output: list[str]) -> None:
 
 async def _add_project_context_info(output: list[str], current_dir: Path) -> None:
     """Add project context information to output"""
+    from .utils.git_operations import get_worktree_info, list_worktrees
+
     project_context = await analyze_project_context(current_dir)
     context_score = sum(1 for detected in project_context.values() if detected)
     output.append(f"\n📈 Project maturity: {context_score}/{len(project_context)}")
+
+    # Add worktree information
+    try:
+        worktree_info = get_worktree_info(current_dir)
+        if worktree_info:
+            all_worktrees = list_worktrees(current_dir)
+
+            output.append("\n🌿 Git Worktree Information:")
+            if worktree_info.is_main_worktree:
+                output.append(
+                    f"   📍 Current: Main repository on '{worktree_info.branch}'"
+                )
+            else:
+                output.append(f"   📍 Current: Worktree on '{worktree_info.branch}'")
+                output.append(f"   📁 Path: {worktree_info.path}")
+
+            if len(all_worktrees) > 1:
+                output.append(f"   🌳 Total worktrees: {len(all_worktrees)}")
+                other_branches = [
+                    wt.branch for wt in all_worktrees if wt.path != worktree_info.path
+                ]
+                if other_branches:
+                    output.append(
+                        f"   🔀 Other branches: {', '.join(other_branches[:3])}"
+                    )
+                    if len(other_branches) > 3:
+                        output.append(f"   ... and {len(other_branches) - 3} more")
+                output.append("   💡 Use 'git_worktree_list' to see all worktrees")
+            else:
+                output.append(
+                    "   💡 Use 'git_worktree_add <branch> <path>' to create parallel worktrees"
+                )
+
+            if worktree_info.is_detached:
+                output.append("   ⚠️ Detached HEAD - consider checking out a branch")
+
+    except Exception:
+        # Silently handle worktree detection failures
+        pass
 
 
 def _add_permissions_info(output: list[str]) -> None:
@@ -3166,6 +3207,11 @@ def _add_basic_tools_info(output: list[str]) -> None:
     output.append("• end - Complete cleanup")
     output.append("• status - This status report with health checks")
     output.append("• permissions - Manage trusted operations")
+    output.append("• git_worktree_list - List all git worktrees")
+    output.append("• git_worktree_add - Create new worktrees")
+    output.append("• git_worktree_remove - Remove worktrees")
+    output.append("• git_worktree_status - Comprehensive worktree status")
+    output.append("• git_worktree_prune - Clean up stale references")
 
 
 def _add_feature_status_info(output: list[str]) -> None:
@@ -7469,6 +7515,259 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
 
     except Exception as e:
         return f"❌ Failed to get metrics: {e}"
+
+
+# Git Worktree Management Tools
+
+
+@mcp.tool()
+async def git_worktree_list(working_directory: str | None = None) -> str:
+    """List all git worktrees for the current repository"""
+    from .worktree_manager import WorktreeManager
+
+    working_dir = Path(working_directory or os.getcwd())
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.list_worktrees(working_dir)
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        worktrees = result["worktrees"]
+        if not worktrees:
+            return (
+                "📝 No worktrees found. This repository only has the main working tree."
+            )
+
+        output = [
+            f"🌿 **Git Worktrees** ({result['total_count']} total)\n",
+            f"📂 Repository: {working_dir.name}",
+            f"🎯 Current: {result.get('current_worktree', 'Unknown')}\n",
+        ]
+
+        for wt in worktrees:
+            prefix = "🔸" if wt["is_current"] else "◦"
+            main_indicator = " (main)" if wt["is_main"] else ""
+            detached_indicator = " (detached)" if wt["is_detached"] else ""
+
+            output.append(
+                f"{prefix} **{wt['branch']}{main_indicator}{detached_indicator}**"
+            )
+            output.append(f"   📁 {wt['path']}")
+
+            status_items = []
+            if wt["locked"]:
+                status_items.append("🔒 locked")
+            if wt["prunable"]:
+                status_items.append("🗑️ prunable")
+            if not wt["exists"]:
+                status_items.append("❌ missing")
+            if wt["has_session"]:
+                status_items.append("🧠 has session")
+
+            if status_items:
+                output.append(f"   Status: {', '.join(status_items)}")
+            output.append("")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.error(f"git_worktree_list failed: {e}")
+        return f"❌ Failed to list worktrees: {e}"
+
+
+@mcp.tool()
+async def git_worktree_add(
+    branch: str,
+    path: str,
+    working_directory: str | None = None,
+    create_branch: bool = False,
+) -> str:
+    """Create a new git worktree"""
+    from .worktree_manager import WorktreeManager
+
+    working_dir = Path(working_directory or os.getcwd())
+    new_path = Path(path)
+
+    if not new_path.is_absolute():
+        new_path = working_dir.parent / path
+
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.create_worktree(
+            repository_path=working_dir,
+            new_path=new_path,
+            branch=branch,
+            create_branch=create_branch,
+        )
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        output = [
+            "🎉 **Worktree Created Successfully!**\n",
+            f"🌿 Branch: {result['branch']}",
+            f"📁 Path: {result['worktree_path']}",
+            f"🎯 Created new branch: {'Yes' if create_branch else 'No'}",
+        ]
+
+        if result.get("output"):
+            output.append(f"\n📝 Git output: {result['output']}")
+
+        output.append(f"\n💡 To start working: cd {result['worktree_path']}")
+        output.append("💡 Use `git_worktree_list` to see all worktrees")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.error(f"git_worktree_add failed: {e}")
+        return f"❌ Failed to create worktree: {e}"
+
+
+@mcp.tool()
+async def git_worktree_remove(
+    path: str, working_directory: str | None = None, force: bool = False
+) -> str:
+    """Remove an existing git worktree"""
+    from .worktree_manager import WorktreeManager
+
+    working_dir = Path(working_directory or os.getcwd())
+    remove_path = Path(path)
+
+    if not remove_path.is_absolute():
+        remove_path = working_dir.parent / path
+
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.remove_worktree(
+            repository_path=working_dir, worktree_path=remove_path, force=force
+        )
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        output = [
+            "🗑️ **Worktree Removed Successfully!**\n",
+            f"📁 Removed path: {result['removed_path']}",
+        ]
+
+        if result.get("output"):
+            output.append(f"📝 Git output: {result['output']}")
+
+        output.append(f"\n💡 Used force removal: {'Yes' if force else 'No'}")
+        output.append("💡 Use `git_worktree_list` to see remaining worktrees")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.error(f"git_worktree_remove failed: {e}")
+        return f"❌ Failed to remove worktree: {e}"
+
+
+@mcp.tool()
+async def git_worktree_status(working_directory: str | None = None) -> str:
+    """Get comprehensive status of current worktree and all related worktrees"""
+    from .worktree_manager import WorktreeManager
+
+    working_dir = Path(working_directory or os.getcwd())
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.get_worktree_status(working_dir)
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        current = result["current_worktree"]
+        all_worktrees = result["all_worktrees"]
+        session_summary = result["session_summary"]
+
+        output = [
+            "🌿 **Git Worktree Status**\n",
+            f"📂 Repository: {working_dir.name}",
+            f"🎯 Current worktree: {current['branch']}"
+            + (" (main)" if current["is_main"] else " (worktree)"),
+            f"📁 Path: {current['path']}",
+            f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
+            f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
+        ]
+
+        # Session summary across all worktrees
+        output.append("📊 **Multi-Worktree Summary:**")
+        output.append(f"• Total worktrees: {result['total_worktrees']}")
+        output.append(f"• Active sessions: {session_summary['active_sessions']}")
+        output.append(f"• Unique branches: {session_summary['unique_branches']}")
+        output.append(f"• Branches: {', '.join(session_summary['branches'])}\n")
+
+        # List all worktrees with status
+        output.append("🌳 **All Worktrees:**")
+        for i, wt in enumerate(all_worktrees, 1):
+            current_marker = " 👈 CURRENT" if wt["is_current"] else ""
+            main_marker = " (main)" if wt["is_main"] else ""
+
+            output.append(f"{i}. **{wt['branch']}{main_marker}**{current_marker}")
+            output.append(f"   📁 {wt['path']}")
+
+            status_items = []
+            if wt["has_session"]:
+                status_items.append("🧠 session")
+            if wt["prunable"]:
+                status_items.append("🗑️ prunable")
+            if not wt["exists"]:
+                status_items.append("❌ missing")
+
+            if status_items:
+                output.append(f"   Status: {', '.join(status_items)}")
+            output.append("")
+
+        output.append("💡 Use `git_worktree_list` for more details")
+        output.append(
+            "💡 Use `git_worktree_add <branch> <path>` to create new worktrees"
+        )
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.error(f"git_worktree_status failed: {e}")
+        return f"❌ Failed to get worktree status: {e}"
+
+
+@mcp.tool()
+async def git_worktree_prune(working_directory: str | None = None) -> str:
+    """Prune stale worktree references"""
+    from .worktree_manager import WorktreeManager
+
+    working_dir = Path(working_directory or os.getcwd())
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.prune_worktrees(working_dir)
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        output = ["🧹 **Worktree Pruning Complete**\n"]
+
+        if result["pruned_count"] > 0:
+            output.append(
+                f"🗑️ Pruned {result['pruned_count']} stale worktree references"
+            )
+            if result.get("output"):
+                output.append(f"📝 Details: {result['output']}")
+        else:
+            output.append("✅ No stale worktree references found")
+            output.append("🎉 All worktrees are clean and up to date")
+
+        output.append("\n💡 Use `git_worktree_list` to see current worktrees")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.error(f"git_worktree_prune failed: {e}")
+        return f"❌ Failed to prune worktrees: {e}"
 
 
 def main():
