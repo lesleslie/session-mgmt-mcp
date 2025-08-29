@@ -1,0 +1,8 @@
+# Creosote ignore file for legitimate dependencies that may not be detected
+# These dependencies are actually used but may not be detected by static analysis
+
+# Used in session_mgmt_mcp.server and crackerjack_integration
+crackerjack
+
+# Used in reflection_tools.py and database_pool.py
+duckdb
