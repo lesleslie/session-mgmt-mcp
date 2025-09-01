@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Integration tests for Multi-Project MCP Tools
-"""
+"""Integration tests for Multi-Project MCP Tools."""
 
 # Import the MCP tools we want to test
 import sys
@@ -20,7 +18,7 @@ from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 # Mock the server functions to simulate MCP tool calls
 async def mock_create_project_group(name: str, projects: list, description: str = ""):
-    """Mock MCP tool: create_project_group"""
+    """Mock MCP tool: create_project_group."""
     from session_mgmt_mcp.server import create_project_group
 
     return await create_project_group(name, projects, description)
@@ -32,18 +30,23 @@ async def mock_add_project_dependency(
     dependency_type: str,
     description: str = "",
 ):
-    """Mock MCP tool: add_project_dependency"""
+    """Mock MCP tool: add_project_dependency."""
     from session_mgmt_mcp.server import add_project_dependency
 
     return await add_project_dependency(
-        source_project, target_project, dependency_type, description
+        source_project,
+        target_project,
+        dependency_type,
+        description,
     )
 
 
 async def mock_search_across_projects(
-    query: str, current_project: str, limit: int = 10
+    query: str,
+    current_project: str,
+    limit: int = 10,
 ):
-    """Mock MCP tool: search_across_projects"""
+    """Mock MCP tool: search_across_projects."""
     from session_mgmt_mcp.server import search_across_projects
 
     return await search_across_projects(query, current_project, limit)
@@ -57,17 +60,22 @@ async def mock_advanced_search(
     sort_by="relevance",
     limit=10,
 ):
-    """Mock MCP tool: advanced_search"""
+    """Mock MCP tool: advanced_search."""
     from session_mgmt_mcp.server import advanced_search
 
     return await advanced_search(
-        query, content_type, project, timeframe, sort_by, limit
+        query,
+        content_type,
+        project,
+        timeframe,
+        sort_by,
+        limit,
     )
 
 
 @pytest.fixture
 async def temp_db():
-    """Create a temporary test database"""
+    """Create a temporary test database."""
     with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as f:
         db_path = f.name
 
@@ -83,8 +91,7 @@ async def temp_db():
 
 @pytest.fixture
 async def setup_test_environment(temp_db):
-    """Setup test environment with sample data"""
-
+    """Setup test environment with sample data."""
     # Add sample conversations
     conversations = [
         {
@@ -155,12 +162,11 @@ async def setup_test_environment(temp_db):
 
 
 class TestMultiProjectMCPTools:
-    """Test multi-project MCP tools integration"""
+    """Test multi-project MCP tools integration."""
 
     @pytest.mark.asyncio
     async def test_create_project_group_mcp(self, temp_db, setup_test_environment):
-        """Test create_project_group MCP tool"""
-
+        """Test create_project_group MCP tool."""
         # Mock the global coordinator
         coordinator = MultiProjectCoordinator(temp_db)
 
@@ -183,8 +189,7 @@ class TestMultiProjectMCPTools:
 
     @pytest.mark.asyncio
     async def test_add_project_dependency_mcp(self, temp_db, setup_test_environment):
-        """Test add_project_dependency MCP tool"""
-
+        """Test add_project_dependency MCP tool."""
         coordinator = MultiProjectCoordinator(temp_db)
 
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
@@ -207,13 +212,15 @@ class TestMultiProjectMCPTools:
 
     @pytest.mark.asyncio
     async def test_search_across_projects_mcp(self, temp_db, setup_test_environment):
-        """Test search_across_projects MCP tool"""
-
+        """Test search_across_projects MCP tool."""
         coordinator = MultiProjectCoordinator(temp_db)
 
         # First add a dependency to enable cross-project search
         await coordinator.add_project_dependency(
-            "frontend-app", "backend-api", "uses", "API calls"
+            "frontend-app",
+            "backend-api",
+            "uses",
+            "API calls",
         )
 
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
@@ -221,7 +228,9 @@ class TestMultiProjectMCPTools:
                 mock_init.return_value = None
 
                 result = await mock_search_across_projects(
-                    query="authentication", current_project="frontend-app", limit=5
+                    query="authentication",
+                    current_project="frontend-app",
+                    limit=5,
                 )
 
         # Should find authentication-related conversations
@@ -236,8 +245,7 @@ class TestMultiProjectMCPTools:
 
     @pytest.mark.asyncio
     async def test_get_project_insights_mcp(self, temp_db, setup_test_environment):
-        """Test get_project_insights MCP tool"""
-
+        """Test get_project_insights MCP tool."""
         coordinator = MultiProjectCoordinator(temp_db)
 
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
@@ -257,12 +265,11 @@ class TestMultiProjectMCPTools:
 
 
 class TestAdvancedSearchMCPTools:
-    """Test advanced search MCP tools integration"""
+    """Test advanced search MCP tools integration."""
 
     @pytest.mark.asyncio
     async def test_advanced_search_mcp(self, temp_db, setup_test_environment):
-        """Test advanced_search MCP tool"""
-
+        """Test advanced_search MCP tool."""
         search_engine = AdvancedSearchEngine(temp_db)
         await search_engine._rebuild_search_index()
 
@@ -284,8 +291,7 @@ class TestAdvancedSearchMCPTools:
 
     @pytest.mark.asyncio
     async def test_search_suggestions_mcp(self, temp_db, setup_test_environment):
-        """Test search_suggestions MCP tool"""
-
+        """Test search_suggestions MCP tool."""
         search_engine = AdvancedSearchEngine(temp_db)
         await search_engine._rebuild_search_index()
 
@@ -296,7 +302,9 @@ class TestAdvancedSearchMCPTools:
                 from session_mgmt_mcp.server import search_suggestions
 
                 result = await search_suggestions(
-                    query="auth", field="content", limit=5
+                    query="auth",
+                    field="content",
+                    limit=5,
                 )
 
         # Check result format
@@ -304,8 +312,7 @@ class TestAdvancedSearchMCPTools:
 
     @pytest.mark.asyncio
     async def test_get_search_metrics_mcp(self, temp_db, setup_test_environment):
-        """Test get_search_metrics MCP tool"""
-
+        """Test get_search_metrics MCP tool."""
         search_engine = AdvancedSearchEngine(temp_db)
         await search_engine._rebuild_search_index()
 
@@ -316,7 +323,8 @@ class TestAdvancedSearchMCPTools:
                 from session_mgmt_mcp.server import get_search_metrics
 
                 result = await get_search_metrics(
-                    metric_type="activity", timeframe="30d"
+                    metric_type="activity",
+                    timeframe="30d",
                 )
 
         # Check result format
@@ -324,18 +332,19 @@ class TestAdvancedSearchMCPTools:
 
 
 class TestMCPToolErrorHandling:
-    """Test MCP tool error handling"""
+    """Test MCP tool error handling."""
 
     @pytest.mark.asyncio
     async def test_missing_coordinator_handling(self):
-        """Test handling when multi_project_coordinator is not available"""
-
+        """Test handling when multi_project_coordinator is not available."""
         with patch("session_mgmt_mcp.server.multi_project_coordinator", None):
             with patch("session_mgmt_mcp.server.initialize_new_features") as mock_init:
                 mock_init.return_value = None
 
                 result = await mock_create_project_group(
-                    name="Test Group", projects=["project1"], description="Test"
+                    name="Test Group",
+                    projects=["project1"],
+                    description="Test",
                 )
 
         # Should return error message
@@ -343,8 +352,7 @@ class TestMCPToolErrorHandling:
 
     @pytest.mark.asyncio
     async def test_missing_search_engine_handling(self):
-        """Test handling when advanced_search_engine is not available"""
-
+        """Test handling when advanced_search_engine is not available."""
         with patch("session_mgmt_mcp.server.advanced_search_engine", None):
             with patch("session_mgmt_mcp.server.initialize_new_features") as mock_init:
                 mock_init.return_value = None
@@ -356,15 +364,15 @@ class TestMCPToolErrorHandling:
 
     @pytest.mark.asyncio
     async def test_initialization_failure_handling(self, temp_db):
-        """Test handling when initialization fails"""
-
+        """Test handling when initialization fails."""
         with patch("session_mgmt_mcp.server.multi_project_coordinator", None):
             with patch("session_mgmt_mcp.server.initialize_new_features") as mock_init:
                 # Mock initialization failure
                 mock_init.side_effect = Exception("Database connection failed")
 
                 result = await mock_create_project_group(
-                    name="Test Group", projects=["project1"]
+                    name="Test Group",
+                    projects=["project1"],
                 )
 
         # Should handle error gracefully
@@ -372,8 +380,7 @@ class TestMCPToolErrorHandling:
 
     @pytest.mark.asyncio
     async def test_invalid_project_dependency_handling(self, temp_db):
-        """Test handling of invalid project dependency parameters"""
-
+        """Test handling of invalid project dependency parameters."""
         coordinator = MultiProjectCoordinator(temp_db)
 
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
@@ -394,14 +401,15 @@ class TestMCPToolErrorHandling:
 
 
 class TestMCPWorkflowIntegration:
-    """Test complete multi-project workflows"""
+    """Test complete multi-project workflows."""
 
     @pytest.mark.asyncio
     async def test_complete_multi_project_workflow(
-        self, temp_db, setup_test_environment
+        self,
+        temp_db,
+        setup_test_environment,
     ):
-        """Test complete workflow: create group, add dependencies, search"""
-
+        """Test complete workflow: create group, add dependencies, search."""
         coordinator = MultiProjectCoordinator(temp_db)
         search_engine = AdvancedSearchEngine(temp_db)
         await search_engine._rebuild_search_index()
@@ -409,7 +417,7 @@ class TestMCPWorkflowIntegration:
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
             with patch("session_mgmt_mcp.server.advanced_search_engine", search_engine):
                 with patch(
-                    "session_mgmt_mcp.server.initialize_new_features"
+                    "session_mgmt_mcp.server.initialize_new_features",
                 ) as mock_init:
                     mock_init.return_value = None
 
@@ -424,7 +432,10 @@ class TestMCPWorkflowIntegration:
 
                     # Step 2: Add dependencies
                     dep1_result = await mock_add_project_dependency(
-                        "frontend-app", "backend-api", "uses", "API calls"
+                        "frontend-app",
+                        "backend-api",
+                        "uses",
+                        "API calls",
                     )
 
                     dep2_result = await mock_add_project_dependency(
@@ -439,7 +450,9 @@ class TestMCPWorkflowIntegration:
 
                     # Step 3: Search across projects
                     search_result = await mock_search_across_projects(
-                        query="authentication", current_project="frontend-app", limit=5
+                        query="authentication",
+                        current_project="frontend-app",
+                        limit=5,
                     )
 
                     # Should find results from related projects
@@ -457,8 +470,7 @@ class TestMCPWorkflowIntegration:
 
     @pytest.mark.asyncio
     async def test_advanced_search_workflow(self, temp_db, setup_test_environment):
-        """Test advanced search workflow with different filters and metrics"""
-
+        """Test advanced search workflow with different filters and metrics."""
         search_engine = AdvancedSearchEngine(temp_db)
         await search_engine._rebuild_search_index()
 
@@ -468,7 +480,8 @@ class TestMCPWorkflowIntegration:
 
                 # Step 1: Basic search
                 basic_result = await mock_advanced_search(
-                    query="authentication", limit=5
+                    query="authentication",
+                    limit=5,
                 )
 
                 assert isinstance(basic_result, str)
@@ -494,19 +507,19 @@ class TestMCPWorkflowIntegration:
                 from session_mgmt_mcp.server import get_search_metrics
 
                 metrics_result = await get_search_metrics(
-                    metric_type="projects", timeframe="30d"
+                    metric_type="projects",
+                    timeframe="30d",
                 )
 
                 assert isinstance(metrics_result, str)
 
 
 class TestMCPToolConfiguration:
-    """Test MCP tools with configuration management"""
+    """Test MCP tools with configuration management."""
 
     @pytest.mark.asyncio
     async def test_tools_with_config(self, temp_db, setup_test_environment):
-        """Test MCP tools with configuration support"""
-
+        """Test MCP tools with configuration support."""
         # Mock configuration
         mock_config = AsyncMock()
         mock_config.database.enable_multi_project = True
@@ -518,26 +531,27 @@ class TestMCPToolConfiguration:
         with patch("session_mgmt_mcp.server.multi_project_coordinator", coordinator):
             with patch("session_mgmt_mcp.server.app_config", mock_config):
                 with patch(
-                    "session_mgmt_mcp.server.initialize_new_features"
+                    "session_mgmt_mcp.server.initialize_new_features",
                 ) as mock_init:
                     mock_init.return_value = None
 
                     result = await mock_create_project_group(
-                        name="Configured Group", projects=["proj1", "proj2"]
+                        name="Configured Group",
+                        projects=["proj1", "proj2"],
                     )
 
                     assert "✅ **Project Group Created**" in result
 
     @pytest.mark.asyncio
     async def test_feature_availability_flags(self):
-        """Test MCP tools respect feature availability flags"""
-
+        """Test MCP tools respect feature availability flags."""
         # Test when features are disabled
         with patch("session_mgmt_mcp.server.MULTI_PROJECT_AVAILABLE", False):
             with patch("session_mgmt_mcp.server.ADVANCED_SEARCH_AVAILABLE", False):
                 # Multi-project tools should be unavailable
                 group_result = await mock_create_project_group(
-                    name="Test Group", projects=["proj1"]
+                    name="Test Group",
+                    projects=["proj1"],
                 )
 
                 search_result = await mock_advanced_search(query="test")

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Reflection Tools for Claude Session Management
+"""Reflection Tools for Claude Session Management.
 
 Provides memory and conversation search capabilities using DuckDB and local embeddings.
 """
@@ -34,9 +33,9 @@ import numpy as np
 
 
 class ReflectionDatabase:
-    """Manages DuckDB database for conversation memory and reflection"""
+    """Manages DuckDB database for conversation memory and reflection."""
 
-    def __init__(self, db_path: str | None = None):
+    def __init__(self, db_path: str | None = None) -> None:
         self.db_path = db_path or os.path.expanduser("~/.claude/data/reflection.duckdb")
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -46,15 +45,15 @@ class ReflectionDatabase:
         self.embedding_dim = 384  # all-MiniLM-L6-v2 dimension
 
     def __enter__(self):
-        """Context manager entry"""
+        """Context manager entry."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with cleanup"""
+        """Context manager exit with cleanup."""
         self.close()
 
-    def close(self):
-        """Close database connection"""
+    def close(self) -> None:
+        """Close database connection."""
         if self.conn:
             try:
                 self.conn.close()
@@ -63,14 +62,15 @@ class ReflectionDatabase:
             finally:
                 self.conn = None
 
-    def __del__(self):
-        """Destructor to ensure cleanup"""
+    def __del__(self) -> None:
+        """Destructor to ensure cleanup."""
         self.close()
 
-    async def initialize(self):
-        """Initialize database and embedding models"""
+    async def initialize(self) -> None:
+        """Initialize database and embedding models."""
         if not DUCKDB_AVAILABLE:
-            raise ImportError("DuckDB not available. Install with: pip install duckdb")
+            msg = "DuckDB not available. Install with: pip install duckdb"
+            raise ImportError(msg)
 
         # Initialize DuckDB connection with appropriate settings for concurrency
         self.conn = duckdb.connect(self.db_path)
@@ -82,12 +82,12 @@ class ReflectionDatabase:
             try:
                 # Load tokenizer
                 self.tokenizer = AutoTokenizer.from_pretrained(
-                    "sentence-transformers/all-MiniLM-L6-v2"
+                    "sentence-transformers/all-MiniLM-L6-v2",
                 )
 
                 # Try to load ONNX model
                 model_path = os.path.expanduser(
-                    "~/.claude/all-MiniLM-L6-v2/onnx/model.onnx"
+                    "~/.claude/all-MiniLM-L6-v2/onnx/model.onnx",
                 )
                 if not os.path.exists(model_path):
                     print("ONNX model not found, will use text search fallback")
@@ -104,8 +104,8 @@ class ReflectionDatabase:
         # Create tables if they don't exist
         await self._ensure_tables()
 
-    async def _ensure_tables(self):
-        """Ensure required tables exist"""
+    async def _ensure_tables(self) -> None:
+        """Ensure required tables exist."""
         # Create conversations table
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS conversations (
@@ -202,8 +202,8 @@ class ReflectionDatabase:
 
         self.conn.commit()
 
-    async def _ensure_indices(self):
-        """Create indices for better query performance"""
+    async def _ensure_indices(self) -> None:
+        """Create indices for better query performance."""
         indices = [
             # Existing table indices
             "CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(project)",
@@ -227,16 +227,18 @@ class ReflectionDatabase:
             except Exception as e:
                 # Some indices might not be supported in all DuckDB versions, continue
                 print(f"Index creation skipped: {e}")
-                pass
 
     async def get_embedding(self, text: str) -> list[float]:
-        """Get embedding for text using ONNX model"""
+        """Get embedding for text using ONNX model."""
         if self.onnx_session and self.tokenizer:
 
             def _get_embedding():
                 # Tokenize text
                 encoded = self.tokenizer(
-                    text, truncation=True, padding=True, return_tensors="np"
+                    text,
+                    truncation=True,
+                    padding=True,
+                    return_tensors="np",
                 )
 
                 # Run inference
@@ -246,7 +248,8 @@ class ReflectionDatabase:
                         "input_ids": encoded["input_ids"],
                         "attention_mask": encoded["attention_mask"],
                         "token_type_ids": encoded.get(
-                            "token_type_ids", np.zeros_like(encoded["input_ids"])
+                            "token_type_ids",
+                            np.zeros_like(encoded["input_ids"]),
                         ),
                     },
                 )
@@ -268,10 +271,11 @@ class ReflectionDatabase:
 
             return await asyncio.get_event_loop().run_in_executor(None, _get_embedding)
 
-        raise RuntimeError("No embedding model available")
+        msg = "No embedding model available"
+        raise RuntimeError(msg)
 
     async def store_conversation(self, content: str, metadata: dict[str, Any]) -> str:
-        """Store conversation with optional embedding"""
+        """Store conversation with optional embedding."""
         conversation_id = hashlib.md5(f"{content}_{time.time()}".encode()).hexdigest()
 
         if ONNX_AVAILABLE and self.onnx_session:
@@ -304,11 +308,13 @@ class ReflectionDatabase:
         return conversation_id
 
     async def store_reflection(
-        self, content: str, tags: list[str] | None = None
+        self,
+        content: str,
+        tags: list[str] | None = None,
     ) -> str:
-        """Store reflection/insight with optional embedding"""
+        """Store reflection/insight with optional embedding."""
         reflection_id = hashlib.md5(
-            f"reflection_{content}_{time.time()}".encode()
+            f"reflection_{content}_{time.time()}".encode(),
         ).hexdigest()
 
         if ONNX_AVAILABLE and self.onnx_session:
@@ -347,7 +353,7 @@ class ReflectionDatabase:
         min_score: float = 0.7,
         project: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Search conversations by text similarity (fallback to text search if no embeddings)"""
+        """Search conversations by text similarity (fallback to text search if no embeddings)."""
         if ONNX_AVAILABLE and self.onnx_session:
             # Use semantic search with embeddings
             try:
@@ -373,7 +379,8 @@ class ReflectionDatabase:
                 params.append(limit)
 
                 results = await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: self.conn.execute(sql, params).fetchall()
+                    None,
+                    lambda: self.conn.execute(sql, params).fetchall(),
                 )
 
                 return [
@@ -403,7 +410,8 @@ class ReflectionDatabase:
         sql += " ORDER BY timestamp DESC"
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.conn.execute(sql, params).fetchall(),
         )
 
         # Simple text matching score
@@ -411,7 +419,7 @@ class ReflectionDatabase:
         for row in results:
             content_lower = row[1].lower()
             score = sum(1 for term in search_terms if term in content_lower) / len(
-                search_terms
+                search_terms,
             )
 
             if score > 0:  # At least one term matches
@@ -422,7 +430,7 @@ class ReflectionDatabase:
                         "timestamp": row[3],
                         "project": row[2],
                         "metadata": json.loads(row[4]) if row[4] else {},
-                    }
+                    },
                 )
 
         # Sort by score and return top matches
@@ -430,9 +438,12 @@ class ReflectionDatabase:
         return matches[:limit]
 
     async def search_reflections(
-        self, query: str, limit: int = 5, min_score: float = 0.7
+        self,
+        query: str,
+        limit: int = 5,
+        min_score: float = 0.7,
     ) -> list[dict[str, Any]]:
-        """Search stored reflections by semantic similarity with text fallback"""
+        """Search stored reflections by semantic similarity with text fallback."""
         if ONNX_AVAILABLE and self.onnx_session:
             # Try semantic search first
             try:
@@ -477,7 +488,8 @@ class ReflectionDatabase:
         sql = "SELECT id, content, tags, timestamp, metadata FROM reflections ORDER BY timestamp DESC"
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.conn.execute(sql).fetchall()
+            None,
+            lambda: self.conn.execute(sql).fetchall(),
         )
 
         # Simple text matching score for reflections
@@ -489,7 +501,7 @@ class ReflectionDatabase:
 
             # Calculate match score
             score = sum(1 for term in search_terms if term in combined_text) / len(
-                search_terms
+                search_terms,
             )
 
             if score > 0:  # At least one term matches
@@ -500,7 +512,7 @@ class ReflectionDatabase:
                         "tags": row[2] if row[2] else [],
                         "timestamp": row[3],
                         "metadata": json.loads(row[4]) if row[4] else {},
-                    }
+                    },
                 )
 
         # Sort by score and return top matches
@@ -508,9 +520,12 @@ class ReflectionDatabase:
         return matches[:limit]
 
     async def search_by_file(
-        self, file_path: str, limit: int = 10, project: str | None = None
+        self,
+        file_path: str,
+        limit: int = 10,
+        project: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Search conversations that mention a specific file"""
+        """Search conversations that mention a specific file."""
         sql = """
             SELECT id, content, project, timestamp, metadata
             FROM conversations
@@ -526,7 +541,8 @@ class ReflectionDatabase:
         params.append(limit)
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.conn.execute(sql, params).fetchall(),
         )
 
         return [
@@ -540,19 +556,19 @@ class ReflectionDatabase:
         ]
 
     async def get_stats(self) -> dict[str, Any]:
-        """Get database statistics"""
+        """Get database statistics."""
         try:
             conv_count = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.conn.execute(
-                    "SELECT COUNT(*) FROM conversations"
+                    "SELECT COUNT(*) FROM conversations",
                 ).fetchone()[0],
             )
 
             refl_count = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.conn.execute(
-                    "SELECT COUNT(*) FROM reflections"
+                    "SELECT COUNT(*) FROM reflections",
                 ).fetchone()[0],
             )
 
@@ -577,7 +593,7 @@ _reflection_db: ReflectionDatabase | None = None
 
 
 async def get_reflection_database() -> ReflectionDatabase:
-    """Get or create reflection database instance"""
+    """Get or create reflection database instance."""
     global _reflection_db
     if _reflection_db is None:
         _reflection_db = ReflectionDatabase()
@@ -585,8 +601,8 @@ async def get_reflection_database() -> ReflectionDatabase:
     return _reflection_db
 
 
-def cleanup_reflection_database():
-    """Clean up global reflection database instance"""
+def cleanup_reflection_database() -> None:
+    """Clean up global reflection database instance."""
     global _reflection_db
     if _reflection_db:
         _reflection_db.close()
@@ -594,7 +610,7 @@ def cleanup_reflection_database():
 
 
 def get_current_project() -> str | None:
-    """Get current project name from working directory"""
+    """Get current project name from working directory."""
     try:
         cwd = Path.cwd()
         # Try to detect project from common indicators

@@ -1,5 +1,4 @@
-"""
-Team Knowledge Base module for shared reflection database with permissions.
+"""Team Knowledge Base module for shared reflection database with permissions.
 
 This module provides team collaboration features including:
 - Shared reflection database with user permissions
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserRole(Enum):
-    """User roles in team knowledge base"""
+    """User roles in team knowledge base."""
 
     VIEWER = "viewer"
     CONTRIBUTOR = "contributor"
@@ -37,7 +36,7 @@ class UserRole(Enum):
 
 
 class AccessLevel(Enum):
-    """Access levels for knowledge base content"""
+    """Access levels for knowledge base content."""
 
     PRIVATE = "private"
     TEAM = "team"
@@ -47,7 +46,7 @@ class AccessLevel(Enum):
 
 @dataclass
 class TeamUser:
-    """Team user information"""
+    """Team user information."""
 
     user_id: str
     username: str
@@ -61,7 +60,7 @@ class TeamUser:
 
 @dataclass
 class TeamReflection:
-    """Team-shared reflection with access control"""
+    """Team-shared reflection with access control."""
 
     id: str
     content: str
@@ -79,7 +78,7 @@ class TeamReflection:
 
 @dataclass
 class Team:
-    """Team information and configuration"""
+    """Team information and configuration."""
 
     team_id: str
     name: str
@@ -92,18 +91,18 @@ class Team:
 
 
 class TeamKnowledgeManager:
-    """Manages team knowledge base with permissions and access control"""
+    """Manages team knowledge base with permissions and access control."""
 
-    def __init__(self, db_path: str | None = None):
-        """Initialize team knowledge manager"""
+    def __init__(self, db_path: str | None = None) -> None:
+        """Initialize team knowledge manager."""
         self.db_path = db_path or str(
-            Path.home() / ".claude" / "data" / "team_knowledge.db"
+            Path.home() / ".claude" / "data" / "team_knowledge.db",
         )
         self._lock = threading.Lock()
         self._init_database()
 
-    def _init_database(self):
-        """Initialize SQLite database for team knowledge"""
+    def _init_database(self) -> None:
+        """Initialize SQLite database for team knowledge."""
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -167,22 +166,22 @@ class TeamKnowledgeManager:
 
             # Create indices
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_team ON team_reflections(team_id)"
+                "CREATE INDEX IF NOT EXISTS idx_reflections_team ON team_reflections(team_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_project ON team_reflections(project_id)"
+                "CREATE INDEX IF NOT EXISTS idx_reflections_project ON team_reflections(project_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_author ON team_reflections(author_id)"
+                "CREATE INDEX IF NOT EXISTS idx_reflections_author ON team_reflections(author_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_access ON team_reflections(access_level)"
+                "CREATE INDEX IF NOT EXISTS idx_reflections_access ON team_reflections(access_level)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)"
+                "CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_access_logs_timestamp ON access_logs(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_access_logs_timestamp ON access_logs(timestamp)",
             )
 
     async def create_user(
@@ -192,7 +191,7 @@ class TeamKnowledgeManager:
         email: str | None = None,
         role: UserRole = UserRole.CONTRIBUTOR,
     ) -> TeamUser:
-        """Create a new team user"""
+        """Create a new team user."""
         user = TeamUser(
             user_id=user_id,
             username=username,
@@ -223,14 +222,22 @@ class TeamKnowledgeManager:
             )
 
         await self._log_access(
-            user_id, "user_created", user_id, "user", {"role": role.value}
+            user_id,
+            "user_created",
+            user_id,
+            "user",
+            {"role": role.value},
         )
         return user
 
     async def create_team(
-        self, team_id: str, name: str, description: str, owner_id: str
+        self,
+        team_id: str,
+        name: str,
+        description: str,
+        owner_id: str,
     ) -> Team:
-        """Create a new team"""
+        """Create a new team."""
         team = Team(
             team_id=team_id,
             name=name,
@@ -263,7 +270,11 @@ class TeamKnowledgeManager:
         # Add owner to team
         await self._add_user_to_team(owner_id, team_id)
         await self._log_access(
-            owner_id, "team_created", team_id, "team", {"name": name}
+            owner_id,
+            "team_created",
+            team_id,
+            "team",
+            {"name": name},
         )
         return team
 
@@ -276,9 +287,9 @@ class TeamKnowledgeManager:
         team_id: str | None = None,
         project_id: str | None = None,
     ) -> str:
-        """Add reflection to team knowledge base"""
+        """Add reflection to team knowledge base."""
         reflection_id = hashlib.sha256(
-            f"{content}{author_id}{time.time()}".encode()
+            f"{content}{author_id}{time.time()}".encode(),
         ).hexdigest()[:16]
 
         reflection = TeamReflection(
@@ -337,7 +348,7 @@ class TeamKnowledgeManager:
         tags: list[str] | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
-        """Search team reflections with access control"""
+        """Search team reflections with access control."""
         user_teams = await self._get_user_teams(user_id)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -408,9 +419,12 @@ class TeamKnowledgeManager:
         return results
 
     async def vote_reflection(
-        self, reflection_id: str, user_id: str, vote_delta: int = 1
+        self,
+        reflection_id: str,
+        user_id: str,
+        vote_delta: int = 1,
     ) -> bool:
-        """Vote on a team reflection"""
+        """Vote on a team reflection."""
         if not await self._can_access_reflection(reflection_id, user_id):
             return False
 
@@ -434,9 +448,12 @@ class TeamKnowledgeManager:
         return True
 
     async def join_team(
-        self, user_id: str, team_id: str, requester_id: str | None = None
+        self,
+        user_id: str,
+        team_id: str,
+        requester_id: str | None = None,
     ) -> bool:
-        """Request to join a team or add user to team"""
+        """Request to join a team or add user to team."""
         team = await self._get_team(team_id)
         if not team:
             return False
@@ -448,12 +465,16 @@ class TeamKnowledgeManager:
 
         await self._add_user_to_team(user_id, team_id)
         await self._log_access(
-            user_id, "team_joined", team_id, "team", {"requester_id": requester_id}
+            user_id,
+            "team_joined",
+            team_id,
+            "team",
+            {"requester_id": requester_id},
         )
         return True
 
     async def get_team_stats(self, team_id: str, user_id: str) -> dict[str, Any] | None:
-        """Get team statistics and activity"""
+        """Get team statistics and activity."""
         if not await self._can_access_team(user_id, team_id):
             return None
 
@@ -462,7 +483,8 @@ class TeamKnowledgeManager:
 
             # Get team info
             team_row = conn.execute(
-                "SELECT * FROM teams WHERE team_id = ?", (team_id,)
+                "SELECT * FROM teams WHERE team_id = ?",
+                (team_id,),
             ).fetchone()
             if not team_row:
                 return None
@@ -507,11 +529,12 @@ class TeamKnowledgeManager:
         return stats
 
     async def get_user_permissions(self, user_id: str) -> dict[str, Any]:
-        """Get user's current permissions and team memberships"""
+        """Get user's current permissions and team memberships."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             user_row = conn.execute(
-                "SELECT * FROM users WHERE user_id = ?", (user_id,)
+                "SELECT * FROM users WHERE user_id = ?",
+                (user_id,),
             ).fetchone()
 
             if not user_row:
@@ -541,7 +564,7 @@ class TeamKnowledgeManager:
     # Private helper methods
 
     def _get_default_permissions(self, role: UserRole) -> dict[str, bool]:
-        """Get default permissions for user role"""
+        """Get default permissions for user role."""
         base_permissions = {
             "read_reflections": True,
             "create_reflections": False,
@@ -558,7 +581,7 @@ class TeamKnowledgeManager:
                     "create_reflections": True,
                     "vote_reflections": True,
                     "join_teams": True,
-                }
+                },
             )
         elif role == UserRole.MODERATOR:
             base_permissions.update(
@@ -568,19 +591,20 @@ class TeamKnowledgeManager:
                     "join_teams": True,
                     "create_teams": True,
                     "moderate_content": True,
-                }
+                },
             )
         elif role == UserRole.ADMIN:
-            base_permissions.update({k: True for k in base_permissions.keys()})
+            base_permissions.update(dict.fromkeys(base_permissions.keys(), True))
 
         return base_permissions
 
-    async def _add_user_to_team(self, user_id: str, team_id: str):
-        """Add user to team"""
+    async def _add_user_to_team(self, user_id: str, team_id: str) -> None:
+        """Add user to team."""
         with sqlite3.connect(self.db_path) as conn:
             # Update team members
             team_row = conn.execute(
-                "SELECT members FROM teams WHERE team_id = ?", (team_id,)
+                "SELECT members FROM teams WHERE team_id = ?",
+                (team_id,),
             ).fetchone()
             if team_row:
                 members = set(json.loads(team_row[0] or "[]"))
@@ -592,7 +616,8 @@ class TeamKnowledgeManager:
 
             # Update user teams
             user_row = conn.execute(
-                "SELECT teams FROM users WHERE user_id = ?", (user_id,)
+                "SELECT teams FROM users WHERE user_id = ?",
+                (user_id,),
             ).fetchone()
             if user_row:
                 teams = json.loads(user_row[0] or "[]")
@@ -604,19 +629,21 @@ class TeamKnowledgeManager:
                     )
 
     async def _get_user_teams(self, user_id: str) -> list[str]:
-        """Get teams user belongs to"""
+        """Get teams user belongs to."""
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
-                "SELECT teams FROM users WHERE user_id = ?", (user_id,)
+                "SELECT teams FROM users WHERE user_id = ?",
+                (user_id,),
             ).fetchone()
             return json.loads(row[0] or "[]") if row else []
 
     async def _get_team(self, team_id: str) -> dict[str, Any] | None:
-        """Get team information"""
+        """Get team information."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
-                "SELECT * FROM teams WHERE team_id = ?", (team_id,)
+                "SELECT * FROM teams WHERE team_id = ?",
+                (team_id,),
             ).fetchone()
             if row:
                 team_data = dict(row)
@@ -627,7 +654,7 @@ class TeamKnowledgeManager:
             return None
 
     async def _can_access_reflection(self, reflection_id: str, user_id: str) -> bool:
-        """Check if user can access reflection"""
+        """Check if user can access reflection."""
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 """
@@ -658,12 +685,12 @@ class TeamKnowledgeManager:
             return False
 
     async def _can_access_team(self, user_id: str, team_id: str) -> bool:
-        """Check if user can access team"""
+        """Check if user can access team."""
         user_teams = await self._get_user_teams(user_id)
         return team_id in user_teams
 
     async def _can_manage_team(self, user_id: str, team_id: str) -> bool:
-        """Check if user can manage team"""
+        """Check if user can manage team."""
         team = await self._get_team(team_id)
         if not team:
             return False
@@ -675,12 +702,14 @@ class TeamKnowledgeManager:
         # Check if user has admin permissions
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
-                "SELECT permissions FROM users WHERE user_id = ?", (user_id,)
+                "SELECT permissions FROM users WHERE user_id = ?",
+                (user_id,),
             ).fetchone()
             if row:
                 permissions = json.loads(row[0] or "{}")
                 return permissions.get("admin_access", False) or permissions.get(
-                    "moderate_content", False
+                    "moderate_content",
+                    False,
                 )
 
         return False
@@ -692,8 +721,8 @@ class TeamKnowledgeManager:
         resource_id: str | None,
         resource_type: str,
         details: dict[str, Any],
-    ):
-        """Log user access for audit trail"""
+    ) -> None:
+        """Log user access for audit trail."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -716,7 +745,7 @@ _team_knowledge_manager = None
 
 
 def get_team_knowledge_manager() -> TeamKnowledgeManager:
-    """Get global team knowledge manager instance"""
+    """Get global team knowledge manager instance."""
     global _team_knowledge_manager
     if _team_knowledge_manager is None:
         _team_knowledge_manager = TeamKnowledgeManager()
@@ -725,9 +754,12 @@ def get_team_knowledge_manager() -> TeamKnowledgeManager:
 
 # Public API functions for MCP tools
 async def create_team_user(
-    user_id: str, username: str, email: str | None = None, role: str = "contributor"
+    user_id: str,
+    username: str,
+    email: str | None = None,
+    role: str = "contributor",
 ) -> dict[str, Any]:
-    """Create a new team user"""
+    """Create a new team user."""
     manager = get_team_knowledge_manager()
     user_role = UserRole(role.lower())
     user = await manager.create_user(user_id, username, email, user_role)
@@ -735,9 +767,12 @@ async def create_team_user(
 
 
 async def create_team(
-    team_id: str, name: str, description: str, owner_id: str
+    team_id: str,
+    name: str,
+    description: str,
+    owner_id: str,
 ) -> dict[str, Any]:
-    """Create a new team"""
+    """Create a new team."""
     manager = get_team_knowledge_manager()
     team = await manager.create_team(team_id, name, description, owner_id)
     return {
@@ -760,11 +795,16 @@ async def add_team_reflection(
     team_id: str | None = None,
     project_id: str | None = None,
 ) -> str:
-    """Add reflection to team knowledge base"""
+    """Add reflection to team knowledge base."""
     manager = get_team_knowledge_manager()
     level = AccessLevel(access_level.lower())
     return await manager.add_team_reflection(
-        content, author_id, tags, level, team_id, project_id
+        content,
+        author_id,
+        tags,
+        level,
+        team_id,
+        project_id,
     )
 
 
@@ -776,36 +816,45 @@ async def search_team_knowledge(
     tags: list[str] | None = None,
     limit: int = 20,
 ) -> list[dict[str, Any]]:
-    """Search team reflections with access control"""
+    """Search team reflections with access control."""
     manager = get_team_knowledge_manager()
     return await manager.search_team_reflections(
-        query, user_id, team_id, project_id, tags, limit
+        query,
+        user_id,
+        team_id,
+        project_id,
+        tags,
+        limit,
     )
 
 
 async def join_team(
-    user_id: str, team_id: str, requester_id: str | None = None
+    user_id: str,
+    team_id: str,
+    requester_id: str | None = None,
 ) -> bool:
-    """Join a team or add user to team"""
+    """Join a team or add user to team."""
     manager = get_team_knowledge_manager()
     return await manager.join_team(user_id, team_id, requester_id)
 
 
 async def get_team_statistics(team_id: str, user_id: str) -> dict[str, Any] | None:
-    """Get team statistics and activity"""
+    """Get team statistics and activity."""
     manager = get_team_knowledge_manager()
     return await manager.get_team_stats(team_id, user_id)
 
 
 async def get_user_team_permissions(user_id: str) -> dict[str, Any]:
-    """Get user's permissions and team memberships"""
+    """Get user's permissions and team memberships."""
     manager = get_team_knowledge_manager()
     return await manager.get_user_permissions(user_id)
 
 
 async def vote_on_reflection(
-    reflection_id: str, user_id: str, vote_delta: int = 1
+    reflection_id: str,
+    user_id: str,
+    vote_delta: int = 1,
 ) -> bool:
-    """Vote on a team reflection"""
+    """Vote on a team reflection."""
     manager = get_team_knowledge_manager()
     return await manager.vote_reflection(reflection_id, user_id, vote_delta)

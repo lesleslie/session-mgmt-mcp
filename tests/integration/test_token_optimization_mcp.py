@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Integration tests for token optimization in MCP server
-"""
+"""Integration tests for token optimization in MCP server."""
 
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -17,7 +15,7 @@ from session_mgmt_mcp.server import (
 
 @pytest.fixture
 def mock_reflection_db():
-    """Mock reflection database with sample data"""
+    """Mock reflection database with sample data."""
     db = AsyncMock()
 
     # Sample conversation data
@@ -52,18 +50,18 @@ def mock_reflection_db():
 
 @pytest.fixture
 def mock_token_optimizer():
-    """Mock token optimizer"""
+    """Mock token optimizer."""
     optimizer = MagicMock()
     optimizer.count_tokens.return_value = 100
     return optimizer
 
 
 class TestReflectOnPastOptimization:
-    """Test token optimization in reflect_on_past tool"""
+    """Test token optimization in reflect_on_past tool."""
 
     @pytest.mark.asyncio
     async def test_reflect_on_past_with_optimization(self, mock_reflection_db):
-        """Test reflect_on_past with token optimization enabled"""
+        """Test reflect_on_past with token optimization enabled."""
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -83,7 +81,10 @@ class TestReflectOnPastOptimization:
             )
 
             result = await reflect_on_past(
-                query="Python functions", limit=5, optimize_tokens=True, max_tokens=500
+                query="Python functions",
+                limit=5,
+                optimize_tokens=True,
+                max_tokens=500,
             )
 
             # Verify optimization was applied
@@ -95,7 +96,7 @@ class TestReflectOnPastOptimization:
 
     @pytest.mark.asyncio
     async def test_reflect_on_past_optimization_disabled(self, mock_reflection_db):
-        """Test reflect_on_past with token optimization disabled"""
+        """Test reflect_on_past with token optimization disabled."""
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -105,7 +106,8 @@ class TestReflectOnPastOptimization:
             mock_get_db.return_value = mock_reflection_db
 
             result = await reflect_on_past(
-                query="Python functions", optimize_tokens=False
+                query="Python functions",
+                optimize_tokens=False,
             )
 
             # Optimization should not be called
@@ -114,9 +116,10 @@ class TestReflectOnPastOptimization:
 
     @pytest.mark.asyncio
     async def test_reflect_on_past_optimization_error_handling(
-        self, mock_reflection_db
+        self,
+        mock_reflection_db,
     ):
-        """Test error handling when optimization fails"""
+        """Test error handling when optimization fails."""
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -129,7 +132,8 @@ class TestReflectOnPastOptimization:
 
             # Should not crash and should log warning
             result = await reflect_on_past(
-                query="Python functions", optimize_tokens=True
+                query="Python functions",
+                optimize_tokens=True,
             )
 
             assert "Found 3 relevant conversations" in result
@@ -137,9 +141,10 @@ class TestReflectOnPastOptimization:
 
     @pytest.mark.asyncio
     async def test_reflect_on_past_token_optimizer_unavailable(
-        self, mock_reflection_db
+        self,
+        mock_reflection_db,
     ):
-        """Test when token optimizer is not available"""
+        """Test when token optimizer is not available."""
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False),
@@ -149,7 +154,8 @@ class TestReflectOnPastOptimization:
             mock_get_db.return_value = mock_reflection_db
 
             result = await reflect_on_past(
-                query="Python functions", optimize_tokens=True
+                query="Python functions",
+                optimize_tokens=True,
             )
 
             # Should work without optimization
@@ -158,11 +164,11 @@ class TestReflectOnPastOptimization:
 
 
 class TestCachedChunkRetrieval:
-    """Test cached chunk retrieval MCP tool"""
+    """Test cached chunk retrieval MCP tool."""
 
     @pytest.mark.asyncio
     async def test_get_cached_chunk_success(self):
-        """Test successful chunk retrieval"""
+        """Test successful chunk retrieval."""
         mock_chunk_data = {
             "chunk": [{"id": "conv1", "content": "Test content"}],
             "current_chunk": 1,
@@ -186,7 +192,7 @@ class TestCachedChunkRetrieval:
 
     @pytest.mark.asyncio
     async def test_get_cached_chunk_not_found(self):
-        """Test chunk retrieval when chunk not found"""
+        """Test chunk retrieval when chunk not found."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_cached_chunk") as mock_get_chunk,
@@ -199,7 +205,7 @@ class TestCachedChunkRetrieval:
 
     @pytest.mark.asyncio
     async def test_get_cached_chunk_optimizer_unavailable(self):
-        """Test chunk retrieval when token optimizer unavailable"""
+        """Test chunk retrieval when token optimizer unavailable."""
         with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await get_cached_chunk("test_key", 1)
 
@@ -207,7 +213,7 @@ class TestCachedChunkRetrieval:
 
     @pytest.mark.asyncio
     async def test_get_cached_chunk_last_chunk(self):
-        """Test retrieving the last chunk"""
+        """Test retrieving the last chunk."""
         mock_chunk_data = {
             "chunk": [{"id": "conv3", "content": "Final chunk content"}],
             "current_chunk": 3,
@@ -229,11 +235,11 @@ class TestCachedChunkRetrieval:
 
 
 class TestTokenUsageStats:
-    """Test token usage statistics MCP tool"""
+    """Test token usage statistics MCP tool."""
 
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_success(self):
-        """Test successful token usage stats retrieval"""
+        """Test successful token usage stats retrieval."""
         mock_stats = {
             "status": "success",
             "total_requests": 25,
@@ -266,7 +272,7 @@ class TestTokenUsageStats:
 
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_no_data(self):
-        """Test token usage stats when no data available"""
+        """Test token usage stats when no data available."""
         mock_stats = {"status": "no_data"}
 
         with (
@@ -281,7 +287,7 @@ class TestTokenUsageStats:
 
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_optimizer_unavailable(self):
-        """Test token usage stats when optimizer unavailable"""
+        """Test token usage stats when optimizer unavailable."""
         with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await get_token_usage_stats()
 
@@ -289,7 +295,7 @@ class TestTokenUsageStats:
 
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_error_handling(self):
-        """Test error handling in token usage stats"""
+        """Test error handling in token usage stats."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_token_usage_stats") as mock_get_stats,
@@ -302,11 +308,11 @@ class TestTokenUsageStats:
 
 
 class TestOptimizeMemoryUsage:
-    """Test memory usage optimization MCP tool"""
+    """Test memory usage optimization MCP tool."""
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_dry_run(self):
-        """Test memory optimization in dry run mode"""
+        """Test memory optimization in dry run mode."""
         mock_optimization_results = {
             "status": "success",
             "total_conversations": 100,
@@ -320,7 +326,7 @@ class TestOptimizeMemoryUsage:
                     "original_count": 5,
                     "projects": ["project1", "project2"],
                     "summary": "Consolidated summary of related conversations about API development...",
-                }
+                },
             ],
         }
 
@@ -334,14 +340,16 @@ class TestOptimizeMemoryUsage:
             mock_get_db.return_value = mock_db
 
             with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer"
+                "session_mgmt_mcp.server.MemoryOptimizer",
             ) as mock_optimizer_class:
                 mock_optimizer = AsyncMock()
                 mock_optimizer.compress_memory.return_value = mock_optimization_results
                 mock_optimizer_class.return_value = mock_optimizer
 
                 result = await optimize_memory_usage(
-                    strategy="auto", max_age_days=30, dry_run=True
+                    strategy="auto",
+                    max_age_days=30,
+                    dry_run=True,
                 )
 
                 assert "🧠 Memory Optimization Results (DRY RUN)" in result
@@ -356,7 +364,7 @@ class TestOptimizeMemoryUsage:
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_aggressive_strategy(self):
-        """Test memory optimization with aggressive strategy"""
+        """Test memory optimization with aggressive strategy."""
         mock_optimization_results = {
             "status": "success",
             "total_conversations": 50,
@@ -374,14 +382,16 @@ class TestOptimizeMemoryUsage:
             mock_get_db.return_value = mock_db
 
             with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer"
+                "session_mgmt_mcp.server.MemoryOptimizer",
             ) as mock_optimizer_class:
                 mock_optimizer = AsyncMock()
                 mock_optimizer.compress_memory.return_value = mock_optimization_results
                 mock_optimizer_class.return_value = mock_optimizer
 
                 result = await optimize_memory_usage(
-                    strategy="aggressive", max_age_days=15, dry_run=False
+                    strategy="aggressive",
+                    max_age_days=15,
+                    dry_run=False,
                 )
 
                 # Verify aggressive policy was set
@@ -396,7 +406,7 @@ class TestOptimizeMemoryUsage:
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_dependencies_unavailable(self):
-        """Test memory optimization when dependencies unavailable"""
+        """Test memory optimization when dependencies unavailable."""
         with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await optimize_memory_usage()
 
@@ -418,7 +428,7 @@ class TestOptimizeMemoryUsage:
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_error_handling(self):
-        """Test error handling in memory optimization"""
+        """Test error handling in memory optimization."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
@@ -432,7 +442,7 @@ class TestOptimizeMemoryUsage:
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_optimization_error(self):
-        """Test handling of optimization errors"""
+        """Test handling of optimization errors."""
         mock_error_results = {"error": "Database not available"}
 
         with (
@@ -444,7 +454,7 @@ class TestOptimizeMemoryUsage:
             mock_get_db.return_value = mock_db
 
             with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer"
+                "session_mgmt_mcp.server.MemoryOptimizer",
             ) as mock_optimizer_class:
                 mock_optimizer = AsyncMock()
                 mock_optimizer.compress_memory.return_value = mock_error_results
@@ -456,11 +466,11 @@ class TestOptimizeMemoryUsage:
 
 
 class TestOptimizationIntegration:
-    """Test integration of token optimization across multiple tools"""
+    """Test integration of token optimization across multiple tools."""
 
     @pytest.mark.asyncio
     async def test_end_to_end_optimization_workflow(self, mock_reflection_db):
-        """Test complete optimization workflow"""
+        """Test complete optimization workflow."""
         # Step 1: Search with optimization
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
@@ -512,7 +522,7 @@ class TestOptimizationIntegration:
 
     @pytest.mark.asyncio
     async def test_optimization_fallback_behavior(self, mock_reflection_db):
-        """Test fallback behavior when optimization fails"""
+        """Test fallback behavior when optimization fails."""
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -524,7 +534,8 @@ class TestOptimizationIntegration:
 
             # Should fall back to unoptimized results
             result = await reflect_on_past(
-                query="Python functions", optimize_tokens=True
+                query="Python functions",
+                optimize_tokens=True,
             )
 
             # Should still show results, just without optimization

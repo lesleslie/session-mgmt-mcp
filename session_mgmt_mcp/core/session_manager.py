@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Session lifecycle management for session-mgmt-mcp.
+"""Session lifecycle management for session-mgmt-mcp.
 
 This module handles session initialization, quality assessment, checkpoints,
 and cleanup operations.
@@ -12,19 +11,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..utils.git_operations import create_checkpoint_commit, is_git_repository
-from ..utils.logging import get_session_logger
+from session_mgmt_mcp.utils.git_operations import (
+    create_checkpoint_commit,
+    is_git_repository,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 
 class SessionLifecycleManager:
     """Manages session lifecycle operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_session_logger()
         self.current_project: str | None = None
 
     async def calculate_quality_score(self) -> dict[str, Any]:
-        """Calculate session quality score based on multiple factors"""
+        """Calculate session quality score based on multiple factors."""
         current_dir = Path(os.environ.get("PWD", Path.cwd()))
 
         # Project health indicators (40% of score)
@@ -45,7 +47,7 @@ class SessionLifecycleManager:
         tool_score = 20 if uv_available else 10
 
         total_score = int(
-            project_score + permissions_score + session_score + tool_score
+            project_score + permissions_score + session_score + tool_score,
         )
 
         return {
@@ -57,24 +59,29 @@ class SessionLifecycleManager:
                 "tools": tool_score,
             },
             "recommendations": self._generate_quality_recommendations(
-                total_score, project_context, uv_available
+                total_score,
+                project_context,
+                uv_available,
             ),
         }
 
     def _generate_quality_recommendations(
-        self, score: int, project_context: dict, uv_available: bool
+        self,
+        score: int,
+        project_context: dict,
+        uv_available: bool,
     ) -> list[str]:
-        """Generate quality improvement recommendations based on score factors"""
+        """Generate quality improvement recommendations based on score factors."""
         recommendations = []
 
         if score < 50:
             recommendations.append(
-                "Session needs attention - multiple areas for improvement"
+                "Session needs attention - multiple areas for improvement",
             )
 
         if not project_context.get("has_pyproject_toml", False):
             recommendations.append(
-                "Consider adding pyproject.toml for modern Python project structure"
+                "Consider adding pyproject.toml for modern Python project structure",
             )
 
         if not project_context.get("has_git_repo", False):
@@ -82,7 +89,7 @@ class SessionLifecycleManager:
 
         if not uv_available:
             recommendations.append(
-                "Install UV package manager for improved dependency management"
+                "Install UV package manager for improved dependency management",
             )
 
         if not project_context.get("has_tests", False):
@@ -96,7 +103,7 @@ class SessionLifecycleManager:
         return recommendations[:5]  # Limit to top 5 recommendations
 
     async def analyze_project_context(self, project_dir: Path) -> dict[str, bool]:
-        """Analyze project directory for common indicators and patterns"""
+        """Analyze project directory for common indicators and patterns."""
         indicators = {
             "has_pyproject_toml": (project_dir / "pyproject.toml").exists(),
             "has_setup_py": (project_dir / "setup.py").exists(),
@@ -154,7 +161,10 @@ class SessionLifecycleManager:
         return quality_score, quality_data
 
     def format_quality_results(
-        self, quality_score: int, quality_data: dict, checkpoint_result: dict = None
+        self,
+        quality_score: int,
+        quality_data: dict,
+        checkpoint_result: dict | None = None,
     ) -> list[str]:
         """Format quality assessment results for display."""
         output = []
@@ -166,7 +176,7 @@ class SessionLifecycleManager:
             output.append(f"✅ Session quality: GOOD (Score: {quality_score}/100)")
         else:
             output.append(
-                f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)"
+                f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)",
             )
 
         # Quality breakdown
@@ -196,19 +206,21 @@ class SessionLifecycleManager:
             if session_stats:
                 output.append("\n⏱️ Session progress:")
                 output.append(
-                    f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes"
+                    f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
                 )
                 output.append(
-                    f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}"
+                    f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
                 )
                 output.append(
-                    f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%"
+                    f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
                 )
 
         return output
 
     async def perform_git_checkpoint(
-        self, current_dir: Path, quality_score: int
+        self,
+        current_dir: Path,
+        quality_score: int,
     ) -> list[str]:
         """Handle git operations for checkpoint commit using the new git utilities."""
         output = []
@@ -219,7 +231,9 @@ class SessionLifecycleManager:
         try:
             # Use the new git utilities
             success, result, git_output = create_checkpoint_commit(
-                current_dir, self.current_project or "Unknown", quality_score
+                current_dir,
+                self.current_project or "Unknown",
+                quality_score,
             )
 
             output.extend(git_output)
@@ -234,7 +248,7 @@ class SessionLifecycleManager:
 
         except Exception as e:
             output.append(f"\n⚠️ Git operations error: {e}")
-            self.logger.error(
+            self.logger.exception(
                 "Git checkpoint error occurred",
                 error=str(e),
                 project=self.current_project,
@@ -243,7 +257,8 @@ class SessionLifecycleManager:
         return output
 
     async def initialize_session(
-        self, working_directory: str | None = None
+        self,
+        working_directory: str | None = None,
     ) -> dict[str, Any]:
         """Initialize a new session with comprehensive setup."""
         try:
@@ -282,7 +297,7 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.error("Session initialization failed", error=str(e))
+            self.logger.exception("Session initialization failed", error=str(e))
             return {"success": False, "error": str(e)}
 
     async def checkpoint_session(self) -> dict[str, Any]:
@@ -315,7 +330,7 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.error("Session checkpoint failed", error=str(e))
+            self.logger.exception("Session checkpoint failed", error=str(e))
             return {"success": False, "error": str(e)}
 
     async def end_session(self) -> dict[str, Any]:
@@ -345,18 +360,16 @@ class SessionLifecycleManager:
             return {"success": True, "summary": summary}
 
         except Exception as e:
-            self.logger.error("Session end failed", error=str(e))
+            self.logger.exception("Session end failed", error=str(e))
             return {"success": False, "error": str(e)}
 
     async def get_session_status(
-        self, working_directory: str | None = None
+        self,
+        working_directory: str | None = None,
     ) -> dict[str, Any]:
         """Get current session status and health information."""
         try:
-            if working_directory:
-                current_dir = Path(working_directory)
-            else:
-                current_dir = Path.cwd()
+            current_dir = Path(working_directory) if working_directory else Path.cwd()
 
             self.current_project = current_dir.name
 
@@ -387,5 +400,5 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.error("Failed to get session status", error=str(e))
+            self.logger.exception("Failed to get session status", error=str(e))
             return {"success": False, "error": str(e)}

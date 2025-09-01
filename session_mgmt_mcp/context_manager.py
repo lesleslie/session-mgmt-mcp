@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Auto-Context Loading for Session Management MCP Server
+"""Auto-Context Loading for Session Management MCP Server.
 
 Automatically detects current development context and loads relevant conversations.
 """
@@ -17,9 +16,9 @@ from .utils.git_operations import get_worktree_info, list_worktrees
 
 
 class ContextDetector:
-    """Detects current development context from environment and files"""
+    """Detects current development context from environment and files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.context_indicators = {
             "git": [".git", ".gitignore", ".github"],
             "python": ["pyproject.toml", "setup.py", "requirements.txt", "*.py"],
@@ -74,15 +73,16 @@ class ContextDetector:
                 # Directory
                 if (working_path / indicator.rstrip("/")).exists():
                     found_indicators.append(indicator)
-            else:
-                # File
-                if (working_path / indicator).exists():
-                    found_indicators.append(indicator)
+            # File
+            elif (working_path / indicator).exists():
+                found_indicators.append(indicator)
 
         return found_indicators
 
     def _detect_languages_and_tools(
-        self, working_path: Path, context: dict[str, Any]
+        self,
+        working_path: Path,
+        context: dict[str, Any],
     ) -> None:
         """Detect programming languages and development tools."""
         for category, indicators in self.context_indicators.items():
@@ -96,7 +96,9 @@ class ContextDetector:
                 context["confidence_score"] += 0.1
 
     def _calculate_project_type_score(
-        self, working_path: Path, indicators: list[str]
+        self,
+        working_path: Path,
+        indicators: list[str],
     ) -> float:
         """Calculate score for a specific project type."""
         type_score = 0
@@ -108,11 +110,10 @@ class ContextDetector:
             elif indicator.endswith("/"):
                 if (working_path / indicator.rstrip("/")).exists():
                     type_score += 1
-            else:
-                if (working_path / indicator).exists():
-                    type_score += 1
-                elif indicator in str(working_path):  # Check if it's in path name
-                    type_score += 0.5
+            elif (working_path / indicator).exists():
+                type_score += 1
+            elif indicator in str(working_path):  # Check if it's in path name
+                type_score += 0.5
 
         return type_score
 
@@ -144,7 +145,7 @@ class ContextDetector:
                                 "path": str(file_path.relative_to(working_path)),
                                 "modified": mod_time.isoformat(),
                                 "size": file_path.stat().st_size,
-                            }
+                            },
                         )
 
             # Sort by modification time and return top 10
@@ -155,7 +156,7 @@ class ContextDetector:
             return []
 
     def detect_current_context(self, working_dir: str | None = None) -> dict[str, Any]:
-        """Detect current development context"""
+        """Detect current development context."""
         if not working_dir:
             working_dir = os.environ.get("PWD", os.getcwd())
 
@@ -202,7 +203,7 @@ class ContextDetector:
         return context
 
     def _should_ignore_file(self, file_path: Path) -> bool:
-        """Check if file should be ignored"""
+        """Check if file should be ignored."""
         ignore_patterns = {
             ".git",
             ".venv",
@@ -218,18 +219,15 @@ class ContextDetector:
 
         # Check if any part of the path matches ignore patterns
         for part in file_path.parts:
-            if part in ignore_patterns or part.startswith(".") and len(part) > 4:
+            if part in ignore_patterns or (part.startswith(".") and len(part) > 4):
                 return True
 
         # Check file extensions to ignore
         ignore_extensions = {".pyc", ".pyo", ".log", ".tmp", ".cache"}
-        if file_path.suffix in ignore_extensions:
-            return True
-
-        return False
+        return file_path.suffix in ignore_extensions
 
     def _get_git_info(self, working_path: Path) -> dict[str, Any]:
-        """Get git repository information"""
+        """Get git repository information."""
         git_info = {}
 
         git_dir = working_path / ".git"
@@ -270,9 +268,9 @@ class ContextDetector:
 
 
 class RelevanceScorer:
-    """Scores conversation relevance based on context"""
+    """Scores conversation relevance based on context."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.scoring_weights = {
             "project_name_match": 0.3,
             "language_match": 0.2,
@@ -283,7 +281,10 @@ class RelevanceScorer:
         }
 
     def _score_project_match(
-        self, conv_content: str, conv_project: str, context: dict[str, Any]
+        self,
+        conv_content: str,
+        conv_project: str,
+        context: dict[str, Any],
     ) -> float:
         """Score based on project name matching."""
         current_project = context["project_name"].lower()
@@ -292,14 +293,16 @@ class RelevanceScorer:
         return 0.0
 
     def _score_language_match(
-        self, conv_content: str, context: dict[str, Any]
+        self,
+        conv_content: str,
+        context: dict[str, Any],
     ) -> float:
         """Score based on programming language matching."""
         score = 0.0
         for lang in context["detected_languages"]:
             if lang in conv_content:
                 score += self.scoring_weights["language_match"] / len(
-                    context["detected_languages"]
+                    context["detected_languages"],
                 )
         return score
 
@@ -309,7 +312,7 @@ class RelevanceScorer:
         for tool in context["detected_tools"]:
             if tool in conv_content:
                 score += self.scoring_weights["tool_match"] / len(
-                    context["detected_tools"]
+                    context["detected_tools"],
                 )
         return score
 
@@ -320,7 +323,7 @@ class RelevanceScorer:
             file_name = Path(file_info["path"]).name.lower()
             if file_name in conv_content:
                 score += self.scoring_weights["file_match"] / len(
-                    context["recent_files"]
+                    context["recent_files"],
                 )
         return score
 
@@ -331,7 +334,7 @@ class RelevanceScorer:
             time_diff = datetime.now() - conv_time
             if time_diff.days == 0:
                 return self.scoring_weights["recency"]
-            elif time_diff.days <= 7:
+            if time_diff.days <= 7:
                 return self.scoring_weights["recency"] * 0.5
         except (ValueError, TypeError):
             pass
@@ -351,7 +354,9 @@ class RelevanceScorer:
         }
 
     def _score_project_keywords(
-        self, conv_content: str, context: dict[str, Any]
+        self,
+        conv_content: str,
+        context: dict[str, Any],
     ) -> float:
         """Score based on project type keywords."""
         if not context.get("project_type"):
@@ -368,9 +373,11 @@ class RelevanceScorer:
         return score
 
     def score_conversation_relevance(
-        self, conversation: dict[str, Any], context: dict[str, Any]
+        self,
+        conversation: dict[str, Any],
+        context: dict[str, Any],
     ) -> float:
-        """Score how relevant a conversation is to current context"""
+        """Score how relevant a conversation is to current context."""
         conv_content = conversation.get("content", "").lower()
         conv_project = conversation.get("project", "").lower()
 
@@ -386,9 +393,9 @@ class RelevanceScorer:
 
 
 class AutoContextLoader:
-    """Main class for automatic context loading"""
+    """Main class for automatic context loading."""
 
-    def __init__(self, reflection_db: ReflectionDatabase):
+    def __init__(self, reflection_db: ReflectionDatabase) -> None:
         self.reflection_db = reflection_db
         self.context_detector = ContextDetector()
         self.relevance_scorer = RelevanceScorer()
@@ -401,8 +408,7 @@ class AutoContextLoader:
         max_conversations: int = 10,
         min_relevance: float = 0.3,
     ) -> dict[str, Any]:
-        """Load relevant conversations based on current context"""
-
+        """Load relevant conversations based on current context."""
         # Detect current context
         current_context = self.context_detector.detect_current_context(working_dir)
 
@@ -420,7 +426,7 @@ class AutoContextLoader:
 
         if hasattr(self.reflection_db, "conn") and self.reflection_db.conn:
             cursor = self.reflection_db.conn.execute(
-                "SELECT id, content, project, timestamp, metadata FROM conversations"
+                "SELECT id, content, project, timestamp, metadata FROM conversations",
             )
             conversations = cursor.fetchall()
 
@@ -437,7 +443,8 @@ class AutoContextLoader:
 
                 # Score relevance
                 relevance = self.relevance_scorer.score_conversation_relevance(
-                    conversation_data, current_context
+                    conversation_data,
+                    current_context,
                 )
 
                 if relevance >= min_relevance:
@@ -462,7 +469,7 @@ class AutoContextLoader:
         return result
 
     def _generate_context_hash(self, context: dict[str, Any]) -> str:
-        """Generate hash for context caching"""
+        """Generate hash for context caching."""
         # Use key context elements for hashing
         hash_data = {
             "project_name": context["project_name"],
@@ -476,7 +483,7 @@ class AutoContextLoader:
         return hashlib.md5(hash_string.encode()).hexdigest()[:12]
 
     async def get_context_summary(self, working_dir: str | None = None) -> str:
-        """Get a human-readable summary of current context"""
+        """Get a human-readable summary of current context."""
         context = self.context_detector.detect_current_context(working_dir)
 
         summary_parts = []
@@ -493,7 +500,7 @@ class AutoContextLoader:
 
         if context["project_type"]:
             summary_parts.append(
-                f"📋 Type: {context['project_type'].replace('_', ' ').title()}"
+                f"📋 Type: {context['project_type'].replace('_', ' ').title()}",
             )
 
         if context["git_info"].get("is_git_repo"):

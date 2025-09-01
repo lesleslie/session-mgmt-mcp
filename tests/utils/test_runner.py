@@ -1,5 +1,4 @@
-"""
-Test runner utilities with coverage reporting and quality metrics.
+"""Test runner utilities with coverage reporting and quality metrics.
 
 Provides utilities for:
 - Running test suites with coverage
@@ -19,9 +18,9 @@ from typing import Any
 
 
 class TestRunner:
-    """Enhanced test runner with coverage and quality metrics"""
+    """Enhanced test runner with coverage and quality metrics."""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path) -> None:
         self.project_root = Path(project_root)
         self.test_dir = self.project_root / "tests"
         self.coverage_dir = self.project_root / "htmlcov"
@@ -29,9 +28,12 @@ class TestRunner:
         self.reports_dir.mkdir(exist_ok=True)
 
     def run_all_tests(
-        self, coverage: bool = True, parallel: bool = True, verbose: bool = True
+        self,
+        coverage: bool = True,
+        parallel: bool = True,
+        verbose: bool = True,
     ) -> dict[str, Any]:
-        """Run all test suites with comprehensive reporting"""
+        """Run all test suites with comprehensive reporting."""
         start_time = time.time()
 
         results = {
@@ -46,22 +48,34 @@ class TestRunner:
         try:
             # Run unit tests
             results["test_results"]["unit"] = self.run_test_suite(
-                "unit", coverage=coverage, parallel=parallel, verbose=verbose
+                "unit",
+                coverage=coverage,
+                parallel=parallel,
+                verbose=verbose,
             )
 
             # Run integration tests
             results["test_results"]["integration"] = self.run_test_suite(
-                "integration", coverage=coverage, parallel=parallel, verbose=verbose
+                "integration",
+                coverage=coverage,
+                parallel=parallel,
+                verbose=verbose,
             )
 
             # Run performance tests
             results["test_results"]["performance"] = self.run_test_suite(
-                "performance", coverage=coverage, parallel=False, verbose=verbose
+                "performance",
+                coverage=coverage,
+                parallel=False,
+                verbose=verbose,
             )
 
             # Run security tests
             results["test_results"]["security"] = self.run_test_suite(
-                "security", coverage=coverage, parallel=parallel, verbose=verbose
+                "security",
+                coverage=coverage,
+                parallel=parallel,
+                verbose=verbose,
             )
 
             # Generate coverage report if enabled
@@ -91,7 +105,7 @@ class TestRunner:
         parallel: bool = True,
         verbose: bool = True,
     ) -> dict[str, Any]:
-        """Run a specific test suite"""
+        """Run a specific test suite."""
         suite_path = self.test_dir / suite_name
 
         if not suite_path.exists():
@@ -123,6 +137,7 @@ class TestRunner:
             start_time = time.time()
             result = subprocess.run(
                 cmd,
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
@@ -161,7 +176,7 @@ class TestRunner:
             }
 
     def parse_junit_xml(self, junit_file: Path) -> dict[str, Any]:
-        """Parse JUnit XML file for test details"""
+        """Parse JUnit XML file for test details."""
         try:
             tree = ET.parse(junit_file)
             root = tree.getroot()
@@ -188,7 +203,7 @@ class TestRunner:
                 if testcase.find("failure") is not None:
                     test_info["status"] = "failed"
                     test_info["failure_message"] = testcase.find("failure").get(
-                        "message"
+                        "message",
                     )
                 elif testcase.find("error") is not None:
                     test_info["status"] = "error"
@@ -205,7 +220,7 @@ class TestRunner:
             return {"error": f"Failed to parse JUnit XML: {e}"}
 
     def generate_coverage_report(self) -> dict[str, Any]:
-        """Generate comprehensive coverage report"""
+        """Generate comprehensive coverage report."""
         coverage_data = {}
 
         try:
@@ -246,7 +261,8 @@ class TestRunner:
                     "branches_covered": summary.get("covered_branches", 0),
                     "branches_total": summary.get("num_branches", 0),
                     "branch_coverage_percent": summary.get(
-                        "percent_covered_branches", 0
+                        "percent_covered_branches",
+                        0,
                     ),
                 }
 
@@ -267,7 +283,7 @@ class TestRunner:
         return coverage_data
 
     def calculate_quality_metrics(self, test_results: dict[str, Any]) -> dict[str, Any]:
-        """Calculate comprehensive quality metrics"""
+        """Calculate comprehensive quality metrics."""
         metrics = {
             "test_quality": {},
             "code_quality": {},
@@ -282,14 +298,16 @@ class TestRunner:
             failed_tests = 0
             execution_times = []
 
-            for suite_name, suite_results in test_results.get(
-                "test_results", {}
-            ).items():
+            for suite_results in test_results.get(
+                "test_results",
+                {},
+            ).values():
                 if "test_details" in suite_results:
                     details = suite_results["test_details"]
                     total_tests += details.get("total_tests", 0)
                     failed_tests += details.get("failures", 0) + details.get(
-                        "errors", 0
+                        "errors",
+                        0,
                     )
                     passed_tests += (
                         details.get("total_tests", 0)
@@ -324,12 +342,14 @@ class TestRunner:
 
             # Performance metrics
             performance_results = test_results.get("test_results", {}).get(
-                "performance", {}
+                "performance",
+                {},
             )
             metrics["performance_metrics"] = {
                 "performance_tests_passed": performance_results.get("success", False),
                 "performance_execution_time": performance_results.get(
-                    "execution_time", 0
+                    "execution_time",
+                    0,
                 ),
                 "performance_issues": [],
             }
@@ -364,7 +384,7 @@ class TestRunner:
         return metrics
 
     def generate_test_summary(self, results: dict[str, Any]) -> dict[str, Any]:
-        """Generate comprehensive test summary"""
+        """Generate comprehensive test summary."""
         summary = {
             "timestamp": results["timestamp"],
             "execution_time": results["execution_time"],
@@ -385,10 +405,12 @@ class TestRunner:
                     else "FAILED",
                     "execution_time": suite_results.get("execution_time", 0),
                     "test_count": suite_results.get("test_details", {}).get(
-                        "total_tests", 0
+                        "total_tests",
+                        0,
                     ),
                     "failure_count": suite_results.get("test_details", {}).get(
-                        "failures", 0
+                        "failures",
+                        0,
                     )
                     + suite_results.get("test_details", {}).get("errors", 0),
                 }
@@ -412,7 +434,8 @@ class TestRunner:
 
             # Quality score
             summary["quality_score"] = results.get("quality_metrics", {}).get(
-                "overall_score", 0
+                "overall_score",
+                0,
             )
 
             # Generate recommendations
@@ -424,7 +447,7 @@ class TestRunner:
         return summary
 
     def generate_recommendations(self, results: dict[str, Any]) -> list[str]:
-        """Generate actionable recommendations based on test results"""
+        """Generate actionable recommendations based on test results."""
         recommendations = []
 
         try:
@@ -434,7 +457,7 @@ class TestRunner:
 
             if line_coverage < 85:
                 recommendations.append(
-                    f"Increase line coverage from {line_coverage:.1f}% to at least 85%"
+                    f"Increase line coverage from {line_coverage:.1f}% to at least 85%",
                 )
 
             if coverage.get("branch_coverage_percent", 0) < 80:
@@ -444,18 +467,19 @@ class TestRunner:
             for suite_name, suite_results in results.get("test_results", {}).items():
                 if not suite_results.get("success", False):
                     failure_count = suite_results.get("test_details", {}).get(
-                        "failures", 0
+                        "failures",
+                        0,
                     )
                     error_count = suite_results.get("test_details", {}).get("errors", 0)
 
                     if failure_count > 0:
                         recommendations.append(
-                            f"Fix {failure_count} failing tests in {suite_name} suite"
+                            f"Fix {failure_count} failing tests in {suite_name} suite",
                         )
 
                     if error_count > 0:
                         recommendations.append(
-                            f"Resolve {error_count} test errors in {suite_name} suite"
+                            f"Resolve {error_count} test errors in {suite_name} suite",
                         )
 
             # Performance recommendations
@@ -472,7 +496,7 @@ class TestRunner:
             quality_score = results.get("quality_metrics", {}).get("overall_score", 0)
             if quality_score < 80:
                 recommendations.append(
-                    f"Improve overall quality score from {quality_score:.1f} to at least 80"
+                    f"Improve overall quality score from {quality_score:.1f} to at least 80",
                 )
 
             # Execution time recommendations
@@ -486,7 +510,7 @@ class TestRunner:
         return recommendations
 
     def save_test_results(self, results: dict[str, Any]):
-        """Save test results to file"""
+        """Save test results to file."""
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             results_file = self.reports_dir / f"test_results_{timestamp}.json"
@@ -503,20 +527,26 @@ class TestRunner:
             print(f"Failed to save test results: {e}")
 
     def run_quick_tests(self) -> dict[str, Any]:
-        """Run quick smoke tests for fast feedback"""
+        """Run quick smoke tests for fast feedback."""
         return self.run_test_suite(
-            "smoke", coverage=False, parallel=True, verbose=False
+            "smoke",
+            coverage=False,
+            parallel=True,
+            verbose=False,
         )
 
     def run_regression_tests(self) -> dict[str, Any]:
-        """Run regression tests"""
+        """Run regression tests."""
         return self.run_test_suite(
-            "regression", coverage=True, parallel=True, verbose=True
+            "regression",
+            coverage=True,
+            parallel=True,
+            verbose=True,
         )
 
 
 def run_test_harness():
-    """Main entry point for test harness"""
+    """Main entry point for test harness."""
     project_root = Path(__file__).parent.parent.parent
     runner = TestRunner(project_root)
 
@@ -547,7 +577,7 @@ def run_test_harness():
     for suite_name, suite_summary in summary.get("test_suites", {}).items():
         status_emoji = "✅" if suite_summary["status"] == "PASSED" else "❌"
         print(
-            f"{status_emoji} {suite_name}: {suite_summary['test_count']} tests, {suite_summary['execution_time']:.2f}s"
+            f"{status_emoji} {suite_name}: {suite_summary['test_count']} tests, {suite_summary['execution_time']:.2f}s",
         )
 
     # Recommendations

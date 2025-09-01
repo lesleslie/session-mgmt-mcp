@@ -1,5 +1,4 @@
-"""
-Integration tests for MCP tools in session-mgmt-mcp.
+"""Integration tests for MCP tools in session-mgmt-mcp.
 
 Tests the complete workflow of session management tools including:
 - Session initialization
@@ -24,11 +23,11 @@ from tests.mcp.test_helpers import (
 
 @pytest.mark.integration
 class TestMCPSessionTools:
-    """Integration tests for session management MCP tools"""
+    """Integration tests for session management MCP tools."""
 
     @pytest.fixture
     async def mcp_test_environment(self):
-        """Setup complete MCP test environment"""
+        """Setup complete MCP test environment."""
         env = MCPTestEnvironment()
 
         # Setup temporary workspace
@@ -55,24 +54,23 @@ class TestMCPSessionTools:
 
     @pytest.fixture
     async def mock_mcp_server(self):
-        """Create mock MCP server for testing"""
-        server = MockMCPServer()
-        return server
+        """Create mock MCP server for testing."""
+        return MockMCPServer()
 
     @pytest.fixture
     async def mcp_client(self, mock_mcp_server):
-        """Create MCP test client"""
-        client = MCPTestClient(mock_mcp_server)
-        return client
+        """Create MCP test client."""
+        return MCPTestClient(mock_mcp_server)
 
     @pytest.mark.asyncio
     async def test_session_init_tool(self, mcp_client, mcp_test_environment):
-        """Test session initialization tool"""
+        """Test session initialization tool."""
         env, workspace, test_project = mcp_test_environment
 
         # Call init tool
         result = await mcp_client.call_tool(
-            "init", {"working_directory": str(test_project)}
+            "init",
+            {"working_directory": str(test_project)},
         )
 
         # Verify successful initialization
@@ -83,13 +81,15 @@ class TestMCPSessionTools:
 
         # Verify tool call was recorded
         assert_tool_call_made(
-            mcp_client, "init", {"working_directory": str(test_project)}
+            mcp_client,
+            "init",
+            {"working_directory": str(test_project)},
         )
         assert_successful_tool_call(mcp_client, "init")
 
     @pytest.mark.asyncio
     async def test_session_checkpoint_tool(self, mcp_client):
-        """Test session checkpoint tool"""
+        """Test session checkpoint tool."""
         # Initialize session first
         await mcp_client.call_tool("init", {"working_directory": "/tmp/test"})
 
@@ -105,7 +105,7 @@ class TestMCPSessionTools:
 
     @pytest.mark.asyncio
     async def test_session_end_tool(self, mcp_client):
-        """Test session end tool"""
+        """Test session end tool."""
         # Initialize session first
         await mcp_client.call_tool("init", {"working_directory": "/tmp/test"})
 
@@ -121,7 +121,7 @@ class TestMCPSessionTools:
 
     @pytest.mark.asyncio
     async def test_session_status_tool(self, mcp_client):
-        """Test session status tool"""
+        """Test session status tool."""
         # Initialize session
         await mcp_client.call_tool("init", {"working_directory": "/tmp/test"})
 
@@ -136,12 +136,13 @@ class TestMCPSessionTools:
 
     @pytest.mark.asyncio
     async def test_complete_session_workflow(self, mcp_client, mcp_test_environment):
-        """Test complete session management workflow"""
+        """Test complete session management workflow."""
         env, workspace, test_project = mcp_test_environment
 
         # Run complete workflow simulation
         workflow_results = await simulate_session_workflow(
-            mcp_client, str(test_project)
+            mcp_client,
+            str(test_project),
         )
 
         # Verify no errors occurred
@@ -162,20 +163,22 @@ class TestMCPSessionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_storage_integration(self, mcp_client):
-        """Test reflection storage and retrieval integration"""
+        """Test reflection storage and retrieval integration."""
         # Store a reflection
         reflection_content = "Implemented comprehensive testing framework"
         tags = ["testing", "framework", "implementation"]
 
         store_result = await mcp_client.call_tool(
-            "store_reflection", {"content": reflection_content, "tags": tags}
+            "store_reflection",
+            {"content": reflection_content, "tags": tags},
         )
 
         assert store_result["success"] is True
 
         # Search for the reflection
         search_result = await mcp_client.call_tool(
-            "reflect_on_past", {"query": "testing framework"}
+            "reflect_on_past",
+            {"query": "testing framework"},
         )
 
         assert "results" in search_result
@@ -183,7 +186,7 @@ class TestMCPSessionTools:
 
     @pytest.mark.asyncio
     async def test_concurrent_tool_calls(self, mcp_client):
-        """Test concurrent MCP tool calls"""
+        """Test concurrent MCP tool calls."""
         # Initialize session
         await mcp_client.call_tool("init", {"working_directory": "/tmp/test"})
 
@@ -217,22 +220,22 @@ class TestMCPSessionTools:
 
 @pytest.mark.integration
 class TestMCPReflectionTools:
-    """Integration tests for reflection management tools"""
+    """Integration tests for reflection management tools."""
 
     @pytest.fixture
     async def reflection_environment(self, mcp_test_environment):
-        """Setup environment with reflection database"""
+        """Setup environment with reflection database."""
         env, workspace, test_project = mcp_test_environment
 
         # Create reflection database directory
         reflection_dir = workspace / ".claude" / "data"
         reflection_dir.mkdir(parents=True, exist_ok=True)
 
-        yield env, workspace, test_project, reflection_dir
+        return env, workspace, test_project, reflection_dir
 
     @pytest.fixture
     async def mcp_client_with_reflections(self, reflection_environment):
-        """MCP client with reflection test data"""
+        """MCP client with reflection test data."""
         env, workspace, test_project, reflection_dir = reflection_environment
 
         server = MockMCPServer()
@@ -264,7 +267,7 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_search_by_content(self, mcp_client_with_reflections):
-        """Test searching reflections by content"""
+        """Test searching reflections by content."""
         client = mcp_client_with_reflections
 
         # Search for authentication-related reflections
@@ -282,12 +285,13 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_search_by_project(self, mcp_client_with_reflections):
-        """Test searching reflections filtered by project"""
+        """Test searching reflections filtered by project."""
         client = mcp_client_with_reflections
 
         # Search within specific project
         result = await client.call_tool(
-            "reflect_on_past", {"query": "test", "project": "test-app"}
+            "reflect_on_past",
+            {"query": "test", "project": "test-app"},
         )
 
         assert "results" in result
@@ -297,12 +301,13 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_search_with_limits(self, mcp_client_with_reflections):
-        """Test reflection search with result limits"""
+        """Test reflection search with result limits."""
         client = mcp_client_with_reflections
 
         # Search with specific limit
         result = await client.call_tool(
-            "reflect_on_past", {"query": "test", "limit": 2}
+            "reflect_on_past",
+            {"query": "test", "limit": 2},
         )
 
         assert "results" in result
@@ -310,7 +315,7 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_storage_with_tags(self, mcp_client_with_reflections):
-        """Test storing reflection with multiple tags"""
+        """Test storing reflection with multiple tags."""
         client = mcp_client_with_reflections
 
         # Store reflection with complex tags
@@ -326,7 +331,8 @@ class TestMCPReflectionTools:
 
         # Search for the stored reflection
         search_result = await client.call_tool(
-            "reflect_on_past", {"query": "websocket real-time"}
+            "reflect_on_past",
+            {"query": "websocket real-time"},
         )
 
         assert len(search_result["results"]) >= 1
@@ -342,12 +348,13 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_search_empty_results(self, mcp_client_with_reflections):
-        """Test reflection search with no matching results"""
+        """Test reflection search with no matching results."""
         client = mcp_client_with_reflections
 
         # Search for something that doesn't exist
         result = await client.call_tool(
-            "reflect_on_past", {"query": "nonexistent-technology-xyz"}
+            "reflect_on_past",
+            {"query": "nonexistent-technology-xyz"},
         )
 
         assert "results" in result
@@ -355,9 +362,10 @@ class TestMCPReflectionTools:
 
     @pytest.mark.asyncio
     async def test_reflection_search_case_insensitive(
-        self, mcp_client_with_reflections
+        self,
+        mcp_client_with_reflections,
     ):
-        """Test case-insensitive reflection search"""
+        """Test case-insensitive reflection search."""
         client = mcp_client_with_reflections
 
         # Search with different cases
@@ -372,11 +380,11 @@ class TestMCPReflectionTools:
 
 @pytest.mark.integration
 class TestMCPErrorHandling:
-    """Integration tests for MCP tool error handling"""
+    """Integration tests for MCP tool error handling."""
 
     @pytest.fixture
     async def error_prone_server(self):
-        """Create MCP server that simulates errors"""
+        """Create MCP server that simulates errors."""
         server = MockMCPServer()
 
         # Override some methods to simulate errors
@@ -392,12 +400,13 @@ class TestMCPErrorHandling:
 
     @pytest.mark.asyncio
     async def test_tool_error_handling(self, error_prone_server):
-        """Test proper error handling in MCP tools"""
+        """Test proper error handling in MCP tools."""
         client = MCPTestClient(error_prone_server)
 
         # Call tool with error trigger
         result = await client.call_tool(
-            "init", {"working_directory": "/tmp/test", "should_fail": True}
+            "init",
+            {"working_directory": "/tmp/test", "should_fail": True},
         )
 
         # Should receive error response
@@ -406,7 +415,7 @@ class TestMCPErrorHandling:
 
     @pytest.mark.asyncio
     async def test_invalid_tool_call(self):
-        """Test calling non-existent tool"""
+        """Test calling non-existent tool."""
         server = MockMCPServer()
         client = MCPTestClient(server)
 
@@ -418,7 +427,7 @@ class TestMCPErrorHandling:
 
     @pytest.mark.asyncio
     async def test_malformed_arguments(self):
-        """Test tool calls with malformed arguments"""
+        """Test tool calls with malformed arguments."""
         server = MockMCPServer()
         client = MCPTestClient(server)
 
@@ -434,11 +443,11 @@ class TestMCPErrorHandling:
 @pytest.mark.integration
 @pytest.mark.slow
 class TestMCPPerformanceIntegration:
-    """Integration tests for MCP performance under load"""
+    """Integration tests for MCP performance under load."""
 
     @pytest.mark.asyncio
     async def test_high_volume_reflections(self, performance_monitor):
-        """Test performance with high volume of reflections"""
+        """Test performance with high volume of reflections."""
         server = MockMCPServer()
         client = MCPTestClient(server)
 
@@ -468,7 +477,8 @@ class TestMCPPerformanceIntegration:
         search_tasks = []
         for i in range(20):
             task = client.call_tool(
-                "reflect_on_past", {"query": f"performance-{i % 10}", "limit": 5}
+                "reflect_on_past",
+                {"query": f"performance-{i % 10}", "limit": 5},
             )
             search_tasks.append(task)
 
@@ -482,17 +492,18 @@ class TestMCPPerformanceIntegration:
 
     @pytest.mark.asyncio
     async def test_concurrent_session_operations(self):
-        """Test concurrent session operations"""
+        """Test concurrent session operations."""
         server = MockMCPServer()
 
         # Create multiple clients simulating concurrent users
         clients = [MCPTestClient(server) for _ in range(5)]
 
         async def session_workflow(client, client_id):
-            """Run session workflow for one client"""
+            """Run session workflow for one client."""
             # Initialize
             init_result = await client.call_tool(
-                "init", {"working_directory": f"/tmp/test-{client_id}"}
+                "init",
+                {"working_directory": f"/tmp/test-{client_id}"},
             )
 
             # Multiple operations
@@ -506,7 +517,7 @@ class TestMCPPerformanceIntegration:
                             "content": f"Client {client_id} reflection {i}",
                             "project": f"project-{client_id}",
                         },
-                    )
+                    ),
                 )
 
             await asyncio.gather(*operations)
@@ -533,7 +544,7 @@ class TestMCPPerformanceIntegration:
 
     @pytest.mark.asyncio
     async def test_memory_usage_stability(self, performance_monitor):
-        """Test memory usage stability over extended operations"""
+        """Test memory usage stability over extended operations."""
         server = MockMCPServer()
         client = MCPTestClient(server)
 
@@ -559,14 +570,14 @@ class TestMCPPerformanceIntegration:
                                 "content": f"Batch {batch} reflection {i}",
                                 "project": "memory-test",
                             },
-                        )
+                        ),
                     )
                 elif i % 4 == 2:
                     batch_tasks.append(
                         client.call_tool(
                             "reflect_on_past",
                             {"query": f"batch {batch % 3}", "limit": 3},
-                        )
+                        ),
                     )
                 else:
                     batch_tasks.append(client.call_tool("checkpoint", {}))

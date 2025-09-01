@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Configuration Management for Session Management MCP Server
+"""Configuration Management for Session Management MCP Server.
 
 Loads configuration from pyproject.toml and environment variables with sensible defaults.
 """
@@ -21,7 +20,7 @@ except ImportError:
 
 @dataclass
 class DatabaseConfig:
-    """Database configuration"""
+    """Database configuration."""
 
     path: str = "~/.claude/data/reflection.duckdb"
     connection_timeout: int = 30
@@ -41,7 +40,7 @@ class DatabaseConfig:
 
 @dataclass
 class SearchConfig:
-    """Search and indexing configuration"""
+    """Search and indexing configuration."""
 
     enable_semantic_search: bool = True
     embedding_model: str = "all-MiniLM-L6-v2"
@@ -61,7 +60,7 @@ class SearchConfig:
 
 @dataclass
 class TokenOptimizationConfig:
-    """Token optimization settings"""
+    """Token optimization settings."""
 
     enable_optimization: bool = True
     default_max_tokens: int = 4000
@@ -79,7 +78,7 @@ class TokenOptimizationConfig:
 
 @dataclass
 class SessionConfig:
-    """Session management configuration"""
+    """Session management configuration."""
 
     auto_checkpoint_interval: int = 1800  # seconds (30 minutes)
     enable_auto_commit: bool = True
@@ -88,7 +87,7 @@ class SessionConfig:
     # Session permissions
     enable_permission_system: bool = True
     default_trusted_operations: list[str] = field(
-        default_factory=lambda: ["git_commit", "uv_sync", "file_operations"]
+        default_factory=lambda: ["git_commit", "uv_sync", "file_operations"],
     )
 
     # Session cleanup
@@ -98,7 +97,7 @@ class SessionConfig:
 
 @dataclass
 class IntegrationConfig:
-    """External integrations configuration"""
+    """External integrations configuration."""
 
     # Crackerjack integration
     enable_crackerjack: bool = True
@@ -115,7 +114,7 @@ class IntegrationConfig:
 
 @dataclass
 class LoggingConfig:
-    """Logging configuration"""
+    """Logging configuration."""
 
     level: str = "INFO"
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -134,7 +133,7 @@ class LoggingConfig:
 
 @dataclass
 class SecurityConfig:
-    """Security and privacy settings"""
+    """Security and privacy settings."""
 
     # Data privacy
     anonymize_paths: bool = False
@@ -144,7 +143,7 @@ class SecurityConfig:
             r"api[_-]?key\s*=\s*['\"][^'\"]+['\"]",
             r"secret\s*=\s*['\"][^'\"]+['\"]",
             r"token\s*=\s*['\"][^'\"]+['\"]",
-        ]
+        ],
     )
 
     # Access control
@@ -158,12 +157,12 @@ class SecurityConfig:
 
 @dataclass
 class SessionMgmtConfig:
-    """Main configuration container"""
+    """Main configuration container."""
 
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     search: SearchConfig = field(default_factory=SearchConfig)
     token_optimization: TokenOptimizationConfig = field(
-        default_factory=TokenOptimizationConfig
+        default_factory=TokenOptimizationConfig,
     )
     session: SessionConfig = field(default_factory=SessionConfig)
     integration: IntegrationConfig = field(default_factory=IntegrationConfig)
@@ -181,14 +180,14 @@ class SessionMgmtConfig:
 
 
 class ConfigLoader:
-    """Loads configuration from pyproject.toml and environment variables"""
+    """Loads configuration from pyproject.toml and environment variables."""
 
-    def __init__(self, project_root: Path | None = None):
+    def __init__(self, project_root: Path | None = None) -> None:
         self.project_root = project_root or self._find_project_root()
         self._config_cache: SessionMgmtConfig | None = None
 
     def _find_project_root(self) -> Path:
-        """Find the project root by looking for pyproject.toml"""
+        """Find the project root by looking for pyproject.toml."""
         current = Path.cwd()
 
         # Check if we're already in the session-mgmt-mcp directory
@@ -215,8 +214,7 @@ class ConfigLoader:
         return current
 
     def load_config(self, reload: bool = False) -> SessionMgmtConfig:
-        """Load configuration from pyproject.toml and environment variables"""
-
+        """Load configuration from pyproject.toml and environment variables."""
         if self._config_cache and not reload:
             return self._config_cache
 
@@ -257,7 +255,7 @@ class ConfigLoader:
         config: SessionMgmtConfig,
         section_name: str,
         section_config: dict[str, Any],
-    ):
+    ) -> None:
         """Apply configuration for a specific section."""
         if not hasattr(config, section_name):
             return
@@ -268,8 +266,10 @@ class ConfigLoader:
                 setattr(section_obj, key, value)
 
     def _apply_server_config(
-        self, config: SessionMgmtConfig, tool_config: dict[str, Any]
-    ):
+        self,
+        config: SessionMgmtConfig,
+        tool_config: dict[str, Any],
+    ) -> None:
         """Apply server-level configuration."""
         server_keys = [
             "server_host",
@@ -283,8 +283,10 @@ class ConfigLoader:
             if key in tool_config and hasattr(config, key):
                 setattr(config, key, tool_config[key])
 
-    def _apply_toml_config(self, config: SessionMgmtConfig, toml_data: dict[str, Any]):
-        """Apply configuration from pyproject.toml"""
+    def _apply_toml_config(
+        self, config: SessionMgmtConfig, toml_data: dict[str, Any]
+    ) -> None:
+        """Apply configuration from pyproject.toml."""
         tool_config = self._get_tool_config(toml_data)
         if not tool_config:
             return
@@ -304,15 +306,16 @@ class ConfigLoader:
         for section_name in config_sections:
             if section_name in tool_config:
                 self._apply_section_config(
-                    config, section_name, tool_config[section_name]
+                    config,
+                    section_name,
+                    tool_config[section_name],
                 )
 
         # Apply server-level config
         self._apply_server_config(config, tool_config)
 
-    def _apply_env_config(self, config: SessionMgmtConfig):
-        """Apply configuration from environment variables"""
-
+    def _apply_env_config(self, config: SessionMgmtConfig) -> None:
+        """Apply configuration from environment variables."""
         env_mappings = {
             # Database
             "SESSION_MGMT_DB_PATH": ("database", "path"),
@@ -395,12 +398,11 @@ class ConfigLoader:
 
                 except (ValueError, AttributeError) as e:
                     print(
-                        f"Warning: Invalid environment variable {env_var}={value}: {e}"
+                        f"Warning: Invalid environment variable {env_var}={value}: {e}",
                     )
 
-    def _expand_paths(self, config: SessionMgmtConfig):
-        """Expand user paths in configuration"""
-
+    def _expand_paths(self, config: SessionMgmtConfig) -> None:
+        """Expand user paths in configuration."""
         # Database path
         config.database.path = os.path.expanduser(config.database.path)
 
@@ -409,16 +411,15 @@ class ConfigLoader:
 
         # Global workspace path
         config.integration.global_workspace_path = os.path.expanduser(
-            config.integration.global_workspace_path
+            config.integration.global_workspace_path,
         )
 
-    def _validate_config(self, config: SessionMgmtConfig):
-        """Validate configuration values"""
-
+    def _validate_config(self, config: SessionMgmtConfig) -> None:
+        """Validate configuration values."""
         # Validate port range
         if not (1024 <= config.server_port <= 65535):
             print(
-                f"Warning: Invalid server port {config.server_port}, using default 3000"
+                f"Warning: Invalid server port {config.server_port}, using default 3000",
             )
             config.server_port = 3000
 
@@ -439,7 +440,7 @@ class ConfigLoader:
             log_path.parent.mkdir(parents=True, exist_ok=True)
 
     def get_example_config(self) -> str:
-        """Get example pyproject.toml configuration"""
+        """Get example pyproject.toml configuration."""
         return """
 # Example session-mgmt-mcp configuration in pyproject.toml
 
@@ -513,7 +514,7 @@ _config_loader: ConfigLoader | None = None
 
 
 def get_config(reload: bool = False) -> SessionMgmtConfig:
-    """Get the global configuration instance"""
+    """Get the global configuration instance."""
     global _config_loader
 
     if _config_loader is None:
@@ -523,5 +524,5 @@ def get_config(reload: bool = False) -> SessionMgmtConfig:
 
 
 def reload_config() -> SessionMgmtConfig:
-    """Force reload configuration from files"""
+    """Force reload configuration from files."""
     return get_config(reload=True)

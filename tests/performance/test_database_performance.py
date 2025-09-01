@@ -1,5 +1,4 @@
-"""
-Advanced performance tests for database operations in session-mgmt-mcp.
+"""Advanced performance tests for database operations in session-mgmt-mcp.
 
 Tests performance characteristics with comprehensive metrics and regression detection:
 - Reflection storage and retrieval with baseline comparison
@@ -26,7 +25,7 @@ from tests.fixtures.data_factories import LargeDatasetFactory, ReflectionDataFac
 
 @dataclass
 class PerformanceMetric:
-    """Structured performance metric with context and thresholds"""
+    """Structured performance metric with context and thresholds."""
 
     name: str
     value: float
@@ -38,12 +37,12 @@ class PerformanceMetric:
 
     @property
     def meets_threshold(self) -> bool:
-        """Check if metric meets performance threshold"""
+        """Check if metric meets performance threshold."""
         return self.threshold is None or self.value <= self.threshold
 
     @property
     def regression_ratio(self) -> float | None:
-        """Calculate regression ratio vs baseline"""
+        """Calculate regression ratio vs baseline."""
         if self.baseline is None:
             return None
         return (
@@ -52,9 +51,9 @@ class PerformanceMetric:
 
 
 class AdvancedPerformanceTracker:
-    """Enhanced performance tracker with baseline comparison and detailed metrics"""
+    """Enhanced performance tracker with baseline comparison and detailed metrics."""
 
-    def __init__(self, baseline_file: Path | None = None):
+    def __init__(self, baseline_file: Path | None = None) -> None:
         self.baseline_file = baseline_file or Path("performance_baseline.json")
         self.metrics: list[PerformanceMetric] = []
         self.baseline_data = self._load_baseline()
@@ -62,7 +61,7 @@ class AdvancedPerformanceTracker:
         self.start_memory = None
 
     def _load_baseline(self) -> dict[str, Any]:
-        """Load baseline performance data"""
+        """Load baseline performance data."""
         if self.baseline_file.exists():
             try:
                 with open(self.baseline_file) as f:
@@ -72,7 +71,7 @@ class AdvancedPerformanceTracker:
         return {}
 
     def start(self):
-        """Start performance tracking"""
+        """Start performance tracking."""
         import psutil
 
         process = psutil.Process()
@@ -80,7 +79,7 @@ class AdvancedPerformanceTracker:
         self.start_memory = process.memory_info().rss / 1024 / 1024  # MB
 
     def record_metric(self, metric: PerformanceMetric):
-        """Record a performance metric"""
+        """Record a performance metric."""
         # Add baseline if available
         baseline_key = f"{metric.context.get('test_name', 'unknown')}.{metric.name}"
         baseline_value = self.baseline_data.get(baseline_key)
@@ -90,7 +89,7 @@ class AdvancedPerformanceTracker:
         self.metrics.append(metric)
 
     def stop(self) -> dict[str, Any]:
-        """Stop tracking and return comprehensive metrics"""
+        """Stop tracking and return comprehensive metrics."""
         import psutil
 
         process = psutil.Process()
@@ -105,7 +104,7 @@ class AdvancedPerformanceTracker:
         }
 
     def analyze_regressions(self, tolerance: float = 0.2) -> dict[str, Any]:
-        """Analyze performance regressions with detailed reporting"""
+        """Analyze performance regressions with detailed reporting."""
         analysis = {
             "regressions": [],
             "improvements": [],
@@ -129,7 +128,7 @@ class AdvancedPerformanceTracker:
                         "threshold": metric.threshold,
                         "unit": metric.unit,
                         "context": metric.context,
-                    }
+                    },
                 )
                 analysis["summary"]["violations_count"] += 1
                 analysis["summary"]["overall_status"] = "FAIL"
@@ -146,7 +145,7 @@ class AdvancedPerformanceTracker:
                             "regression_percent": regression_ratio * 100,
                             "unit": metric.unit,
                             "context": metric.context,
-                        }
+                        },
                     )
                     analysis["summary"]["regressions_count"] += 1
                 elif regression_ratio < -tolerance:
@@ -158,14 +157,14 @@ class AdvancedPerformanceTracker:
                             "improvement_percent": -regression_ratio * 100,
                             "unit": metric.unit,
                             "context": metric.context,
-                        }
+                        },
                     )
                     analysis["summary"]["improvements_count"] += 1
 
         return analysis
 
     def save_baseline(self):
-        """Save current metrics as new baseline"""
+        """Save current metrics as new baseline."""
         baseline_data = {}
         for metric in self.metrics:
             key = f"{metric.context.get('test_name', 'unknown')}.{metric.name}"
@@ -177,11 +176,11 @@ class AdvancedPerformanceTracker:
 
 @pytest.mark.performance
 class TestReflectionDatabasePerformance:
-    """Performance tests for ReflectionDatabase operations"""
+    """Performance tests for ReflectionDatabase operations."""
 
     @pytest.fixture
     async def perf_database(self):
-        """Create database optimized for performance testing"""
+        """Create database optimized for performance testing."""
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
@@ -200,15 +199,15 @@ class TestReflectionDatabasePerformance:
 
     @pytest.fixture
     def performance_tracker(self):
-        """Track performance metrics during tests"""
+        """Track performance metrics during tests."""
 
         class PerformanceTracker:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.metrics = {}
                 self.start_time = None
                 self.start_memory = None
 
-            def start(self):
+            def start(self) -> None:
                 import psutil
 
                 process = psutil.Process()
@@ -232,9 +231,11 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_single_reflection_storage_performance(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test performance of storing individual reflections"""
+        """Test performance of storing individual reflections."""
         performance_tracker.start()
 
         # Store reflections and measure time per operation
@@ -272,9 +273,11 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_bulk_reflection_storage_performance(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test performance of bulk reflection storage"""
+        """Test performance of bulk reflection storage."""
         performance_tracker.start()
 
         # Generate large dataset
@@ -311,9 +314,11 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_search_performance_small_dataset(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test search performance on small dataset"""
+        """Test search performance on small dataset."""
         # Populate database with test data
         reflections = ReflectionDataFactory.build_batch(100)
         for reflection in reflections:
@@ -354,13 +359,15 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_search_performance_large_dataset(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test search performance on large dataset"""
+        """Test search performance on large dataset."""
         # Populate with large dataset
         reflection_count = 5000
         reflections = LargeDatasetFactory.generate_large_reflection_dataset(
-            reflection_count
+            reflection_count,
         )
 
         # Store in batches
@@ -416,9 +423,11 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_concurrent_read_performance(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test concurrent read performance"""
+        """Test concurrent read performance."""
         # Populate database
         reflections = ReflectionDataFactory.build_batch(500)
         for reflection in reflections:
@@ -473,13 +482,15 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_mixed_read_write_performance(
-        self, perf_database, performance_tracker
+        self,
+        perf_database,
+        performance_tracker,
     ):
-        """Test performance under mixed read/write load"""
+        """Test performance under mixed read/write load."""
         performance_tracker.start()
 
         async def writer_task():
-            """Continuously write reflections"""
+            """Continuously write reflections."""
             durations = []
             for i in range(100):
                 reflection = ReflectionDataFactory()
@@ -500,7 +511,7 @@ class TestReflectionDatabasePerformance:
             return durations
 
         async def reader_task():
-            """Continuously search reflections"""
+            """Continuously search reflections."""
             durations = []
             queries = ["writer", "reflection", "performance", "test", "database"]
 
@@ -509,7 +520,8 @@ class TestReflectionDatabasePerformance:
                 start = time.perf_counter()
 
                 results = await perf_database.search_reflections(
-                    query=f"{query} {i}", limit=5
+                    query=f"{query} {i}",
+                    limit=5,
                 )
 
                 end = time.perf_counter()
@@ -546,7 +558,7 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_memory_usage_growth(self, perf_database):
-        """Test memory usage growth with increasing data"""
+        """Test memory usage growth with increasing data."""
         import psutil
 
         process = psutil.Process()
@@ -610,7 +622,7 @@ class TestReflectionDatabasePerformance:
 
     @pytest.mark.asyncio
     async def test_database_file_size_growth(self, perf_database):
-        """Test database file size growth characteristics"""
+        """Test database file size growth characteristics."""
         db_path = Path(perf_database.db_path)
 
         file_sizes = []
@@ -638,7 +650,7 @@ class TestReflectionDatabasePerformance:
             file_sizes.append((count, file_size_mb))
 
         # Analyze file size growth
-        for i, (count, size) in enumerate(file_sizes):
+        for _i, (count, size) in enumerate(file_sizes):
             # File size should be reasonable relative to data
             size_per_reflection = size / count * 1024  # KB per reflection
             assert size_per_reflection < 10, (
@@ -652,11 +664,11 @@ class TestReflectionDatabasePerformance:
 
 @pytest.mark.performance
 class TestDatabaseQueryOptimization:
-    """Test database query optimization and indexing performance"""
+    """Test database query optimization and indexing performance."""
 
     @pytest.fixture
     async def indexed_database(self):
-        """Create database with optimized indexes"""
+        """Create database with optimized indexes."""
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
@@ -685,9 +697,11 @@ class TestDatabaseQueryOptimization:
 
     @pytest.mark.asyncio
     async def test_indexed_vs_unindexed_performance(
-        self, indexed_database, performance_tracker
+        self,
+        indexed_database,
+        performance_tracker,
     ):
-        """Compare performance with and without indexes"""
+        """Compare performance with and without indexes."""
         # Populate with substantial data
         reflections = ReflectionDataFactory.build_batch(2000)
 
@@ -711,7 +725,7 @@ class TestDatabaseQueryOptimization:
         ]
 
         query_times = {}
-        for pattern_name, query in query_patterns:
+        for pattern_name, _query in query_patterns:
             times = []
 
             for _ in range(10):  # Run each query multiple times
@@ -719,16 +733,20 @@ class TestDatabaseQueryOptimization:
 
                 if pattern_name == "project":
                     results = await indexed_database.search_reflections(
-                        query="test", project="test-project", limit=10
+                        query="test",
+                        project="test-project",
+                        limit=10,
                     )
                 elif pattern_name == "timestamp":
                     # Search recent reflections (timestamp-based)
                     results = await indexed_database.search_reflections(
-                        query="recent", limit=10
+                        query="recent",
+                        limit=10,
                     )
                 else:  # content_search
                     results = await indexed_database.search_reflections(
-                        query="content search test", limit=10
+                        query="content search test",
+                        limit=10,
                     )
 
                 end = time.perf_counter()
@@ -745,7 +763,7 @@ class TestDatabaseQueryOptimization:
 
     @pytest.mark.asyncio
     async def test_query_plan_analysis(self, indexed_database):
-        """Analyze query execution plans for performance"""
+        """Analyze query execution plans for performance."""
         # Populate database
         reflections = ReflectionDataFactory.build_batch(1000)
 
@@ -766,7 +784,7 @@ class TestDatabaseQueryOptimization:
         for query in test_queries:
             try:
                 result = await indexed_database._execute_query(query)
-                plan = [row for row in result]
+                plan = list(result)
 
                 # Check that query plan uses indexes when appropriate
                 plan_text = " ".join([str(row) for row in plan]).lower()

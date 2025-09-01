@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Cross-LLM Compatibility for Session Management MCP Server
+"""Cross-LLM Compatibility for Session Management MCP Server.
 
 Provides unified interface for multiple LLM providers including OpenAI, Google Gemini, and Ollama.
 """
@@ -18,7 +17,7 @@ from typing import Any
 
 @dataclass
 class LLMMessage:
-    """Standardized message format across LLM providers"""
+    """Standardized message format across LLM providers."""
 
     role: str  # 'system', 'user', 'assistant'
     content: str
@@ -34,7 +33,7 @@ class LLMMessage:
 
 @dataclass
 class LLMResponse:
-    """Standardized response format from LLM providers"""
+    """Standardized response format from LLM providers."""
 
     content: str
     model: str
@@ -50,9 +49,9 @@ class LLMResponse:
 
 
 class LLMProvider(ABC):
-    """Abstract base class for LLM providers"""
+    """Abstract base class for LLM providers."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.name = self.__class__.__name__.replace("Provider", "").lower()
         self.logger = logging.getLogger(f"llm_providers.{self.name}")
@@ -66,8 +65,7 @@ class LLMProvider(ABC):
         max_tokens: int | None = None,
         **kwargs,
     ) -> LLMResponse:
-        """Generate a response from the LLM"""
-        pass
+        """Generate a response from the LLM."""
 
     @abstractmethod
     async def stream_generate(
@@ -78,24 +76,21 @@ class LLMProvider(ABC):
         max_tokens: int | None = None,
         **kwargs,
     ) -> AsyncGenerator[str]:
-        """Generate a streaming response from the LLM"""
-        pass
+        """Generate a streaming response from the LLM."""
 
     @abstractmethod
     async def is_available(self) -> bool:
-        """Check if the provider is available and properly configured"""
-        pass
+        """Check if the provider is available and properly configured."""
 
     @abstractmethod
     def get_models(self) -> list[str]:
-        """Get list of available models for this provider"""
-        pass
+        """Get list of available models for this provider."""
 
 
 class OpenAIProvider(LLMProvider):
-    """OpenAI API provider"""
+    """OpenAI API provider."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.api_key = config.get("api_key") or os.getenv("OPENAI_API_KEY")
         self.base_url = config.get("base_url", "https://api.openai.com/v1")
@@ -103,22 +98,24 @@ class OpenAIProvider(LLMProvider):
         self._client = None
 
     async def _get_client(self):
-        """Get or create OpenAI client"""
+        """Get or create OpenAI client."""
         if self._client is None:
             try:
                 import openai
 
                 self._client = openai.AsyncOpenAI(
-                    api_key=self.api_key, base_url=self.base_url
+                    api_key=self.api_key,
+                    base_url=self.base_url,
                 )
             except ImportError:
+                msg = "OpenAI package not installed. Install with: pip install openai"
                 raise ImportError(
-                    "OpenAI package not installed. Install with: pip install openai"
+                    msg,
                 )
         return self._client
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
-        """Convert LLMMessage objects to OpenAI format"""
+        """Convert LLMMessage objects to OpenAI format."""
         return [{"role": msg.role, "content": msg.content} for msg in messages]
 
     async def generate(
@@ -129,9 +126,10 @@ class OpenAIProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> LLMResponse:
-        """Generate response using OpenAI API"""
+        """Generate response using OpenAI API."""
         if not await self.is_available():
-            raise RuntimeError("OpenAI provider not available")
+            msg = "OpenAI provider not available"
+            raise RuntimeError(msg)
 
         client = await self._get_client()
         model_name = model or self.default_model
@@ -166,7 +164,7 @@ class OpenAIProvider(LLMProvider):
             )
 
         except Exception as e:
-            self.logger.error(f"OpenAI generation failed: {e}")
+            self.logger.exception(f"OpenAI generation failed: {e}")
             raise
 
     async def stream_generate(
@@ -177,9 +175,10 @@ class OpenAIProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> AsyncGenerator[str]:
-        """Stream response using OpenAI API"""
+        """Stream response using OpenAI API."""
         if not await self.is_available():
-            raise RuntimeError("OpenAI provider not available")
+            msg = "OpenAI provider not available"
+            raise RuntimeError(msg)
 
         client = await self._get_client()
         model_name = model or self.default_model
@@ -199,11 +198,11 @@ class OpenAIProvider(LLMProvider):
                     yield chunk.choices[0].delta.content
 
         except Exception as e:
-            self.logger.error(f"OpenAI streaming failed: {e}")
+            self.logger.exception(f"OpenAI streaming failed: {e}")
             raise
 
     async def is_available(self) -> bool:
-        """Check if OpenAI API is available"""
+        """Check if OpenAI API is available."""
         if not self.api_key:
             return False
 
@@ -216,7 +215,7 @@ class OpenAIProvider(LLMProvider):
             return False
 
     def get_models(self) -> list[str]:
-        """Get available OpenAI models"""
+        """Get available OpenAI models."""
         return [
             "gpt-4",
             "gpt-4-turbo",
@@ -228,9 +227,9 @@ class OpenAIProvider(LLMProvider):
 
 
 class GeminiProvider(LLMProvider):
-    """Google Gemini API provider"""
+    """Google Gemini API provider."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.api_key = (
             config.get("api_key")
@@ -241,7 +240,7 @@ class GeminiProvider(LLMProvider):
         self._client = None
 
     async def _get_client(self):
-        """Get or create Gemini client"""
+        """Get or create Gemini client."""
         if self._client is None:
             try:
                 import google.generativeai as genai
@@ -249,24 +248,25 @@ class GeminiProvider(LLMProvider):
                 genai.configure(api_key=self.api_key)
                 self._client = genai
             except ImportError:
+                msg = "Google Generative AI package not installed. Install with: pip install google-generativeai"
                 raise ImportError(
-                    "Google Generative AI package not installed. Install with: pip install google-generativeai"
+                    msg,
                 )
         return self._client
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
-        """Convert LLMMessage objects to Gemini format"""
+        """Convert LLMMessage objects to Gemini format."""
         converted = []
         for msg in messages:
             if msg.role == "system":
                 # Gemini doesn't have system role, prepend to first user message
                 if converted and converted[-1]["role"] == "user":
                     converted[-1]["parts"] = [
-                        f"System: {msg.content}\n\nUser: {converted[-1]['parts'][0]}"
+                        f"System: {msg.content}\n\nUser: {converted[-1]['parts'][0]}",
                     ]
                 else:
                     converted.append(
-                        {"role": "user", "parts": [f"System: {msg.content}"]}
+                        {"role": "user", "parts": [f"System: {msg.content}"]},
                     )
             elif msg.role == "user":
                 converted.append({"role": "user", "parts": [msg.content]})
@@ -282,9 +282,10 @@ class GeminiProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> LLMResponse:
-        """Generate response using Gemini API"""
+        """Generate response using Gemini API."""
         if not await self.is_available():
-            raise RuntimeError("Gemini provider not available")
+            msg = "Gemini provider not available"
+            raise RuntimeError(msg)
 
         genai = await self._get_client()
         model_name = model or self.default_model
@@ -334,7 +335,7 @@ class GeminiProvider(LLMProvider):
             )
 
         except Exception as e:
-            self.logger.error(f"Gemini generation failed: {e}")
+            self.logger.exception(f"Gemini generation failed: {e}")
             raise
 
     async def stream_generate(
@@ -345,9 +346,10 @@ class GeminiProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> AsyncGenerator[str]:
-        """Stream response using Gemini API"""
+        """Stream response using Gemini API."""
         if not await self.is_available():
-            raise RuntimeError("Gemini provider not available")
+            msg = "Gemini provider not available"
+            raise RuntimeError(msg)
 
         genai = await self._get_client()
         model_name = model or self.default_model
@@ -381,11 +383,11 @@ class GeminiProvider(LLMProvider):
                     yield chunk.text
 
         except Exception as e:
-            self.logger.error(f"Gemini streaming failed: {e}")
+            self.logger.exception(f"Gemini streaming failed: {e}")
             raise
 
     async def is_available(self) -> bool:
-        """Check if Gemini API is available"""
+        """Check if Gemini API is available."""
         if not self.api_key:
             return False
 
@@ -398,7 +400,7 @@ class GeminiProvider(LLMProvider):
             return False
 
     def get_models(self) -> list[str]:
-        """Get available Gemini models"""
+        """Get available Gemini models."""
         return [
             "gemini-pro",
             "gemini-pro-vision",
@@ -409,18 +411,20 @@ class GeminiProvider(LLMProvider):
 
 
 class OllamaProvider(LLMProvider):
-    """Ollama local LLM provider"""
+    """Ollama local LLM provider."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.base_url = config.get("base_url", "http://localhost:11434")
         self.default_model = config.get("default_model", "llama2")
         self._available_models = []
 
     async def _make_request(
-        self, endpoint: str, data: dict[str, Any]
+        self,
+        endpoint: str,
+        data: dict[str, Any],
     ) -> dict[str, Any]:
-        """Make HTTP request to Ollama API"""
+        """Make HTTP request to Ollama API."""
         try:
             import aiohttp
 
@@ -432,12 +436,13 @@ class OllamaProvider(LLMProvider):
                 ) as response:
                     return await response.json()
         except ImportError:
+            msg = "aiohttp package not installed. Install with: pip install aiohttp"
             raise ImportError(
-                "aiohttp package not installed. Install with: pip install aiohttp"
+                msg,
             )
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
-        """Convert LLMMessage objects to Ollama format"""
+        """Convert LLMMessage objects to Ollama format."""
         return [{"role": msg.role, "content": msg.content} for msg in messages]
 
     async def generate(
@@ -448,9 +453,10 @@ class OllamaProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> LLMResponse:
-        """Generate response using Ollama API"""
+        """Generate response using Ollama API."""
         if not await self.is_available():
-            raise RuntimeError("Ollama provider not available")
+            msg = "Ollama provider not available"
+            raise RuntimeError(msg)
 
         model_name = model or self.default_model
 
@@ -481,7 +487,7 @@ class OllamaProvider(LLMProvider):
             )
 
         except Exception as e:
-            self.logger.error(f"Ollama generation failed: {e}")
+            self.logger.exception(f"Ollama generation failed: {e}")
             raise
 
     async def stream_generate(
@@ -492,9 +498,10 @@ class OllamaProvider(LLMProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> AsyncGenerator[str]:
-        """Stream response using Ollama API"""
+        """Stream response using Ollama API."""
         if not await self.is_available():
-            raise RuntimeError("Ollama provider not available")
+            msg = "Ollama provider not available"
+            raise RuntimeError(msg)
 
         model_name = model or self.default_model
 
@@ -530,17 +537,18 @@ class OllamaProvider(LLMProvider):
                                 continue
 
         except Exception as e:
-            self.logger.error(f"Ollama streaming failed: {e}")
+            self.logger.exception(f"Ollama streaming failed: {e}")
             raise
 
     async def is_available(self) -> bool:
-        """Check if Ollama is available"""
+        """Check if Ollama is available."""
         try:
             import aiohttp
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f"{self.base_url}/api/tags", timeout=aiohttp.ClientTimeout(total=10)
+                    f"{self.base_url}/api/tags",
+                    timeout=aiohttp.ClientTimeout(total=10),
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
@@ -553,7 +561,7 @@ class OllamaProvider(LLMProvider):
             return False
 
     def get_models(self) -> list[str]:
-        """Get available Ollama models"""
+        """Get available Ollama models."""
         return (
             self._available_models
             if self._available_models
@@ -569,16 +577,16 @@ class OllamaProvider(LLMProvider):
 
 
 class LLMManager:
-    """Manager for multiple LLM providers with fallback support"""
+    """Manager for multiple LLM providers with fallback support."""
 
-    def __init__(self, config_path: str | None = None):
+    def __init__(self, config_path: str | None = None) -> None:
         self.providers: dict[str, LLMProvider] = {}
         self.config = self._load_config(config_path)
         self.logger = logging.getLogger("llm_providers.manager")
         self._initialize_providers()
 
     def _load_config(self, config_path: str | None) -> dict[str, Any]:
-        """Load configuration from file or environment"""
+        """Load configuration from file or environment."""
         config = {
             "providers": {},
             "default_provider": "openai",
@@ -614,8 +622,8 @@ class LLMManager:
 
         return config
 
-    def _initialize_providers(self):
-        """Initialize all configured providers"""
+    def _initialize_providers(self) -> None:
+        """Initialize all configured providers."""
         provider_classes = {
             "openai": OpenAIProvider,
             "gemini": GeminiProvider,
@@ -626,15 +634,15 @@ class LLMManager:
             if provider_name in provider_classes:
                 try:
                     self.providers[provider_name] = provider_classes[provider_name](
-                        provider_config
+                        provider_config,
                     )
                 except Exception as e:
                     self.logger.warning(
-                        f"Failed to initialize {provider_name} provider: {e}"
+                        f"Failed to initialize {provider_name} provider: {e}",
                     )
 
     async def get_available_providers(self) -> list[str]:
-        """Get list of available providers"""
+        """Get list of available providers."""
         available = []
         for name, provider in self.providers.items():
             if await provider.is_available():
@@ -649,7 +657,7 @@ class LLMManager:
         use_fallback: bool = True,
         **kwargs,
     ) -> LLMResponse:
-        """Generate response with optional fallback"""
+        """Generate response with optional fallback."""
         target_provider = provider or self.config["default_provider"]
 
         # Try primary provider
@@ -670,14 +678,17 @@ class LLMManager:
                         if await provider_instance.is_available():
                             self.logger.info(f"Falling back to {fallback_name}")
                             return await provider_instance.generate(
-                                messages, model, **kwargs
+                                messages,
+                                model,
+                                **kwargs,
                             )
                     except Exception as e:
                         self.logger.warning(
-                            f"Fallback provider {fallback_name} failed: {e}"
+                            f"Fallback provider {fallback_name} failed: {e}",
                         )
 
-        raise RuntimeError("No available LLM providers")
+        msg = "No available LLM providers"
+        raise RuntimeError(msg)
 
     async def stream_generate(
         self,
@@ -687,7 +698,7 @@ class LLMManager:
         use_fallback: bool = True,
         **kwargs,
     ) -> AsyncGenerator[str]:
-        """Stream generate response with optional fallback"""
+        """Stream generate response with optional fallback."""
         target_provider = provider or self.config["default_provider"]
 
         # Try primary provider
@@ -696,7 +707,9 @@ class LLMManager:
                 provider_instance = self.providers[target_provider]
                 if await provider_instance.is_available():
                     async for chunk in provider_instance.stream_generate(
-                        messages, model, **kwargs
+                        messages,
+                        model,
+                        **kwargs,
                     ):
                         yield chunk
                     return
@@ -712,19 +725,22 @@ class LLMManager:
                         if await provider_instance.is_available():
                             self.logger.info(f"Falling back to {fallback_name}")
                             async for chunk in provider_instance.stream_generate(
-                                messages, model, **kwargs
+                                messages,
+                                model,
+                                **kwargs,
                             ):
                                 yield chunk
                             return
                     except Exception as e:
                         self.logger.warning(
-                            f"Fallback provider {fallback_name} failed: {e}"
+                            f"Fallback provider {fallback_name} failed: {e}",
                         )
 
-        raise RuntimeError("No available LLM providers")
+        msg = "No available LLM providers"
+        raise RuntimeError(msg)
 
     def get_provider_info(self) -> dict[str, Any]:
-        """Get information about all providers"""
+        """Get information about all providers."""
         info = {
             "providers": {},
             "config": {
@@ -744,9 +760,9 @@ class LLMManager:
         return info
 
     async def test_providers(self) -> dict[str, Any]:
-        """Test all providers and return status"""
+        """Test all providers and return status."""
         test_message = [
-            LLMMessage(role="user", content='Hello, respond with just "OK"')
+            LLMMessage(role="user", content='Hello, respond with just "OK"'),
         ]
         results = {}
 

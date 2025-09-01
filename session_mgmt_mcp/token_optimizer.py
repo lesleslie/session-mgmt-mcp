@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Token Optimization for Session Management MCP Server
+"""Token Optimization for Session Management MCP Server.
 
 Provides response chunking, content truncation, and context window monitoring
 to reduce token usage while maintaining functionality.
@@ -18,7 +17,7 @@ import tiktoken
 
 @dataclass
 class TokenUsageMetrics:
-    """Token usage metrics for monitoring"""
+    """Token usage metrics for monitoring."""
 
     request_tokens: int
     response_tokens: int
@@ -30,7 +29,7 @@ class TokenUsageMetrics:
 
 @dataclass
 class ChunkResult:
-    """Result of response chunking"""
+    """Result of response chunking."""
 
     chunks: list[str]
     total_chunks: int
@@ -40,9 +39,9 @@ class ChunkResult:
 
 
 class TokenOptimizer:
-    """Main token optimization class"""
+    """Main token optimization class."""
 
-    def __init__(self, max_tokens: int = 4000, chunk_size: int = 2000):
+    def __init__(self, max_tokens: int = 4000, chunk_size: int = 2000) -> None:
         self.max_tokens = max_tokens
         self.chunk_size = chunk_size
         self.encoding = self._get_encoding()
@@ -59,7 +58,7 @@ class TokenOptimizer:
         }
 
     def _get_encoding(self):
-        """Get tiktoken encoding for token counting"""
+        """Get tiktoken encoding for token counting."""
         try:
             return tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
         except Exception:
@@ -67,12 +66,11 @@ class TokenOptimizer:
             return None
 
     def count_tokens(self, text: str) -> int:
-        """Count tokens in text"""
+        """Count tokens in text."""
         if self.encoding:
             return len(self.encoding.encode(text))
-        else:
-            # Rough approximation: ~4 chars per token
-            return len(text) // 4
+        # Rough approximation: ~4 chars per token
+        return len(text) // 4
 
     def optimize_search_results(
         self,
@@ -80,12 +78,13 @@ class TokenOptimizer:
         strategy: str = "truncate_old",
         max_tokens: int | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Optimize search results to reduce token usage"""
+        """Optimize search results to reduce token usage."""
         max_tokens = max_tokens or self.max_tokens
 
         if strategy in self.strategies:
             optimized_results, optimization_info = self.strategies[strategy](
-                results, max_tokens
+                results,
+                max_tokens,
             )
         else:
             optimized_results, optimization_info = results, {"strategy": "none"}
@@ -94,21 +93,26 @@ class TokenOptimizer:
         optimization_info["original_count"] = len(results)
         optimization_info["optimized_count"] = len(optimized_results)
         optimization_info["token_savings"] = self._calculate_token_savings(
-            results, optimized_results
+            results,
+            optimized_results,
         )
 
         return optimized_results, optimization_info
 
     def _truncate_old_conversations(
-        self, results: list[dict[str, Any]], max_tokens: int
+        self,
+        results: list[dict[str, Any]],
+        max_tokens: int,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Truncate old conversations based on age and importance"""
+        """Truncate old conversations based on age and importance."""
         if not results:
             return results, {"strategy": "truncate_old", "action": "no_results"}
 
         # Sort by timestamp (newest first)
         sorted_results = sorted(
-            results, key=lambda x: x.get("timestamp", ""), reverse=True
+            results,
+            key=lambda x: x.get("timestamp", ""),
+            reverse=True,
         )
 
         optimized_results = []
@@ -124,7 +128,8 @@ class TokenOptimizer:
                 # Try truncating the content
                 if len(optimized_results) < 3:  # Always keep at least 3 recent results
                     truncated_content = self._truncate_content(
-                        content, max_tokens - current_tokens
+                        content,
+                        max_tokens - current_tokens,
                     )
                     if truncated_content:
                         result_copy = result.copy()
@@ -148,9 +153,11 @@ class TokenOptimizer:
         }
 
     def _summarize_long_content(
-        self, results: list[dict[str, Any]], max_tokens: int
+        self,
+        results: list[dict[str, Any]],
+        max_tokens: int,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Summarize long content to reduce tokens"""
+        """Summarize long content to reduce tokens."""
         optimized_results = []
         summarized_count = 0
 
@@ -174,9 +181,11 @@ class TokenOptimizer:
         }
 
     def _chunk_large_response(
-        self, results: list[dict[str, Any]], max_tokens: int
+        self,
+        results: list[dict[str, Any]],
+        max_tokens: int,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Chunk large response into manageable pieces"""
+        """Chunk large response into manageable pieces."""
         if not results:
             return results, {"strategy": "chunk_response", "action": "no_results"}
 
@@ -225,9 +234,11 @@ class TokenOptimizer:
         return results, {"strategy": "chunk_response", "action": "failed"}
 
     def _filter_duplicate_content(
-        self, results: list[dict[str, Any]], max_tokens: int
+        self,
+        results: list[dict[str, Any]],
+        max_tokens: int,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Filter out duplicate or very similar content"""
+        """Filter out duplicate or very similar content."""
         if not results:
             return results, {"strategy": "filter_duplicates", "action": "no_results"}
 
@@ -254,9 +265,11 @@ class TokenOptimizer:
         }
 
     def _prioritize_recent_content(
-        self, results: list[dict[str, Any]], max_tokens: int
+        self,
+        results: list[dict[str, Any]],
+        max_tokens: int,
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-        """Prioritize recent content and score-based ranking"""
+        """Prioritize recent content and score-based ranking."""
         if not results:
             return results, {"strategy": "prioritize_recent", "action": "no_results"}
 
@@ -317,7 +330,7 @@ class TokenOptimizer:
         }
 
     def _truncate_content(self, content: str, max_tokens: int) -> str:
-        """Truncate content to fit within token limit"""
+        """Truncate content to fit within token limit."""
         if self.count_tokens(content) <= max_tokens:
             return content
 
@@ -345,7 +358,7 @@ class TokenOptimizer:
         return truncated.strip()
 
     def _create_quick_summary(self, content: str, max_length: int = 200) -> str:
-        """Create a quick summary of content"""
+        """Create a quick summary of content."""
         # Extract first and last sentences
         sentences = [s.strip() for s in content.split(".") if s.strip()]
         if not sentences:
@@ -364,9 +377,9 @@ class TokenOptimizer:
         return summary
 
     def _create_chunk_cache_entry(self, chunks: list[list[dict[str, Any]]]) -> str:
-        """Create cache entry for chunked results"""
+        """Create cache entry for chunked results."""
         cache_key = hashlib.md5(
-            f"chunks_{datetime.now().isoformat()}_{len(chunks)}".encode()
+            f"chunks_{datetime.now().isoformat()}_{len(chunks)}".encode(),
         ).hexdigest()
 
         chunk_result = ChunkResult(
@@ -384,7 +397,7 @@ class TokenOptimizer:
         return cache_key
 
     def get_chunk(self, cache_key: str, chunk_index: int) -> dict[str, Any] | None:
-        """Get a specific chunk from cache"""
+        """Get a specific chunk from cache."""
         if cache_key not in self.chunk_cache:
             return None
 
@@ -412,9 +425,11 @@ class TokenOptimizer:
         return None
 
     def _calculate_token_savings(
-        self, original: list[dict[str, Any]], optimized: list[dict[str, Any]]
+        self,
+        original: list[dict[str, Any]],
+        optimized: list[dict[str, Any]],
     ) -> dict[str, int]:
-        """Calculate token savings from optimization"""
+        """Calculate token savings from optimization."""
         original_tokens = sum(
             self.count_tokens(str(item.get("content", ""))) for item in original
         )
@@ -427,7 +442,8 @@ class TokenOptimizer:
             "optimized_tokens": optimized_tokens,
             "tokens_saved": original_tokens - optimized_tokens,
             "savings_percentage": round(
-                ((original_tokens - optimized_tokens) / original_tokens) * 100, 1
+                ((original_tokens - optimized_tokens) / original_tokens) * 100,
+                1,
             )
             if original_tokens > 0
             else 0,
@@ -439,8 +455,8 @@ class TokenOptimizer:
         request_tokens: int,
         response_tokens: int,
         optimization_applied: str | None = None,
-    ):
-        """Track token usage for monitoring"""
+    ) -> None:
+        """Track token usage for monitoring."""
         metrics = TokenUsageMetrics(
             request_tokens=request_tokens,
             response_tokens=response_tokens,
@@ -457,7 +473,7 @@ class TokenOptimizer:
             self.usage_history = self.usage_history[-100:]
 
     def get_usage_stats(self, hours: int = 24) -> dict[str, Any]:
-        """Get token usage statistics"""
+        """Get token usage statistics."""
         cutoff = datetime.now() - timedelta(hours=hours)
 
         recent_usage = [
@@ -491,9 +507,10 @@ class TokenOptimizer:
         }
 
     def _estimate_cost_savings(
-        self, usage_metrics: list[TokenUsageMetrics]
+        self,
+        usage_metrics: list[TokenUsageMetrics],
     ) -> dict[str, float]:
-        """Estimate cost savings from optimizations"""
+        """Estimate cost savings from optimizations."""
         # Rough cost estimation (adjust based on actual pricing)
         cost_per_1k_tokens = 0.01  # Example rate
 
@@ -512,7 +529,7 @@ class TokenOptimizer:
         }
 
     def cleanup_cache(self, max_age_hours: int = 1):
-        """Clean up expired cache entries"""
+        """Clean up expired cache entries."""
         cutoff = datetime.now() - timedelta(hours=max_age_hours)
         expired_keys = []
 
@@ -535,7 +552,7 @@ _token_optimizer = None
 
 
 def get_token_optimizer() -> TokenOptimizer:
-    """Get global token optimizer instance"""
+    """Get global token optimizer instance."""
     global _token_optimizer
     if _token_optimizer is None:
         _token_optimizer = TokenOptimizer()
@@ -547,13 +564,13 @@ async def optimize_search_response(
     strategy: str = "prioritize_recent",
     max_tokens: int = 4000,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Async wrapper for search result optimization"""
+    """Async wrapper for search result optimization."""
     optimizer = get_token_optimizer()
     return optimizer.optimize_search_results(results, strategy, max_tokens)
 
 
 async def get_cached_chunk(cache_key: str, chunk_index: int) -> dict[str, Any] | None:
-    """Async wrapper for chunk retrieval"""
+    """Async wrapper for chunk retrieval."""
     optimizer = get_token_optimizer()
     return optimizer.get_chunk(cache_key, chunk_index)
 
@@ -563,15 +580,18 @@ async def track_token_usage(
     request_tokens: int,
     response_tokens: int,
     optimization_applied: str | None = None,
-):
-    """Async wrapper for usage tracking"""
+) -> None:
+    """Async wrapper for usage tracking."""
     optimizer = get_token_optimizer()
     optimizer.track_usage(
-        operation, request_tokens, response_tokens, optimization_applied
+        operation,
+        request_tokens,
+        response_tokens,
+        optimization_applied,
     )
 
 
 async def get_token_usage_stats(hours: int = 24) -> dict[str, Any]:
-    """Async wrapper for usage statistics"""
+    """Async wrapper for usage statistics."""
     optimizer = get_token_optimizer()
     return optimizer.get_usage_stats(hours)

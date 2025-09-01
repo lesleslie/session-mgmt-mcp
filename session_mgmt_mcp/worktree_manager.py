@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Git Worktree Management for Session Management MCP Server
+"""Git Worktree Management for Session Management MCP Server.
 
 Provides high-level worktree operations and coordination with session management.
 """
@@ -18,18 +17,18 @@ from .utils.git_operations import (
 
 
 class WorktreeManager:
-    """Manages git worktrees with session coordination"""
+    """Manages git worktrees with session coordination."""
 
-    def __init__(self, session_logger=None):
+    def __init__(self, session_logger=None) -> None:
         self.session_logger = session_logger
 
-    def _log(self, message: str, level: str = "info", **context):
-        """Log messages if logger available"""
+    def _log(self, message: str, level: str = "info", **context) -> None:
+        """Log messages if logger available."""
         if self.session_logger:
             getattr(self.session_logger, level)(message, **context)
 
     async def list_worktrees(self, directory: Path) -> dict[str, Any]:
-        """List all worktrees with enhanced information"""
+        """List all worktrees with enhanced information."""
         if not is_git_repository(directory):
             return {"success": False, "error": "Not a git repository", "worktrees": []}
 
@@ -81,7 +80,7 @@ class WorktreeManager:
         create_branch: bool = False,
         checkout_existing: bool = False,
     ) -> dict[str, Any]:
-        """Create a new worktree"""
+        """Create a new worktree."""
         if not is_git_repository(repository_path):
             return {
                 "success": False,
@@ -107,7 +106,11 @@ class WorktreeManager:
 
             # Execute git worktree add
             result = subprocess.run(
-                cmd, cwd=repository_path, capture_output=True, text=True, check=True
+                cmd,
+                cwd=repository_path,
+                capture_output=True,
+                text=True,
+                check=True,
             )
 
             # Verify worktree was created
@@ -142,9 +145,12 @@ class WorktreeManager:
             return {"success": False, "error": str(e)}
 
     async def remove_worktree(
-        self, repository_path: Path, worktree_path: Path, force: bool = False
+        self,
+        repository_path: Path,
+        worktree_path: Path,
+        force: bool = False,
     ) -> dict[str, Any]:
-        """Remove an existing worktree"""
+        """Remove an existing worktree."""
         if not is_git_repository(repository_path):
             return {
                 "success": False,
@@ -162,7 +168,11 @@ class WorktreeManager:
 
             # Execute git worktree remove
             result = subprocess.run(
-                cmd, cwd=repository_path, capture_output=True, text=True, check=True
+                cmd,
+                cwd=repository_path,
+                capture_output=True,
+                text=True,
+                check=True,
             )
 
             self._log("Removed worktree", path=str(worktree_path))
@@ -184,7 +194,7 @@ class WorktreeManager:
             return {"success": False, "error": str(e)}
 
     async def prune_worktrees(self, repository_path: Path) -> dict[str, Any]:
-        """Prune stale worktree references"""
+        """Prune stale worktree references."""
         if not is_git_repository(repository_path):
             return {"success": False, "error": "Directory is not a git repository"}
 
@@ -219,7 +229,7 @@ class WorktreeManager:
             return {"success": False, "error": error_msg}
 
     async def get_worktree_status(self, directory: Path) -> dict[str, Any]:
-        """Get comprehensive status for current worktree and all related worktrees"""
+        """Get comprehensive status for current worktree and all related worktrees."""
         if not is_git_repository(directory):
             return {"success": False, "error": "Not a git repository"}
 
@@ -234,7 +244,7 @@ class WorktreeManager:
                 }
 
             # Enhanced status with session coordination
-            status = {
+            return {
                 "success": True,
                 "current_worktree": {
                     "path": str(current_worktree.path),
@@ -261,14 +271,12 @@ class WorktreeManager:
                 "session_summary": self._get_session_summary(all_worktrees),
             }
 
-            return status
-
         except Exception as e:
             self._log(f"Failed to get worktree status: {e}", level="error")
             return {"success": False, "error": str(e)}
 
     def _check_session_exists(self, path: Path) -> bool:
-        """Check if a worktree has an active session (placeholder)"""
+        """Check if a worktree has an active session (placeholder)."""
         # This would integrate with session management
         # For now, just check if it's a valid path
         if isinstance(path, str):
@@ -276,7 +284,7 @@ class WorktreeManager:
         return path.exists() and (path / ".git").exists()
 
     def _get_session_summary(self, worktrees: list[WorktreeInfo]) -> dict[str, Any]:
-        """Get summary of sessions across worktrees"""
+        """Get summary of sessions across worktrees."""
         active_sessions = 0
         branches = set()
 
@@ -292,9 +300,11 @@ class WorktreeManager:
         }
 
     async def switch_worktree_context(
-        self, from_path: Path, to_path: Path
+        self,
+        from_path: Path,
+        to_path: Path,
     ) -> dict[str, Any]:
-        """Coordinate switching between worktrees with session preservation"""
+        """Coordinate switching between worktrees with session preservation."""
         try:
             # Validate both paths
             if not is_git_repository(from_path):

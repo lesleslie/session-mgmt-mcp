@@ -1,5 +1,4 @@
-"""
-Unit tests for ReflectionDatabase and reflection tools.
+"""Unit tests for ReflectionDatabase and reflection tools.
 
 Tests the database operations for storing and retrieving reflections,
 conversation search, and embedding-based similarity matching.
@@ -29,11 +28,11 @@ except ImportError:
 
 
 class TestReflectionDatabase:
-    """Test suite for ReflectionDatabase"""
+    """Test suite for ReflectionDatabase."""
 
     @pytest.fixture
     async def temp_db(self):
-        """Create temporary database for testing"""
+        """Create temporary database for testing."""
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
@@ -52,7 +51,7 @@ class TestReflectionDatabase:
 
     @pytest.fixture
     def sample_reflection(self):
-        """Sample reflection data for testing"""
+        """Sample reflection data for testing."""
         return {
             "content": "Implemented authentication system with JWT tokens",
             "project": "test-project",
@@ -62,10 +61,10 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_database_initialization(self, temp_db):
-        """Test database initialization creates required tables"""
+        """Test database initialization creates required tables."""
         # Check if tables exist by querying them
         result = await temp_db._execute_query(
-            "SELECT name FROM sqlite_master WHERE type='table'"
+            "SELECT name FROM sqlite_master WHERE type='table'",
         )
 
         table_names = [row[0] for row in result]
@@ -74,7 +73,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_store_reflection_success(self, temp_db, sample_reflection):
-        """Test successful reflection storage"""
+        """Test successful reflection storage."""
         result = await temp_db.store_reflection(
             content=sample_reflection["content"],
             project=sample_reflection["project"],
@@ -85,7 +84,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_store_reflection_with_embedding(self, temp_db, sample_reflection):
-        """Test storing reflection with custom embedding"""
+        """Test storing reflection with custom embedding."""
         result = await temp_db.store_reflection(
             content=sample_reflection["content"],
             project=sample_reflection["project"],
@@ -97,16 +96,17 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_store_reflection_minimal(self, temp_db):
-        """Test storing reflection with minimal data"""
+        """Test storing reflection with minimal data."""
         result = await temp_db.store_reflection(
-            content="Minimal reflection", project="test"
+            content="Minimal reflection",
+            project="test",
         )
 
         assert result is True
 
     @pytest.mark.asyncio
     async def test_store_reflection_empty_content(self, temp_db):
-        """Test storing reflection with empty content"""
+        """Test storing reflection with empty content."""
         result = await temp_db.store_reflection(content="", project="test")
 
         # Should still succeed with empty content
@@ -114,7 +114,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_search_reflections_by_text(self, temp_db):
-        """Test text-based reflection search"""
+        """Test text-based reflection search."""
         # Store test reflections
         test_reflections = [
             {"content": "Authentication system implementation", "project": "proj1"},
@@ -135,7 +135,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_search_reflections_by_project(self, temp_db):
-        """Test searching reflections filtered by project"""
+        """Test searching reflections filtered by project."""
         # Store reflections for different projects
         reflections = [
             {"content": "Feature A implementation", "project": "project-alpha"},
@@ -148,7 +148,9 @@ class TestReflectionDatabase:
 
         # Search within specific project
         results = await temp_db.search_reflections(
-            query="feature", project="project-alpha", limit=10
+            query="feature",
+            project="project-alpha",
+            limit=10,
         )
 
         assert len(results) == 2
@@ -157,11 +159,12 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_search_reflections_limit(self, temp_db):
-        """Test search result limiting"""
+        """Test search result limiting."""
         # Store many reflections
         for i in range(10):
             await temp_db.store_reflection(
-                content=f"Test reflection number {i}", project="test"
+                content=f"Test reflection number {i}",
+                project="test",
             )
 
         # Search with limit
@@ -171,7 +174,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_search_reflections_empty_query(self, temp_db):
-        """Test search with empty query"""
+        """Test search with empty query."""
         # Store a reflection
         await temp_db.store_reflection(content="Test reflection", project="test")
 
@@ -182,7 +185,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_get_reflection_stats_empty(self, temp_db):
-        """Test getting stats from empty database"""
+        """Test getting stats from empty database."""
         stats = await temp_db.get_reflection_stats()
 
         expected_stats = {
@@ -196,7 +199,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_get_reflection_stats_with_data(self, temp_db):
-        """Test getting stats with data in database"""
+        """Test getting stats with data in database."""
         # Store reflections for different projects
         reflections = [
             {"content": "Reflection 1", "project": "proj-a"},
@@ -217,7 +220,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_concurrent_operations(self, temp_db):
-        """Test concurrent database operations"""
+        """Test concurrent database operations."""
 
         async def store_reflection(i):
             return await temp_db.store_reflection(
@@ -239,7 +242,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_database_error_handling(self, temp_db):
-        """Test database error handling"""
+        """Test database error handling."""
         # Close the database connection to simulate error
         if temp_db.conn:
             temp_db.conn.close()
@@ -247,7 +250,8 @@ class TestReflectionDatabase:
 
         # Operations should handle the error gracefully
         result = await temp_db.store_reflection(
-            content="This should fail", project="test"
+            content="This should fail",
+            project="test",
         )
 
         # Should return False on failure rather than raising exception
@@ -255,7 +259,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_large_content_storage(self, temp_db):
-        """Test storing large content"""
+        """Test storing large content."""
         large_content = "A" * 10000  # 10KB content
 
         result = await temp_db.store_reflection(content=large_content, project="test")
@@ -269,13 +273,14 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_special_characters_handling(self, temp_db):
-        """Test handling of special characters in content"""
+        """Test handling of special characters in content."""
         special_content = (
             "Test with special chars: 'quotes', \"double quotes\", <tags>, & ampersand"
         )
 
         result = await temp_db.store_reflection(
-            content=special_content, project="special-test"
+            content=special_content,
+            project="special-test",
         )
 
         assert result is True
@@ -290,11 +295,12 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_unicode_content_handling(self, temp_db):
-        """Test handling of Unicode content"""
+        """Test handling of Unicode content."""
         unicode_content = "Unicode test: 🚀 émoji ñoñó 中文 العربية"
 
         result = await temp_db.store_reflection(
-            content=unicode_content, project="unicode-test"
+            content=unicode_content,
+            project="unicode-test",
         )
 
         assert result is True
@@ -308,11 +314,13 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_tag_handling(self, temp_db):
-        """Test proper handling of tags"""
+        """Test proper handling of tags."""
         tags = ["python", "web-development", "API", "testing"]
 
         result = await temp_db.store_reflection(
-            content="Test with tags", project="tag-test", tags=tags
+            content="Test with tags",
+            project="tag-test",
+            tags=tags,
         )
 
         assert result is True
@@ -323,16 +331,17 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_empty_database_search(self, temp_db):
-        """Test searching in empty database"""
+        """Test searching in empty database."""
         results = await temp_db.search_reflections(query="nonexistent", limit=10)
 
         assert results == []
 
     @pytest.mark.asyncio
     async def test_search_case_insensitive(self, temp_db):
-        """Test case-insensitive search"""
+        """Test case-insensitive search."""
         await temp_db.store_reflection(
-            content="JavaScript Development Project", project="test"
+            content="JavaScript Development Project",
+            project="test",
         )
 
         # Search with different cases
@@ -342,7 +351,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_performance_large_dataset(self, temp_db, performance_monitor):
-        """Test performance with large dataset"""
+        """Test performance with large dataset."""
         performance_monitor.start_monitoring()
 
         # Store many reflections
@@ -367,7 +376,7 @@ class TestReflectionDatabase:
 
     @pytest.mark.asyncio
     async def test_database_file_permissions(self, temp_db):
-        """Test database file has correct permissions"""
+        """Test database file has correct permissions."""
         db_path = Path(temp_db.db_path)
 
         # Check file exists
@@ -387,17 +396,17 @@ class TestReflectionDatabase:
 
 @pytest.mark.asyncio
 class TestReflectionDatabaseWithEmbeddings:
-    """Test ReflectionDatabase with embedding functionality"""
+    """Test ReflectionDatabase with embedding functionality."""
 
     @pytest.fixture
     async def temp_db_with_embeddings(self):
-        """Create temporary database with embedding support"""
+        """Create temporary database with embedding support."""
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
         # Mock embedding model availability
         with patch(
-            "session_mgmt_mcp.reflection_tools.ReflectionDatabase._load_embedding_model"
+            "session_mgmt_mcp.reflection_tools.ReflectionDatabase._load_embedding_model",
         ) as mock_load:
             mock_model = Mock()
             mock_tokenizer = Mock()
@@ -418,7 +427,7 @@ class TestReflectionDatabaseWithEmbeddings:
 
     @pytest.mark.asyncio
     async def test_embedding_generation(self, temp_db_with_embeddings):
-        """Test automatic embedding generation"""
+        """Test automatic embedding generation."""
         db, mock_model, mock_tokenizer = temp_db_with_embeddings
 
         # Configure mocks
@@ -426,7 +435,8 @@ class TestReflectionDatabaseWithEmbeddings:
         mock_model.predict.return_value = [[0.1, -0.2, 0.3] * 128]  # 384-dim
 
         result = await db.store_reflection(
-            content="Test reflection for embedding", project="embedding-test"
+            content="Test reflection for embedding",
+            project="embedding-test",
         )
 
         assert result is True
@@ -436,7 +446,7 @@ class TestReflectionDatabaseWithEmbeddings:
 
     @pytest.mark.asyncio
     async def test_semantic_search(self, temp_db_with_embeddings):
-        """Test semantic search with embeddings"""
+        """Test semantic search with embeddings."""
         db, mock_model, mock_tokenizer = temp_db_with_embeddings
 
         # Setup mock responses for similar embeddings
@@ -448,7 +458,8 @@ class TestReflectionDatabaseWithEmbeddings:
 
         # Store a reflection
         await db.store_reflection(
-            content="Machine learning model training", project="ml-project"
+            content="Machine learning model training",
+            project="ml-project",
         )
 
         # Search embedding (similar to storage)
@@ -463,10 +474,11 @@ class TestReflectionDatabaseWithEmbeddings:
 
     @pytest.mark.asyncio
     async def test_embedding_fallback_to_text_search(self, temp_db):
-        """Test fallback to text search when embeddings unavailable"""
+        """Test fallback to text search when embeddings unavailable."""
         # Store reflection without embeddings
         await temp_db.store_reflection(
-            content="Fallback search test content", project="fallback-test"
+            content="Fallback search test content",
+            project="fallback-test",
         )
 
         # Search should still work via text search

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Multi-Project Session Coordination
+"""Multi-Project Session Coordination.
 
 Manages relationships and coordination between multiple projects and their sessions.
 """
@@ -18,7 +17,7 @@ from .reflection_tools import ReflectionDatabase
 
 @dataclass
 class ProjectGroup:
-    """Represents a group of related projects"""
+    """Represents a group of related projects."""
 
     id: str
     name: str
@@ -30,7 +29,7 @@ class ProjectGroup:
 
 @dataclass
 class ProjectDependency:
-    """Represents a dependency between two projects"""
+    """Represents a dependency between two projects."""
 
     id: str
     source_project: str
@@ -43,7 +42,7 @@ class ProjectDependency:
 
 @dataclass
 class SessionLink:
-    """Represents a link between sessions across projects"""
+    """Represents a link between sessions across projects."""
 
     id: str
     source_session_id: str
@@ -55,9 +54,9 @@ class SessionLink:
 
 
 class MultiProjectCoordinator:
-    """Coordinates sessions and knowledge across multiple projects"""
+    """Coordinates sessions and knowledge across multiple projects."""
 
-    def __init__(self, reflection_db: ReflectionDatabase):
+    def __init__(self, reflection_db: ReflectionDatabase) -> None:
         self.reflection_db = reflection_db
         self.active_project_groups: dict[str, ProjectGroup] = {}
         self.dependency_cache: dict[str, list[ProjectDependency]] = {}
@@ -70,7 +69,7 @@ class MultiProjectCoordinator:
         description: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> ProjectGroup:
-        """Create a new project group"""
+        """Create a new project group."""
         group_id = hashlib.md5(f"{name}_{time.time()}".encode()).hexdigest()
 
         group = ProjectGroup(
@@ -113,9 +112,9 @@ class MultiProjectCoordinator:
         description: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> ProjectDependency:
-        """Add a dependency relationship between projects"""
+        """Add a dependency relationship between projects."""
         dep_id = hashlib.md5(
-            f"{source_project}_{target_project}_{dependency_type}".encode()
+            f"{source_project}_{target_project}_{dependency_type}".encode(),
         ).hexdigest()
 
         dependency = ProjectDependency(
@@ -164,9 +163,9 @@ class MultiProjectCoordinator:
         context: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> SessionLink:
-        """Create a link between two sessions across projects"""
+        """Create a link between two sessions across projects."""
         link_id = hashlib.md5(
-            f"{source_session_id}_{target_session_id}_{link_type}".encode()
+            f"{source_session_id}_{target_session_id}_{link_type}".encode(),
         ).hexdigest()
 
         link = SessionLink(
@@ -208,9 +207,10 @@ class MultiProjectCoordinator:
         return link
 
     async def get_project_groups(
-        self, project: str | None = None
+        self,
+        project: str | None = None,
     ) -> list[ProjectGroup]:
-        """Get project groups, optionally filtered by project"""
+        """Get project groups, optionally filtered by project."""
         sql = "SELECT id, name, description, projects, created_at, metadata FROM project_groups"
         params = []
 
@@ -221,7 +221,8 @@ class MultiProjectCoordinator:
         sql += " ORDER BY created_at DESC"
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
         )
 
         groups = []
@@ -244,7 +245,7 @@ class MultiProjectCoordinator:
         project: str,
         direction: str = "both",  # "outbound", "inbound", "both"
     ) -> list[ProjectDependency]:
-        """Get dependencies for a project"""
+        """Get dependencies for a project."""
         if project in self.dependency_cache:
             return self.dependency_cache[project]
 
@@ -269,7 +270,8 @@ class MultiProjectCoordinator:
         """
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
         )
 
         dependencies = []
@@ -289,7 +291,7 @@ class MultiProjectCoordinator:
         return dependencies
 
     async def get_session_links(self, session_id: str) -> list[SessionLink]:
-        """Get all links for a session"""
+        """Get all links for a session."""
         if session_id in self.session_links_cache:
             return self.session_links_cache[session_id]
 
@@ -303,7 +305,8 @@ class MultiProjectCoordinator:
         results = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: self.reflection_db.conn.execute(
-                sql, [session_id, session_id]
+                sql,
+                [session_id, session_id],
             ).fetchall(),
         )
 
@@ -324,13 +327,15 @@ class MultiProjectCoordinator:
         return links
 
     async def find_related_conversations(
-        self, current_project: str, query: str, limit: int = 10
+        self,
+        current_project: str,
+        query: str,
+        limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Find conversations across related projects"""
-
+        """Find conversations across related projects."""
         # Get project dependencies to find related projects
         dependencies = await self.get_project_dependencies(current_project)
-        related_projects = set([current_project])
+        related_projects = {current_project}
 
         for dep in dependencies:
             if dep.source_project == current_project:
@@ -343,7 +348,9 @@ class MultiProjectCoordinator:
 
         for project in related_projects:
             project_results = await self.reflection_db.search_conversations(
-                query=query, limit=limit, project=project
+                query=query,
+                limit=limit,
+                project=project,
             )
 
             for result in project_results:
@@ -356,10 +363,11 @@ class MultiProjectCoordinator:
         return results[:limit]
 
     async def get_cross_project_insights(
-        self, projects: list[str], time_range_days: int = 30
+        self,
+        projects: list[str],
+        time_range_days: int = 30,
     ) -> dict[str, Any]:
-        """Get insights across multiple projects"""
-
+        """Get insights across multiple projects."""
         since_date = datetime.now(UTC) - timedelta(days=time_range_days)
         insights = {
             "project_activity": {},
@@ -381,7 +389,8 @@ class MultiProjectCoordinator:
             result = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.reflection_db.conn.execute(
-                    sql, [project, since_date]
+                    sql,
+                    [project, since_date],
                 ).fetchone(),
             )
 
@@ -399,10 +408,11 @@ class MultiProjectCoordinator:
         return insights
 
     async def _find_common_patterns(
-        self, projects: list[str], since_date: datetime
+        self,
+        projects: list[str],
+        since_date: datetime,
     ) -> list[dict[str, Any]]:
-        """Find common patterns across projects"""
-
+        """Find common patterns across projects."""
         # Simple pattern detection based on common keywords
         patterns = []
 
@@ -416,7 +426,8 @@ class MultiProjectCoordinator:
         results = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: self.reflection_db.conn.execute(
-                sql, [projects, since_date]
+                sql,
+                [projects, since_date],
             ).fetchall(),
         )
 
@@ -450,32 +461,33 @@ class MultiProjectCoordinator:
                         "pattern": word,
                         "projects": [p[0] for p in project_counts],
                         "frequency": sum(p[1] for p in project_counts),
-                    }
+                    },
                 )
 
         # Sort by frequency
         patterns.sort(key=lambda x: x["frequency"], reverse=True)
         return patterns[:10]  # Return top 10 patterns
 
-    def _clear_dependency_cache(self, project: str):
-        """Clear dependency cache for a project"""
+    def _clear_dependency_cache(self, project: str) -> None:
+        """Clear dependency cache for a project."""
         if project in self.dependency_cache:
             del self.dependency_cache[project]
 
-    def _clear_session_links_cache(self, session_id: str):
-        """Clear session links cache for a session"""
+    def _clear_session_links_cache(self, session_id: str) -> None:
+        """Clear session links cache for a session."""
         if session_id in self.session_links_cache:
             del self.session_links_cache[session_id]
 
     async def cleanup_old_links(self, max_age_days: int = 365):
-        """Clean up old session links and dependencies"""
+        """Clean up old session links and dependencies."""
         cutoff_date = datetime.now(UTC) - timedelta(days=max_age_days)
 
         # Clean up old session links
         deleted_links = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: self.reflection_db.conn.execute(
-                "DELETE FROM session_links WHERE created_at < ?", [cutoff_date]
+                "DELETE FROM session_links WHERE created_at < ?",
+                [cutoff_date],
             ).rowcount,
         )
 

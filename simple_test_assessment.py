@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
-"""
-Simple testing assessment for session-mgmt-mcp.
-"""
+"""Simple testing assessment for session-mgmt-mcp."""
 
 import subprocess
 from pathlib import Path
 
 
 def run_command(cmd: list[str]) -> tuple[int, str, str]:
-    """Run a command and return exit code, stdout, stderr"""
+    """Run a command and return exit code, stdout, stderr."""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+        result = subprocess.run(
+            cmd, check=False, capture_output=True, text=True, cwd=Path.cwd()
+        )
         return result.returncode, result.stdout, result.stderr
     except Exception as e:
         return 1, "", str(e)
 
 
-def assess_testing_status():
-    """Assess current testing status and capabilities"""
+def assess_testing_status() -> None:
+    """Assess current testing status and capabilities."""
     print("🧪 Session Management MCP - Testing Assessment")
     print("=" * 60)
 
     # Check pytest availability
     print("\n1. Testing Framework Status:")
     code, stdout, stderr = run_command(
-        ["python", "-c", "import pytest; print('pytest available')"]
+        ["python", "-c", "import pytest; print('pytest available')"],
     )
     if code == 0:
         print("   ✅ pytest: Available")
@@ -43,7 +43,7 @@ def assess_testing_status():
 
     for module in modules_to_check:
         code, stdout, stderr = run_command(
-            ["python", "-c", f"import {module}; print('OK')"]
+            ["python", "-c", f"import {module}; print('OK')"],
         )
         if code == 0:
             print(f"   ✅ {module}: Imports successfully")
@@ -95,7 +95,7 @@ def assess_testing_status():
                     "-v",
                     "--tb=line",
                     "--disable-warnings",
-                ]
+                ],
             )
 
             if code == 0:
@@ -111,8 +111,7 @@ def assess_testing_status():
                 if failed > 0:
                     print("      ⚠️ Some tests failed - see details above")
                 break
-            else:
-                print(f"      ❌ Test execution failed: {stderr.strip()[:100]}")
+            print(f"      ❌ Test execution failed: {stderr.strip()[:100]}")
         else:
             print(f"   ❌ {test_file} not found")
 

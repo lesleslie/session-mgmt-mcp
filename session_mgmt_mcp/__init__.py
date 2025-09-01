@@ -1,5 +1,4 @@
-"""
-Claude Session Management MCP Server
+"""Claude Session Management MCP Server.
 
 A dedicated MCP server that provides session management functionality
 including initialization, checkpoints, and cleanup across all projects.

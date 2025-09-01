@@ -1,5 +1,4 @@
-"""
-MCP server testing helpers and utilities.
+"""MCP server testing helpers and utilities.
 
 Provides utilities for testing MCP tools, server functionality,
 and message handling.
@@ -13,15 +12,15 @@ from unittest.mock import AsyncMock, patch
 
 
 class MCPTestClient:
-    """Test client for MCP server operations"""
+    """Test client for MCP server operations."""
 
-    def __init__(self, mcp_server):
+    def __init__(self, mcp_server) -> None:
         self.mcp_server = mcp_server
         self.tools = {}
         self.call_history = []
 
     async def list_tools(self) -> list[dict[str, Any]]:
-        """List available MCP tools"""
+        """List available MCP tools."""
         # Get tools from the MCP server
         tools = []
         if hasattr(self.mcp_server, "list_tools"):
@@ -29,9 +28,11 @@ class MCPTestClient:
         return tools
 
     async def call_tool(
-        self, tool_name: str, arguments: dict[str, Any]
+        self,
+        tool_name: str,
+        arguments: dict[str, Any],
     ) -> dict[str, Any]:
-        """Call an MCP tool with arguments"""
+        """Call an MCP tool with arguments."""
         call_record = {
             "tool_name": tool_name,
             "arguments": arguments,
@@ -49,7 +50,7 @@ class MCPTestClient:
         return result
 
     def get_call_history(self, tool_name: str | None = None) -> list[dict[str, Any]]:
-        """Get history of tool calls, optionally filtered by tool name"""
+        """Get history of tool calls, optionally filtered by tool name."""
         if tool_name:
             return [
                 call for call in self.call_history if call["tool_name"] == tool_name
@@ -57,20 +58,20 @@ class MCPTestClient:
         return self.call_history
 
     def clear_history(self):
-        """Clear call history"""
+        """Clear call history."""
         self.call_history.clear()
 
 
 class MCPTestEnvironment:
-    """Complete test environment for MCP server testing"""
+    """Complete test environment for MCP server testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.temp_dirs = []
         self.mock_patches = []
         self.test_data = {}
 
     def setup_temp_workspace(self) -> Path:
-        """Setup temporary workspace for testing"""
+        """Setup temporary workspace for testing."""
         temp_dir = Path(tempfile.mkdtemp(prefix="mcp_test_"))
         self.temp_dirs.append(temp_dir)
 
@@ -83,7 +84,7 @@ class MCPTestEnvironment:
         return temp_dir
 
     def setup_mock_git_repo(self, path: Path):
-        """Setup mock git repository for testing"""
+        """Setup mock git repository for testing."""
         git_dir = path / ".git"
         git_dir.mkdir(exist_ok=True)
 
@@ -102,14 +103,14 @@ class MCPTestEnvironment:
         (path / "src" / "main.py").write_text("print('Hello, World!')")
 
     def add_mock_patch(self, target: str, **kwargs):
-        """Add a mock patch to be cleaned up later"""
+        """Add a mock patch to be cleaned up later."""
         patcher = patch(target, **kwargs)
         mock = patcher.start()
         self.mock_patches.append(patcher)
         return mock
 
     def cleanup(self):
-        """Cleanup test environment"""
+        """Cleanup test environment."""
         # Stop all patches
         for patcher in self.mock_patches:
             patcher.stop()
@@ -125,9 +126,10 @@ class MCPTestEnvironment:
 
 
 async def simulate_session_workflow(
-    mcp_client: MCPTestClient, project_path: str = "/tmp/test-project"
+    mcp_client: MCPTestClient,
+    project_path: str = "/tmp/test-project",
 ) -> dict[str, Any]:
-    """Simulate a complete session management workflow"""
+    """Simulate a complete session management workflow."""
     workflow_results = {
         "init": None,
         "checkpoint": None,
@@ -139,7 +141,8 @@ async def simulate_session_workflow(
     try:
         # 1. Initialize session
         init_result = await mcp_client.call_tool(
-            "init", {"working_directory": project_path}
+            "init",
+            {"working_directory": project_path},
         )
         workflow_results["init"] = init_result
 
@@ -166,21 +169,21 @@ async def simulate_session_workflow(
 
 
 def create_mock_reflection_database():
-    """Create mock reflection database for testing"""
+    """Create mock reflection database for testing."""
     mock_db = AsyncMock()
 
     # Mock database methods
     mock_db.store_reflection = AsyncMock(return_value=True)
     mock_db.search_reflections = AsyncMock(return_value=[])
     mock_db.get_reflection_stats = AsyncMock(
-        return_value={"total_reflections": 0, "projects": 0, "date_range": None}
+        return_value={"total_reflections": 0, "projects": 0, "date_range": None},
     )
 
     return mock_db
 
 
 def create_test_session_permissions():
-    """Create test session permissions manager"""
+    """Create test session permissions manager."""
     from session_mgmt_mcp.server import SessionPermissionsManager
 
     permissions = SessionPermissionsManager()
@@ -194,9 +197,9 @@ def create_test_session_permissions():
 
 
 class MockMCPServer:
-    """Mock MCP server for testing"""
+    """Mock MCP server for testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tools = {
             "init": self._mock_init,
             "checkpoint": self._mock_checkpoint,
@@ -208,14 +211,13 @@ class MockMCPServer:
         self.state = {"initialized": False, "checkpoints": [], "reflections": []}
 
     async def list_tools(self):
-        """List available tools"""
+        """List available tools."""
         return [
-            {"name": name, "description": f"Mock {name} tool"}
-            for name in self.tools.keys()
+            {"name": name, "description": f"Mock {name} tool"} for name in self.tools
         ]
 
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]):
-        """Call a tool"""
+        """Call a tool."""
         if tool_name not in self.tools:
             return {"error": f"Tool {tool_name} not found"}
 
@@ -223,7 +225,7 @@ class MockMCPServer:
         return await handler(arguments)
 
     async def _mock_init(self, args):
-        """Mock init tool"""
+        """Mock init tool."""
         self.state["initialized"] = True
         return {
             "success": True,
@@ -238,7 +240,7 @@ class MockMCPServer:
         }
 
     async def _mock_checkpoint(self, args):
-        """Mock checkpoint tool"""
+        """Mock checkpoint tool."""
         checkpoint = {
             "timestamp": asyncio.get_event_loop().time(),
             "quality_score": 0.90,
@@ -252,7 +254,7 @@ class MockMCPServer:
         }
 
     async def _mock_end(self, args):
-        """Mock end tool"""
+        """Mock end tool."""
         return {
             "success": True,
             "session_ended": True,
@@ -261,7 +263,7 @@ class MockMCPServer:
         }
 
     async def _mock_status(self, args):
-        """Mock status tool"""
+        """Mock status tool."""
         return {
             "session_active": self.state["initialized"],
             "checkpoints_count": len(self.state["checkpoints"]),
@@ -270,7 +272,7 @@ class MockMCPServer:
         }
 
     async def _mock_reflect_on_past(self, args):
-        """Mock reflect on past tool"""
+        """Mock reflect on past tool."""
         query = args.get("query", "")
         return {
             "results": [
@@ -278,13 +280,13 @@ class MockMCPServer:
                     "content": f'Mock reflection matching "{query}"',
                     "score": 0.95,
                     "project": "test-project",
-                }
+                },
             ],
             "total_results": 1,
         }
 
     async def _mock_store_reflection(self, args):
-        """Mock store reflection tool"""
+        """Mock store reflection tool."""
         reflection = {
             "content": args.get("content", ""),
             "tags": args.get("tags", []),
@@ -299,9 +301,11 @@ class MockMCPServer:
 
 
 def assert_tool_call_made(
-    mcp_client: MCPTestClient, tool_name: str, expected_args: dict | None = None
+    mcp_client: MCPTestClient,
+    tool_name: str,
+    expected_args: dict | None = None,
 ):
-    """Assert that a specific tool call was made"""
+    """Assert that a specific tool call was made."""
     calls = mcp_client.get_call_history(tool_name)
     assert len(calls) > 0, f"Expected tool '{tool_name}' to be called"
 
@@ -317,7 +321,7 @@ def assert_tool_call_made(
 
 
 def assert_successful_tool_call(mcp_client: MCPTestClient, tool_name: str):
-    """Assert that a tool call was successful"""
+    """Assert that a tool call was successful."""
     calls = mcp_client.get_call_history(tool_name)
     assert len(calls) > 0, f"Expected tool '{tool_name}' to be called"
 
@@ -329,9 +333,11 @@ def assert_successful_tool_call(mcp_client: MCPTestClient, tool_name: str):
 
 
 def assert_tool_call_count(
-    mcp_client: MCPTestClient, tool_name: str, expected_count: int
+    mcp_client: MCPTestClient,
+    tool_name: str,
+    expected_count: int,
 ):
-    """Assert the number of times a tool was called"""
+    """Assert the number of times a tool was called."""
     calls = mcp_client.get_call_history(tool_name)
     assert len(calls) == expected_count, (
         f"Expected {expected_count} calls to '{tool_name}', got {len(calls)}"
@@ -342,18 +348,18 @@ def assert_tool_call_count(
 
 
 class MCPPerformanceTracker:
-    """Track performance metrics for MCP operations"""
+    """Track performance metrics for MCP operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics = {}
         self.start_times = {}
 
     def start_operation(self, operation_name: str):
-        """Start tracking an operation"""
+        """Start tracking an operation."""
         self.start_times[operation_name] = asyncio.get_event_loop().time()
 
     def end_operation(self, operation_name: str):
-        """End tracking an operation and record metrics"""
+        """End tracking an operation and record metrics."""
         if operation_name not in self.start_times:
             return
 
@@ -366,7 +372,7 @@ class MCPPerformanceTracker:
         del self.start_times[operation_name]
 
     def get_average_duration(self, operation_name: str) -> float | None:
-        """Get average duration for an operation"""
+        """Get average duration for an operation."""
         if operation_name not in self.metrics or not self.metrics[operation_name]:
             return None
 
@@ -374,7 +380,7 @@ class MCPPerformanceTracker:
         return sum(durations) / len(durations)
 
     def get_operation_stats(self, operation_name: str) -> dict[str, float]:
-        """Get comprehensive stats for an operation"""
+        """Get comprehensive stats for an operation."""
         if operation_name not in self.metrics or not self.metrics[operation_name]:
             return {}
 

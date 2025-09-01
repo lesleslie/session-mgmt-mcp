@@ -1,5 +1,4 @@
-"""
-Test data management and cleanup utilities.
+"""Test data management and cleanup utilities.
 
 Provides utilities for:
 - Managing test data lifecycle
@@ -32,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 class TestDataManager:
-    """Manages test data lifecycle and cleanup"""
+    """Manages test data lifecycle and cleanup."""
 
-    def __init__(self, base_temp_dir: Path | None = None):
+    def __init__(self, base_temp_dir: Path | None = None) -> None:
         self.base_temp_dir = base_temp_dir or Path(tempfile.gettempdir())
         self.temp_dirs: list[Path] = []
         self.temp_files: list[Path] = []
@@ -43,7 +42,7 @@ class TestDataManager:
 
     @contextmanager
     def temp_directory(self, prefix: str = "session_mgmt_test_") -> Generator[Path]:
-        """Create and manage temporary directory"""
+        """Create and manage temporary directory."""
         temp_dir = Path(tempfile.mkdtemp(prefix=prefix, dir=self.base_temp_dir))
         self.temp_dirs.append(temp_dir)
 
@@ -54,9 +53,9 @@ class TestDataManager:
 
     @contextmanager
     def temp_file(self, suffix: str = ".tmp", prefix: str = "test_") -> Generator[Path]:
-        """Create and manage temporary file"""
+        """Create and manage temporary file."""
         temp_file = Path(
-            tempfile.mktemp(suffix=suffix, prefix=prefix, dir=self.base_temp_dir)
+            tempfile.mktemp(suffix=suffix, prefix=prefix, dir=self.base_temp_dir),
         )
         self.temp_files.append(temp_file)
 
@@ -67,7 +66,7 @@ class TestDataManager:
 
     @asynccontextmanager
     async def temp_database(self, populate: bool = False) -> ReflectionDatabase:
-        """Create and manage temporary test database"""
+        """Create and manage temporary test database."""
         with self.temp_file(suffix=".db", prefix="test_reflections_") as db_path:
             db = ReflectionDatabase(str(db_path))
             self.databases.append(db)
@@ -83,8 +82,8 @@ class TestDataManager:
                 if db.conn:
                     db.conn.close()
 
-    async def _populate_test_database(self, db: ReflectionDatabase):
-        """Populate database with test data"""
+    async def _populate_test_database(self, db: ReflectionDatabase) -> None:
+        """Populate database with test data."""
         # Add variety of test reflections
         test_reflections = ReflectionDataFactory.build_batch(50)
 
@@ -96,7 +95,7 @@ class TestDataManager:
             )
 
     def create_test_project_structure(self, base_path: Path, project_name: str) -> Path:
-        """Create realistic test project structure"""
+        """Create realistic test project structure."""
         project_path = base_path / project_name
         project_path.mkdir(parents=True, exist_ok=True)
 
@@ -166,7 +165,7 @@ DEBUG=True
         return project_path
 
     def create_git_repository(self, project_path: Path):
-        """Initialize git repository in project"""
+        """Initialize git repository in project."""
         git_dir = project_path / ".git"
         git_dir.mkdir(exist_ok=True)
 
@@ -192,26 +191,28 @@ DEBUG=True
         (objects_dir / "pack").mkdir(exist_ok=True)
 
     def generate_test_dataset(
-        self, dataset_type: str, size: str = "small"
+        self,
+        dataset_type: str,
+        size: str = "small",
     ) -> list[dict]:
-        """Generate test datasets of various sizes"""
+        """Generate test datasets of various sizes."""
         sizes = {"tiny": 10, "small": 50, "medium": 200, "large": 1000, "xlarge": 5000}
 
         count = sizes.get(size, 50)
 
         if dataset_type == "reflections":
             return ReflectionDataFactory.build_batch(count)
-        elif dataset_type == "sessions":
+        if dataset_type == "sessions":
             return SessionDataFactory.build_batch(count)
-        elif dataset_type == "projects":
+        if dataset_type == "projects":
             return ProjectDataFactory.build_batch(count)
-        elif dataset_type == "large_reflections":
+        if dataset_type == "large_reflections":
             return LargeDatasetFactory.generate_large_reflection_dataset(count)
-        else:
-            raise ValueError(f"Unknown dataset type: {dataset_type}")
+        msg = f"Unknown dataset type: {dataset_type}"
+        raise ValueError(msg)
 
     def save_test_data(self, data: Any, file_path: Path):
-        """Save test data to file"""
+        """Save test data to file."""
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         if file_path.suffix == ".json":
@@ -223,27 +224,28 @@ DEBUG=True
                 json.dump(data, f, indent=2, default=str)
 
     def load_test_data(self, file_path: Path) -> Any:
-        """Load test data from file"""
+        """Load test data from file."""
         if not file_path.exists():
-            raise FileNotFoundError(f"Test data file not found: {file_path}")
+            msg = f"Test data file not found: {file_path}"
+            raise FileNotFoundError(msg)
 
         with open(file_path) as f:
             return json.load(f)
 
     def register_cleanup_callback(self, callback: callable):
-        """Register callback to be called during cleanup"""
+        """Register callback to be called during cleanup."""
         self.cleanup_callbacks.append(callback)
 
-    def _cleanup_directory(self, directory: Path):
-        """Clean up temporary directory"""
+    def _cleanup_directory(self, directory: Path) -> None:
+        """Clean up temporary directory."""
         if directory.exists():
             try:
                 shutil.rmtree(directory)
             except Exception as e:
                 logger.warning(f"Failed to cleanup directory {directory}: {e}")
 
-    def _cleanup_file(self, file_path: Path):
-        """Clean up temporary file"""
+    def _cleanup_file(self, file_path: Path) -> None:
+        """Clean up temporary file."""
         if file_path.exists():
             try:
                 file_path.unlink()
@@ -251,7 +253,7 @@ DEBUG=True
                 logger.warning(f"Failed to cleanup file {file_path}: {e}")
 
     def cleanup_all(self):
-        """Clean up all managed resources"""
+        """Clean up all managed resources."""
         # Call cleanup callbacks
         for callback in self.cleanup_callbacks:
             try:
@@ -283,11 +285,11 @@ DEBUG=True
 
 
 class DatabaseTestHelper:
-    """Helper for database testing operations"""
+    """Helper for database testing operations."""
 
     @staticmethod
-    async def reset_database(db: ReflectionDatabase):
-        """Reset database to clean state"""
+    async def reset_database(db: ReflectionDatabase) -> None:
+        """Reset database to clean state."""
         try:
             # Drop all tables
             await db._execute_query("DROP TABLE IF EXISTS reflections")
@@ -296,12 +298,12 @@ class DatabaseTestHelper:
             # Recreate tables
             await db._ensure_tables()
         except Exception as e:
-            logger.error(f"Failed to reset database: {e}")
+            logger.exception(f"Failed to reset database: {e}")
             raise
 
     @staticmethod
     async def verify_database_integrity(db: ReflectionDatabase) -> dict[str, Any]:
-        """Verify database integrity and return health status"""
+        """Verify database integrity and return health status."""
         integrity_status = {
             "healthy": True,
             "issues": [],
@@ -312,7 +314,7 @@ class DatabaseTestHelper:
         try:
             # Check table existence
             tables = await db._execute_query(
-                "SELECT name FROM sqlite_master WHERE type='table'"
+                "SELECT name FROM sqlite_master WHERE type='table'",
             )
             table_names = [row[0] for row in tables]
 
@@ -324,7 +326,7 @@ class DatabaseTestHelper:
                 else:
                     # Count rows in each table
                     count_result = await db._execute_query(
-                        f"SELECT COUNT(*) FROM {table}"
+                        f"SELECT COUNT(*) FROM {table}",
                     )
                     integrity_status["table_counts"][table] = (
                         count_result[0][0] if count_result else 0
@@ -340,8 +342,8 @@ class DatabaseTestHelper:
         return integrity_status
 
     @staticmethod
-    async def backup_database(db: ReflectionDatabase, backup_path: Path):
-        """Create backup of database"""
+    async def backup_database(db: ReflectionDatabase, backup_path: Path) -> None:
+        """Create backup of database."""
         try:
             if db.conn:
                 # For SQLite, we can use the backup API
@@ -349,15 +351,16 @@ class DatabaseTestHelper:
                 db.conn.backup(backup_conn)
                 backup_conn.close()
         except Exception as e:
-            logger.error(f"Failed to backup database: {e}")
+            logger.exception(f"Failed to backup database: {e}")
             raise
 
     @staticmethod
-    async def restore_database(db: ReflectionDatabase, backup_path: Path):
-        """Restore database from backup"""
+    async def restore_database(db: ReflectionDatabase, backup_path: Path) -> None:
+        """Restore database from backup."""
         try:
             if not backup_path.exists():
-                raise FileNotFoundError(f"Backup file not found: {backup_path}")
+                msg = f"Backup file not found: {backup_path}"
+                raise FileNotFoundError(msg)
 
             # Close current connection
             if db.conn:
@@ -370,30 +373,30 @@ class DatabaseTestHelper:
             db.conn = sqlite3.connect(db.db_path)
 
         except Exception as e:
-            logger.error(f"Failed to restore database: {e}")
+            logger.exception(f"Failed to restore database: {e}")
             raise
 
 
 class PerformanceTestDataManager:
-    """Specialized manager for performance test data"""
+    """Specialized manager for performance test data."""
 
-    def __init__(self, data_manager: TestDataManager):
+    def __init__(self, data_manager: TestDataManager) -> None:
         self.data_manager = data_manager
         self.performance_data: dict[str, list[float]] = {}
         self.baseline_metrics: dict[str, float] = {}
 
     def record_performance_metric(self, metric_name: str, value: float):
-        """Record performance metric for analysis"""
+        """Record performance metric for analysis."""
         if metric_name not in self.performance_data:
             self.performance_data[metric_name] = []
         self.performance_data[metric_name].append(value)
 
     def set_baseline_metric(self, metric_name: str, value: float):
-        """Set baseline value for performance metric"""
+        """Set baseline value for performance metric."""
         self.baseline_metrics[metric_name] = value
 
     def get_performance_summary(self) -> dict[str, Any]:
-        """Get performance test summary"""
+        """Get performance test summary."""
         summary = {
             "metrics": {},
             "baselines": self.baseline_metrics,
@@ -431,7 +434,7 @@ class PerformanceTestDataManager:
                             "baseline": baseline,
                             "current": current,
                             "change_percent": change_percent,
-                        }
+                        },
                     )
                 elif change_percent < -5:  # 5% improvement threshold
                     summary["improvements"].append(
@@ -440,20 +443,22 @@ class PerformanceTestDataManager:
                             "baseline": baseline,
                             "current": current,
                             "change_percent": change_percent,
-                        }
+                        },
                     )
 
         return summary
 
     async def generate_large_dataset_for_testing(
-        self, db: ReflectionDatabase, size: int = 10000
+        self,
+        db: ReflectionDatabase,
+        size: int = 10000,
     ):
-        """Generate large dataset for performance testing"""
+        """Generate large dataset for performance testing."""
         batch_size = 100
 
         for i in range(0, size, batch_size):
             batch_reflections = ReflectionDataFactory.build_batch(
-                min(batch_size, size - i)
+                min(batch_size, size - i),
             )
 
             # Store batch
@@ -478,7 +483,7 @@ _global_test_data_manager: TestDataManager | None = None
 
 
 def get_test_data_manager() -> TestDataManager:
-    """Get global test data manager instance"""
+    """Get global test data manager instance."""
     global _global_test_data_manager
     if _global_test_data_manager is None:
         _global_test_data_manager = TestDataManager()
@@ -486,7 +491,7 @@ def get_test_data_manager() -> TestDataManager:
 
 
 def cleanup_test_data():
-    """Clean up global test data"""
+    """Clean up global test data."""
     global _global_test_data_manager
     if _global_test_data_manager is not None:
         _global_test_data_manager.cleanup_all()

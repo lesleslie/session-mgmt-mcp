@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Advanced Search Engine for Session Management
+"""Advanced Search Engine for Session Management.
 
 Provides enhanced search capabilities with faceted filtering, full-text search,
 and intelligent result ranking.
@@ -21,7 +20,7 @@ from .search_enhanced import EnhancedSearchEngine
 
 @dataclass
 class SearchFilter:
-    """Represents a search filter criterion"""
+    """Represents a search filter criterion."""
 
     field: str
     operator: str  # 'eq', 'ne', 'in', 'not_in', 'contains', 'starts_with', 'ends_with', 'range'
@@ -31,7 +30,7 @@ class SearchFilter:
 
 @dataclass
 class SearchFacet:
-    """Represents a search facet with possible values"""
+    """Represents a search facet with possible values."""
 
     name: str
     values: list[tuple[str, int]]  # (value, count) tuples
@@ -40,7 +39,7 @@ class SearchFacet:
 
 @dataclass
 class SearchResult:
-    """Enhanced search result with metadata"""
+    """Enhanced search result with metadata."""
 
     content_id: str
     content_type: str
@@ -55,9 +54,9 @@ class SearchResult:
 
 
 class AdvancedSearchEngine:
-    """Advanced search engine with faceted filtering and full-text search"""
+    """Advanced search engine with faceted filtering and full-text search."""
 
-    def __init__(self, reflection_db: ReflectionDatabase):
+    def __init__(self, reflection_db: ReflectionDatabase) -> None:
         self.reflection_db = reflection_db
         self.enhanced_search = EnhancedSearchEngine(reflection_db)
         self.index_cache: dict[str, datetime] = {}
@@ -87,8 +86,7 @@ class AdvancedSearchEngine:
         offset: int = 0,
         include_highlights: bool = True,
     ) -> dict[str, Any]:
-        """Perform advanced search with faceted filtering"""
-
+        """Perform advanced search with faceted filtering."""
         # Ensure search index is up to date
         await self._ensure_search_index()
 
@@ -117,10 +115,12 @@ class AdvancedSearchEngine:
         }
 
     async def suggest_completions(
-        self, query: str, field: str = "content", limit: int = 10
+        self,
+        query: str,
+        field: str = "content",
+        limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Get search completion suggestions"""
-
+        """Get search completion suggestions."""
         # Simple prefix matching for now - could be enhanced with more sophisticated algorithms
         sql = f"""
             SELECT DISTINCT {field}, COUNT(*) as frequency
@@ -134,7 +134,8 @@ class AdvancedSearchEngine:
         results = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: self.reflection_db.conn.execute(
-                sql, [f"%{query}%", limit]
+                sql,
+                [f"%{query}%", limit],
             ).fetchall(),
         )
 
@@ -145,10 +146,12 @@ class AdvancedSearchEngine:
         return suggestions
 
     async def get_similar_content(
-        self, content_id: str, content_type: str, limit: int = 5
+        self,
+        content_id: str,
+        content_type: str,
+        limit: int = 5,
     ) -> list[SearchResult]:
-        """Find similar content using embeddings or text similarity"""
-
+        """Find similar content using embeddings or text similarity."""
         # Get the source content
         sql = """
             SELECT indexed_content, search_metadata
@@ -159,7 +162,8 @@ class AdvancedSearchEngine:
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: self.reflection_db.conn.execute(
-                sql, [content_id, content_type]
+                sql,
+                [content_id, content_type],
             ).fetchone(),
         )
 
@@ -188,7 +192,7 @@ class AdvancedSearchEngine:
                         project=conv.get("project"),
                         timestamp=conv.get("timestamp"),
                         metadata=conv.get("metadata", {}),
-                    )
+                    ),
                 )
 
         return search_results[:limit]
@@ -200,14 +204,15 @@ class AdvancedSearchEngine:
         project: str | None = None,
         limit: int = 20,
     ) -> list[SearchResult]:
-        """Search within a specific timeframe"""
-
+        """Search within a specific timeframe."""
         # Parse timeframe
         start_time, end_time = self._parse_timeframe(timeframe)
 
         # Build time filter
         time_filter = SearchFilter(
-            field="timestamp", operator="range", value=(start_time, end_time)
+            field="timestamp",
+            operator="range",
+            value=(start_time, end_time),
         )
 
         filters = [time_filter]
@@ -216,7 +221,10 @@ class AdvancedSearchEngine:
 
         # Perform search
         search_results = await self.search(
-            query=query or "*", filters=filters, limit=limit, sort_by="date"
+            query=query or "*",
+            filters=filters,
+            limit=limit,
+            sort_by="date",
         )
 
         return search_results["results"]
@@ -227,8 +235,7 @@ class AdvancedSearchEngine:
         timeframe: str = "30d",
         filters: list[SearchFilter] | None = None,
     ) -> dict[str, Any]:
-        """Calculate aggregate metrics from search data"""
-
+        """Calculate aggregate metrics from search data."""
         start_time, end_time = self._parse_timeframe(timeframe)
         base_conditions = ["last_indexed BETWEEN ? AND ?"]
         params = [start_time, end_time]
@@ -286,7 +293,8 @@ class AdvancedSearchEngine:
             return {"error": f"Unknown metric type: {metric_type}"}
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
         )
 
         return {
@@ -297,9 +305,8 @@ class AdvancedSearchEngine:
             else [],
         }
 
-    async def _ensure_search_index(self):
-        """Ensure search index is up to date"""
-
+    async def _ensure_search_index(self) -> None:
+        """Ensure search index is up to date."""
         # Check when index was last updated
         last_update = await self._get_last_index_update()
 
@@ -308,18 +315,18 @@ class AdvancedSearchEngine:
             await self._rebuild_search_index()
 
     async def _get_last_index_update(self) -> datetime | None:
-        """Get timestamp of last index update"""
+        """Get timestamp of last index update."""
         sql = "SELECT MAX(last_indexed) FROM search_index"
 
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql).fetchone()
+            None,
+            lambda: self.reflection_db.conn.execute(sql).fetchone(),
         )
 
         return result[0] if result and result[0] else None
 
-    async def _rebuild_search_index(self):
-        """Rebuild the search index from conversations and reflections"""
-
+    async def _rebuild_search_index(self) -> None:
+        """Rebuild the search index from conversations and reflections."""
         # Index conversations
         await self._index_conversations()
 
@@ -329,12 +336,12 @@ class AdvancedSearchEngine:
         # Update facets
         await self._update_search_facets()
 
-    async def _index_conversations(self):
-        """Index all conversations for search"""
-
+    async def _index_conversations(self) -> None:
+        """Index all conversations for search."""
         sql = "SELECT id, content, project, timestamp, metadata FROM conversations"
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql).fetchall(),
         )
 
         for row in results:
@@ -384,12 +391,12 @@ class AdvancedSearchEngine:
 
         self.reflection_db.conn.commit()
 
-    async def _index_reflections(self):
-        """Index all reflections for search"""
-
+    async def _index_reflections(self) -> None:
+        """Index all reflections for search."""
         sql = "SELECT id, content, tags, timestamp, metadata FROM reflections"
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql).fetchall(),
         )
 
         for row in results:
@@ -433,12 +440,12 @@ class AdvancedSearchEngine:
 
         self.reflection_db.conn.commit()
 
-    async def _update_search_facets(self):
-        """Update search facets based on indexed content"""
-
+    async def _update_search_facets(self) -> None:
+        """Update search facets based on indexed content."""
         # Clear existing facets
         await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute("DELETE FROM search_facets")
+            None,
+            lambda: self.reflection_db.conn.execute("DELETE FROM search_facets"),
         )
 
         # Generate facets from search metadata
@@ -459,13 +466,14 @@ class AdvancedSearchEngine:
             """
 
             results = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.reflection_db.conn.execute(sql).fetchall()
+                None,
+                lambda: self.reflection_db.conn.execute(sql).fetchall(),
             )
 
-            for facet_value, count in results:
+            for facet_value, _count in results:
                 if isinstance(facet_value, str) and facet_value:
                     facet_id = hashlib.md5(
-                        f"{facet_name}_{facet_value}".encode()
+                        f"{facet_name}_{facet_value}".encode(),
                     ).hexdigest()
 
                     await asyncio.get_event_loop().run_in_executor(
@@ -490,7 +498,7 @@ class AdvancedSearchEngine:
         self.reflection_db.conn.commit()
 
     def _extract_technical_terms(self, content: str) -> list[str]:
-        """Extract technical terms and patterns from content"""
+        """Extract technical terms and patterns from content."""
         terms = []
 
         # Programming language keywords
@@ -520,16 +528,19 @@ class AdvancedSearchEngine:
         return terms[:20]  # Limit total terms
 
     def _build_search_query(
-        self, query: str, filters: list[SearchFilter] | None
+        self,
+        query: str,
+        filters: list[SearchFilter] | None,
     ) -> str:
-        """Build search query with filters"""
+        """Build search query with filters."""
         # For now, return simple query - could be enhanced with query parsing
         return query
 
     def _build_filter_conditions(
-        self, filters: list[SearchFilter]
+        self,
+        filters: list[SearchFilter],
     ) -> tuple[list[str], list[Any]]:
-        """Build SQL conditions from filters"""
+        """Build SQL conditions from filters."""
         conditions = []
         params = []
 
@@ -555,10 +566,13 @@ class AdvancedSearchEngine:
         return conditions, params
 
     async def _execute_search(
-        self, query: str, sort_by: str, limit: int, offset: int
+        self,
+        query: str,
+        sort_by: str,
+        limit: int,
+        offset: int,
     ) -> list[SearchResult]:
-        """Execute the actual search"""
-
+        """Execute the actual search."""
         # Simple text search for now - could be enhanced with full-text search
         sql = """
             SELECT content_id, content_type, indexed_content, search_metadata, last_indexed
@@ -579,7 +593,8 @@ class AdvancedSearchEngine:
         params.extend([limit, offset])
 
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.reflection_db.conn.execute(sql, params).fetchall()
+            None,
+            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
         )
 
         search_results = []
@@ -608,16 +623,17 @@ class AdvancedSearchEngine:
                     if metadata.get("timestamp")
                     else last_indexed,
                     metadata=metadata,
-                )
+                ),
             )
 
         return search_results
 
     async def _add_highlights(
-        self, results: list[SearchResult], query: str
+        self,
+        results: list[SearchResult],
+        query: str,
     ) -> list[SearchResult]:
-        """Add search highlights to results"""
-
+        """Add search highlights to results."""
         query_terms = query.lower().split()
 
         for result in results:
@@ -645,8 +661,7 @@ class AdvancedSearchEngine:
         filters: list[SearchFilter] | None,
         requested_facets: list[str],
     ) -> dict[str, SearchFacet]:
-        """Calculate facet counts for search results"""
-
+        """Calculate facet counts for search results."""
         facets = {}
 
         for facet_name in requested_facets:
@@ -666,7 +681,8 @@ class AdvancedSearchEngine:
                 results = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: self.reflection_db.conn.execute(
-                        sql, [facet_name, f"%{query}%", facet_config["size"]]
+                        sql,
+                        [facet_name, f"%{query}%", facet_config["size"]],
                     ).fetchall(),
                 )
 
@@ -679,7 +695,7 @@ class AdvancedSearchEngine:
         return facets
 
     def _parse_timeframe(self, timeframe: str) -> tuple[datetime, datetime]:
-        """Parse timeframe string into start and end times"""
+        """Parse timeframe string into start and end times."""
         now = datetime.now(UTC)
 
         if timeframe == "1h":

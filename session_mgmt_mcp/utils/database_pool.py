@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Database connection pooling for DuckDB.
+"""Database connection pooling for DuckDB.
 
 This module provides efficient connection pooling and management for DuckDB operations.
 """
@@ -28,7 +27,7 @@ logger = get_session_logger()
 class DatabaseConnectionPool:
     """Thread-safe connection pool for DuckDB."""
 
-    def __init__(self, db_path: str, max_connections: int = 5):
+    def __init__(self, db_path: str, max_connections: int = 5) -> None:
         self.db_path = db_path
         self.max_connections = max_connections
         self._pool: list = []
@@ -46,7 +45,8 @@ class DatabaseConnectionPool:
     def _create_connection(self):
         """Create a new DuckDB connection."""
         if not DUCKDB_AVAILABLE:
-            raise ImportError("DuckDB not available")
+            msg = "DuckDB not available"
+            raise ImportError(msg)
 
         try:
             conn = duckdb.connect(self.db_path)
@@ -56,29 +56,30 @@ class DatabaseConnectionPool:
             conn.execute("PRAGMA temp_directory='/tmp'")
             return conn
         except Exception as e:
-            logger.error(f"Failed to create database connection: {e}")
+            logger.exception(f"Failed to create database connection: {e}")
             raise
 
     def get_connection(self):
         """Get a connection from the pool or create a new one."""
         if self._closed:
-            raise RuntimeError("Connection pool is closed")
+            msg = "Connection pool is closed"
+            raise RuntimeError(msg)
 
         with self._pool_lock:
             if self._pool:
                 conn = self._pool.pop()
                 self._active_connections[id(conn)] = conn
                 return conn
-            elif len(self._active_connections) < self.max_connections:
+            if len(self._active_connections) < self.max_connections:
                 conn = self._create_connection()
                 self._active_connections[id(conn)] = conn
                 return conn
-            else:
-                raise RuntimeError(
-                    f"Maximum connections ({self.max_connections}) reached"
-                )
+            msg = f"Maximum connections ({self.max_connections}) reached"
+            raise RuntimeError(
+                msg,
+            )
 
-    def return_connection(self, conn):
+    def return_connection(self, conn) -> None:
         """Return a connection to the pool."""
         if self._closed or not conn:
             return
@@ -105,14 +106,16 @@ class DatabaseConnectionPool:
             conn = await loop.run_in_executor(self._get_executor(), self.get_connection)
             yield conn
         except Exception as e:
-            logger.error(f"Database connection error: {e}")
+            logger.exception(f"Database connection error: {e}")
             raise
         finally:
             if conn:
                 # Return connection in executor
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(
-                    self._get_executor(), self.return_connection, conn
+                    self._get_executor(),
+                    self.return_connection,
+                    conn,
                 )
 
     def _get_executor(self):
@@ -130,11 +133,11 @@ class DatabaseConnectionPool:
                 try:
                     if parameters:
                         return conn.execute(query, parameters).fetchall()
-                    else:
-                        return conn.execute(query).fetchall()
+                    return conn.execute(query).fetchall()
                 except Exception as e:
-                    logger.error(
-                        f"Query execution error: {e}", extra={"query": query[:100]}
+                    logger.exception(
+                        f"Query execution error: {e}",
+                        extra={"query": query[:100]},
                     )
                     raise
 
@@ -153,7 +156,7 @@ class DatabaseConnectionPool:
                         results.append(result)
                     return results
                 except Exception as e:
-                    logger.error(f"Batch query execution error: {e}")
+                    logger.exception(f"Batch query execution error: {e}")
                     raise
 
             return await loop.run_in_executor(self._get_executor(), _execute_many)
@@ -171,7 +174,7 @@ class DatabaseConnectionPool:
                 "db_path": self.db_path,
             }
 
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all connections and clean up."""
         if self._closed:
             return
@@ -214,12 +217,13 @@ def get_database_pool(db_path: str, max_connections: int = 5) -> DatabaseConnect
     with _pools_lock:
         if db_path not in _connection_pools:
             _connection_pools[db_path] = DatabaseConnectionPool(
-                db_path, max_connections
+                db_path,
+                max_connections,
             )
         return _connection_pools[db_path]
 
 
-def close_all_pools():
+def close_all_pools() -> None:
     """Close all database connection pools."""
     with _pools_lock:
         for pool in _connection_pools.values():

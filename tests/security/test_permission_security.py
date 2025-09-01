@@ -1,5 +1,4 @@
-"""
-Security tests for permission system in session-mgmt-mcp.
+"""Security tests for permission system in session-mgmt-mcp.
 
 Tests security aspects of:
 - Permission escalation prevention
@@ -25,11 +24,11 @@ from tests.fixtures.data_factories import SecurityTestDataFactory
 
 @pytest.mark.security
 class TestSessionPermissionSecurity:
-    """Security tests for SessionPermissionsManager"""
+    """Security tests for SessionPermissionsManager."""
 
     @pytest.fixture
     def permissions_manager(self):
-        """Create clean permissions manager for security testing"""
+        """Create clean permissions manager for security testing."""
         manager = SessionPermissionsManager()
         manager.trusted_operations.clear()
         manager.auto_checkpoint = False
@@ -37,7 +36,7 @@ class TestSessionPermissionSecurity:
         return manager
 
     def test_unauthorized_operation_access(self, permissions_manager):
-        """Test that unauthorized operations are properly blocked"""
+        """Test that unauthorized operations are properly blocked."""
         sensitive_operations = [
             "delete_all_reflections",
             "modify_system_config",
@@ -55,7 +54,7 @@ class TestSessionPermissionSecurity:
             assert permissions_manager.is_trusted_operation(operation) is True
 
     def test_permission_isolation_between_sessions(self):
-        """Test that permissions are isolated between different sessions"""
+        """Test that permissions are isolated between different sessions."""
         # Create multiple permission managers (simulating different sessions)
         session1 = SessionPermissionsManager()
         session2 = SessionPermissionsManager()
@@ -76,7 +75,7 @@ class TestSessionPermissionSecurity:
         # In a real multi-session environment, you'd want separate instances
 
     def test_permission_revocation_security(self, permissions_manager):
-        """Test secure permission revocation"""
+        """Test secure permission revocation."""
         # Trust several operations
         sensitive_ops = ["admin_access", "data_modification", "system_control"]
         for operation in sensitive_ops:
@@ -97,13 +96,14 @@ class TestSessionPermissionSecurity:
         assert permissions_manager.auto_checkpoint is False
 
     def test_auto_checkpoint_security_controls(self, permissions_manager):
-        """Test security controls around auto-checkpoint functionality"""
+        """Test security controls around auto-checkpoint functionality."""
         # Test with invalid frequency values
         invalid_frequencies = [-1, 0, -100, -999999]
 
         for freq in invalid_frequencies:
             result = permissions_manager.configure_auto_checkpoint(
-                enabled=True, frequency=freq
+                enabled=True,
+                frequency=freq,
             )
             assert result is False, f"Should reject invalid frequency: {freq}"
             assert permissions_manager.auto_checkpoint is False
@@ -125,12 +125,12 @@ class TestSessionPermissionSecurity:
         assert permissions_manager.checkpoint_frequency == 300
 
     def test_concurrent_permission_modification_security(self, permissions_manager):
-        """Test security of concurrent permission modifications"""
+        """Test security of concurrent permission modifications."""
         results = []
         errors = []
 
-        def trust_operation_worker(operation_prefix, count):
-            """Worker function for concurrent permission testing"""
+        def trust_operation_worker(operation_prefix, count) -> None:
+            """Worker function for concurrent permission testing."""
             try:
                 for i in range(count):
                     operation = f"{operation_prefix}_operation_{i}"
@@ -140,8 +140,8 @@ class TestSessionPermissionSecurity:
             except Exception as e:
                 errors.append(e)
 
-        def revoke_permissions_worker():
-            """Worker that revokes permissions during concurrent access"""
+        def revoke_permissions_worker() -> None:
+            """Worker that revokes permissions during concurrent access."""
             try:
                 time.sleep(0.05)  # Let some permissions be added first
                 permissions_manager.revoke_all_permissions()
@@ -155,7 +155,8 @@ class TestSessionPermissionSecurity:
         # Trust operations from multiple threads
         for i in range(3):
             thread = threading.Thread(
-                target=trust_operation_worker, args=(f"worker_{i}", 10)
+                target=trust_operation_worker,
+                args=(f"worker_{i}", 10),
             )
             threads.append(thread)
 
@@ -178,7 +179,7 @@ class TestSessionPermissionSecurity:
         assert len(results) > 0
 
     def test_input_validation_for_operations(self, permissions_manager):
-        """Test input validation for operation names"""
+        """Test input validation for operation names."""
         # Test various potentially malicious operation names
         malicious_inputs = [
             "",  # Empty string
@@ -216,7 +217,7 @@ class TestSessionPermissionSecurity:
                 )
 
     def test_checkpoint_timing_attack_prevention(self, permissions_manager):
-        """Test prevention of timing attacks on checkpoint system"""
+        """Test prevention of timing attacks on checkpoint system."""
         permissions_manager.auto_checkpoint = True
         permissions_manager.checkpoint_frequency = 300  # 5 minutes
 
@@ -226,7 +227,7 @@ class TestSessionPermissionSecurity:
 
         # Multiple rapid checks should not leak timing information
         check_results = []
-        for i in range(100):
+        for _i in range(100):
             start = time.perf_counter()
             should_checkpoint = permissions_manager.should_auto_checkpoint()
             end = time.perf_counter()
@@ -249,7 +250,7 @@ class TestSessionPermissionSecurity:
         )
 
     def test_permission_state_tampering_protection(self, permissions_manager):
-        """Test protection against direct state tampering"""
+        """Test protection against direct state tampering."""
         # Trust some operations
         permissions_manager.trust_operation("legitimate_operation")
 
@@ -274,11 +275,11 @@ class TestSessionPermissionSecurity:
 
 @pytest.mark.security
 class TestDatabaseSecurity:
-    """Security tests for database operations"""
+    """Security tests for database operations."""
 
     @pytest.fixture
     async def secure_database(self):
-        """Create database for security testing"""
+        """Create database for security testing."""
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
@@ -297,7 +298,7 @@ class TestDatabaseSecurity:
 
     @pytest.mark.asyncio
     async def test_sql_injection_prevention(self, secure_database):
-        """Test prevention of SQL injection attacks"""
+        """Test prevention of SQL injection attacks."""
         # Various SQL injection payloads
         sql_injection_payloads = [
             "'; DROP TABLE reflections; --",
@@ -315,7 +316,8 @@ class TestDatabaseSecurity:
         for payload in sql_injection_payloads:
             # Try to inject SQL through content field
             result = await secure_database.store_reflection(
-                content=payload, project="security_test"
+                content=payload,
+                project="security_test",
             )
 
             # Should succeed (properly escaped) rather than cause SQL error
@@ -323,7 +325,8 @@ class TestDatabaseSecurity:
 
             # Try to inject through project field
             result = await secure_database.store_reflection(
-                content="Test content", project=payload
+                content="Test content",
+                project=payload,
             )
 
             assert result is True, (
@@ -332,7 +335,8 @@ class TestDatabaseSecurity:
 
             # Try to inject through search query
             search_results = await secure_database.search_reflections(
-                query=payload, limit=5
+                query=payload,
+                limit=5,
             )
 
             # Should return results or empty list, not cause SQL error
@@ -342,7 +346,7 @@ class TestDatabaseSecurity:
 
     @pytest.mark.asyncio
     async def test_input_sanitization(self, secure_database):
-        """Test input sanitization for dangerous content"""
+        """Test input sanitization for dangerous content."""
         dangerous_inputs = [
             "<script>alert('xss')</script>",
             "javascript:alert('xss')",
@@ -369,7 +373,9 @@ class TestDatabaseSecurity:
 
             # Search for it to verify it was stored safely
             search_results = await secure_database.search_reflections(
-                query="dangerous_input", project="security_test", limit=10
+                query="dangerous_input",
+                project="security_test",
+                limit=10,
             )
 
             # Should find results
@@ -388,7 +394,7 @@ class TestDatabaseSecurity:
 
     @pytest.mark.asyncio
     async def test_database_file_permissions(self, secure_database):
-        """Test database file has secure permissions"""
+        """Test database file has secure permissions."""
         db_path = Path(secure_database.db_path)
 
         # Check file exists
@@ -410,11 +416,11 @@ class TestDatabaseSecurity:
 
     @pytest.mark.asyncio
     async def test_concurrent_access_security(self, secure_database):
-        """Test security under concurrent access"""
+        """Test security under concurrent access."""
 
         # Test race conditions and concurrent access patterns
-        async def malicious_writer():
-            """Attempt to write malicious data rapidly"""
+        async def malicious_writer() -> None:
+            """Attempt to write malicious data rapidly."""
             for i in range(50):
                 await secure_database.store_reflection(
                     content=f"Malicious content {i} with SQL: '; DROP TABLE reflections; --",
@@ -422,8 +428,8 @@ class TestDatabaseSecurity:
                     tags=["malicious", f"attempt_{i}"],
                 )
 
-        async def legitimate_writer():
-            """Write legitimate data"""
+        async def legitimate_writer() -> None:
+            """Write legitimate data."""
             for i in range(50):
                 await secure_database.store_reflection(
                     content=f"Legitimate reflection {i}",
@@ -432,11 +438,12 @@ class TestDatabaseSecurity:
                 )
 
         async def concurrent_reader():
-            """Read data during concurrent writes"""
+            """Read data during concurrent writes."""
             results = []
-            for i in range(20):
+            for _i in range(20):
                 search_results = await secure_database.search_reflections(
-                    query="reflection", limit=5
+                    query="reflection",
+                    limit=5,
                 )
                 results.extend(search_results)
                 await asyncio.sleep(0.01)  # Small delay
@@ -477,7 +484,7 @@ class TestDatabaseSecurity:
 
     @pytest.mark.asyncio
     async def test_embedding_vector_security(self, secure_database):
-        """Test security of embedding vector handling"""
+        """Test security of embedding vector handling."""
         # Test with malformed embedding vectors
         malformed_embeddings = [
             [float("inf")] * 384,  # Infinity values
@@ -514,11 +521,10 @@ class TestDatabaseSecurity:
 
 @pytest.mark.security
 class TestInputValidationSecurity:
-    """Test input validation and sanitization security"""
+    """Test input validation and sanitization security."""
 
     def test_reflection_content_validation(self):
-        """Test validation of reflection content"""
-
+        """Test validation of reflection content."""
         # Generate security test data
         security_data = SecurityTestDataFactory()
 
@@ -553,7 +559,7 @@ class TestInputValidationSecurity:
                 assert isinstance(e, ValueError | TypeError)
 
     def test_project_name_validation(self):
-        """Test validation of project names"""
+        """Test validation of project names."""
         dangerous_project_names = [
             "../../../etc/passwd",  # Path traversal
             "project'; DROP TABLE reflections; --",  # SQL injection
@@ -590,7 +596,7 @@ class TestInputValidationSecurity:
                 assert isinstance(e, ValueError | TypeError)
 
     def test_tag_validation(self):
-        """Test validation of reflection tags"""
+        """Test validation of reflection tags."""
         dangerous_tags = [
             ["normal_tag", "'; DROP TABLE tags; --"],  # SQL injection in tag
             ["<script>alert('tag')</script>"],  # XSS in tag
@@ -634,20 +640,20 @@ class TestInputValidationSecurity:
 
 @pytest.mark.security
 class TestRateLimitingSecurity:
-    """Test rate limiting and abuse prevention"""
+    """Test rate limiting and abuse prevention."""
 
     @pytest.fixture
     def rate_limiter(self):
-        """Create rate limiter for testing"""
+        """Create rate limiter for testing."""
 
         class SimpleRateLimiter:
-            def __init__(self, max_requests=10, time_window=60):
+            def __init__(self, max_requests=10, time_window=60) -> None:
                 self.max_requests = max_requests
                 self.time_window = time_window  # seconds
                 self.requests = []
 
-            def is_allowed(self, identifier="default"):
-                """Check if request is allowed under rate limit"""
+            def is_allowed(self, identifier="default") -> bool:
+                """Check if request is allowed under rate limit."""
                 now = time.time()
                 # Clean old requests
                 self.requests = [
@@ -663,13 +669,13 @@ class TestRateLimitingSecurity:
                 return True
 
             def get_remaining_requests(self):
-                """Get number of remaining requests"""
+                """Get number of remaining requests."""
                 return max(0, self.max_requests - len(self.requests))
 
         return SimpleRateLimiter()
 
     def test_basic_rate_limiting(self, rate_limiter):
-        """Test basic rate limiting functionality"""
+        """Test basic rate limiting functionality."""
         # Should allow requests up to the limit
         for i in range(rate_limiter.max_requests):
             assert rate_limiter.is_allowed() is True, (
@@ -683,7 +689,7 @@ class TestRateLimitingSecurity:
         assert rate_limiter.get_remaining_requests() == 0
 
     def test_rate_limit_window_expiry(self, rate_limiter):
-        """Test rate limit window expiry"""
+        """Test rate limit window expiry."""
         # Use up the rate limit
         for _ in range(rate_limiter.max_requests):
             assert rate_limiter.is_allowed() is True
@@ -700,7 +706,7 @@ class TestRateLimitingSecurity:
             assert rate_limiter.is_allowed() is True
 
     def test_burst_request_handling(self, rate_limiter):
-        """Test handling of burst requests"""
+        """Test handling of burst requests."""
         # Simulate rapid burst of requests
         allowed_count = 0
         blocked_count = 0
@@ -717,10 +723,10 @@ class TestRateLimitingSecurity:
 
     @pytest.mark.asyncio
     async def test_concurrent_rate_limiting(self, rate_limiter):
-        """Test rate limiting under concurrent access"""
+        """Test rate limiting under concurrent access."""
 
         async def make_requests(request_count):
-            """Make multiple requests"""
+            """Make multiple requests."""
             request_results = []
             for _ in range(request_count):
                 result = rate_limiter.is_allowed()

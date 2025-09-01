@@ -1,5 +1,4 @@
-"""
-Data factories for generating test data for session-mgmt-mcp tests.
+"""Data factories for generating test data for session-mgmt-mcp tests.
 
 Uses factory_boy and faker to generate realistic test data for:
 - Session management
@@ -20,7 +19,7 @@ fake = Faker()
 
 
 class SessionDataFactory(factory.Factory):
-    """Factory for session management test data"""
+    """Factory for session management test data."""
 
     class Meta:
         model = dict
@@ -28,11 +27,11 @@ class SessionDataFactory(factory.Factory):
     session_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
     project_name = factory.LazyAttribute(lambda obj: fake.slug())
     working_directory = factory.LazyAttribute(
-        lambda obj: f"/tmp/test-projects/{obj.project_name}"
+        lambda obj: f"/tmp/test-projects/{obj.project_name}",
     )
     start_time = factory.LazyFunction(datetime.now)
     end_time = factory.LazyAttribute(
-        lambda obj: obj.start_time + timedelta(hours=random.randint(1, 8))
+        lambda obj: obj.start_time + timedelta(hours=random.randint(1, 8)),
     )
     status = factory.Iterator(["active", "completed", "failed", "interrupted"])
     quality_score = factory.LazyAttribute(lambda obj: random.uniform(0.6, 0.98))
@@ -49,12 +48,12 @@ class SessionDataFactory(factory.Factory):
             "permissions": random.choice([True, False]),
             "toolkit_integration": random.choice([True, False]),
             "uv_available": random.choice([True, False]),
-        }
+        },
     )
 
 
 class ReflectionDataFactory(factory.Factory):
-    """Factory for reflection and conversation test data"""
+    """Factory for reflection and conversation test data."""
 
     class Meta:
         model = dict
@@ -68,7 +67,7 @@ class ReflectionDataFactory(factory.Factory):
             days=random.randint(0, 30),
             hours=random.randint(0, 23),
             minutes=random.randint(0, 59),
-        )
+        ),
     )
     tags = factory.LazyFunction(
         lambda: random.sample(
@@ -89,12 +88,12 @@ class ReflectionDataFactory(factory.Factory):
                 "monitoring",
             ],
             k=random.randint(1, 4),
-        )
+        ),
     )
 
     # Embedding simulation (384-dimensional vector)
     embedding = factory.LazyFunction(
-        lambda: [random.uniform(-1, 1) for _ in range(384)]
+        lambda: [random.uniform(-1, 1) for _ in range(384)],
     )
 
     # Conversation metadata
@@ -104,7 +103,7 @@ class ReflectionDataFactory(factory.Factory):
 
 
 class UserDataFactory(factory.Factory):
-    """Factory for user-related test data"""
+    """Factory for user-related test data."""
 
     class Meta:
         model = dict
@@ -116,21 +115,21 @@ class UserDataFactory(factory.Factory):
 
     # User preferences
     preferred_language = factory.Iterator(
-        ["python", "javascript", "typescript", "go", "rust"]
+        ["python", "javascript", "typescript", "go", "rust"],
     )
     timezone = factory.LazyAttribute(lambda obj: fake.timezone())
     theme = factory.Iterator(["light", "dark", "auto"])
 
     # Activity data
     last_active = factory.LazyFunction(
-        lambda: datetime.now() - timedelta(hours=random.randint(0, 72))
+        lambda: datetime.now() - timedelta(hours=random.randint(0, 72)),
     )
     session_count = factory.LazyAttribute(lambda obj: random.randint(1, 100))
     total_interactions = factory.LazyAttribute(lambda obj: random.randint(10, 1000))
 
 
 class ProjectDataFactory(factory.Factory):
-    """Factory for project structure test data"""
+    """Factory for project structure test data."""
 
     class Meta:
         model = dict
@@ -138,7 +137,7 @@ class ProjectDataFactory(factory.Factory):
     name = factory.LazyAttribute(lambda obj: fake.slug())
     path = factory.LazyAttribute(lambda obj: f"/Users/test/Projects/{obj.name}")
     type = factory.Iterator(
-        ["python", "javascript", "typescript", "go", "rust", "java"]
+        ["python", "javascript", "typescript", "go", "rust", "java"],
     )
     framework = factory.LazyAttribute(
         lambda obj: {
@@ -148,7 +147,7 @@ class ProjectDataFactory(factory.Factory):
             "go": random.choice(["gin", "echo", "fiber"]),
             "rust": random.choice(["axum", "warp", "rocket"]),
             "java": random.choice(["spring", "quarkus", "micronaut"]),
-        }.get(obj.type, "unknown")
+        }.get(obj.type, "unknown"),
     )
 
     # Project health metrics
@@ -156,7 +155,7 @@ class ProjectDataFactory(factory.Factory):
     has_docs = factory.Iterator([True, False])
     has_ci = factory.Iterator([True, False])
     test_coverage = factory.LazyAttribute(
-        lambda obj: random.uniform(0.3, 0.95) if obj.has_tests else 0.0
+        lambda obj: random.uniform(0.3, 0.95) if obj.has_tests else 0.0,
     )
 
     # File structure
@@ -166,26 +165,26 @@ class ProjectDataFactory(factory.Factory):
     # Git information
     git_initialized = factory.Iterator([True, False])
     commit_count = factory.LazyAttribute(
-        lambda obj: random.randint(1, 500) if obj.git_initialized else 0
+        lambda obj: random.randint(1, 500) if obj.git_initialized else 0,
     )
     branch_name = factory.Iterator(["main", "master", "develop", "feature/test"])
 
     # Dependencies
     dependency_count = factory.LazyAttribute(lambda obj: random.randint(0, 50))
     outdated_dependencies = factory.LazyAttribute(
-        lambda obj: random.randint(0, obj.dependency_count // 3)
+        lambda obj: random.randint(0, obj.dependency_count // 3),
     )
 
 
 class DatabaseTestDataFactory(factory.Factory):
-    """Factory for database-related test data"""
+    """Factory for database-related test data."""
 
     class Meta:
         model = dict
 
     database_type = factory.Iterator(["duckdb", "sqlite", "postgresql"])
     connection_string = factory.LazyAttribute(
-        lambda obj: f"{obj.database_type}://test.db"
+        lambda obj: f"{obj.database_type}://test.db",
     )
     table_count = factory.LazyAttribute(lambda obj: random.randint(1, 20))
     record_count = factory.LazyAttribute(lambda obj: random.randint(0, 10000))
@@ -197,12 +196,12 @@ class DatabaseTestDataFactory(factory.Factory):
     # Health status
     is_healthy = factory.Iterator([True, False])
     last_backup = factory.LazyFunction(
-        lambda: datetime.now() - timedelta(days=random.randint(0, 7))
+        lambda: datetime.now() - timedelta(days=random.randint(0, 7)),
     )
 
 
 class ErrorDataFactory(factory.Factory):
-    """Factory for error and exception test data"""
+    """Factory for error and exception test data."""
 
     class Meta:
         model = dict
@@ -215,7 +214,7 @@ class ErrorDataFactory(factory.Factory):
             "PermissionError",
             "FileNotFoundError",
             "DatabaseError",
-        ]
+        ],
     )
     error_message = factory.LazyAttribute(lambda obj: fake.sentence())
     stack_trace = factory.LazyAttribute(lambda obj: fake.text(max_nb_chars=500))
@@ -225,7 +224,7 @@ class ErrorDataFactory(factory.Factory):
             "function": fake.word(),
             "line_number": random.randint(1, 1000),
             "file_path": f"/src/{fake.file_name()}",
-        }
+        },
     )
 
     # Error categorization
@@ -235,7 +234,7 @@ class ErrorDataFactory(factory.Factory):
 
 
 class PerformanceDataFactory(factory.Factory):
-    """Factory for performance testing data"""
+    """Factory for performance testing data."""
 
     class Meta:
         model = dict
@@ -248,7 +247,7 @@ class PerformanceDataFactory(factory.Factory):
             "network_request",
             "computation",
             "memory_allocation",
-        ]
+        ],
     )
     duration_ms = factory.LazyAttribute(lambda obj: random.uniform(1, 5000))
     memory_usage_mb = factory.LazyAttribute(lambda obj: random.uniform(1, 500))
@@ -262,7 +261,7 @@ class PerformanceDataFactory(factory.Factory):
     # Benchmarking
     baseline_duration = factory.LazyAttribute(lambda obj: obj.duration_ms * 0.9)
     performance_regression = factory.LazyAttribute(
-        lambda obj: obj.duration_ms > obj.baseline_duration * 1.1
+        lambda obj: obj.duration_ms > obj.baseline_duration * 1.1,
     )
 
 
@@ -270,24 +269,24 @@ class PerformanceDataFactory(factory.Factory):
 
 
 class LargeDatasetFactory(factory.Factory):
-    """Factory for large dataset testing"""
+    """Factory for large dataset testing."""
 
     class Meta:
         model = dict
 
     @classmethod
     def generate_large_reflection_dataset(cls, count: int = 1000) -> list[dict]:
-        """Generate large reflection dataset for performance testing"""
+        """Generate large reflection dataset for performance testing."""
         return ReflectionDataFactory.build_batch(count)
 
     @classmethod
     def generate_project_portfolio(cls, project_count: int = 50) -> list[dict]:
-        """Generate portfolio of projects for testing"""
+        """Generate portfolio of projects for testing."""
         return ProjectDataFactory.build_batch(project_count)
 
     @classmethod
     def generate_conversation_history(cls, days: int = 30) -> list[dict]:
-        """Generate conversation history over specified days"""
+        """Generate conversation history over specified days."""
         reflections = []
         for day in range(days):
             day_reflections = ReflectionDataFactory.build_batch(random.randint(1, 10))
@@ -298,7 +297,7 @@ class LargeDatasetFactory(factory.Factory):
 
 
 class SecurityTestDataFactory(factory.Factory):
-    """Factory for security testing data"""
+    """Factory for security testing data."""
 
     class Meta:
         model = dict
@@ -319,7 +318,7 @@ class SecurityTestDataFactory(factory.Factory):
             "session_end",
             "database_access",
             "file_system_access",
-        ]
+        ],
     )
     permission_level = factory.Iterator(["none", "read", "write", "admin"])
 
@@ -330,7 +329,7 @@ class SecurityTestDataFactory(factory.Factory):
             "<script>alert('xss')</script>",
             "../../../../etc/passwd",
             "rm -rf /*",
-        ]
+        ],
     )
 
     # Rate limiting
@@ -342,7 +341,7 @@ class SecurityTestDataFactory(factory.Factory):
 
 
 def create_test_project_structure(base_path: Path, project_data: dict) -> Path:
-    """Create realistic project structure on filesystem for testing"""
+    """Create realistic project structure on filesystem for testing."""
     project_path = base_path / project_data["name"]
     project_path.mkdir(parents=True, exist_ok=True)
 
@@ -368,7 +367,7 @@ description = "Test project"
 
 
 def generate_realistic_embedding(text: str) -> list[float]:
-    """Generate pseudo-realistic embedding for text (for testing)"""
+    """Generate pseudo-realistic embedding for text (for testing)."""
     # Simple hash-based embedding simulation
     import hashlib
 

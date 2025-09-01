@@ -1,5 +1,4 @@
-"""
-Natural Language Scheduling module for time-based reminders and triggers.
+"""Natural Language Scheduling module for time-based reminders and triggers.
 
 This module provides intelligent scheduling capabilities including:
 - Natural language time parsing ("in 30 minutes", "tomorrow at 9am")
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class ReminderType(Enum):
-    """Types of reminders"""
+    """Types of reminders."""
 
     ONE_TIME = "one_time"
     RECURRING = "recurring"
@@ -44,7 +43,7 @@ class ReminderType(Enum):
 
 
 class ReminderStatus(Enum):
-    """Reminder execution status"""
+    """Reminder execution status."""
 
     PENDING = "pending"
     ACTIVE = "active"
@@ -55,7 +54,7 @@ class ReminderStatus(Enum):
 
 @dataclass
 class NaturalReminder:
-    """Natural language reminder with scheduling information"""
+    """Natural language reminder with scheduling information."""
 
     id: str
     title: str
@@ -75,7 +74,7 @@ class NaturalReminder:
 
 @dataclass
 class SchedulingContext:
-    """Context information for scheduling decisions"""
+    """Context information for scheduling decisions."""
 
     current_time: datetime
     timezone: str
@@ -86,14 +85,14 @@ class SchedulingContext:
 
 
 class NaturalLanguageParser:
-    """Parses natural language time expressions"""
+    """Parses natural language time expressions."""
 
-    def __init__(self):
-        """Initialize natural language parser"""
+    def __init__(self) -> None:
+        """Initialize natural language parser."""
         self.time_patterns = {
             # Relative time patterns
             r"in (\d+) (minute|min|minutes|mins)": lambda m: timedelta(
-                minutes=int(m.group(1))
+                minutes=int(m.group(1)),
             ),
             r"in (\d+) (hour|hours|hr|hrs)": lambda m: timedelta(hours=int(m.group(1))),
             r"in (\d+) (day|days)": lambda m: timedelta(days=int(m.group(1))),
@@ -108,7 +107,7 @@ class NaturalLanguageParser:
             r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday) at (\d{1,2}):?(\d{2})?\s*(am|pm)?": self._parse_weekday_time,
             # Session-relative
             r"end of (session|work)": lambda m: timedelta(
-                hours=2
+                hours=2,
             ),  # Default session length
             r"after (break|lunch)": lambda m: timedelta(hours=1),
             r"before (meeting|call)": lambda m: timedelta(minutes=15),
@@ -124,9 +123,11 @@ class NaturalLanguageParser:
         }
 
     def parse_time_expression(
-        self, expression: str, base_time: datetime | None = None
+        self,
+        expression: str,
+        base_time: datetime | None = None,
     ) -> datetime | None:
-        """Parse natural language time expression"""
+        """Parse natural language time expression."""
         if not expression:
             return None
 
@@ -141,12 +142,11 @@ class NaturalLanguageParser:
                     if callable(handler):
                         if isinstance(handler(match), timedelta):
                             return base_time + handler(match)
-                        elif isinstance(handler(match), datetime):
+                        if isinstance(handler(match), datetime):
                             return handler(match)
-                        else:
-                            delta = handler(match)
-                            if hasattr(delta, "days") or hasattr(delta, "months"):
-                                return base_time + delta
+                        delta = handler(match)
+                        if hasattr(delta, "days") or hasattr(delta, "months"):
+                            return base_time + delta
                 except Exception:
                     continue
 
@@ -162,7 +162,7 @@ class NaturalLanguageParser:
         return None
 
     def parse_recurrence(self, expression: str) -> str | None:
-        """Parse recurrence pattern from natural language"""
+        """Parse recurrence pattern from natural language."""
         if not expression:
             return None
 
@@ -173,13 +173,12 @@ class NaturalLanguageParser:
             if match:
                 if callable(handler):
                     return handler(match)
-                else:
-                    return handler
+                return handler
 
         return None
 
     def _parse_tomorrow(self, match):
-        """Parse 'tomorrow' with optional time"""
+        """Parse 'tomorrow' with optional time."""
         tomorrow = datetime.now() + timedelta(days=1)
 
         if match.group(2) and match.group(3):  # Has time
@@ -193,9 +192,8 @@ class NaturalLanguageParser:
                 hour = 0
 
             return tomorrow.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        else:
-            # Default to 9 AM tomorrow
-            return tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
+        # Default to 9 AM tomorrow
+        return tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
 
     def _parse_next_weekday(self, match):
         """Parse 'next monday', etc."""
@@ -219,7 +217,7 @@ class NaturalLanguageParser:
         return today + timedelta(days=days_ahead)
 
     def _parse_specific_time(self, match):
-        """Parse 'at 3:30pm' for today"""
+        """Parse 'at 3:30pm' for today."""
         hour = int(match.group(1))
         minute = int(match.group(2)) if match.group(2) else 0
         am_pm = match.group(3)
@@ -230,7 +228,10 @@ class NaturalLanguageParser:
             hour = 0
 
         target_time = datetime.now().replace(
-            hour=hour, minute=minute, second=0, microsecond=0
+            hour=hour,
+            minute=minute,
+            second=0,
+            microsecond=0,
         )
 
         # If time has passed today, schedule for tomorrow
@@ -240,7 +241,7 @@ class NaturalLanguageParser:
         return target_time
 
     def _parse_weekday_time(self, match):
-        """Parse 'monday at 3pm'"""
+        """Parse 'monday at 3pm'."""
         weekdays = {
             "monday": 0,
             "tuesday": 1,
@@ -268,7 +269,10 @@ class NaturalLanguageParser:
             days_ahead += 7
         elif days_ahead == 0:  # Today - check if time has passed
             target_time = today.replace(
-                hour=hour, minute=minute, second=0, microsecond=0
+                hour=hour,
+                minute=minute,
+                second=0,
+                microsecond=0,
             )
             if target_time <= today:
                 days_ahead = 7
@@ -278,12 +282,12 @@ class NaturalLanguageParser:
 
 
 class ReminderScheduler:
-    """Manages scheduling and execution of reminders"""
+    """Manages scheduling and execution of reminders."""
 
-    def __init__(self, db_path: str | None = None):
-        """Initialize reminder scheduler"""
+    def __init__(self, db_path: str | None = None) -> None:
+        """Initialize reminder scheduler."""
         self.db_path = db_path or str(
-            Path.home() / ".claude" / "data" / "natural_scheduler.db"
+            Path.home() / ".claude" / "data" / "natural_scheduler.db",
         )
         self.parser = NaturalLanguageParser()
         self._lock = threading.Lock()
@@ -292,8 +296,8 @@ class ReminderScheduler:
         self._callbacks: dict[str, list[Callable]] = {}
         self._init_database()
 
-    def _init_database(self):
-        """Initialize SQLite database for reminders"""
+    def _init_database(self) -> None:
+        """Initialize SQLite database for reminders."""
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -329,16 +333,16 @@ class ReminderScheduler:
 
             # Create indices
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reminders_scheduled ON reminders(scheduled_for)"
+                "CREATE INDEX IF NOT EXISTS idx_reminders_scheduled ON reminders(scheduled_for)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reminders_status ON reminders(status)"
+                "CREATE INDEX IF NOT EXISTS idx_reminders_status ON reminders(status)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders(user_id)"
+                "CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders(user_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reminders_project ON reminders(project_id)"
+                "CREATE INDEX IF NOT EXISTS idx_reminders_project ON reminders(project_id)",
             )
 
     async def create_reminder(
@@ -352,7 +356,7 @@ class ReminderScheduler:
         context_triggers: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> str | None:
-        """Create a new reminder from natural language"""
+        """Create a new reminder from natural language."""
         # Parse the time expression
         scheduled_time = self.parser.parse_time_expression(time_expression)
         if not scheduled_time:
@@ -425,9 +429,11 @@ class ReminderScheduler:
         return reminder_id
 
     async def get_pending_reminders(
-        self, user_id: str | None = None, project_id: str | None = None
+        self,
+        user_id: str | None = None,
+        project_id: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Get pending reminders"""
+        """Get pending reminders."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
 
@@ -450,7 +456,7 @@ class ReminderScheduler:
             for row in cursor.fetchall():
                 result = dict(row)
                 result["context_triggers"] = json.loads(
-                    result["context_triggers"] or "[]"
+                    result["context_triggers"] or "[]",
                 )
                 result["metadata"] = json.loads(result["metadata"] or "{}")
                 results.append(result)
@@ -458,9 +464,10 @@ class ReminderScheduler:
             return results
 
     async def get_due_reminders(
-        self, check_time: datetime | None = None
+        self,
+        check_time: datetime | None = None,
     ) -> list[dict[str, Any]]:
-        """Get reminders that are due for execution"""
+        """Get reminders that are due for execution."""
         check_time = check_time or datetime.now()
 
         with sqlite3.connect(self.db_path) as conn:
@@ -479,7 +486,7 @@ class ReminderScheduler:
             for row in cursor.fetchall():
                 result = dict(row)
                 result["context_triggers"] = json.loads(
-                    result["context_triggers"] or "[]"
+                    result["context_triggers"] or "[]",
                 )
                 result["metadata"] = json.loads(result["metadata"] or "{}")
                 results.append(result)
@@ -487,13 +494,14 @@ class ReminderScheduler:
             return results
 
     async def execute_reminder(self, reminder_id: str) -> bool:
-        """Execute a due reminder"""
+        """Execute a due reminder."""
         try:
             # Get reminder details
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
                 row = conn.execute(
-                    "SELECT * FROM reminders WHERE id = ?", (reminder_id,)
+                    "SELECT * FROM reminders WHERE id = ?",
+                    (reminder_id,),
                 ).fetchone()
 
                 if not row:
@@ -501,10 +509,10 @@ class ReminderScheduler:
 
                 reminder_data = dict(row)
                 reminder_data["context_triggers"] = json.loads(
-                    reminder_data["context_triggers"] or "[]"
+                    reminder_data["context_triggers"] or "[]",
                 )
                 reminder_data["metadata"] = json.loads(
-                    reminder_data["metadata"] or "{}"
+                    reminder_data["metadata"] or "{}",
                 )
 
             # Execute callbacks
@@ -513,7 +521,7 @@ class ReminderScheduler:
                 try:
                     await callback(reminder_data)
                 except Exception as e:
-                    logger.error(f"Callback error for reminder {reminder_id}: {e}")
+                    logger.exception(f"Callback error for reminder {reminder_id}: {e}")
 
             # Update status
             now = datetime.now()
@@ -523,7 +531,8 @@ class ReminderScheduler:
             if reminder_data["recurrence_rule"]:
                 # Schedule next occurrence
                 next_time = self._calculate_next_occurrence(
-                    reminder_data["scheduled_for"], reminder_data["recurrence_rule"]
+                    reminder_data["scheduled_for"],
+                    reminder_data["recurrence_rule"],
                 )
                 if next_time:
                     with sqlite3.connect(self.db_path) as conn:
@@ -556,19 +565,25 @@ class ReminderScheduler:
                 )
 
             await self._log_reminder_action(
-                reminder_id, "executed", "success", {"executed_at": now.isoformat()}
+                reminder_id,
+                "executed",
+                "success",
+                {"executed_at": now.isoformat()},
             )
 
             return True
 
         except Exception as e:
             await self._log_reminder_action(
-                reminder_id, "executed", "failed", {"error": str(e)}
+                reminder_id,
+                "executed",
+                "failed",
+                {"error": str(e)},
             )
             return False
 
     async def cancel_reminder(self, reminder_id: str) -> bool:
-        """Cancel a pending reminder"""
+        """Cancel a pending reminder."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 result = conn.execute(
@@ -589,58 +604,64 @@ class ReminderScheduler:
 
         except Exception as e:
             await self._log_reminder_action(
-                reminder_id, "cancelled", "failed", {"error": str(e)}
+                reminder_id,
+                "cancelled",
+                "failed",
+                {"error": str(e)},
             )
             return False
 
-    def register_notification_callback(self, method: str, callback: Callable):
-        """Register callback for notification method"""
+    def register_notification_callback(self, method: str, callback: Callable) -> None:
+        """Register callback for notification method."""
         if method not in self._callbacks:
             self._callbacks[method] = []
         self._callbacks[method].append(callback)
 
-    def start_scheduler(self):
-        """Start the background scheduler"""
+    def start_scheduler(self) -> None:
+        """Start the background scheduler."""
         if self._running:
             return
 
         self._running = True
         self._scheduler_thread = threading.Thread(
-            target=self._scheduler_loop, daemon=True
+            target=self._scheduler_loop,
+            daemon=True,
         )
         self._scheduler_thread.start()
 
-    def stop_scheduler(self):
-        """Stop the background scheduler"""
+    def stop_scheduler(self) -> None:
+        """Stop the background scheduler."""
         self._running = False
         if self._scheduler_thread and self._scheduler_thread.is_alive():
             self._scheduler_thread.join(timeout=5.0)
 
-    def _scheduler_loop(self):
-        """Background scheduler loop"""
+    def _scheduler_loop(self) -> None:
+        """Background scheduler loop."""
         while self._running:
             try:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(self._check_and_execute_reminders())
             except Exception as e:
-                logger.error(f"Scheduler loop error: {e}")
+                logger.exception(f"Scheduler loop error: {e}")
             finally:
                 if loop and not loop.is_closed():
                     loop.close()
                 time.sleep(60)  # Check every minute
 
-    async def _check_and_execute_reminders(self):
-        """Check for due reminders and execute them"""
+    async def _check_and_execute_reminders(self) -> None:
+        """Check for due reminders and execute them."""
         due_reminders = await self.get_due_reminders()
 
         for reminder in due_reminders:
             await self.execute_reminder(reminder["id"])
 
     def _calculate_next_occurrence(
-        self, last_time: datetime, recurrence_rule: str
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
     ) -> datetime | None:
-        """Calculate next occurrence for recurring reminder"""
+        """Calculate next occurrence for recurring reminder."""
         if not DATEUTIL_AVAILABLE:
             return None
 
@@ -648,11 +669,11 @@ class ReminderScheduler:
             # Simple rule parsing (extend as needed)
             if recurrence_rule.startswith("FREQ=DAILY"):
                 return last_time + timedelta(days=1)
-            elif recurrence_rule.startswith("FREQ=WEEKLY"):
+            if recurrence_rule.startswith("FREQ=WEEKLY"):
                 return last_time + timedelta(weeks=1)
-            elif recurrence_rule.startswith("FREQ=MONTHLY"):
+            if recurrence_rule.startswith("FREQ=MONTHLY"):
                 return last_time + relativedelta(months=1)
-            elif "INTERVAL=" in recurrence_rule:
+            if "INTERVAL=" in recurrence_rule:
                 # Parse interval from rule like "FREQ=HOURLY;INTERVAL=2"
                 parts = recurrence_rule.split(";")
                 interval = 1
@@ -666,20 +687,24 @@ class ReminderScheduler:
 
                 if freq == "HOURLY":
                     return last_time + timedelta(hours=interval)
-                elif freq == "MINUTELY":
+                if freq == "MINUTELY":
                     return last_time + timedelta(minutes=interval)
-                elif freq == "DAILY":
+                if freq == "DAILY":
                     return last_time + timedelta(days=interval)
 
         except Exception as e:
-            logger.error(f"Error calculating next occurrence: {e}")
+            logger.exception(f"Error calculating next occurrence: {e}")
 
         return None
 
     async def _log_reminder_action(
-        self, reminder_id: str, action: str, result: str, details: dict[str, Any]
-    ):
-        """Log reminder action for audit trail"""
+        self,
+        reminder_id: str,
+        action: str,
+        result: str,
+        details: dict[str, Any],
+    ) -> None:
+        """Log reminder action for audit trail."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -695,7 +720,7 @@ _reminder_scheduler = None
 
 
 def get_reminder_scheduler() -> ReminderScheduler:
-    """Get global reminder scheduler instance"""
+    """Get global reminder scheduler instance."""
     global _reminder_scheduler
     if _reminder_scheduler is None:
         _reminder_scheduler = ReminderScheduler()
@@ -711,53 +736,59 @@ async def create_natural_reminder(
     project_id: str | None = None,
     notification_method: str = "session",
 ) -> str | None:
-    """Create reminder from natural language time expression"""
+    """Create reminder from natural language time expression."""
     scheduler = get_reminder_scheduler()
     return await scheduler.create_reminder(
-        title, time_expression, description, user_id, project_id, notification_method
+        title,
+        time_expression,
+        description,
+        user_id,
+        project_id,
+        notification_method,
     )
 
 
 async def list_user_reminders(
-    user_id: str = "default", project_id: str | None = None
+    user_id: str = "default",
+    project_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """List pending reminders for user/project"""
+    """List pending reminders for user/project."""
     scheduler = get_reminder_scheduler()
     return await scheduler.get_pending_reminders(user_id, project_id)
 
 
 async def cancel_user_reminder(reminder_id: str) -> bool:
-    """Cancel a specific reminder"""
+    """Cancel a specific reminder."""
     scheduler = get_reminder_scheduler()
     return await scheduler.cancel_reminder(reminder_id)
 
 
 async def check_due_reminders() -> list[dict[str, Any]]:
-    """Check for reminders that are due now"""
+    """Check for reminders that are due now."""
     scheduler = get_reminder_scheduler()
     return await scheduler.get_due_reminders()
 
 
-def start_reminder_service():
-    """Start the background reminder service"""
+def start_reminder_service() -> None:
+    """Start the background reminder service."""
     scheduler = get_reminder_scheduler()
     scheduler.start_scheduler()
 
 
-def stop_reminder_service():
-    """Stop the background reminder service"""
+def stop_reminder_service() -> None:
+    """Stop the background reminder service."""
     scheduler = get_reminder_scheduler()
     scheduler.stop_scheduler()
 
 
-def register_session_notifications():
-    """Register session-based notification callbacks"""
+def register_session_notifications() -> None:
+    """Register session-based notification callbacks."""
     scheduler = get_reminder_scheduler()
 
-    async def session_notification(reminder_data: dict[str, Any]):
-        """Default session notification handler"""
+    async def session_notification(reminder_data: dict[str, Any]) -> None:
+        """Default session notification handler."""
         logger.info(
-            f"Reminder: {reminder_data['title']} - {reminder_data['description']}"
+            f"Reminder: {reminder_data['title']} - {reminder_data['description']}",
         )
 
     scheduler.register_notification_callback("session", session_notification)

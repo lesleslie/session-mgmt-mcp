@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unit tests for Advanced Search Engine
-"""
+"""Unit tests for Advanced Search Engine."""
 
 import asyncio
 import tempfile
@@ -20,7 +18,7 @@ from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 @pytest.fixture
 async def temp_db():
-    """Create a temporary test database"""
+    """Create a temporary test database."""
     with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as f:
         db_path = f.name
 
@@ -36,14 +34,13 @@ async def temp_db():
 
 @pytest.fixture
 async def search_engine(temp_db):
-    """Create a search engine with test database"""
+    """Create a search engine with test database."""
     return AdvancedSearchEngine(temp_db)
 
 
 @pytest.fixture
 async def sample_data(temp_db):
-    """Add sample conversations and reflections to test database"""
-
+    """Add sample conversations and reflections to test database."""
     # Sample conversations
     conversations = [
         {
@@ -122,18 +119,18 @@ async def sample_data(temp_db):
 
 
 class TestSearchIndexing:
-    """Test search index creation and management"""
+    """Test search index creation and management."""
 
     @pytest.mark.asyncio
     async def test_index_conversations(self, search_engine, sample_data):
-        """Test indexing of conversations"""
-
+        """Test indexing of conversations."""
         await search_engine._rebuild_search_index()
 
         # Check that conversations were indexed
         sql = "SELECT COUNT(*) FROM search_index WHERE content_type = 'conversation'"
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: search_engine.reflection_db.conn.execute(sql).fetchone()
+            None,
+            lambda: search_engine.reflection_db.conn.execute(sql).fetchone(),
         )
 
         conversation_count = result[0]
@@ -141,14 +138,14 @@ class TestSearchIndexing:
 
     @pytest.mark.asyncio
     async def test_index_reflections(self, search_engine, sample_data):
-        """Test indexing of reflections"""
-
+        """Test indexing of reflections."""
         await search_engine._rebuild_search_index()
 
         # Check that reflections were indexed
         sql = "SELECT COUNT(*) FROM search_index WHERE content_type = 'reflection'"
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: search_engine.reflection_db.conn.execute(sql).fetchone()
+            None,
+            lambda: search_engine.reflection_db.conn.execute(sql).fetchone(),
         )
 
         reflection_count = result[0]
@@ -156,8 +153,7 @@ class TestSearchIndexing:
 
     @pytest.mark.asyncio
     async def test_technical_term_extraction(self, search_engine, sample_data):
-        """Test extraction of technical terms from content"""
-
+        """Test extraction of technical terms from content."""
         # Test technical term extraction
         test_content = """
         def authenticate_user(username, password):
@@ -186,15 +182,15 @@ class TestSearchIndexing:
 
     @pytest.mark.asyncio
     async def test_facet_generation(self, search_engine, sample_data):
-        """Test automatic facet generation"""
-
+        """Test automatic facet generation."""
         await search_engine._rebuild_search_index()
         await search_engine._update_search_facets()
 
         # Check that facets were created
         sql = "SELECT DISTINCT facet_name FROM search_facets"
         results = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: search_engine.reflection_db.conn.execute(sql).fetchall()
+            None,
+            lambda: search_engine.reflection_db.conn.execute(sql).fetchall(),
         )
 
         facet_names = [row[0] for row in results]
@@ -207,17 +203,18 @@ class TestSearchIndexing:
 
 
 class TestBasicSearch:
-    """Test basic search functionality"""
+    """Test basic search functionality."""
 
     @pytest.mark.asyncio
     async def test_simple_text_search(self, search_engine, sample_data):
-        """Test simple text-based search"""
-
+        """Test simple text-based search."""
         await search_engine._rebuild_search_index()
 
         # Search for authentication-related content
         results = await search_engine.search(
-            query="authentication", limit=5, include_highlights=True
+            query="authentication",
+            limit=5,
+            include_highlights=True,
         )
 
         assert len(results["results"]) > 0
@@ -236,13 +233,14 @@ class TestBasicSearch:
 
     @pytest.mark.asyncio
     async def test_project_filtering(self, search_engine, sample_data):
-        """Test filtering by project"""
-
+        """Test filtering by project."""
         await search_engine._rebuild_search_index()
 
         # Create project filter
         project_filter = SearchFilter(
-            field="project", operator="eq", value="webapp-backend"
+            field="project",
+            operator="eq",
+            value="webapp-backend",
         )
 
         results = await search_engine.search(
@@ -257,17 +255,20 @@ class TestBasicSearch:
 
     @pytest.mark.asyncio
     async def test_content_type_filtering(self, search_engine, sample_data):
-        """Test filtering by content type"""
-
+        """Test filtering by content type."""
         await search_engine._rebuild_search_index()
 
         # Filter for conversations only
         content_filter = SearchFilter(
-            field="content_type", operator="eq", value="conversation"
+            field="content_type",
+            operator="eq",
+            value="conversation",
         )
 
         results = await search_engine.search(
-            query="*", filters=[content_filter], limit=10
+            query="*",
+            filters=[content_filter],
+            limit=10,
         )
 
         # All results should be conversations
@@ -276,8 +277,7 @@ class TestBasicSearch:
 
     @pytest.mark.asyncio
     async def test_timeframe_filtering(self, search_engine, sample_data):
-        """Test filtering by time range"""
-
+        """Test filtering by time range."""
         await search_engine._rebuild_search_index()
 
         # Create time filter for last 24 hours
@@ -285,7 +285,9 @@ class TestBasicSearch:
         yesterday = now - timedelta(hours=24)
 
         time_filter = SearchFilter(
-            field="timestamp", operator="range", value=(yesterday, now)
+            field="timestamp",
+            operator="range",
+            value=(yesterday, now),
         )
 
         results = await search_engine.search(query="*", filters=[time_filter], limit=10)
@@ -295,8 +297,7 @@ class TestBasicSearch:
 
     @pytest.mark.asyncio
     async def test_multiple_filters(self, search_engine, sample_data):
-        """Test combining multiple filters"""
-
+        """Test combining multiple filters."""
         await search_engine._rebuild_search_index()
 
         # Combine project and content type filters
@@ -314,17 +315,18 @@ class TestBasicSearch:
 
 
 class TestAdvancedSearch:
-    """Test advanced search features"""
+    """Test advanced search features."""
 
     @pytest.mark.asyncio
     async def test_faceted_search(self, search_engine, sample_data):
-        """Test faceted search with result counts"""
-
+        """Test faceted search with result counts."""
         await search_engine._rebuild_search_index()
 
         # Search with facets
         results = await search_engine.search(
-            query="authentication", facets=["project", "content_type"], limit=5
+            query="authentication",
+            facets=["project", "content_type"],
+            limit=5,
         )
 
         assert "facets" in results
@@ -339,13 +341,14 @@ class TestAdvancedSearch:
 
     @pytest.mark.asyncio
     async def test_search_suggestions(self, search_engine, sample_data):
-        """Test search completion suggestions"""
-
+        """Test search completion suggestions."""
         await search_engine._rebuild_search_index()
 
         # Get suggestions for partial query
         suggestions = await search_engine.suggest_completions(
-            query="auth", field="content", limit=5
+            query="auth",
+            field="content",
+            limit=5,
         )
 
         assert isinstance(suggestions, list)
@@ -357,21 +360,23 @@ class TestAdvancedSearch:
 
     @pytest.mark.asyncio
     async def test_similar_content(self, search_engine, sample_data):
-        """Test finding similar content"""
-
+        """Test finding similar content."""
         await search_engine._rebuild_search_index()
 
         # First, get a conversation ID from the index
         sql = "SELECT content_id FROM search_index WHERE content_type = 'conversation' LIMIT 1"
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: search_engine.reflection_db.conn.execute(sql).fetchone()
+            None,
+            lambda: search_engine.reflection_db.conn.execute(sql).fetchone(),
         )
 
         if result:
             content_id = result[0]
 
             similar = await search_engine.get_similar_content(
-                content_id=content_id, content_type="conversation", limit=3
+                content_id=content_id,
+                content_type="conversation",
+                limit=3,
             )
 
             assert isinstance(similar, list)
@@ -381,13 +386,14 @@ class TestAdvancedSearch:
 
     @pytest.mark.asyncio
     async def test_timeframe_search(self, search_engine, sample_data):
-        """Test timeframe-based search"""
-
+        """Test timeframe-based search."""
         await search_engine._rebuild_search_index()
 
         # Search for content from last day
         results = await search_engine.search_by_timeframe(
-            timeframe="1d", query="authentication", limit=5
+            timeframe="1d",
+            query="authentication",
+            limit=5,
         )
 
         assert isinstance(results, list)
@@ -398,18 +404,21 @@ class TestAdvancedSearch:
 
     @pytest.mark.asyncio
     async def test_sorting_options(self, search_engine, sample_data):
-        """Test different sorting options"""
-
+        """Test different sorting options."""
         await search_engine._rebuild_search_index()
 
         # Test relevance sorting (default)
         relevance_results = await search_engine.search(
-            query="authentication", sort_by="relevance", limit=3
+            query="authentication",
+            sort_by="relevance",
+            limit=3,
         )
 
         # Test date sorting
         date_results = await search_engine.search(
-            query="authentication", sort_by="date", limit=3
+            query="authentication",
+            sort_by="date",
+            limit=3,
         )
 
         # Both should return results
@@ -424,16 +433,16 @@ class TestAdvancedSearch:
 
 
 class TestSearchMetrics:
-    """Test search metrics and analytics"""
+    """Test search metrics and analytics."""
 
     @pytest.mark.asyncio
     async def test_activity_metrics(self, search_engine, sample_data):
-        """Test activity metrics calculation"""
-
+        """Test activity metrics calculation."""
         await search_engine._rebuild_search_index()
 
         metrics = await search_engine.aggregate_metrics(
-            metric_type="activity", timeframe="30d"
+            metric_type="activity",
+            timeframe="30d",
         )
 
         assert "metric_type" in metrics
@@ -443,12 +452,12 @@ class TestSearchMetrics:
 
     @pytest.mark.asyncio
     async def test_project_metrics(self, search_engine, sample_data):
-        """Test project-based metrics"""
-
+        """Test project-based metrics."""
         await search_engine._rebuild_search_index()
 
         metrics = await search_engine.aggregate_metrics(
-            metric_type="projects", timeframe="30d"
+            metric_type="projects",
+            timeframe="30d",
         )
 
         assert metrics["metric_type"] == "projects"
@@ -461,12 +470,12 @@ class TestSearchMetrics:
 
     @pytest.mark.asyncio
     async def test_content_type_metrics(self, search_engine, sample_data):
-        """Test content type metrics"""
-
+        """Test content type metrics."""
         await search_engine._rebuild_search_index()
 
         metrics = await search_engine.aggregate_metrics(
-            metric_type="content_types", timeframe="30d"
+            metric_type="content_types",
+            timeframe="30d",
         )
 
         assert metrics["metric_type"] == "content_types"
@@ -477,12 +486,11 @@ class TestSearchMetrics:
 
 
 class TestErrorHandling:
-    """Test error handling and edge cases"""
+    """Test error handling and edge cases."""
 
     @pytest.mark.asyncio
     async def test_empty_query(self, search_engine, sample_data):
-        """Test handling of empty queries"""
-
+        """Test handling of empty queries."""
         await search_engine._rebuild_search_index()
 
         # Empty query should still work
@@ -493,18 +501,21 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_invalid_filters(self, search_engine, sample_data):
-        """Test handling of invalid filters"""
-
+        """Test handling of invalid filters."""
         await search_engine._rebuild_search_index()
 
         # Invalid field name
         invalid_filter = SearchFilter(
-            field="nonexistent_field", operator="eq", value="test"
+            field="nonexistent_field",
+            operator="eq",
+            value="test",
         )
 
         # Should not crash, might return empty results
         results = await search_engine.search(
-            query="test", filters=[invalid_filter], limit=5
+            query="test",
+            filters=[invalid_filter],
+            limit=5,
         )
 
         assert "results" in results
@@ -512,12 +523,12 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_unknown_metric_type(self, search_engine, sample_data):
-        """Test handling of unknown metric types"""
-
+        """Test handling of unknown metric types."""
         await search_engine._rebuild_search_index()
 
         metrics = await search_engine.aggregate_metrics(
-            metric_type="unknown_metric", timeframe="30d"
+            metric_type="unknown_metric",
+            timeframe="30d",
         )
 
         # Should return error message
@@ -526,8 +537,7 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_malformed_timeframe(self, search_engine):
-        """Test handling of malformed timeframe strings"""
-
+        """Test handling of malformed timeframe strings."""
         # Should handle invalid timeframe gracefully
         start_time, end_time = search_engine._parse_timeframe("invalid_timeframe")
 
@@ -538,12 +548,11 @@ class TestErrorHandling:
 
 
 class TestPerformance:
-    """Test search performance characteristics"""
+    """Test search performance characteristics."""
 
     @pytest.mark.asyncio
     async def test_large_result_set_handling(self, search_engine, temp_db):
-        """Test handling of large result sets"""
-
+        """Test handling of large result sets."""
         # Add many conversations
         for i in range(100):
             await temp_db.store_conversation(
@@ -562,8 +571,7 @@ class TestPerformance:
 
     @pytest.mark.asyncio
     async def test_concurrent_searches(self, search_engine, sample_data):
-        """Test concurrent search operations"""
-
+        """Test concurrent search operations."""
         await search_engine._rebuild_search_index()
 
         # Run multiple searches concurrently

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Claude Session Management MCP Server - FastMCP Version
+"""Claude Session Management MCP Server - FastMCP Version.
 
 A dedicated MCP server that provides session management functionality
 including initialization, checkpoints, and cleanup across all projects.
@@ -25,9 +24,9 @@ from typing import Any
 
 # Configure structured logging
 class SessionLogger:
-    """Structured logging for session management with context"""
+    """Structured logging for session management with context."""
 
-    def __init__(self, log_dir: Path):
+    def __init__(self, log_dir: Path) -> None:
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = (
@@ -50,7 +49,7 @@ class SessionLogger:
 
             # Structured formatter
             formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s"
+                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s",
             )
             file_handler.setFormatter(formatter)
             console_handler.setFormatter(formatter)
@@ -58,20 +57,20 @@ class SessionLogger:
             self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
 
-    def info(self, message: str, **context):
-        """Log info with optional context"""
+    def info(self, message: str, **context) -> None:
+        """Log info with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.info(message)
 
-    def warning(self, message: str, **context):
-        """Log warning with optional context"""
+    def warning(self, message: str, **context) -> None:
+        """Log warning with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.warning(message)
 
-    def error(self, message: str, **context):
-        """Log error with optional context"""
+    def error(self, message: str, **context) -> None:
+        """Log error with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.error(message)
@@ -95,7 +94,7 @@ except ImportError:
 
         # Create a minimal mock FastMCP for testing
         class MockFastMCP:
-            def __init__(self, name):
+            def __init__(self, name) -> None:
                 self.name = name
                 self.tools = {}
                 self.prompts = {}
@@ -112,7 +111,7 @@ except ImportError:
 
                 return decorator
 
-            def run(self, *args, **kwargs):
+            def run(self, *args, **kwargs) -> None:
                 pass
 
         FastMCP = MockFastMCP
@@ -231,19 +230,19 @@ except ImportError as e:
 
 
 class SessionPermissionsManager:
-    """Manages session permissions to avoid repeated prompts for trusted operations"""
+    """Manages session permissions to avoid repeated prompts for trusted operations."""
 
     _instance = None
     _session_id = None
 
     def __new__(cls, claude_dir: Path):
-        """Singleton pattern to ensure consistent session ID across tool calls"""
+        """Singleton pattern to ensure consistent session ID across tool calls."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, claude_dir: Path):
+    def __init__(self, claude_dir: Path) -> None:
         if self._initialized:
             return
         self.claude_dir = claude_dir
@@ -258,12 +257,12 @@ class SessionPermissionsManager:
         self._initialized = True
 
     def _generate_session_id(self) -> str:
-        """Generate unique session ID based on current time and working directory"""
+        """Generate unique session ID based on current time and working directory."""
         session_data = f"{datetime.now().isoformat()}_{os.getcwd()}"
         return hashlib.md5(session_data.encode()).hexdigest()[:12]
 
-    def _load_permissions(self):
-        """Load previously granted permissions"""
+    def _load_permissions(self) -> None:
+        """Load previously granted permissions."""
         if self.permissions_file.exists():
             try:
                 with open(self.permissions_file) as f:
@@ -272,8 +271,8 @@ class SessionPermissionsManager:
             except (json.JSONDecodeError, KeyError):
                 pass
 
-    def _save_permissions(self):
-        """Save current trusted permissions"""
+    def _save_permissions(self) -> None:
+        """Save current trusted permissions."""
         data = {
             "trusted_operations": list(self.trusted_operations),
             "last_updated": datetime.now().isoformat(),
@@ -283,16 +282,16 @@ class SessionPermissionsManager:
             json.dump(data, f, indent=2)
 
     def is_operation_trusted(self, operation: str) -> bool:
-        """Check if an operation is already trusted"""
+        """Check if an operation is already trusted."""
         return operation in self.trusted_operations
 
-    def trust_operation(self, operation: str, description: str = ""):
-        """Mark an operation as trusted to avoid future prompts"""
+    def trust_operation(self, operation: str, description: str = "") -> None:
+        """Mark an operation as trusted to avoid future prompts."""
         self.trusted_operations.add(operation)
         self._save_permissions()
 
     def get_permission_status(self) -> dict[str, Any]:
-        """Get current permission status"""
+        """Get current permission status."""
         return {
             "session_id": self.session_id,
             "trusted_operations_count": len(self.trusted_operations),
@@ -300,8 +299,8 @@ class SessionPermissionsManager:
             "permissions_file": str(self.permissions_file),
         }
 
-    def revoke_all_permissions(self):
-        """Revoke all trusted permissions (for security reset)"""
+    def revoke_all_permissions(self) -> None:
+        """Revoke all trusted permissions (for security reset)."""
         self.trusted_operations.clear()
         if self.permissions_file.exists():
             self.permissions_file.unlink()
@@ -317,14 +316,18 @@ class SessionPermissionsManager:
 
 # Utility Functions
 def _detect_other_mcp_servers() -> dict[str, bool]:
-    """Detect availability of other MCP servers by checking common paths and processes"""
+    """Detect availability of other MCP servers by checking common paths and processes."""
     detected = {}
 
     # Check for crackerjack MCP server
     try:
         # Try to import crackerjack to see if it's available
         result = subprocess.run(
-            ["crackerjack", "--version"], capture_output=True, text=True, timeout=5
+            ["crackerjack", "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         detected["crackerjack"] = result.returncode == 0
     except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
@@ -334,7 +337,7 @@ def _detect_other_mcp_servers() -> dict[str, bool]:
 
 
 def _generate_server_guidance(detected_servers: dict[str, bool]) -> list[str]:
-    """Generate guidance messages based on detected servers"""
+    """Generate guidance messages based on detected servers."""
     guidance = []
 
     if detected_servers.get("crackerjack", False):
@@ -346,7 +349,7 @@ def _generate_server_guidance(detected_servers: dict[str, bool]) -> list[str]:
                 "   • Gets memory, analytics, and intelligent insights automatically",
                 "   • View trends with /session-mgmt:crackerjack-history",
                 "   • Analyze patterns with /session-mgmt:crackerjack-patterns",
-            ]
+            ],
         )
 
     return guidance
@@ -862,8 +865,8 @@ advanced_search_engine: Any | None = None
 app_config: Any | None = None
 
 
-async def initialize_new_features():
-    """Initialize multi-project coordination and advanced search features"""
+async def initialize_new_features() -> None:
+    """Initialize multi-project coordination and advanced search features."""
     global multi_project_coordinator, advanced_search_engine, app_config
 
     # Load configuration
@@ -889,7 +892,7 @@ async def initialize_new_features():
 
 
 def validate_claude_directory() -> dict[str, Any]:
-    """Simple validation of ~/.claude directory structure"""
+    """Simple validation of ~/.claude directory structure."""
     validation_result = {"valid": True, "component_status": {}}
 
     # Ensure basic ~/.claude directory structure exists
@@ -906,7 +909,7 @@ def validate_claude_directory() -> dict[str, Any]:
 
 
 async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
-    """Analyze project structure and context with enhanced error handling"""
+    """Analyze project structure and context with enhanced error handling."""
     try:
         # Ensure project_dir exists and is accessible
         if not project_dir.exists():
@@ -949,7 +952,7 @@ async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
 
 
 def _setup_claude_directory(output: list[str]) -> dict:
-    """Setup Claude directory and return validation results"""
+    """Setup Claude directory and return validation results."""
     output.append("\n📋 Phase 1: Claude directory setup...")
 
     claude_validation = validate_claude_directory()
@@ -963,17 +966,17 @@ def _setup_claude_directory(output: list[str]) -> dict:
 
 
 def _setup_uv_dependencies(output: list[str], current_dir: Path) -> None:
-    """Setup UV dependencies and package management"""
+    """Setup UV dependencies and package management."""
     output.append("\n🔧 Phase 2: UV dependency management & session setup...")
 
     uv_available = shutil.which("uv") is not None
     output.append(
-        f"🔍 UV package manager: {'✅ AVAILABLE' if uv_available else '❌ NOT FOUND'}"
+        f"🔍 UV package manager: {'✅ AVAILABLE' if uv_available else '❌ NOT FOUND'}",
     )
 
     # Check UV permissions
     uv_trusted = permissions_manager.is_operation_trusted(
-        permissions_manager.TRUSTED_UV_OPERATIONS
+        permissions_manager.TRUSTED_UV_OPERATIONS,
     )
     if uv_trusted:
         output.append("🔐 UV operations: ✅ TRUSTED (no prompts needed)")
@@ -988,9 +991,11 @@ def _setup_uv_dependencies(output: list[str], current_dir: Path) -> None:
 
 
 def _handle_uv_operations(
-    output: list[str], current_dir: Path, uv_trusted: bool
+    output: list[str],
+    current_dir: Path,
+    uv_trusted: bool,
 ) -> None:
-    """Handle UV operations for dependency management"""
+    """Handle UV operations for dependency management."""
     project_has_pyproject = (current_dir / "pyproject.toml").exists()
 
     if not project_has_pyproject:
@@ -1021,9 +1026,11 @@ def _handle_uv_operations(
 
 
 def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
-    """Run UV sync and compile operations"""
+    """Run UV sync and compile operations."""
     # Sync dependencies
-    sync_result = subprocess.run(["uv", "sync"], capture_output=True, text=True)
+    sync_result = subprocess.run(
+        ["uv", "sync"], check=False, capture_output=True, text=True
+    )
     if sync_result.returncode == 0:
         output.append("✅ UV sync completed successfully")
 
@@ -1038,6 +1045,7 @@ def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
                     "--output-file",
                     "requirements.txt",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
             )
@@ -1045,7 +1053,7 @@ def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
                 output.append("✅ Requirements.txt generated from UV dependencies")
             else:
                 output.append(
-                    f"⚠️ Requirements compilation warning: {compile_result.stderr}"
+                    f"⚠️ Requirements compilation warning: {compile_result.stderr}",
                 )
         else:
             output.append("✅ Requirements.txt already exists")
@@ -1054,7 +1062,7 @@ def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
 
 
 def _setup_session_management(output: list[str]) -> None:
-    """Setup session management functionality"""
+    """Setup session management functionality."""
     output.append("\n🔧 Phase 3: Session management setup...")
     output.append("✅ Session management functionality ready")
     output.append("   📊 Conversation memory system enabled")
@@ -1066,9 +1074,11 @@ def _setup_session_management(output: list[str]) -> None:
 
 
 async def _analyze_project_structure(
-    output: list[str], current_dir: Path, current_project: str
+    output: list[str],
+    current_dir: Path,
+    current_project: str,
 ) -> tuple[dict, int]:
-    """Analyze project structure and add information to output"""
+    """Analyze project structure and add information to output."""
     output.append(f"\n🎯 Phase 5: Project context analysis for {current_project}...")
 
     project_context = await analyze_project_context(current_dir)
@@ -1080,7 +1090,7 @@ async def _analyze_project_structure(
         output.append(f"   {status} {context_type.replace('_', ' ').title()}")
 
     output.append(
-        f"\n📊 Project maturity: {context_score}/{len(project_context)} indicators"
+        f"\n📊 Project maturity: {context_score}/{len(project_context)} indicators",
     )
     if context_score >= len(project_context) - 1:
         output.append("🌟 Excellent project structure - well-organized codebase")
@@ -1099,7 +1109,7 @@ def _add_final_summary(
     project_context: dict,
     claude_validation: dict,
 ) -> None:
-    """Add final summary information to output"""
+    """Add final summary information to output."""
     output.append("\n" + "=" * 60)
     output.append(f"🎯 {current_project.upper()} SESSION INITIALIZATION COMPLETE")
     output.append("=" * 60)
@@ -1118,12 +1128,12 @@ def _add_final_summary(
 
 
 def _add_permissions_and_tools_summary(output: list[str], current_project: str) -> None:
-    """Add permissions summary and available tools"""
+    """Add permissions summary and available tools."""
     # Permissions Summary
     permissions_status = permissions_manager.get_permission_status()
     output.append("\n🔐 Session Permissions Summary:")
     output.append(
-        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}"
+        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
     )
 
     if permissions_status["trusted_operations_count"] > 0:
@@ -1151,10 +1161,11 @@ def _add_permissions_and_tools_summary(output: list[str], current_project: str) 
 
 @mcp.tool()
 async def init(working_directory: str | None = None) -> str:
-    """Initialize Claude session with comprehensive setup including UV dependencies and automation tools
+    """Initialize Claude session with comprehensive setup including UV dependencies and automation tools.
 
     Args:
         working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
     """
     output = []
     output.append("🚀 Claude Session Initialization via MCP Server")
@@ -1175,17 +1186,23 @@ async def init(working_directory: str | None = None) -> str:
     _setup_uv_dependencies(output, current_dir)
     _setup_session_management(output)
     project_context, context_score = await _analyze_project_structure(
-        output, current_dir, current_project
+        output,
+        current_dir,
+        current_project,
     )
     _add_final_summary(
-        output, current_project, context_score, project_context, claude_validation
+        output,
+        current_project,
+        context_score,
+        project_context,
+        claude_validation,
     )
 
     return "\n".join(output)
 
 
 async def calculate_quality_score() -> dict[str, Any]:
-    """Calculate session quality score based on multiple factors"""
+    """Calculate session quality score based on multiple factors."""
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
 
     # Project health indicators (40% of score)
@@ -1198,7 +1215,8 @@ async def calculate_quality_score() -> dict[str, Any]:
     # Permissions health (20% of score)
     permissions_count = len(permissions_manager.trusted_operations)
     permissions_score = min(
-        permissions_count * 5, 20
+        permissions_count * 5,
+        20,
     )  # Up to 4 trusted operations = max score
 
     # Session management availability (20% of score)
@@ -1219,20 +1237,26 @@ async def calculate_quality_score() -> dict[str, Any]:
             "tools": tool_score,
         },
         "recommendations": _generate_quality_recommendations(
-            total_score, project_context, permissions_count, uv_available
+            total_score,
+            project_context,
+            permissions_count,
+            uv_available,
         ),
     }
 
 
 def _generate_quality_recommendations(
-    score: int, project_context: dict, permissions_count: int, uv_available: bool
+    score: int,
+    project_context: dict,
+    permissions_count: int,
+    uv_available: bool,
 ) -> list[str]:
-    """Generate quality improvement recommendations based on score factors"""
+    """Generate quality improvement recommendations based on score factors."""
     recommendations = []
 
     if score < 50:
         recommendations.append(
-            "Session needs attention - multiple areas for improvement"
+            "Session needs attention - multiple areas for improvement",
         )
     elif score < 75:
         recommendations.append("Good session health - minor optimizations available")
@@ -1248,26 +1272,25 @@ def _generate_quality_recommendations(
     # Permissions recommendations
     if permissions_count == 0:
         recommendations.append(
-            "No trusted operations yet - permissions will be granted on first use"
+            "No trusted operations yet - permissions will be granted on first use",
         )
     elif permissions_count > 5:
         recommendations.append(
-            "Many trusted operations - consider reviewing for security"
+            "Many trusted operations - consider reviewing for security",
         )
 
     # Tools recommendations
     if not uv_available:
         recommendations.append(
-            "Install UV package manager for better dependency management"
+            "Install UV package manager for better dependency management",
         )
 
     return recommendations
 
 
 def should_suggest_compact() -> tuple[bool, str]:
-    """
-    Determine if compacting would be beneficial and provide reasoning.
-    Returns (should_compact, reason)
+    """Determine if compacting would be beneficial and provide reasoning.
+    Returns (should_compact, reason).
     """
     # Heuristics for when compaction might be needed:
     # 1. Large projects with many files
@@ -1317,6 +1340,7 @@ def should_suggest_compact() -> tuple[bool, str]:
                 # Check number of recent commits as activity indicator
                 result = subprocess.run(
                     ["git", "log", "--oneline", "-20", "--since='24 hours ago'"],
+                    check=False,
                     capture_output=True,
                     text=True,
                     cwd=current_dir,
@@ -1328,7 +1352,7 @@ def should_suggest_compact() -> tuple[bool, str]:
                             line
                             for line in result.stdout.strip().split("\n")
                             if line.strip()
-                        ]
+                        ],
                     )
                     if recent_commits >= 3:
                         return (
@@ -1339,6 +1363,7 @@ def should_suggest_compact() -> tuple[bool, str]:
                 # Check for large number of modified files
                 status_result = subprocess.run(
                     ["git", "status", "--porcelain"],
+                    check=False,
                     capture_output=True,
                     text=True,
                     cwd=current_dir,
@@ -1350,7 +1375,7 @@ def should_suggest_compact() -> tuple[bool, str]:
                             line
                             for line in status_result.stdout.strip().split("\n")
                             if line.strip()
-                        ]
+                        ],
                     )
                     if modified_files >= 10:
                         return (
@@ -1394,10 +1419,12 @@ async def _optimize_reflection_database() -> str:
 
         if db.conn:
             await asyncio.get_event_loop().run_in_executor(
-                None, lambda: db.conn.execute("VACUUM")
+                None,
+                lambda: db.conn.execute("VACUUM"),
             )
             await asyncio.get_event_loop().run_in_executor(
-                None, lambda: db.conn.execute("ANALYZE")
+                None,
+                lambda: db.conn.execute("ANALYZE"),
             )
 
         db_size_after = (
@@ -1421,7 +1448,8 @@ def _cleanup_session_logs() -> str:
             return "📝 Logs: No log directory found"
 
         log_files = sorted(
-            log_dir.glob("session_management_*.log"), key=lambda x: x.stat().st_mtime
+            log_dir.glob("session_management_*.log"),
+            key=lambda x: x.stat().st_mtime,
         )
 
         if len(log_files) <= 10:
@@ -1470,7 +1498,8 @@ def _cleanup_temp_files(current_dir: Path) -> str:
 
         # Clean coverage files (keep most recent 3)
         coverage_files = sorted(
-            current_dir.glob(".coverage*"), key=lambda x: x.stat().st_mtime
+            current_dir.glob(".coverage*"),
+            key=lambda x: x.stat().st_mtime,
         )
         if len(coverage_files) > 3:
             for cov_file in coverage_files[:-3]:
@@ -1495,6 +1524,7 @@ def _optimize_git_repository(current_dir: Path) -> list[str]:
         # Run git garbage collection
         gc_result = subprocess.run(
             ["git", "gc", "--auto"],
+            check=False,
             cwd=current_dir,
             capture_output=True,
             text=True,
@@ -1512,6 +1542,7 @@ def _optimize_git_repository(current_dir: Path) -> list[str]:
         # Prune remote tracking branches
         prune_result = subprocess.run(
             ["git", "remote", "prune", "origin"],
+            check=False,
             cwd=current_dir,
             capture_output=True,
             text=True,
@@ -1536,7 +1567,11 @@ def _cleanup_uv_cache() -> str:
             return "📦 UV: Not available"
 
         cache_result = subprocess.run(
-            ["uv", "cache", "clean"], capture_output=True, text=True, timeout=30
+            ["uv", "cache", "clean"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
 
         return (
@@ -1573,13 +1608,13 @@ async def _analyze_context_compaction() -> list[str]:
                     "",
                     "💡 WORKFLOW: After this checkpoint completes, run: /compact",
                     "🔄 Context compaction should be applied for optimal performance",
-                ]
+                ],
             )
         else:
             results.append("✅ Context appears well-optimized for current session")
 
         results.append(
-            "💡 This checkpoint includes intelligent conversation summarization"
+            "💡 This checkpoint includes intelligent conversation summarization",
         )
 
         # Store conversation summary
@@ -1627,7 +1662,8 @@ async def _store_context_summary(conversation_summary: dict) -> None:
             ],
         )
     except Exception as e:
-        raise Exception(f"Context summary storage failed: {str(e)[:50]}")
+        msg = f"Context summary storage failed: {str(e)[:50]}"
+        raise Exception(msg)
 
 
 async def perform_strategic_compaction() -> list[str]:
@@ -1659,35 +1695,36 @@ async def perform_strategic_compaction() -> list[str]:
         [
             f"\n📊 Strategic compaction complete: {total_operations} optimization tasks performed",
             "🎯 Recommendation: Conversation context should be compacted automatically",
-        ]
+        ],
     )
 
     return results
 
 
 async def _generate_basic_insights(
-    quality_score: float, conversation_summary: dict[str, Any]
+    quality_score: float,
+    conversation_summary: dict[str, Any],
 ) -> list[str]:
     """Generate basic session insights from quality score and conversation summary."""
     insights = []
 
     insights.append(
-        f"Session checkpoint completed with quality score: {quality_score}/100"
+        f"Session checkpoint completed with quality score: {quality_score}/100",
     )
 
     if conversation_summary["key_topics"]:
         insights.append(
-            f"Key discussion topics: {', '.join(conversation_summary['key_topics'][:3])}"
+            f"Key discussion topics: {', '.join(conversation_summary['key_topics'][:3])}",
         )
 
     if conversation_summary["decisions_made"]:
         insights.append(
-            f"Important decisions: {conversation_summary['decisions_made'][0]}"
+            f"Important decisions: {conversation_summary['decisions_made'][0]}",
         )
 
     if conversation_summary["next_steps"]:
         insights.append(
-            f"Next steps identified: {conversation_summary['next_steps'][0]}"
+            f"Next steps identified: {conversation_summary['next_steps'][0]}",
         )
 
     return insights
@@ -1710,7 +1747,7 @@ def _add_session_health_insights(insights: list[str], quality_score: float) -> N
         insights.append("Good session progress with minor optimization opportunities")
     else:
         insights.append(
-            "Session requires attention - potential workflow improvements needed"
+            "Session requires attention - potential workflow improvements needed",
         )
 
 
@@ -1732,13 +1769,16 @@ async def _capture_flow_analysis(db, tags: list[str], results: list[str]) -> Non
         flow_summary += f"Key recommendation: {flow_analysis['recommendations'][0]}"
 
     flow_id = await db.store_reflection(
-        flow_summary, tags + ["flow-analysis", "phase3"]
+        flow_summary,
+        [*tags, "flow-analysis", "phase3"],
     )
     results.append(f"🔄 Flow analysis stored: {flow_id[:12]}...")
 
 
 async def _capture_intelligence_insights(
-    db, tags: list[str], results: list[str]
+    db,
+    tags: list[str],
+    results: list[str],
 ) -> None:
     """Capture session intelligence insights."""
     intelligence = await generate_session_intelligence()
@@ -1747,7 +1787,8 @@ async def _capture_intelligence_insights(
         intel_summary += f"Priority: {intelligence['priority_actions'][0]}"
 
         intel_id = await db.store_reflection(
-            intel_summary, tags + ["intelligence", "proactive"]
+            intel_summary,
+            [*tags, "intelligence", "proactive"],
         )
         results.append(f"🧠 Intelligence insights stored: {intel_id[:12]}...")
 
@@ -1768,7 +1809,8 @@ async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> N
                 )
 
                 detail_id = await db.store_reflection(
-                    detail_summary, tags + ["session-metrics"]
+                    detail_summary,
+                    [*tags, "session-metrics"],
                 )
                 results.append(f"📊 Session metrics stored: {detail_id[:12]}...")
         except Exception as e:
@@ -1776,12 +1818,12 @@ async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> N
 
 
 async def capture_session_insights(quality_score: float) -> list[str]:
-    """Phase 1 & 3: Automatically capture and store session insights with conversation summarization"""
+    """Phase 1 & 3: Automatically capture and store session insights with conversation summarization."""
     results = []
 
     if not REFLECTION_TOOLS_AVAILABLE:
         results.append(
-            "⚠️ Reflection storage not available - install dependencies: pip install duckdb transformers"
+            "⚠️ Reflection storage not available - install dependencies: pip install duckdb transformers",
         )
         return results
 
@@ -1819,7 +1861,7 @@ async def capture_session_insights(quality_score: float) -> list[str]:
     except Exception as e:
         results.append(f"❌ Insight capture failed: {str(e)[:60]}...")
         results.append(
-            "💡 Manual reflection storage still available via store_reflection tool"
+            "💡 Manual reflection storage still available via store_reflection tool",
         )
 
     return results
@@ -1936,7 +1978,7 @@ def _get_error_summary(error: Exception) -> dict[str, Any]:
 
 
 async def summarize_current_conversation() -> dict[str, Any]:
-    """Phase 3: AI-Powered Conversation Summarization"""
+    """Phase 3: AI-Powered Conversation Summarization."""
     try:
         summary = _create_empty_summary()
 
@@ -2016,7 +2058,7 @@ def _check_workflow_drift(quality_scores: list[float]) -> tuple[list[str], bool]
         variance = max(quality_scores) - min(quality_scores)
         if variance > 30:
             quality_alerts.append(
-                "High quality variance detected - workflow inconsistency"
+                "High quality variance detected - workflow inconsistency",
             )
             recommend_checkpoint = True
 
@@ -2036,7 +2078,7 @@ async def _perform_quality_analysis() -> tuple[str, list[str], bool]:
 
         if quality_scores:
             trend, trend_alerts, trend_checkpoint = _analyze_quality_trend(
-                quality_scores
+                quality_scores,
             )
             quality_trend = trend
             quality_alerts.extend(trend_alerts)
@@ -2064,7 +2106,7 @@ def _get_quality_error_result(error: Exception) -> dict[str, Any]:
 
 
 async def monitor_proactive_quality() -> dict[str, Any]:
-    """Phase 3: Proactive Quality Monitoring with Early Warning System"""
+    """Phase 3: Proactive Quality Monitoring with Early Warning System."""
     try:
         quality_alerts = []
         quality_trend = "stable"
@@ -2089,7 +2131,7 @@ async def monitor_proactive_quality() -> dict[str, Any]:
 
 
 async def analyze_advanced_context_metrics() -> dict[str, Any]:
-    """Phase 3A: Advanced context metrics analysis"""
+    """Phase 3A: Advanced context metrics analysis."""
     return {
         "estimated_tokens": 0,  # Placeholder for actual token counting
         "context_density": "moderate",
@@ -2098,7 +2140,7 @@ async def analyze_advanced_context_metrics() -> dict[str, Any]:
 
 
 async def analyze_token_usage_patterns() -> dict[str, Any]:
-    """Phase 3A: Intelligent token usage analysis with smart triggers"""
+    """Phase 3A: Intelligent token usage analysis with smart triggers."""
     try:
         # Get conversation statistics from memory system
         conv_stats = {"total_conversations": 0, "recent_activity": "low"}
@@ -2178,7 +2220,7 @@ async def analyze_token_usage_patterns() -> dict[str, Any]:
 
 
 async def analyze_conversation_flow() -> dict[str, Any]:
-    """Phase 3A: Analyze conversation patterns and flow"""
+    """Phase 3A: Analyze conversation patterns and flow."""
     try:
         # Analyze recent reflection patterns to understand session flow
 
@@ -2188,7 +2230,8 @@ async def analyze_conversation_flow() -> dict[str, Any]:
 
                 # Search recent reflections for patterns
                 recent_reflections = await db.search_reflections(
-                    "session checkpoint", limit=5
+                    "session checkpoint",
+                    limit=5,
                 )
 
                 if recent_reflections:
@@ -2220,13 +2263,13 @@ async def analyze_conversation_flow() -> dict[str, Any]:
                 else:
                     pattern_type = "new_session"
                     recommendations = [
-                        "Establish workflow patterns through regular checkpoints"
+                        "Establish workflow patterns through regular checkpoints",
                     ]
 
             except Exception:
                 pattern_type = "analysis_unavailable"
                 recommendations = [
-                    "Use regular checkpoints to establish workflow patterns"
+                    "Use regular checkpoints to establish workflow patterns",
                 ]
         else:
             pattern_type = "basic_session"
@@ -2247,17 +2290,17 @@ async def analyze_conversation_flow() -> dict[str, Any]:
 
 
 async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
-    """Phase 3A: Advanced memory pattern analysis"""
+    """Phase 3A: Advanced memory pattern analysis."""
     try:
         # Analyze conversation history for intelligent insights
         if conv_count == 0:
             return {
                 "summary": "New session - no historical patterns yet",
                 "proactive_suggestions": [
-                    "Start building conversation history for better insights"
+                    "Start building conversation history for better insights",
                 ],
             }
-        elif conv_count < 5:
+        if conv_count < 5:
             return {
                 "summary": f"{conv_count} conversations stored - building pattern recognition",
                 "proactive_suggestions": [
@@ -2265,7 +2308,7 @@ async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
                     "Use store_reflection for important insights",
                 ],
             }
-        elif conv_count < 20:
+        if conv_count < 20:
             return {
                 "summary": f"{conv_count} conversations stored - developing patterns",
                 "proactive_suggestions": [
@@ -2273,28 +2316,27 @@ async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
                     "Search previous solutions before starting new implementations",
                 ],
             }
-        else:
-            return {
-                "summary": f"{conv_count} conversations - rich pattern recognition available",
-                "proactive_suggestions": [
-                    "Leverage extensive history with targeted searches",
-                    "Consider workflow optimization based on successful patterns",
-                    "Use conversation history to accelerate problem-solving",
-                ],
-            }
+        return {
+            "summary": f"{conv_count} conversations - rich pattern recognition available",
+            "proactive_suggestions": [
+                "Leverage extensive history with targeted searches",
+                "Consider workflow optimization based on successful patterns",
+                "Use conversation history to accelerate problem-solving",
+            ],
+        }
 
     except Exception as e:
         return {
             "summary": "Memory analysis unavailable",
             "proactive_suggestions": [
-                "Use basic memory tools for conversation tracking"
+                "Use basic memory tools for conversation tracking",
             ],
             "error": str(e),
         }
 
 
 async def analyze_project_workflow_patterns(current_dir: Path) -> dict[str, Any]:
-    """Phase 3A: Project-specific workflow pattern analysis"""
+    """Phase 3A: Project-specific workflow pattern analysis."""
     try:
         workflow_recommendations = []
 
@@ -2312,39 +2354,39 @@ async def analyze_project_workflow_patterns(current_dir: Path) -> dict[str, Any]
         # Generate intelligent workflow recommendations
         if has_tests:
             workflow_recommendations.append(
-                "Use targeted test commands for specific test scenarios"
+                "Use targeted test commands for specific test scenarios",
             )
             workflow_recommendations.append(
-                "Consider test-driven development workflow with regular testing"
+                "Consider test-driven development workflow with regular testing",
             )
 
         if has_git:
             workflow_recommendations.append(
-                "Leverage git context for branch-specific development"
+                "Leverage git context for branch-specific development",
             )
             workflow_recommendations.append(
-                "Use commit messages to track progress patterns"
+                "Use commit messages to track progress patterns",
             )
 
         if has_python and has_tests:
             workflow_recommendations.append(
-                "Python+Testing: Consider pytest workflows with coverage analysis"
+                "Python+Testing: Consider pytest workflows with coverage analysis",
             )
 
         if has_node:
             workflow_recommendations.append(
-                "Node.js project: Leverage npm/yarn scripts in development workflow"
+                "Node.js project: Leverage npm/yarn scripts in development workflow",
             )
 
         if has_docker:
             workflow_recommendations.append(
-                "Containerized project: Consider container-based development workflows"
+                "Containerized project: Consider container-based development workflows",
             )
 
         # Default recommendations if no specific patterns detected
         if not workflow_recommendations:
             workflow_recommendations.append(
-                "Establish project-specific workflow patterns through regular checkpoints"
+                "Establish project-specific workflow patterns through regular checkpoints",
             )
 
         return {
@@ -2371,15 +2413,15 @@ def _get_time_based_recommendations(hour: int) -> list[str]:
 
     if 9 <= hour <= 11:
         recommendations.append(
-            "Morning session: Consider high-focus tasks and planning"
+            "Morning session: Consider high-focus tasks and planning",
         )
     elif 13 <= hour <= 15:
         recommendations.append(
-            "Afternoon session: Good time for implementation and testing"
+            "Afternoon session: Good time for implementation and testing",
         )
     elif hour >= 18:
         recommendations.append(
-            "Evening session: Consider review and documentation tasks"
+            "Evening session: Consider review and documentation tasks",
         )
 
     return recommendations
@@ -2412,12 +2454,11 @@ def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:
 
     if avg_score > 80:
         return ["Excellent session trend: Maintain current productive patterns"]
-    elif avg_score < 60:
+    if avg_score < 60:
         return [
-            "Session quality declining: Review workflow and take corrective actions"
+            "Session quality declining: Review workflow and take corrective actions",
         ]
-    else:
-        return ["Steady session progress: Consider optimization opportunities"]
+    return ["Steady session progress: Consider optimization opportunities"]
 
 
 async def _analyze_reflection_based_intelligence() -> list[str]:
@@ -2456,7 +2497,7 @@ def _get_intelligence_error_result(error: Exception) -> dict[str, Any]:
 
 
 async def generate_session_intelligence() -> dict[str, Any]:
-    """Phase 3A: Generate proactive session intelligence and priority actions"""
+    """Phase 3A: Generate proactive session intelligence and priority actions."""
     try:
         current_time = datetime.now()
 
@@ -2477,36 +2518,36 @@ async def generate_session_intelligence() -> dict[str, Any]:
 
 
 async def _analyze_token_usage_recommendations(results: list[str]) -> None:
-    """Analyze token usage and add recommendations"""
+    """Analyze token usage and add recommendations."""
     token_analysis = await analyze_token_usage_patterns()
     if token_analysis["needs_attention"]:
         results.append(f"⚠️ Context usage: {token_analysis['status']}")
         results.append(
-            f"   Estimated conversation length: {token_analysis['estimated_length']}"
+            f"   Estimated conversation length: {token_analysis['estimated_length']}",
         )
 
         # Smart compaction triggers - PRIORITY RECOMMENDATIONS
         if token_analysis["recommend_compact"]:
             results.append(
-                "🚨 CRITICAL AUTO-RECOMMENDATION: Context compaction required"
+                "🚨 CRITICAL AUTO-RECOMMENDATION: Context compaction required",
             )
             results.append(
-                "🔄 This checkpoint has prepared conversation summary for compaction"
+                "🔄 This checkpoint has prepared conversation summary for compaction",
             )
             results.append(
-                "💡 Compaction should be applied automatically after this checkpoint"
+                "💡 Compaction should be applied automatically after this checkpoint",
             )
 
         if token_analysis["recommend_clear"]:
             results.append(
-                "🆕 AUTO-RECOMMENDATION: Consider /clear for fresh context after compaction"
+                "🆕 AUTO-RECOMMENDATION: Consider /clear for fresh context after compaction",
             )
     else:
         results.append(f"✅ Context usage: {token_analysis['status']}")
 
 
 async def _analyze_conversation_flow_recommendations(results: list[str]) -> None:
-    """Analyze conversation flow and add recommendations"""
+    """Analyze conversation flow and add recommendations."""
     flow_analysis = await analyze_conversation_flow()
     results.append(f"📊 Session flow: {flow_analysis['pattern_type']}")
 
@@ -2517,7 +2558,7 @@ async def _analyze_conversation_flow_recommendations(results: list[str]) -> None
 
 
 async def _analyze_memory_recommendations(results: list[str]) -> None:
-    """Analyze memory patterns and add recommendations"""
+    """Analyze memory patterns and add recommendations."""
     if REFLECTION_TOOLS_AVAILABLE:
         try:
             db = await get_reflection_database()
@@ -2538,7 +2579,7 @@ async def _analyze_memory_recommendations(results: list[str]) -> None:
 
 
 async def _analyze_project_workflow_recommendations(results: list[str]) -> None:
-    """Analyze project workflow patterns and add recommendations"""
+    """Analyze project workflow patterns and add recommendations."""
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
     project_insights = await analyze_project_workflow_patterns(current_dir)
 
@@ -2549,7 +2590,7 @@ async def _analyze_project_workflow_recommendations(results: list[str]) -> None:
 
 
 async def _analyze_session_intelligence_recommendations(results: list[str]) -> None:
-    """Analyze session intelligence and add recommendations"""
+    """Analyze session intelligence and add recommendations."""
     session_intelligence = await generate_session_intelligence()
     if session_intelligence["priority_actions"]:
         results.append("\n🧠 Session Intelligence:")
@@ -2558,7 +2599,7 @@ async def _analyze_session_intelligence_recommendations(results: list[str]) -> N
 
 
 async def _analyze_quality_monitoring_recommendations(results: list[str]) -> None:
-    """Analyze quality monitoring and add recommendations"""
+    """Analyze quality monitoring and add recommendations."""
     quality_monitoring = await monitor_proactive_quality()
     if quality_monitoring["monitoring_active"]:
         results.append(f"\n📊 Quality Trend: {quality_monitoring['quality_trend']}")
@@ -2573,7 +2614,7 @@ async def _analyze_quality_monitoring_recommendations(results: list[str]) -> Non
 
 
 async def _add_fallback_recommendations(results: list[str], error: Exception) -> None:
-    """Add fallback recommendations when analysis fails"""
+    """Add fallback recommendations when analysis fails."""
     results.append(f"❌ Advanced context analysis failed: {str(error)[:60]}...")
     results.append("💡 Falling back to basic context management recommendations")
 
@@ -2585,7 +2626,7 @@ async def _add_fallback_recommendations(results: list[str], error: Exception) ->
 
 
 async def analyze_context_usage() -> list[str]:
-    """Phase 2 & 3A: Advanced context analysis with intelligent recommendations"""
+    """Phase 2 & 3A: Advanced context analysis with intelligent recommendations."""
     results = []
 
     try:
@@ -2616,7 +2657,9 @@ async def _perform_quality_assessment() -> tuple[int, dict]:
 
 
 async def _format_quality_results(
-    quality_score: int, quality_data: dict, checkpoint_result: dict = None
+    quality_score: int,
+    quality_data: dict,
+    checkpoint_result: dict | None = None,
 ) -> list[str]:
     """Format quality assessment results for display."""
     output = []
@@ -2628,7 +2671,7 @@ async def _format_quality_results(
         output.append(f"✅ Session quality: GOOD (Score: {quality_score}/100)")
     else:
         output.append(
-            f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)"
+            f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)",
         )
 
     # Quality breakdown
@@ -2658,13 +2701,13 @@ async def _format_quality_results(
         if session_stats:
             output.append("\n⏱️ Session progress:")
             output.append(
-                f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes"
+                f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
             )
             output.append(
-                f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}"
+                f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
             )
             output.append(
-                f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%"
+                f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
             )
 
     return output
@@ -2686,6 +2729,7 @@ async def _perform_git_checkpoint(current_dir: Path, quality_score: int) -> list
         # Check git status
         status_result = subprocess.run(
             ["git", "status", "--porcelain"],
+            check=False,
             capture_output=True,
             text=True,
             cwd=current_dir,
@@ -2707,7 +2751,7 @@ async def _perform_git_checkpoint(current_dir: Path, quality_score: int) -> list
             return output
 
         output.append(
-            f"\n📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files"
+            f"\n📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files",
         )
 
         # Handle untracked files
@@ -2717,12 +2761,12 @@ async def _perform_git_checkpoint(current_dir: Path, quality_score: int) -> list
         # Stage and commit modified files
         if modified_files:
             output.extend(
-                _stage_and_commit_files(current_dir, modified_files, quality_score)
+                _stage_and_commit_files(current_dir, modified_files, quality_score),
             )
         elif untracked_files:
             output.append("\nℹ️ No staged changes to commit")
             output.append(
-                "   💡 Add untracked files with 'git add' if you want to include them"
+                "   💡 Add untracked files with 'git add' if you want to include them",
             )
 
     except Exception as e:
@@ -2766,7 +2810,9 @@ def _format_untracked_files(untracked_files: list[str]) -> list[str]:
 
 
 def _stage_and_commit_files(
-    current_dir: Path, modified_files: list[str], quality_score: int
+    current_dir: Path,
+    modified_files: list[str],
+    quality_score: int,
 ) -> list[str]:
     """Stage modified files and create commit."""
     output = []
@@ -2774,11 +2820,14 @@ def _stage_and_commit_files(
 
     # Stage files
     for file in modified_files:
-        subprocess.run(["git", "add", file], cwd=current_dir, capture_output=True)
+        subprocess.run(
+            ["git", "add", file], check=False, cwd=current_dir, capture_output=True
+        )
 
     # Check if there's anything to commit
     staged_result = subprocess.run(
         ["git", "diff", "--cached", "--name-only"],
+        check=False,
         capture_output=True,
         text=True,
         cwd=current_dir,
@@ -2790,10 +2839,11 @@ def _stage_and_commit_files(
 
     # Create commit
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    commit_message = f"checkpoint: Session checkpoint - {timestamp}\n\nAutomatic checkpoint commit via session-management MCP server\nProject: {current_project}\nQuality Score: {quality_score}/100"
+    commit_message = f"checkpoint: Session checkpoint - {timestamp}\n\nAutomatic checkpoint commit via session-management MCP server\nProject: {project_name}\nQuality Score: {quality_score}/100"
 
     commit_result = subprocess.run(
         ["git", "commit", "-m", commit_message],
+        check=False,
         capture_output=True,
         text=True,
         cwd=current_dir,
@@ -2802,6 +2852,7 @@ def _stage_and_commit_files(
     if commit_result.returncode == 0:
         hash_result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
+            check=False,
             capture_output=True,
             text=True,
             cwd=current_dir,
@@ -2820,11 +2871,27 @@ def _stage_and_commit_files(
 
 
 @mcp.tool()
-async def checkpoint() -> str:
-    """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations"""
+async def checkpoint(working_directory: str | None = None) -> str:
+    """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations.
+
+    Args:
+        working_directory: Directory to perform checkpoint analysis in (defaults to current directory)
+
+    """
+    # Handle None parameter like other MCP functions
+    if working_directory is None:
+        working_directory = "."
+
+    # Determine project name from working directory
+    project_name = (
+        Path(working_directory).name
+        if working_directory != "."
+        else current_project or "Current Project"
+    )
+
     output = []
     output.append(
-        f"🔍 Claude Session Checkpoint - {current_project or 'Current Project'}"
+        f"🔍 Claude Session Checkpoint - {project_name}",
     )
     output.append("=" * 50)
 
@@ -2839,8 +2906,10 @@ async def checkpoint() -> str:
             if checkpoint_result.get("checkpoint_passed", True):
                 output.extend(
                     await _format_quality_results(
-                        quality_score, quality_data, checkpoint_result
-                    )
+                        quality_score,
+                        quality_data,
+                        checkpoint_result,
+                    ),
                 )
             else:
                 output.append("⚠️ Session quality issues detected:")
@@ -2848,13 +2917,15 @@ async def checkpoint() -> str:
                     output.append(f"   • {issue}")
         else:
             output.append(
-                "\n⚠️ Session management not available - performing basic checks"
+                "\n⚠️ Session management not available - performing basic checks",
             )
             output.extend(await _format_quality_results(quality_score, quality_data))
 
     except Exception as e:
-        session_logger.error(
-            "Checkpoint error occurred", error=str(e), project=current_project
+        session_logger.exception(
+            "Checkpoint error occurred",
+            error=str(e),
+            project=current_project,
         )
         output.append(f"❌ Checkpoint error: {e}")
         quality_score, quality_data = await _perform_quality_assessment()
@@ -2865,7 +2936,7 @@ async def checkpoint() -> str:
     project_context = await analyze_project_context(current_dir)
     context_score = sum(1 for detected in project_context.values() if detected)
     output.append(
-        f"\n🎯 Project context: {context_score}/{len(project_context)} indicators"
+        f"\n🎯 Project context: {context_score}/{len(project_context)} indicators",
     )
 
     # Dynamic recommendations
@@ -2932,7 +3003,7 @@ async def checkpoint() -> str:
         output.append("💡 Manual /compact may be needed")
 
     output.append(
-        f"\n✨ Enhanced checkpoint complete - {current_project} session optimized!"
+        f"\n✨ Enhanced checkpoint complete - {project_name} session optimized!",
     )
     output.append("🔄 Context compaction has been automatically triggered")
 
@@ -2941,7 +3012,7 @@ async def checkpoint() -> str:
 
 @mcp.tool()
 async def end() -> str:
-    """End Claude session with cleanup, learning capture, and handoff file creation"""
+    """End Claude session with cleanup, learning capture, and handoff file creation."""
     output = []
     output.append(f"🏁 Claude Session End - {current_project or 'Current Project'}")
     output.append("=" * 60)
@@ -3022,7 +3093,7 @@ async def end() -> str:
         output.append("\n✅ Basic session cleanup completed")
 
     output.append(
-        f"\n🙏 {current_project.upper() if current_project else 'SESSION'} COMPLETE!"
+        f"\n🙏 {current_project.upper() if current_project else 'SESSION'} COMPLETE!",
     )
     output.append(f"📅 Ended: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     output.append("\n🔄 Next session: Use /session-management:init slash command")
@@ -3032,7 +3103,7 @@ async def end() -> str:
 
 
 async def health_check() -> dict[str, Any]:
-    """Comprehensive health check for MCP server and toolkit availability"""
+    """Comprehensive health check for MCP server and toolkit availability."""
     health_status = {
         "overall_healthy": True,
         "checks": {},
@@ -3055,7 +3126,7 @@ async def health_check() -> dict[str, Any]:
     )
     if not SESSION_MANAGEMENT_AVAILABLE:
         health_status["warnings"].append(
-            "Session management toolkit not fully available"
+            "Session management toolkit not fully available",
         )
 
     # UV package manager health
@@ -3088,7 +3159,7 @@ async def health_check() -> dict[str, Any]:
     )
     if not CRACKERJACK_INTEGRATION_AVAILABLE:
         health_status["warnings"].append(
-            "Crackerjack integration not available - quality monitoring disabled"
+            "Crackerjack integration not available - quality monitoring disabled",
         )
 
     # Log health check results
@@ -3103,7 +3174,7 @@ async def health_check() -> dict[str, Any]:
 
 
 async def _add_basic_status_info(output: list[str], current_dir: Path) -> None:
-    """Add basic status information to output"""
+    """Add basic status information to output."""
     global current_project
     current_project = current_dir.name
 
@@ -3113,11 +3184,11 @@ async def _add_basic_status_info(output: list[str], current_dir: Path) -> None:
 
 
 async def _add_health_status_info(output: list[str]) -> None:
-    """Add health check information to output"""
+    """Add health check information to output."""
     health_status = await health_check()
 
     output.append(
-        f"\n🏥 System Health: {'✅ HEALTHY' if health_status['overall_healthy'] else '⚠️ ISSUES DETECTED'}"
+        f"\n🏥 System Health: {'✅ HEALTHY' if health_status['overall_healthy'] else '⚠️ ISSUES DETECTED'}",
     )
 
     # Display health check results
@@ -3138,7 +3209,7 @@ async def _add_health_status_info(output: list[str]) -> None:
 
 
 async def _add_project_context_info(output: list[str], current_dir: Path) -> None:
-    """Add project context information to output"""
+    """Add project context information to output."""
     from .utils.git_operations import get_worktree_info, list_worktrees
 
     project_context = await analyze_project_context(current_dir)
@@ -3154,7 +3225,7 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
             output.append("\n🌿 Git Worktree Information:")
             if worktree_info.is_main_worktree:
                 output.append(
-                    f"   📍 Current: Main repository on '{worktree_info.branch}'"
+                    f"   📍 Current: Main repository on '{worktree_info.branch}'",
                 )
             else:
                 output.append(f"   📍 Current: Worktree on '{worktree_info.branch}'")
@@ -3167,14 +3238,14 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
                 ]
                 if other_branches:
                     output.append(
-                        f"   🔀 Other branches: {', '.join(other_branches[:3])}"
+                        f"   🔀 Other branches: {', '.join(other_branches[:3])}",
                     )
                     if len(other_branches) > 3:
                         output.append(f"   ... and {len(other_branches) - 3} more")
                 output.append("   💡 Use 'git_worktree_list' to see all worktrees")
             else:
                 output.append(
-                    "   💡 Use 'git_worktree_add <branch> <path>' to create parallel worktrees"
+                    "   💡 Use 'git_worktree_add <branch> <path>' to create parallel worktrees",
                 )
 
             if worktree_info.is_detached:
@@ -3186,11 +3257,11 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
 
 
 def _add_permissions_info(output: list[str]) -> None:
-    """Add permissions information to output"""
+    """Add permissions information to output."""
     permissions_status = permissions_manager.get_permission_status()
     output.append("\n🔐 Session Permissions:")
     output.append(
-        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}"
+        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
     )
     if permissions_status["trusted_operations"]:
         for op in permissions_status["trusted_operations"]:
@@ -3200,7 +3271,7 @@ def _add_permissions_info(output: list[str]) -> None:
 
 
 def _add_basic_tools_info(output: list[str]) -> None:
-    """Add basic MCP tools information to output"""
+    """Add basic MCP tools information to output."""
     output.append("\n🛠️ Available MCP Tools:")
     output.append("• init - Full session initialization")
     output.append("• checkpoint - Quality monitoring")
@@ -3215,7 +3286,7 @@ def _add_basic_tools_info(output: list[str]) -> None:
 
 
 def _add_feature_status_info(output: list[str]) -> None:
-    """Add feature status information to output"""
+    """Add feature status information to output."""
     # Token Optimization Status
     if TOKEN_OPTIMIZER_AVAILABLE:
         output.append("\n⚡ Token Optimization:")
@@ -3230,7 +3301,7 @@ def _add_feature_status_info(output: list[str]) -> None:
         output.append("• create_project_group - Create project groups for coordination")
         output.append("• add_project_dependency - Define project relationships")
         output.append(
-            "• search_across_projects - Search conversations across related projects"
+            "• search_across_projects - Search conversations across related projects",
         )
         output.append("• get_project_insights - Cross-project activity analysis")
 
@@ -3244,7 +3315,7 @@ def _add_feature_status_info(output: list[str]) -> None:
 
 
 def _add_configuration_info(output: list[str]) -> None:
-    """Add configuration information to output"""
+    """Add configuration information to output."""
     if CONFIG_AVAILABLE:
         output.append("\n⚙️ Configuration:")
         output.append("• pyproject.toml configuration support")
@@ -3262,7 +3333,7 @@ def _add_configuration_info(output: list[str]) -> None:
                 savings = usage_stats.get("estimated_cost_savings", {})
                 if savings.get("savings_usd", 0) > 0:
                     output.append(
-                        f"• Last 24h savings: ${savings['savings_usd']:.4f} USD, {savings['estimated_tokens_saved']:,} tokens"
+                        f"• Last 24h savings: ${savings['savings_usd']:.4f} USD, {savings['estimated_tokens_saved']:,} tokens",
                     )
 
             cache_size = len(optimizer.chunk_cache)
@@ -3276,12 +3347,12 @@ def _add_configuration_info(output: list[str]) -> None:
 
 
 def _add_crackerjack_integration_info(output: list[str]) -> None:
-    """Add Crackerjack integration information to output"""
+    """Add Crackerjack integration information to output."""
     if CRACKERJACK_INTEGRATION_AVAILABLE:
         output.append("\n🔧 Crackerjack Integration (Enhanced):")
         output.append("\n🎯 RECOMMENDED COMMANDS (Enhanced with Memory & Analytics):")
         output.append(
-            "• /session-mgmt:crackerjack-run <command> - Smart execution with insights"
+            "• /session-mgmt:crackerjack-run <command> - Smart execution with insights",
         )
         output.append("• /session-mgmt:crackerjack-history - View trends and patterns")
         output.append("• /session-mgmt:crackerjack-metrics - Quality metrics over time")
@@ -3293,10 +3364,10 @@ def _add_crackerjack_integration_info(output: list[str]) -> None:
         if detected_servers.get("crackerjack", False):
             output.append("\n📋 Basic Commands (Raw Output Only):")
             output.append(
-                "• /crackerjack:run <command> - Simple execution without memory"
+                "• /crackerjack:run <command> - Simple execution without memory",
             )
             output.append(
-                "💡 Use enhanced commands above for better development experience"
+                "💡 Use enhanced commands above for better development experience",
             )
 
         output.append("\n🧠 Enhanced Features:")
@@ -3310,10 +3381,11 @@ def _add_crackerjack_integration_info(output: list[str]) -> None:
 
 @mcp.tool()
 async def status(working_directory: str | None = None) -> str:
-    """Get current session status and project context information with health checks
+    """Get current session status and project context information with health checks.
 
     Args:
         working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
     """
     output = []
     output.append("📊 Claude Session Status via MCP Server")
@@ -3338,11 +3410,12 @@ async def status(working_directory: str | None = None) -> str:
 
 @mcp.tool()
 async def permissions(action: str = "status", operation: str | None = None) -> str:
-    """Manage session permissions for trusted operations to avoid repeated prompts
+    """Manage session permissions for trusted operations to avoid repeated prompts.
 
     Args:
         action: Action to perform: status (show current), trust (add operation), revoke_all (reset)
         operation: Operation to trust (required for 'trust' action)
+
     """
     output = []
     output.append("🔐 Claude Session Permissions Management")
@@ -3353,7 +3426,7 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
         output.append(f"\n📊 Session ID: {permissions_status['session_id']}")
         output.append(f"📁 Permissions file: {permissions_status['permissions_file']}")
         output.append(
-            f"✅ Trusted operations: {permissions_status['trusted_operations_count']}"
+            f"✅ Trusted operations: {permissions_status['trusted_operations_count']}",
         )
 
         if permissions_status["trusted_operations"]:
@@ -3363,12 +3436,12 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
                 output.append(f"   • {friendly_name}")
 
             output.append(
-                "\n💡 These operations will not prompt for permission in future sessions"
+                "\n💡 These operations will not prompt for permission in future sessions",
             )
         else:
             output.append("\n⚠️ No operations are currently trusted")
             output.append(
-                "💡 Operations will be automatically trusted on first successful use"
+                "💡 Operations will be automatically trusted on first successful use",
             )
 
         output.append("\n🛠️ Common Operations That Can Be Trusted:")
@@ -3382,14 +3455,15 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
         if not operation:
             output.append("❌ Error: 'operation' parameter required for 'trust' action")
             output.append(
-                "💡 Example: permissions with action='trust' and operation='uv_package_management'"
+                "💡 Example: permissions with action='trust' and operation='uv_package_management'",
             )
         else:
             permissions_manager.trust_operation(
-                operation, f"Manually trusted via MCP at {datetime.now()}"
+                operation,
+                f"Manually trusted via MCP at {datetime.now()}",
             )
             output.append(
-                f"✅ Operation trusted: {operation.replace('_', ' ').title()}"
+                f"✅ Operation trusted: {operation.replace('_', ' ').title()}",
             )
             output.append("🔓 This operation will no longer prompt for permission")
 
@@ -3398,7 +3472,7 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
         output.append("🚨 All trusted permissions have been revoked")
         output.append("⚠️ All operations will now prompt for permission again")
         output.append(
-            "💡 Use this for security reset or if permissions were granted incorrectly"
+            "💡 Use this for security reset or if permissions were granted incorrectly",
         )
 
     else:
@@ -3424,7 +3498,10 @@ except ImportError:
 # Reflection Tools
 @mcp.tool()
 async def _optimize_search_results(
-    results: list, optimize_tokens: bool, max_tokens: int, query: str
+    results: list,
+    optimize_tokens: bool,
+    max_tokens: int,
+    query: str,
 ) -> tuple[list, dict]:
     """Apply token optimization to search results if available."""
     optimization_info = {}
@@ -3432,7 +3509,9 @@ async def _optimize_search_results(
     if optimize_tokens and TOKEN_OPTIMIZER_AVAILABLE:
         try:
             results, optimization_info = await optimize_search_response(
-                results, strategy="prioritize_recent", max_tokens=max_tokens
+                results,
+                strategy="prioritize_recent",
+                max_tokens=max_tokens,
             )
 
             # Track usage
@@ -3450,7 +3529,10 @@ async def _optimize_search_results(
 
 
 def _build_search_header(
-    results: list, query: str, current_proj: str | None, optimization_info: dict
+    results: list,
+    query: str,
+    current_proj: str | None,
+    optimization_info: dict,
 ) -> list[str]:
     """Build the header section of search results."""
     output = []
@@ -3463,7 +3545,7 @@ def _build_search_header(
         savings = optimization_info.get("token_savings", {})
         if savings.get("tokens_saved", 0) > 0:
             output.append(
-                f"⚡ Token optimization: {savings.get('savings_percentage', 0)}% saved"
+                f"⚡ Token optimization: {savings.get('savings_percentage', 0)}% saved",
             )
 
     output.append("=" * 50)
@@ -3487,12 +3569,18 @@ def _format_search_results(results: list) -> list[str]:
 
 
 async def _perform_main_search(
-    query: str, limit: int, min_score: float, current_proj: str | None
+    query: str,
+    limit: int,
+    min_score: float,
+    current_proj: str | None,
 ) -> list:
     """Perform the main conversation search."""
     db = await get_reflection_database()
     return await db.search_conversations(
-        query=query, limit=limit, min_score=min_score, project=current_proj
+        query=query,
+        limit=limit,
+        min_score=min_score,
+        project=current_proj,
     )
 
 
@@ -3506,7 +3594,10 @@ def _should_retry_search(error: Exception) -> bool:
 
 
 async def _retry_search_with_cleanup(
-    query: str, limit: int, min_score: float, project: str | None
+    query: str,
+    limit: int,
+    min_score: float,
+    project: str | None,
 ) -> str:
     """Retry search after database cleanup."""
     try:
@@ -3517,7 +3608,10 @@ async def _retry_search_with_cleanup(
         current_proj = project or get_current_project()
 
         results = await db.search_conversations(
-            query=query, limit=limit, min_score=min_score, project=current_proj
+            query=query,
+            limit=limit,
+            min_score=min_score,
+            project=current_proj,
         )
 
         if not results:
@@ -3556,7 +3650,7 @@ async def reflect_on_past(
     optimize_tokens: bool = True,
     max_tokens: int = 4000,
 ) -> str:
-    """Search past conversations and store reflections with semantic similarity"""
+    """Search past conversations and store reflections with semantic similarity."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3569,7 +3663,10 @@ async def reflect_on_past(
 
         # Apply token optimization if available
         results, optimization_info = await _optimize_search_results(
-            results, optimize_tokens, max_tokens, query
+            results,
+            optimize_tokens,
+            max_tokens,
+            query,
         )
 
         # Build and format output
@@ -3586,7 +3683,7 @@ async def reflect_on_past(
 
 @mcp.tool()
 async def store_reflection(content: str, tags: list[str] | None = None) -> str:
-    """Store an important insight or reflection for future reference"""
+    """Store an important insight or reflection for future reference."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3618,14 +3715,14 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> str:
 
                 output = []
                 output.append(
-                    "💾 Reflection stored successfully! (after connection reset)"
+                    "💾 Reflection stored successfully! (after connection reset)",
                 )
                 output.append(f"🆔 ID: {reflection_id}")
                 output.append(f"📝 Content: {content[:100]}...")
                 if tags:
                     output.append(f"🏷️ Tags: {', '.join(tags)}")
                 output.append(
-                    f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                 )
 
                 return "\n".join(output)
@@ -3637,9 +3734,11 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> str:
 
 @mcp.tool()
 async def quick_search(
-    query: str, min_score: float = 0.7, project: str | None = None
+    query: str,
+    min_score: float = 0.7,
+    project: str | None = None,
 ) -> str:
-    """Quick search that returns only the count and top result for fast overview"""
+    """Quick search that returns only the count and top result for fast overview."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3648,12 +3747,18 @@ async def quick_search(
         current_proj = project or get_current_project()
 
         results = await db.search_conversations(
-            query=query, limit=1, min_score=min_score, project=current_proj
+            query=query,
+            limit=1,
+            min_score=min_score,
+            project=current_proj,
         )
 
         # Get total count with lower score threshold
         all_results = await db.search_conversations(
-            query=query, limit=100, min_score=0.3, project=current_proj
+            query=query,
+            limit=100,
+            min_score=0.3,
+            project=current_proj,
         )
 
         output = []
@@ -3662,7 +3767,7 @@ async def quick_search(
             output.append(f"📁 Project: {current_proj}")
         output.append(f"📊 Total matches: {len(all_results)} (threshold: 0.3)")
         output.append(
-            f"🎯 High relevance: {len([r for r in all_results if r['score'] >= min_score])}"
+            f"🎯 High relevance: {len([r for r in all_results if r['score'] >= min_score])}",
         )
 
         if results:
@@ -3673,7 +3778,7 @@ async def quick_search(
             output.append(f"📅 {top_result.get('timestamp', 'Unknown time')}")
         else:
             output.append(
-                f"\n💡 No high-relevance matches found (min_score: {min_score})"
+                f"\n💡 No high-relevance matches found (min_score: {min_score})",
             )
 
         return "\n".join(output)
@@ -3684,9 +3789,11 @@ async def quick_search(
 
 @mcp.tool()
 async def search_summary(
-    query: str, min_score: float = 0.7, project: str | None = None
+    query: str,
+    min_score: float = 0.7,
+    project: str | None = None,
 ) -> str:
-    """Get aggregated insights from search results without individual result details"""
+    """Get aggregated insights from search results without individual result details."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3695,7 +3802,10 @@ async def search_summary(
         current_proj = project or get_current_project()
 
         results = await db.search_conversations(
-            query=query, limit=10, min_score=min_score, project=current_proj
+            query=query,
+            limit=10,
+            min_score=min_score,
+            project=current_proj,
         )
 
         if not results:
@@ -3704,7 +3814,7 @@ async def search_summary(
         # Analyze results
         total_results = len(results)
         avg_score = sum(r["score"] for r in results) / total_results
-        projects = set(r.get("project") for r in results if r.get("project"))
+        projects = {r.get("project") for r in results if r.get("project")}
 
         # Extract common themes (simple keyword analysis)
         all_content = " ".join(r["content"] for r in results)
@@ -3737,9 +3847,12 @@ async def search_summary(
 
 @mcp.tool()
 async def get_more_results(
-    query: str, offset: int = 3, limit: int = 3, project: str | None = None
+    query: str,
+    offset: int = 3,
+    limit: int = 3,
+    project: str | None = None,
 ) -> str:
-    """Get additional search results after an initial search (pagination support)"""
+    """Get additional search results after an initial search (pagination support)."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3749,7 +3862,10 @@ async def get_more_results(
 
         # Get more results than needed to handle offset
         all_results = await db.search_conversations(
-            query=query, limit=offset + limit, min_score=0.5, project=current_proj
+            query=query,
+            limit=offset + limit,
+            min_score=0.5,
+            project=current_proj,
         )
 
         # Apply offset and limit
@@ -3760,7 +3876,7 @@ async def get_more_results(
 
         output = []
         output.append(
-            f"📄 Additional results for: '{query}' (positions {offset + 1}-{offset + len(paginated_results)})"
+            f"📄 Additional results for: '{query}' (positions {offset + 1}-{offset + len(paginated_results)})",
         )
         if current_proj:
             output.append(f"📁 Project: {current_proj}")
@@ -3781,9 +3897,11 @@ async def get_more_results(
 
 @mcp.tool()
 async def search_by_file(
-    file_path: str, limit: int = 10, project: str | None = None
+    file_path: str,
+    limit: int = 10,
+    project: str | None = None,
 ) -> str:
-    """Search for conversations that analyzed a specific file"""
+    """Search for conversations that analyzed a specific file."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3792,7 +3910,9 @@ async def search_by_file(
         current_proj = project or get_current_project()
 
         results = await db.search_by_file(
-            file_path=file_path, limit=limit, project=current_proj
+            file_path=file_path,
+            limit=limit,
+            project=current_proj,
         )
 
         if not results:
@@ -3823,7 +3943,7 @@ async def search_by_concept(
     limit: int = 10,
     project: str | None = None,
 ) -> str:
-    """Search for conversations about a specific development concept"""
+    """Search for conversations about a specific development concept."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3833,11 +3953,16 @@ async def search_by_concept(
 
         # Search both conversations and reflections for the concept
         conv_results = await db.search_conversations(
-            query=concept, limit=limit, min_score=0.6, project=current_proj
+            query=concept,
+            limit=limit,
+            min_score=0.6,
+            project=current_proj,
         )
 
         refl_results = await db.search_reflections(
-            query=concept, limit=5, min_score=0.6
+            query=concept,
+            limit=5,
+            min_score=0.6,
         )
 
         output = []
@@ -3851,7 +3976,7 @@ async def search_by_concept(
             for i, result in enumerate(conv_results[:5], 1):
                 score_pct = result["score"] * 100
                 output.append(
-                    f"#{i} (Score: {score_pct:.1f}%) {result['content'][:150]}..."
+                    f"#{i} (Score: {score_pct:.1f}%) {result['content'][:150]}...",
                 )
 
         if refl_results:
@@ -3860,13 +3985,13 @@ async def search_by_concept(
                 score_pct = result["score"] * 100
                 tags_str = f" [{', '.join(result['tags'])}]" if result["tags"] else ""
                 output.append(
-                    f"#{i} (Score: {score_pct:.1f}%){tags_str} {result['content'][:150]}..."
+                    f"#{i} (Score: {score_pct:.1f}%){tags_str} {result['content'][:150]}...",
                 )
 
         if not conv_results and not refl_results:
             output.append(f"🔍 No relevant content found for concept: '{concept}'")
             output.append(
-                "💡 Try related terms or check if conversations about this topic exist"
+                "💡 Try related terms or check if conversations about this topic exist",
             )
 
         return "\n".join(output)
@@ -3877,7 +4002,7 @@ async def search_by_concept(
 
 @mcp.tool()
 async def reset_reflection_database() -> str:
-    """Reset the reflection database connection to fix lock issues"""
+    """Reset the reflection database connection to fix lock issues."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3902,7 +4027,7 @@ async def reset_reflection_database() -> str:
 
 @mcp.tool()
 async def reflection_stats() -> str:
-    """Get statistics about the reflection database"""
+    """Get statistics about the reflection database."""
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: pip install duckdb transformers"
 
@@ -3939,7 +4064,7 @@ async def reflection_stats() -> str:
 # Token Optimization Tools
 @mcp.tool()
 async def get_cached_chunk(cache_key: str, chunk_index: int) -> str:
-    """Get a specific chunk from cached chunked response"""
+    """Get a specific chunk from cached chunked response."""
     if not TOKEN_OPTIMIZER_AVAILABLE:
         return "❌ Token optimizer not available. Install dependencies: pip install tiktoken"
 
@@ -3953,7 +4078,7 @@ async def get_cached_chunk(cache_key: str, chunk_index: int) -> str:
 
         output = []
         output.append(
-            f"📄 Chunk {chunk_data['current_chunk']} of {chunk_data['total_chunks']}"
+            f"📄 Chunk {chunk_data['current_chunk']} of {chunk_data['total_chunks']}",
         )
         output.append("=" * 50)
 
@@ -3966,7 +4091,7 @@ async def get_cached_chunk(cache_key: str, chunk_index: int) -> str:
 
         if chunk_data["has_more"]:
             output.append(
-                f"\n💡 More chunks available. Use: get_cached_chunk('{cache_key}', {chunk_data['current_chunk'] + 1})"
+                f"\n💡 More chunks available. Use: get_cached_chunk('{cache_key}', {chunk_data['current_chunk'] + 1})",
             )
 
         return "\n".join(output)
@@ -3977,7 +4102,7 @@ async def get_cached_chunk(cache_key: str, chunk_index: int) -> str:
 
 @mcp.tool()
 async def get_token_usage_stats(hours: int = 24) -> str:
-    """Get token usage statistics and optimization metrics"""
+    """Get token usage statistics and optimization metrics."""
     if not TOKEN_OPTIMIZER_AVAILABLE:
         return "❌ Token optimizer not available. Install dependencies: pip install tiktoken"
 
@@ -3995,7 +4120,7 @@ async def get_token_usage_stats(hours: int = 24) -> str:
         output.append(f"📈 Total Requests: {stats['total_requests']}")
         output.append(f"🔤 Total Tokens Used: {stats['total_tokens']:,}")
         output.append(
-            f"📊 Average Tokens per Request: {stats['average_tokens_per_request']}"
+            f"📊 Average Tokens per Request: {stats['average_tokens_per_request']}",
         )
 
         if stats.get("optimizations_applied"):
@@ -4008,10 +4133,10 @@ async def get_token_usage_stats(hours: int = 24) -> str:
             output.append("\n💰 Estimated Cost Savings:")
             output.append(f"  • ${cost_savings['savings_usd']:.4f} USD saved")
             output.append(
-                f"  • {cost_savings['estimated_tokens_saved']:,} tokens saved"
+                f"  • {cost_savings['estimated_tokens_saved']:,} tokens saved",
             )
             output.append(
-                f"  • {cost_savings['requests_optimized']} optimized requests"
+                f"  • {cost_savings['requests_optimized']} optimized requests",
             )
 
         return "\n".join(output)
@@ -4022,9 +4147,11 @@ async def get_token_usage_stats(hours: int = 24) -> str:
 
 @mcp.tool()
 async def optimize_memory_usage(
-    strategy: str = "auto", max_age_days: int = 30, dry_run: bool = True
+    strategy: str = "auto",
+    max_age_days: int = 30,
+    dry_run: bool = True,
 ) -> str:
-    """Optimize memory usage by consolidating old conversations"""
+    """Optimize memory usage by consolidating old conversations."""
     if not TOKEN_OPTIMIZER_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return (
             "❌ Memory optimization requires both token optimizer and reflection tools"
@@ -4051,13 +4178,13 @@ async def optimize_memory_usage(
 
         output = []
         output.append(
-            f"🧠 Memory Optimization Results {'(DRY RUN)' if dry_run else ''}"
+            f"🧠 Memory Optimization Results {'(DRY RUN)' if dry_run else ''}",
         )
         output.append("=" * 50)
         output.append(f"📊 Total Conversations: {results['total_conversations']}")
         output.append(f"✅ Conversations to Keep: {results['conversations_to_keep']}")
         output.append(
-            f"📦 Conversations to Consolidate: {results['conversations_to_consolidate']}"
+            f"📦 Conversations to Consolidate: {results['conversations_to_consolidate']}",
         )
         output.append(f"🔗 Clusters Created: {results['clusters_created']}")
 
@@ -4070,7 +4197,7 @@ async def optimize_memory_usage(
             output.append("\n📝 Consolidation Preview:")
             for i, summary in enumerate(results["consolidated_summaries"][:3], 1):
                 output.append(
-                    f"  #{i}: {summary['original_count']} conversations → 1 summary"
+                    f"  #{i}: {summary['original_count']} conversations → 1 summary",
                 )
                 output.append(f"      Projects: {', '.join(summary['projects'][:2])}")
                 output.append(f"      Summary: {summary['summary'][:100]}...")
@@ -4094,13 +4221,14 @@ async def search_code(
     limit: int = 10,
     project: str | None = None,
 ) -> str:
-    """Search for code patterns in conversations using AST parsing
+    """Search for code patterns in conversations using AST parsing.
 
     Args:
         query: Search query for code patterns
         pattern_type: Type of code pattern (function, class, import, assignment, call, loop, conditional, try, async)
         limit: Maximum number of results to return
         project: Optional project filter
+
     """
     if not ENHANCED_SEARCH_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Enhanced search or reflection tools not available"
@@ -4152,13 +4280,14 @@ async def search_errors(
     limit: int = 10,
     project: str | None = None,
 ) -> str:
-    """Search for error patterns and debugging contexts in conversations
+    """Search for error patterns and debugging contexts in conversations.
 
     Args:
         query: Search query for error patterns
         error_type: Type of error (python_traceback, python_exception, javascript_error, etc.)
         limit: Maximum number of results to return
         project: Optional project filter
+
     """
     if not ENHANCED_SEARCH_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Enhanced search or reflection tools not available"
@@ -4188,9 +4317,9 @@ async def search_errors(
             output.append(f"🚨 Pattern: {pattern['type']} - {pattern['subtype']}")
 
             if pattern["type"] == "error":
-                if "groups" in pattern and pattern["groups"]:
+                if pattern.get("groups"):
                     output.append(
-                        f"💀 Error: {pattern['groups'][0] if pattern['groups'] else 'Unknown'}"
+                        f"💀 Error: {pattern['groups'][0] if pattern['groups'] else 'Unknown'}",
                     )
                     if len(pattern["groups"]) > 1:
                         output.append(f"📝 Message: {pattern['groups'][1]}")
@@ -4212,13 +4341,14 @@ async def search_temporal(
     limit: int = 10,
     project: str | None = None,
 ) -> str:
-    """Search conversations within a specific time range using natural language
+    """Search conversations within a specific time range using natural language.
 
     Args:
         time_expression: Natural language time expression (e.g., "yesterday", "last week", "2 days ago")
         query: Optional search query to filter results within the time range
         limit: Maximum number of results to return
         project: Optional project filter
+
     """
     if not ENHANCED_SEARCH_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Enhanced search or reflection tools not available"
@@ -4261,12 +4391,13 @@ async def auto_load_context(
     max_conversations: int = 10,
     min_relevance: float = 0.3,
 ) -> str:
-    """Automatically load relevant conversations based on current development context
+    """Automatically load relevant conversations based on current development context.
 
     Args:
         working_directory: Optional working directory override
         max_conversations: Maximum number of conversations to load
         min_relevance: Minimum relevance score (0.0-1.0)
+
     """
     if not AUTO_CONTEXT_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Auto-context loading or reflection tools not available"
@@ -4276,7 +4407,9 @@ async def auto_load_context(
         context_loader = AutoContextLoader(db)
 
         result = await context_loader.load_relevant_context(
-            working_directory, max_conversations, min_relevance
+            working_directory,
+            max_conversations,
+            min_relevance,
         )
 
         context = result["context"]
@@ -4314,7 +4447,7 @@ async def auto_load_context(
 
         # Relevant conversations
         output.append(
-            f"\n💬 Loaded Conversations: {result['loaded_count']}/{result['total_found']} found"
+            f"\n💬 Loaded Conversations: {result['loaded_count']}/{result['total_found']} found",
         )
         if conversations:
             for i, conv in enumerate(conversations, 1):
@@ -4330,17 +4463,17 @@ async def auto_load_context(
                 output.append(f"💬 Content: {content_preview}")
         else:
             output.append(
-                f"🔍 No conversations found above {min_relevance:.1f} relevance threshold"
+                f"🔍 No conversations found above {min_relevance:.1f} relevance threshold",
             )
             output.append(
-                "💡 Try lowering min_relevance or working on this project more"
+                "💡 Try lowering min_relevance or working on this project more",
             )
 
         # Recent files info
         if context["recent_files"]:
             recent_count = len(context["recent_files"])
             output.append(
-                f"\n📄 Recent activity: {recent_count} files modified in last 2 hours"
+                f"\n📄 Recent activity: {recent_count} files modified in last 2 hours",
             )
             for file_info in context["recent_files"][:3]:  # Show top 3
                 output.append(f"    📝 {file_info['path']}")
@@ -4353,10 +4486,11 @@ async def auto_load_context(
 
 @mcp.tool()
 async def get_context_summary(working_directory: str | None = None) -> str:
-    """Get a summary of current development context without loading conversations
+    """Get a summary of current development context without loading conversations.
 
     Args:
         working_directory: Optional working directory override
+
     """
     if not AUTO_CONTEXT_AVAILABLE:
         return "❌ Auto-context loading tools not available"
@@ -4409,13 +4543,14 @@ async def compress_memory(
     importance_threshold: float = 0.3,
     dry_run: bool = False,
 ) -> str:
-    """Compress conversation memory by consolidating old conversations
+    """Compress conversation memory by consolidating old conversations.
 
     Args:
         max_age_days: Consolidate conversations older than this many days
         max_conversations: Maximum total conversations to keep
         importance_threshold: Minimum importance score to avoid consolidation (0.0-1.0)
         dry_run: Preview changes without actually applying them
+
     """
     if not MEMORY_OPTIMIZER_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Memory optimizer or reflection tools not available"
@@ -4446,7 +4581,7 @@ async def compress_memory(
         output.append(f"📁 Total conversations: {result['total_conversations']}")
         output.append(f"✅ Conversations to keep: {result['conversations_to_keep']}")
         output.append(
-            f"🗜️ Conversations to consolidate: {result['conversations_to_consolidate']}"
+            f"🗜️ Conversations to consolidate: {result['conversations_to_consolidate']}",
         )
         output.append(f"📦 Clusters created: {result['clusters_created']}")
 
@@ -4454,14 +4589,15 @@ async def compress_memory(
             space_mb = result["space_saved_estimate"] / (1024 * 1024)
             compression_pct = result["compression_ratio"] * 100
             output.append(
-                f"💾 Space saved: {space_mb:.2f}MB ({compression_pct:.1f}% reduction)"
+                f"💾 Space saved: {space_mb:.2f}MB ({compression_pct:.1f}% reduction)",
             )
 
         # Show consolidation details
         if result["consolidated_summaries"]:
             output.append("\n📋 Consolidation Details:")
             for i, summary in enumerate(
-                result["consolidated_summaries"][:5], 1
+                result["consolidated_summaries"][:5],
+                1,
             ):  # Show top 5
                 original_kb = summary["original_size"] / 1024
                 compressed_kb = summary["compressed_size"] / 1024
@@ -4471,11 +4607,11 @@ async def compress_memory(
 
                 output.append(f"\n#{i} Cluster:")
                 output.append(
-                    f"   📁 Projects: {', '.join(summary['projects']) if summary['projects'] else 'Multiple'}"
+                    f"   📁 Projects: {', '.join(summary['projects']) if summary['projects'] else 'Multiple'}",
                 )
                 output.append(f"   💬 Conversations: {summary['original_count']}")
                 output.append(
-                    f"   📏 Size: {original_kb:.1f}KB → {compressed_kb:.1f}KB ({reduction_pct:.1f}% reduction)"
+                    f"   📏 Size: {original_kb:.1f}KB → {compressed_kb:.1f}KB ({reduction_pct:.1f}% reduction)",
                 )
                 output.append(f"   🕒 Time range: {summary['time_range']}")
                 output.append(f"   📝 Summary: {summary['summary'][:100]}...")
@@ -4486,7 +4622,7 @@ async def compress_memory(
             output.append("\n💡 Run with dry_run=False to apply these changes")
         elif not result["consolidated_summaries"]:
             output.append(
-                "\n💡 No consolidation needed - all conversations are recent or important"
+                "\n💡 No consolidation needed - all conversations are recent or important",
             )
 
         return "\n".join(output)
@@ -4497,7 +4633,7 @@ async def compress_memory(
 
 @mcp.tool()
 async def get_compression_stats() -> str:
-    """Get memory compression statistics and history"""
+    """Get memory compression statistics and history."""
     if not MEMORY_OPTIMIZER_AVAILABLE or not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Memory optimizer or reflection tools not available"
 
@@ -4515,10 +4651,10 @@ async def get_compression_stats() -> str:
             last_run = stats["last_run"]
             output.append(f"🕒 Last compression: {last_run}")
             output.append(
-                f"💬 Conversations processed: {stats['conversations_processed']}"
+                f"💬 Conversations processed: {stats['conversations_processed']}",
             )
             output.append(
-                f"📦 Conversations consolidated: {stats['conversations_consolidated']}"
+                f"📦 Conversations consolidated: {stats['conversations_consolidated']}",
             )
 
             if stats["space_saved_bytes"] > 0:
@@ -4529,7 +4665,7 @@ async def get_compression_stats() -> str:
         else:
             output.append("💡 No compression runs performed yet")
             output.append(
-                "🔧 Use compress_memory() to start optimizing your conversation storage"
+                "🔧 Use compress_memory() to start optimizing your conversation storage",
             )
 
         # Current database stats
@@ -4547,7 +4683,7 @@ async def get_compression_stats() -> str:
 
             # Check for consolidated conversations
             cursor = db.conn.execute(
-                "SELECT COUNT(*) FROM conversations WHERE metadata LIKE '%consolidated%'"
+                "SELECT COUNT(*) FROM conversations WHERE metadata LIKE '%consolidated%'",
             )
             consolidated_count = cursor.fetchone()[0]
             if consolidated_count > 0:
@@ -4566,13 +4702,14 @@ async def set_retention_policy(
     importance_threshold: float = 0.3,
     consolidation_age_days: int = 30,
 ) -> str:
-    """Set memory retention policy parameters
+    """Set memory retention policy parameters.
 
     Args:
         max_age_days: Maximum age in days to keep conversations
         max_conversations: Maximum total conversations to store
         importance_threshold: Minimum importance score to retain (0.0-1.0)
         consolidation_age_days: Age in days after which to consolidate conversations
+
     """
     if not MEMORY_OPTIMIZER_AVAILABLE:
         return "❌ Memory optimizer not available"
@@ -4606,7 +4743,7 @@ async def set_retention_policy(
         output.append(f"⭐ Importance threshold: {policy['importance_threshold']:.1f}")
         output.append(f"📦 Consolidation age: {policy['consolidation_age_days']} days")
         output.append(
-            f"🗜️ Target compression: {policy.get('compression_ratio', 0.5) * 100:.0f}%"
+            f"🗜️ Target compression: {policy.get('compression_ratio', 0.5) * 100:.0f}%",
         )
 
         output.append("\n💡 These settings will be applied on the next compression run")
@@ -4894,7 +5031,7 @@ _app_monitor = None
 
 
 async def get_app_monitor() -> ApplicationMonitor | None:
-    """Get or initialize application monitor"""
+    """Get or initialize application monitor."""
     global _app_monitor
     if not APP_MONITOR_AVAILABLE:
         return None
@@ -4914,6 +5051,7 @@ async def start_app_monitoring(project_paths: list[str] | None = None) -> str:
 
     Args:
         project_paths: Optional list of project directories to monitor
+
     """
     if not APP_MONITOR_AVAILABLE:
         return "❌ Application monitoring not available. Install dependencies: pip install watchdog psutil"
@@ -4955,8 +5093,7 @@ async def stop_app_monitoring() -> str:
         if monitor and monitor.monitoring_active:
             await monitor.stop_monitoring()
             return "✅ Application monitoring stopped"
-        else:
-            return "ℹ️ Application monitoring was not active"
+        return "ℹ️ Application monitoring was not active"
     except Exception as e:
         return f"❌ Error stopping monitoring: {e}"
 
@@ -4967,6 +5104,7 @@ async def get_activity_summary(hours: int = 2) -> str:
 
     Args:
         hours: Number of hours to look back (default: 2)
+
     """
     if not APP_MONITOR_AVAILABLE:
         return "❌ Application monitoring not available"
@@ -5001,7 +5139,7 @@ async def get_activity_summary(hours: int = 2) -> str:
             output.append("📄 Most Active Files:")
             for file_info in summary["active_files"][:5]:
                 output.append(
-                    f"  • {file_info['file_path']} (score: {file_info['activity_score']})"
+                    f"  • {file_info['file_path']} (score: {file_info['activity_score']})",
                 )
             output.append("")
 
@@ -5022,6 +5160,7 @@ async def get_context_insights(hours: int = 1) -> str:
 
     Args:
         hours: Number of hours to analyze (default: 1)
+
     """
     if not APP_MONITOR_AVAILABLE:
         return "❌ Application monitoring not available"
@@ -5057,7 +5196,7 @@ async def get_context_insights(hours: int = 1) -> str:
                 "",
                 f"🔄 Context Switches: {insights['context_switches']}",
                 f"⚡ Productivity Score: {insights['productivity_score']:.2f}",
-            ]
+            ],
         )
 
         return "\n".join(output)
@@ -5072,6 +5211,7 @@ async def get_active_files(minutes: int = 60) -> str:
 
     Args:
         minutes: Number of minutes to look back (default: 60)
+
     """
     if not APP_MONITOR_AVAILABLE:
         return "❌ Application monitoring not available"
@@ -5106,7 +5246,7 @@ _llm_manager = None
 
 
 async def get_llm_manager() -> LLMManager | None:
-    """Get or initialize LLM manager"""
+    """Get or initialize LLM manager."""
     global _llm_manager
     if not LLM_PROVIDERS_AVAILABLE:
         return None
@@ -5151,7 +5291,7 @@ async def list_llm_providers() -> str:
             [
                 f"🎯 Default Provider: {config['default_provider']}",
                 f"🔄 Fallback Providers: {', '.join(config['fallback_providers'])}",
-            ]
+            ],
         )
 
         return "\n".join(output)
@@ -5212,6 +5352,7 @@ async def generate_with_llm(
         temperature: Generation temperature (0.0-1.0)
         max_tokens: Maximum tokens to generate
         use_fallback: Whether to use fallback providers if primary fails
+
     """
     if not LLM_PROVIDERS_AVAILABLE:
         return "❌ LLM providers not available"
@@ -5263,6 +5404,7 @@ async def chat_with_llm(
         model: Specific model to use
         temperature: Generation temperature (0.0-1.0)
         max_tokens: Maximum tokens to generate
+
     """
     if not LLM_PROVIDERS_AVAILABLE:
         return "❌ LLM providers not available"
@@ -5320,6 +5462,7 @@ async def configure_llm_provider(
         api_key: API key for the provider
         base_url: Base URL for the provider API
         default_model: Default model to use
+
     """
     if not LLM_PROVIDERS_AVAILABLE:
         return "❌ LLM providers not available"
@@ -5367,7 +5510,7 @@ _serverless_manager = None
 
 
 async def get_serverless_manager() -> ServerlessSessionManager | None:
-    """Get or initialize serverless session manager"""
+    """Get or initialize serverless session manager."""
     global _serverless_manager
     if not SERVERLESS_MODE_AVAILABLE:
         return None
@@ -5375,7 +5518,7 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
     if _serverless_manager is None:
         config_path = Path.home() / ".claude" / "data" / "serverless_config.json"
         config = ServerlessConfigManager.load_config(
-            str(config_path) if config_path.exists() else None
+            str(config_path) if config_path.exists() else None,
         )
         storage_backend = ServerlessConfigManager.create_storage_backend(config)
         _serverless_manager = ServerlessSessionManager(storage_backend)
@@ -5397,6 +5540,7 @@ async def create_serverless_session(
         project_id: Project identifier for the session
         session_data: Optional metadata for the session
         ttl_hours: Time-to-live in hours (default: 24)
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available. Install dependencies: pip install redis boto3"
@@ -5425,6 +5569,7 @@ async def get_serverless_session(session_id: str) -> str:
 
     Args:
         session_id: Session identifier to retrieve
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available"
@@ -5451,7 +5596,7 @@ async def get_serverless_session(session_id: str) -> str:
 
         if session_state.metadata:
             output.append(
-                f"📋 Metadata: {json.dumps(session_state.metadata, indent=2)}"
+                f"📋 Metadata: {json.dumps(session_state.metadata, indent=2)}",
             )
 
         return "\n".join(output)
@@ -5462,7 +5607,9 @@ async def get_serverless_session(session_id: str) -> str:
 
 @mcp.tool()
 async def update_serverless_session(
-    session_id: str, updates: dict[str, Any], ttl_hours: int | None = None
+    session_id: str,
+    updates: dict[str, Any],
+    ttl_hours: int | None = None,
 ) -> str:
     """Update serverless session state.
 
@@ -5470,6 +5617,7 @@ async def update_serverless_session(
         session_id: Session identifier to update
         updates: Dictionary of updates to apply
         ttl_hours: Optional new TTL in hours
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available"
@@ -5489,8 +5637,7 @@ async def update_serverless_session(
             if ttl_hours:
                 result += f"\n🕐 New TTL: {ttl_hours} hours"
             return result
-        else:
-            return f"❌ Failed to update session {session_id}"
+        return f"❌ Failed to update session {session_id}"
 
     except Exception as e:
         return f"❌ Error updating session: {e}"
@@ -5502,6 +5649,7 @@ async def delete_serverless_session(session_id: str) -> str:
 
     Args:
         session_id: Session identifier to delete
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available"
@@ -5515,8 +5663,7 @@ async def delete_serverless_session(session_id: str) -> str:
 
         if success:
             return f"✅ Deleted session {session_id}"
-        else:
-            return f"❌ Session not found or failed to delete: {session_id}"
+        return f"❌ Session not found or failed to delete: {session_id}"
 
     except Exception as e:
         return f"❌ Error deleting session: {e}"
@@ -5524,13 +5671,15 @@ async def delete_serverless_session(session_id: str) -> str:
 
 @mcp.tool()
 async def list_serverless_sessions(
-    user_id: str | None = None, project_id: str | None = None
+    user_id: str | None = None,
+    project_id: str | None = None,
 ) -> str:
     """List serverless sessions by user or project.
 
     Args:
         user_id: Filter by user ID (optional)
         project_id: Filter by project ID (optional)
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available"
@@ -5561,7 +5710,7 @@ async def list_serverless_sessions(
             session_state = await manager.get_session(session_id)
             if session_state:
                 output.append(
-                    f"• {session_id[:12]}... (user: {session_state.user_id}, project: {session_state.project_id})"
+                    f"• {session_id[:12]}... (user: {session_state.user_id}, project: {session_state.project_id})",
                 )
 
         if len(session_ids) > 10:
@@ -5582,7 +5731,7 @@ async def test_serverless_storage() -> str:
     try:
         config_path = Path.home() / ".claude" / "data" / "serverless_config.json"
         config = ServerlessConfigManager.load_config(
-            str(config_path) if config_path.exists() else None
+            str(config_path) if config_path.exists() else None,
         )
 
         test_results = await ServerlessConfigManager.test_storage_backends(config)
@@ -5592,7 +5741,7 @@ async def test_serverless_storage() -> str:
         for backend_name, available in test_results.items():
             status = "✅" if available else "❌"
             output.append(
-                f"{status} {backend_name.title()}: {'Available' if available else 'Not available'}"
+                f"{status} {backend_name.title()}: {'Available' if available else 'Not available'}",
             )
 
         # Show current configuration
@@ -5603,7 +5752,7 @@ async def test_serverless_storage() -> str:
             [
                 "",
                 f"🎯 Current Backend: {current_backend} ({'✅ Available' if current_available else '❌ Not available'})",
-            ]
+            ],
         )
 
         return "\n".join(output)
@@ -5641,13 +5790,15 @@ async def cleanup_serverless_sessions() -> str:
 
 @mcp.tool()
 async def configure_serverless_storage(
-    backend: str, config_updates: dict[str, Any]
+    backend: str,
+    config_updates: dict[str, Any],
 ) -> str:
     """Configure serverless storage backend settings.
 
     Args:
         backend: Storage backend (redis, s3, local)
         config_updates: Configuration updates to apply
+
     """
     if not SERVERLESS_MODE_AVAILABLE:
         return "❌ Serverless mode not available"
@@ -5658,7 +5809,7 @@ async def configure_serverless_storage(
 
         # Load existing config
         config = ServerlessConfigManager.load_config(
-            str(config_path) if config_path.exists() else None
+            str(config_path) if config_path.exists() else None,
         )
 
         # Update configuration
@@ -5689,9 +5840,12 @@ async def configure_serverless_storage(
 # Team Knowledge Base Tools
 @mcp.tool()
 async def create_team_user(
-    user_id: str, username: str, email: str | None = None, role: str = "contributor"
+    user_id: str,
+    username: str,
+    email: str | None = None,
+    role: str = "contributor",
 ) -> str:
-    """Create a new team user with specified role"""
+    """Create a new team user with specified role."""
     try:
         from .team_knowledge import create_team_user as _create_team_user
 
@@ -5717,7 +5871,7 @@ async def create_team_user(
 
 @mcp.tool()
 async def create_team(team_id: str, name: str, description: str, owner_id: str) -> str:
-    """Create a new team for knowledge sharing"""
+    """Create a new team for knowledge sharing."""
     try:
         from .team_knowledge import create_team as _create_team
 
@@ -5751,12 +5905,17 @@ async def add_team_reflection(
     team_id: str | None = None,
     project_id: str | None = None,
 ) -> str:
-    """Add reflection to team knowledge base with access control"""
+    """Add reflection to team knowledge base with access control."""
     try:
         from .team_knowledge import add_team_reflection as _add_team_reflection
 
         reflection_id = await _add_team_reflection(
-            content, author_id, tags, access_level, team_id, project_id
+            content,
+            author_id,
+            tags,
+            access_level,
+            team_id,
+            project_id,
         )
 
         output = []
@@ -5790,12 +5949,17 @@ async def search_team_knowledge(
     tags: list[str] | None = None,
     limit: int = 20,
 ) -> str:
-    """Search team reflections with access control"""
+    """Search team reflections with access control."""
     try:
         from .team_knowledge import search_team_knowledge as _search_team_knowledge
 
         results = await _search_team_knowledge(
-            query, user_id, team_id, project_id, tags, limit
+            query,
+            user_id,
+            team_id,
+            project_id,
+            tags,
+            limit,
         )
 
         if not results:
@@ -5835,7 +5999,7 @@ async def search_team_knowledge(
 
 @mcp.tool()
 async def join_team(user_id: str, team_id: str, requester_id: str | None = None) -> str:
-    """Join a team or add user to team"""
+    """Join a team or add user to team."""
     try:
         from .team_knowledge import join_team as _join_team
 
@@ -5849,11 +6013,12 @@ async def join_team(user_id: str, team_id: str, requester_id: str | None = None)
             if requester_id and requester_id != user_id:
                 output.append(f"👑 Added by: {requester_id}")
             output.append(
-                "🌟 You can now access team reflections and contribute knowledge"
+                "🌟 You can now access team reflections and contribute knowledge",
             )
             return "\n".join(output)
-        else:
-            return f"❌ Failed to join team {team_id}. Check permissions and team existence."
+        return (
+            f"❌ Failed to join team {team_id}. Check permissions and team existence."
+        )
 
     except ImportError:
         return "❌ Team knowledge tools not available"
@@ -5863,7 +6028,7 @@ async def join_team(user_id: str, team_id: str, requester_id: str | None = None)
 
 @mcp.tool()
 async def get_team_statistics(team_id: str, user_id: str) -> str:
-    """Get team statistics and activity"""
+    """Get team statistics and activity."""
     try:
         from .team_knowledge import get_team_statistics as _get_team_statistics
 
@@ -5886,19 +6051,19 @@ async def get_team_statistics(team_id: str, user_id: str) -> str:
         output.append(f"👥 Members: {stats['member_count']}")
         output.append(f"📁 Projects: {stats['project_count']}")
         output.append(
-            f"💡 Total Reflections: {reflection_stats['total_reflections'] or 0}"
+            f"💡 Total Reflections: {reflection_stats['total_reflections'] or 0}",
         )
         output.append(
-            f"✍️ Active Contributors: {reflection_stats['active_contributors'] or 0}"
+            f"✍️ Active Contributors: {reflection_stats['active_contributors'] or 0}",
         )
         output.append(f"👍 Total Votes: {reflection_stats['total_votes'] or 0}")
         output.append(
             f"📈 Avg Votes/Reflection: {reflection_stats['avg_votes']:.1f}"
             if reflection_stats["avg_votes"]
-            else "📈 Avg Votes/Reflection: 0.0"
+            else "📈 Avg Votes/Reflection: 0.0",
         )
         output.append(
-            f"⚡ Recent Activity (7 days): {stats['recent_activity']['recent_reflections']} reflections"
+            f"⚡ Recent Activity (7 days): {stats['recent_activity']['recent_reflections']} reflections",
         )
 
         return "\n".join(output)
@@ -5911,7 +6076,7 @@ async def get_team_statistics(team_id: str, user_id: str) -> str:
 
 @mcp.tool()
 async def get_user_team_permissions(user_id: str) -> str:
-    """Get user's permissions and team memberships"""
+    """Get user's permissions and team memberships."""
     try:
         from .team_knowledge import (
             get_user_team_permissions as _get_user_team_permissions,
@@ -5964,9 +6129,11 @@ async def get_user_team_permissions(user_id: str) -> str:
 
 @mcp.tool()
 async def vote_on_reflection(
-    reflection_id: str, user_id: str, vote_delta: int = 1
+    reflection_id: str,
+    user_id: str,
+    vote_delta: int = 1,
 ) -> str:
-    """Vote on a team reflection (upvote/downvote)"""
+    """Vote on a team reflection (upvote/downvote)."""
     try:
         from .team_knowledge import vote_on_reflection as _vote_on_reflection
 
@@ -5982,8 +6149,7 @@ async def vote_on_reflection(
             output.append(f"📊 Vote Delta: {vote_delta:+d}")
             output.append("🌟 Your vote helps surface valuable team knowledge")
             return "\n".join(output)
-        else:
-            return f"❌ Failed to vote on reflection {reflection_id}. Check permissions and reflection existence."
+        return f"❌ Failed to vote on reflection {reflection_id}. Check permissions and reflection existence."
 
     except ImportError:
         return "❌ Team knowledge tools not available"
@@ -6001,7 +6167,7 @@ async def create_natural_reminder(
     project_id: str | None = None,
     notification_method: str = "session",
 ) -> str:
-    """Create reminder from natural language time expression"""
+    """Create reminder from natural language time expression."""
     try:
         from .natural_scheduler import (
             create_natural_reminder as _create_natural_reminder,
@@ -6028,11 +6194,10 @@ async def create_natural_reminder(
                 output.append(f"📁 Project: {project_id}")
             output.append(f"📢 Notification: {notification_method}")
             output.append(
-                "🎯 Reminder will trigger automatically at the scheduled time"
+                "🎯 Reminder will trigger automatically at the scheduled time",
             )
             return "\n".join(output)
-        else:
-            return f"❌ Failed to parse time expression: '{time_expression}'\n💡 Try formats like 'in 30 minutes', 'tomorrow at 9am', 'every day at 5pm'"
+        return f"❌ Failed to parse time expression: '{time_expression}'\n💡 Try formats like 'in 30 minutes', 'tomorrow at 9am', 'every day at 5pm'"
 
     except ImportError:
         return "❌ Natural scheduling tools not available. Install: pip install python-dateutil schedule python-crontab"
@@ -6042,9 +6207,10 @@ async def create_natural_reminder(
 
 @mcp.tool()
 async def list_user_reminders(
-    user_id: str = "default", project_id: str | None = None
+    user_id: str = "default",
+    project_id: str | None = None,
 ) -> str:
-    """List pending reminders for user/project"""
+    """List pending reminders for user/project."""
     try:
         from .natural_scheduler import list_user_reminders as _list_user_reminders
 
@@ -6057,7 +6223,7 @@ async def list_user_reminders(
             if project_id:
                 output.append(f"📁 Project: {project_id}")
             output.append(
-                "💡 Use 'create_natural_reminder' to set up time-based reminders"
+                "💡 Use 'create_natural_reminder' to set up time-based reminders",
             )
             return "\n".join(output)
 
@@ -6075,7 +6241,7 @@ async def list_user_reminders(
             if reminder["description"]:
                 output.append(f"📄 Description: {reminder['description']}")
             output.append(
-                f"🔄 Type: {reminder['reminder_type'].replace('_', ' ').title()}"
+                f"🔄 Type: {reminder['reminder_type'].replace('_', ' ').title()}",
             )
             output.append(f"📊 Status: {reminder['status'].replace('_', ' ').title()}")
             output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
@@ -6095,7 +6261,7 @@ async def list_user_reminders(
 
 @mcp.tool()
 async def cancel_user_reminder(reminder_id: str) -> str:
-    """Cancel a specific reminder"""
+    """Cancel a specific reminder."""
     try:
         from .natural_scheduler import cancel_user_reminder as _cancel_user_reminder
 
@@ -6108,8 +6274,7 @@ async def cancel_user_reminder(reminder_id: str) -> str:
             output.append("🚫 The reminder will no longer trigger")
             output.append("💡 You can create a new reminder if needed")
             return "\n".join(output)
-        else:
-            return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists."
+        return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists."
 
     except ImportError:
         return "❌ Natural scheduling tools not available"
@@ -6119,7 +6284,7 @@ async def cancel_user_reminder(reminder_id: str) -> str:
 
 @mcp.tool()
 async def check_due_reminders() -> str:
-    """Check for reminders that are due now"""
+    """Check for reminders that are due now."""
     try:
         from .natural_scheduler import check_due_reminders as _check_due_reminders
 
@@ -6148,7 +6313,7 @@ async def check_due_reminders() -> str:
                 from datetime import datetime
 
                 scheduled = datetime.fromisoformat(
-                    reminder["scheduled_for"].replace("Z", "+00:00")
+                    reminder["scheduled_for"],
                 )
                 now = datetime.now()
                 overdue = now - scheduled
@@ -6163,7 +6328,7 @@ async def check_due_reminders() -> str:
                 output.append("⏱️ Overdue: calculation failed")
 
         output.append(
-            "\n💡 These reminders should be processed by the background scheduler"
+            "\n💡 These reminders should be processed by the background scheduler",
         )
         return "\n".join(output)
 
@@ -6175,7 +6340,7 @@ async def check_due_reminders() -> str:
 
 @mcp.tool()
 async def start_reminder_service() -> str:
-    """Start the background reminder service"""
+    """Start the background reminder service."""
     try:
         from .natural_scheduler import (
             register_session_notifications,
@@ -6196,7 +6361,7 @@ async def start_reminder_service() -> str:
         output.append("🔍 Checking for due reminders every minute")
         output.append("📢 Session notifications are registered")
         output.append(
-            "💡 Reminders will automatically trigger at their scheduled times"
+            "💡 Reminders will automatically trigger at their scheduled times",
         )
         output.append("🛑 Use 'stop_reminder_service' to stop the background service")
 
@@ -6210,7 +6375,7 @@ async def start_reminder_service() -> str:
 
 @mcp.tool()
 async def stop_reminder_service() -> str:
-    """Stop the background reminder service"""
+    """Stop the background reminder service."""
     try:
         from .natural_scheduler import stop_reminder_service as _stop_reminder_service
 
@@ -6222,7 +6387,7 @@ async def stop_reminder_service() -> str:
         output.append("⚠️ Existing reminders will not trigger automatically")
         output.append("🚀 Use 'start_reminder_service' to restart the service")
         output.append(
-            "💡 You can still check due reminders manually with 'check_due_reminders'"
+            "💡 You can still check due reminders manually with 'check_due_reminders'",
         )
 
         return "\n".join(output)
@@ -6236,9 +6401,10 @@ async def stop_reminder_service() -> str:
 # Smart Interruption Management Tools
 @mcp.tool()
 async def start_interruption_monitoring(
-    working_directory: str = ".", watch_files: bool = True
+    working_directory: str = ".",
+    watch_files: bool = True,
 ) -> str:
-    """Start smart interruption monitoring with context switch detection"""
+    """Start smart interruption monitoring with context switch detection."""
     try:
         from .interruption_manager import (
             start_interruption_monitoring as _start_interruption_monitoring,
@@ -6254,7 +6420,7 @@ async def start_interruption_monitoring(
         output.append("💾 Auto-save: enabled (30s threshold)")
         output.append("🔄 Context preservation: automatic")
         output.append(
-            "💡 Your work context will be automatically preserved during interruptions"
+            "💡 Your work context will be automatically preserved during interruptions",
         )
         output.append("🛑 Use 'stop_interruption_monitoring' to disable")
 
@@ -6268,7 +6434,7 @@ async def start_interruption_monitoring(
 
 @mcp.tool()
 async def stop_interruption_monitoring() -> str:
-    """Stop interruption monitoring"""
+    """Stop interruption monitoring."""
     try:
         from .interruption_manager import (
             stop_interruption_monitoring as _stop_interruption_monitoring,
@@ -6294,16 +6460,20 @@ async def stop_interruption_monitoring() -> str:
 
 @mcp.tool()
 async def create_session_context(
-    user_id: str, project_id: str | None = None, working_directory: str = "."
+    user_id: str,
+    project_id: str | None = None,
+    working_directory: str = ".",
 ) -> str:
-    """Create new session context for interruption management"""
+    """Create new session context for interruption management."""
     try:
         from .interruption_manager import (
             create_session_context as _create_session_context,
         )
 
         session_id = await _create_session_context(
-            user_id, project_id, working_directory
+            user_id,
+            project_id,
+            working_directory,
         )
 
         output = []
@@ -6326,9 +6496,10 @@ async def create_session_context(
 
 @mcp.tool()
 async def preserve_current_context(
-    session_id: str | None = None, force: bool = False
+    session_id: str | None = None,
+    force: bool = False,
 ) -> str:
-    """Manually preserve current session context"""
+    """Manually preserve current session context."""
     try:
         from .interruption_manager import (
             preserve_current_context as _preserve_current_context,
@@ -6346,8 +6517,7 @@ async def preserve_current_context(
             output.append("🗜️ Data compressed for storage")
             output.append("✅ Recovery is now possible if interruption occurs")
             return "\n".join(output)
-        else:
-            return "❌ Failed to preserve context. Check that a session context exists."
+        return "❌ Failed to preserve context. Check that a session context exists."
 
     except ImportError:
         return "❌ Interruption management tools not available"
@@ -6357,7 +6527,7 @@ async def preserve_current_context(
 
 @mcp.tool()
 async def restore_session_context(session_id: str) -> str:
-    """Restore session context from snapshot"""
+    """Restore session context from snapshot."""
     try:
         from .interruption_manager import (
             restore_session_context as _restore_session_context,
@@ -6374,7 +6544,7 @@ async def restore_session_context(session_id: str) -> str:
                 output.append(f"📁 Project: {context_data['project_id']}")
             output.append(f"📂 Working directory: {context_data['working_directory']}")
             output.append(
-                f"📊 Interruption count: {context_data['interruption_count']}"
+                f"📊 Interruption count: {context_data['interruption_count']}",
             )
             output.append(f"🔄 Recovery attempts: {context_data['recovery_attempts']}")
             output.append(f"⏱️ Focus duration: {context_data['focus_duration']:.1f}s")
@@ -6382,8 +6552,7 @@ async def restore_session_context(session_id: str) -> str:
                 output.append(f"📄 Open files: {len(context_data['open_files'])}")
             output.append("✅ Context is now active and being monitored")
             return "\n".join(output)
-        else:
-            return f"❌ Failed to restore context for session {session_id}. Check that the session exists and has preserved data."
+        return f"❌ Failed to restore context for session {session_id}. Check that the session exists and has preserved data."
 
     except ImportError:
         return "❌ Interruption management tools not available"
@@ -6393,7 +6562,7 @@ async def restore_session_context(session_id: str) -> str:
 
 @mcp.tool()
 async def get_interruption_history(user_id: str, hours: int = 24) -> str:
-    """Get recent interruption history for user"""
+    """Get recent interruption history for user."""
     try:
         from .interruption_manager import (
             get_interruption_history as _get_interruption_history,
@@ -6411,7 +6580,7 @@ async def get_interruption_history(user_id: str, hours: int = 24) -> str:
 
         output = []
         output.append(
-            f"📊 Found {len(history)} interruptions in the last {hours} hours"
+            f"📊 Found {len(history)} interruptions in the last {hours} hours",
         )
         output.append(f"👤 User: {user_id}")
         output.append("=" * 50)
@@ -6448,7 +6617,7 @@ async def get_interruption_history(user_id: str, hours: int = 24) -> str:
                 f" ({event['duration']:.1f}s)" if event.get("duration") else ""
             )
             output.append(
-                f"  {i}. {auto_saved} {event_type}{duration_info} - {timestamp}"
+                f"  {i}. {auto_saved} {event_type}{duration_info} - {timestamp}",
             )
 
         if len(history) > 5:
@@ -6545,7 +6714,9 @@ def _format_snapshot_statistics(snapshots: dict) -> list[str]:
 
 
 def _calculate_efficiency_rates(
-    sessions: dict, interruptions: dict, by_type: list
+    sessions: dict,
+    interruptions: dict,
+    by_type: list,
 ) -> tuple[float, float]:
     """Calculate preservation and auto-save rates."""
     preservation_rate = (
@@ -6563,14 +6734,18 @@ def _calculate_efficiency_rates(
 
 
 def _format_efficiency_metrics(
-    sessions: dict, interruptions: dict, by_type: list
+    sessions: dict,
+    interruptions: dict,
+    by_type: list,
 ) -> list[str]:
     """Format efficiency metrics section."""
     if not (sessions and interruptions):
         return []
 
     preservation_rate, auto_save_rate = _calculate_efficiency_rates(
-        sessions, interruptions, by_type
+        sessions,
+        interruptions,
+        by_type,
     )
 
     return [
@@ -6587,7 +6762,7 @@ def _has_statistics_data(sessions: dict, interruptions: dict, snapshots: dict) -
             sessions,
             interruptions.get("total", 0),
             snapshots.get("total_snapshots", 0),
-        ]
+        ],
     )
 
 
@@ -6601,7 +6776,7 @@ def _format_no_data_message(user_id: str) -> list[str]:
 
 
 async def get_interruption_statistics(user_id: str) -> str:
-    """Get comprehensive interruption and context preservation statistics"""
+    """Get comprehensive interruption and context preservation statistics."""
     try:
         from .interruption_manager import (
             get_interruption_statistics as _get_interruption_statistics,
@@ -6641,9 +6816,22 @@ async def get_interruption_statistics(user_id: str) -> str:
 
 @mcp.tool()
 async def execute_crackerjack_command(
-    command: str, args: str = "", working_directory: str = ".", timeout: int = 300
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300,
+    ai_agent_mode: bool = False,
 ) -> str:
-    """Execute a Crackerjack command and parse the output for insights"""
+    """Execute a Crackerjack command with enhanced AI integration.
+
+    Args:
+        command: Crackerjack command to execute (analyze, check, test, lint, etc.)
+        args: Additional command line arguments
+        working_directory: Directory to run command in
+        timeout: Command timeout in seconds
+        ai_agent_mode: Enable AI agent autonomous fixing mode
+
+    """
     if not CRACKERJACK_INTEGRATION_AVAILABLE:
         return "❌ Crackerjack integration not available"
 
@@ -6651,22 +6839,26 @@ async def execute_crackerjack_command(
         integration = CrackerjackIntegration()
         args_list = args.split() if args else []
         result = await integration.execute_crackerjack_command(
-            command, args_list, working_directory, timeout
+            command,
+            args_list,
+            working_directory,
+            timeout,
+            ai_agent_mode,
         )
 
         output = [f"🔧 Crackerjack {command} execution complete"]
+        if ai_agent_mode:
+            output.append("🤖 AI Agent mode enabled")
         output.append(f"📁 Working directory: {working_directory}")
-        output.append(f"⏱️  Duration: {result.duration:.2f}s")
+        output.append(f"⏱️  Duration: {result.execution_time:.2f}s")
         output.append(f"🎯 Exit code: {result.exit_code}")
 
-        if result.parsed_results:
+        if result.parsed_data:
             output.append("\n📊 Parsed Results:")
-            for key, value in result.parsed_results.items():
+            for key, value in result.parsed_data.items():
                 if isinstance(value, dict) and value:
                     output.append(f"  • {key}: {len(value)} items")
-                elif isinstance(value, int | float):
-                    output.append(f"  • {key}: {value}")
-                elif value:
+                elif isinstance(value, int | float) or value:
                     output.append(f"  • {key}: {value}")
 
         if result.memory_insights:
@@ -6687,41 +6879,59 @@ async def execute_crackerjack_command(
 # Clean Command Aliases
 @mcp.tool()
 async def crackerjack_run(
-    command: str, args: str = "", working_directory: str = ".", timeout: int = 300
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300,
+    ai_agent_mode: bool = False,
 ) -> str:
-    """Run crackerjack with enhanced analytics (replaces /crackerjack:run)
+    """Run crackerjack with enhanced analytics (replaces /crackerjack:run).
 
     Provides memory integration, intelligent insights, and quality tracking.
     Use this instead of basic /crackerjack:run for development work.
+
+    Args:
+        command: Crackerjack command to execute
+        args: Additional command arguments
+        working_directory: Directory to run in
+        timeout: Command timeout in seconds
+        ai_agent_mode: Enable autonomous AI fixing
+
     """
-    return await execute_crackerjack_command(command, args, working_directory, timeout)
+    return await execute_crackerjack_command(
+        command, args, working_directory, timeout, ai_agent_mode
+    )
 
 
 @mcp.tool()
 async def crackerjack_history(
-    working_directory: str = ".", command_filter: str = "", days: int = 7
+    working_directory: str = ".",
+    command_filter: str = "",
+    days: int = 7,
 ) -> str:
-    """View crackerjack execution history with trends and patterns"""
+    """View crackerjack execution history with trends and patterns."""
     return await get_crackerjack_results_history(
-        working_directory, command_filter, days
+        working_directory,
+        command_filter,
+        days,
     )
 
 
 @mcp.tool()
 async def crackerjack_metrics(working_directory: str = ".", days: int = 30) -> str:
-    """Get quality metrics trends from crackerjack execution history"""
+    """Get quality metrics trends from crackerjack execution history."""
     return await get_crackerjack_quality_metrics(days, working_directory)
 
 
 @mcp.tool()
 async def crackerjack_patterns(days: int = 7, working_directory: str = ".") -> str:
-    """Analyze test failure patterns and trends"""
+    """Analyze test failure patterns and trends."""
     return await analyze_crackerjack_test_patterns(days, working_directory)
 
 
 @mcp.tool()
 async def crackerjack_help() -> str:
-    """Get comprehensive help for choosing the right crackerjack commands"""
+    """Get comprehensive help for choosing the right crackerjack commands."""
     output = ["🔧 CRACKERJACK COMMAND GUIDE", "=" * 50]
 
     # Check what's available
@@ -6747,7 +6957,7 @@ async def crackerjack_help() -> str:
                 "  ✅ Pattern detection - identifies recurring issues",
                 "  ✅ Trend analysis - shows improvement/degradation",
                 "  ✅ Cross-session learning - builds knowledge over time",
-            ]
+            ],
         )
 
     if has_basic_crackerjack:
@@ -6763,7 +6973,7 @@ async def crackerjack_help() -> str:
                 "  ❌ No intelligent analysis",
                 "  ❌ No quality tracking",
                 "  ❌ No pattern detection",
-            ]
+            ],
         )
 
     # Usage recommendations
@@ -6784,7 +6994,7 @@ async def crackerjack_help() -> str:
             "  1. /session-mgmt:crackerjack-run check",
             "  2. /session-mgmt:crackerjack-history",
             "  3. /session-mgmt:crackerjack-metrics",
-        ]
+        ],
     )
 
     if not has_enhanced and not has_basic_crackerjack:
@@ -6793,7 +7003,7 @@ async def crackerjack_help() -> str:
                 "\n❌ SETUP REQUIRED:",
                 "Neither enhanced nor basic crackerjack is available.",
                 "Install crackerjack to get started with code quality tools.",
-            ]
+            ],
         )
 
     return "\n".join(output)
@@ -6801,16 +7011,20 @@ async def crackerjack_help() -> str:
 
 @mcp.tool()
 async def get_crackerjack_results_history(
-    working_directory: str = ".", command_filter: str = "", days: int = 7
+    working_directory: str = ".",
+    command_filter: str = "",
+    days: int = 7,
 ) -> str:
-    """Get recent Crackerjack command execution history"""
+    """Get recent Crackerjack command execution history."""
     if not CRACKERJACK_INTEGRATION_AVAILABLE:
         return "❌ Crackerjack integration not available"
 
     try:
         integration = CrackerjackIntegration()
         results = await integration.get_recent_crackerjack_results(
-            working_directory, command_filter, days
+            working_directory,
+            command_filter,
+            days,
         )
 
         if not results:
@@ -6856,9 +7070,10 @@ async def get_crackerjack_results_history(
 
 @mcp.tool()
 async def get_crackerjack_quality_metrics(
-    working_directory: str = ".", days: int = 30
+    working_directory: str = ".",
+    days: int = 30,
 ) -> str:
-    """Get quality metrics trends from Crackerjack execution history"""
+    """Get quality metrics trends from Crackerjack execution history."""
     if not CRACKERJACK_INTEGRATION_AVAILABLE:
         return "❌ Crackerjack integration not available"
 
@@ -6937,7 +7152,7 @@ async def get_crackerjack_quality_metrics(
 
 
 def _add_frequent_failures_info(output: list[str], frequent_failures: list) -> None:
-    """Add frequent failures information to output"""
+    """Add frequent failures information to output."""
     if frequent_failures:
         output.append("\n🔥 Most Frequent Failures:")
         for failure in frequent_failures[:5]:
@@ -6948,17 +7163,19 @@ def _add_frequent_failures_info(output: list[str], frequent_failures: list) -> N
 
 
 def _add_error_types_info(output: list[str], error_types: dict) -> None:
-    """Add error type distribution information to output"""
+    """Add error type distribution information to output."""
     if error_types:
         output.append("\n📊 Error Type Distribution:")
         for error_type, count in sorted(
-            error_types.items(), key=lambda x: x[1], reverse=True
+            error_types.items(),
+            key=lambda x: x[1],
+            reverse=True,
         )[:5]:
             output.append(f"  • {error_type}: {count} occurrences")
 
 
 def _add_trends_info(output: list[str], trends: dict) -> None:
-    """Add trends information to output"""
+    """Add trends information to output."""
     if not trends:
         return
 
@@ -6980,9 +7197,11 @@ def _add_trends_info(output: list[str], trends: dict) -> None:
 
 
 def _generate_test_recommendations(
-    frequent_failures: list, error_types: dict, trends: dict
+    frequent_failures: list,
+    error_types: dict,
+    trends: dict,
 ) -> list[str]:
-    """Generate recommendations based on test patterns"""
+    """Generate recommendations based on test patterns."""
     recommendations = []
 
     if frequent_failures and len(frequent_failures) > 3:
@@ -6990,12 +7209,12 @@ def _generate_test_recommendations(
 
     if error_types.get("AssertionError", 0) > error_types.get("ImportError", 0) * 2:
         recommendations.append(
-            "High assertion failures suggest logic issues in tests or code"
+            "High assertion failures suggest logic issues in tests or code",
         )
 
     if trends.get("stability_score", 100) < 70:
         recommendations.append(
-            "Test stability is below 70% - consider test environment review"
+            "Test stability is below 70% - consider test environment review",
         )
 
     return recommendations
@@ -7003,9 +7222,10 @@ def _generate_test_recommendations(
 
 @mcp.tool()
 async def analyze_crackerjack_test_patterns(
-    working_directory: str = ".", days: int = 7
+    working_directory: str = ".",
+    days: int = 7,
 ) -> str:
-    """Analyze test failure patterns and trends"""
+    """Analyze test failure patterns and trends."""
     if not CRACKERJACK_INTEGRATION_AVAILABLE:
         return "❌ Crackerjack integration not available"
 
@@ -7028,7 +7248,9 @@ async def analyze_crackerjack_test_patterns(
         _add_trends_info(output, trends)
 
         recommendations = _generate_test_recommendations(
-            frequent_failures, error_types, trends
+            frequent_failures,
+            error_types,
+            trends,
         )
         if recommendations:
             output.append("\n💡 Recommendations:")
@@ -7046,6 +7268,126 @@ async def analyze_crackerjack_test_patterns(
 
     except Exception as e:
         return f"❌ Error analyzing test patterns: {e}"
+
+
+@mcp.tool()
+async def crackerjack_quality_trends(
+    working_directory: str = ".",
+    days: int = 30,
+) -> str:
+    """Analyze quality trends over time with actionable insights."""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available"
+
+    try:
+        integration = CrackerjackIntegration()
+        trends = await integration.get_quality_trends(working_directory, days)
+
+        output = [f"📊 Quality Trends Analysis (last {days} days)"]
+        output.append(f"📁 Directory: {working_directory}")
+
+        overall = trends.get("overall", {})
+        output.append(
+            f"\n🎯 Overall Direction: {overall.get('overall_direction', 'unknown').upper()}"
+        )
+
+        improving = overall.get("improving_count", 0)
+        declining = overall.get("declining_count", 0)
+        stable = overall.get("stable_count", 0)
+
+        output.append(f"  📈 Improving: {improving} metrics")
+        output.append(f"  📉 Declining: {declining} metrics")
+        output.append(f"  ➡️  Stable: {stable} metrics")
+
+        # Individual metric trends
+        metric_trends = trends.get("trends", {})
+        if metric_trends:
+            output.append("\n📋 Metric Details:")
+            for metric_type, trend_data in metric_trends.items():
+                direction = trend_data.get("direction", "unknown")
+                recent_avg = trend_data.get("recent_average", 0)
+                change = trend_data.get("change", 0)
+                strength = trend_data.get("trend_strength", "unknown")
+
+                icon = (
+                    "📈"
+                    if direction == "improving"
+                    else "📉"
+                    if direction == "declining"
+                    else "➡️"
+                )
+                metric_name = metric_type.replace("_", " ").title()
+
+                output.append(
+                    f"  {icon} {metric_name}: {recent_avg:.1f}% (±{change:.1f}%, {strength})"
+                )
+
+        # Recommendations
+        recommendations = trends.get("recommendations", [])
+        if recommendations:
+            output.append("\n💡 Recommendations:")
+            for rec in recommendations[:5]:  # Show top 5
+                output.append(f"  • {rec}")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        return f"❌ Error analyzing quality trends: {e}"
+
+
+@mcp.tool()
+async def crackerjack_health_check() -> str:
+    """Check Crackerjack integration health and provide diagnostics."""
+    if not CRACKERJACK_INTEGRATION_AVAILABLE:
+        return "❌ Crackerjack integration not available - check installation"
+
+    try:
+        integration = CrackerjackIntegration()
+        health = await integration.health_check()
+
+        output = ["🏥 Crackerjack Integration Health Check"]
+
+        status = health.get("status", "unknown")
+        if status == "healthy":
+            output.append("✅ Status: HEALTHY")
+        elif status == "partial":
+            output.append("⚠️ Status: PARTIAL (some features may be limited)")
+        else:
+            output.append("❌ Status: UNHEALTHY")
+
+        # Detailed checks
+        output.append("\n🔍 Component Status:")
+
+        if health.get("crackerjack_available"):
+            output.append("  ✅ Crackerjack CLI: Available")
+        else:
+            output.append("  ❌ Crackerjack CLI: Not available")
+
+        if health.get("database_accessible"):
+            output.append("  ✅ Integration Database: Accessible")
+        else:
+            output.append("  ❌ Integration Database: Not accessible")
+
+        # Recommendations
+        recommendations = health.get("recommendations", [])
+        if recommendations:
+            output.append("\n💡 Diagnostics:")
+            for rec in recommendations:
+                output.append(f"  • {rec}")
+
+        # Quick fix suggestions
+        if status != "healthy":
+            output.append("\n🔧 Quick Fixes:")
+            if not health.get("crackerjack_available"):
+                output.append("  → Install crackerjack: uv add crackerjack")
+            if not health.get("database_accessible"):
+                output.append("  → Check ~/.claude/data/ directory permissions")
+                output.append("  → Try running a simple crackerjack command first")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        return f"❌ Health check failed: {e}"
 
 
 def _format_monitoring_status(quality_data: dict) -> list[str]:
@@ -7131,7 +7473,7 @@ def _format_monitor_usage_guidance() -> list[str]:
 
 @mcp.tool()
 async def quality_monitor() -> str:
-    """Phase 3: Proactive quality monitoring with early warning system"""
+    """Phase 3: Proactive quality monitoring with early warning system."""
     output = []
     output.append("📊 Proactive Quality Monitor")
     output.append("=" * 50)
@@ -7157,13 +7499,13 @@ async def quality_monitor() -> str:
 
 @mcp.prompt("quality-monitor")
 async def quality_monitor_prompt() -> str:
-    """Proactive session quality monitoring with trend analysis and early warnings"""
+    """Proactive session quality monitoring with trend analysis and early warnings."""
     return await quality_monitor()
 
 
 @mcp.tool()
 async def auto_compact() -> str:
-    """Automatically trigger conversation compaction with intelligent summary"""
+    """Automatically trigger conversation compaction with intelligent summary."""
     output = []
     output.append("🔄 Auto-Compaction Tool")
     output.append("=" * 50)
@@ -7177,7 +7519,7 @@ async def auto_compact() -> str:
 
         if conversation_summary["key_topics"]:
             output.append(
-                f"• Topics: {', '.join(conversation_summary['key_topics'][:3])}"
+                f"• Topics: {', '.join(conversation_summary['key_topics'][:3])}",
             )
 
         if conversation_summary["decisions_made"]:
@@ -7233,7 +7575,7 @@ async def auto_compact() -> str:
 
 @mcp.prompt("auto-compact")
 async def auto_compact_prompt() -> str:
-    """Automatically trigger conversation compaction with context preservation"""
+    """Automatically trigger conversation compaction with context preservation."""
     return await auto_compact()
 
 
@@ -7242,9 +7584,11 @@ async def auto_compact_prompt() -> str:
 
 @mcp.tool()
 async def create_project_group(
-    name: str, projects: list[str], description: str = ""
+    name: str,
+    projects: list[str],
+    description: str = "",
 ) -> str:
-    """Create a new project group for multi-project coordination"""
+    """Create a new project group for multi-project coordination."""
     if not multi_project_coordinator:
         await initialize_new_features()
         if not multi_project_coordinator:
@@ -7252,7 +7596,9 @@ async def create_project_group(
 
     try:
         group = await multi_project_coordinator.create_project_group(
-            name=name, projects=projects, description=description
+            name=name,
+            projects=projects,
+            description=description,
         )
 
         return f"""✅ **Project Group Created**
@@ -7275,7 +7621,7 @@ async def add_project_dependency(
     dependency_type: str,
     description: str = "",
 ) -> str:
-    """Add a dependency relationship between projects"""
+    """Add a dependency relationship between projects."""
     if not multi_project_coordinator:
         await initialize_new_features()
         if not multi_project_coordinator:
@@ -7304,9 +7650,11 @@ This relationship will be used for cross-project search and coordination."""
 
 @mcp.tool()
 async def search_across_projects(
-    query: str, current_project: str, limit: int = 10
+    query: str,
+    current_project: str,
+    limit: int = 10,
 ) -> str:
-    """Search conversations across related projects"""
+    """Search conversations across related projects."""
     if not multi_project_coordinator:
         await initialize_new_features()
         if not multi_project_coordinator:
@@ -7314,7 +7662,9 @@ async def search_across_projects(
 
     try:
         results = await multi_project_coordinator.find_related_conversations(
-            current_project=current_project, query=query, limit=limit
+            current_project=current_project,
+            query=query,
+            limit=limit,
         )
 
         if not results:
@@ -7343,7 +7693,7 @@ async def search_across_projects(
 
 @mcp.tool()
 async def get_project_insights(projects: list[str], time_range_days: int = 30) -> str:
-    """Get cross-project insights and collaboration opportunities"""
+    """Get cross-project insights and collaboration opportunities."""
     if not multi_project_coordinator:
         await initialize_new_features()
         if not multi_project_coordinator:
@@ -7351,7 +7701,8 @@ async def get_project_insights(projects: list[str], time_range_days: int = 30) -
 
     try:
         insights = await multi_project_coordinator.get_cross_project_insights(
-            projects=projects, time_range_days=time_range_days
+            projects=projects,
+            time_range_days=time_range_days,
         )
 
         output = [f"📊 **Cross-Project Insights** (Last {time_range_days} days)\n"]
@@ -7361,7 +7712,7 @@ async def get_project_insights(projects: list[str], time_range_days: int = 30) -
             output.append("**📈 Project Activity:**")
             for project, stats in insights["project_activity"].items():
                 output.append(
-                    f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}"
+                    f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}",
                 )
             output.append("")
 
@@ -7371,7 +7722,7 @@ async def get_project_insights(projects: list[str], time_range_days: int = 30) -
             for pattern in insights["common_patterns"][:5]:  # Top 5
                 projects_str = ", ".join(pattern["projects"])
                 output.append(
-                    f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})"
+                    f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})",
                 )
             output.append("")
 
@@ -7396,7 +7747,7 @@ async def advanced_search(
     sort_by: str = "relevance",
     limit: int = 10,
 ) -> str:
-    """Perform advanced search with faceted filtering"""
+    """Perform advanced search with faceted filtering."""
     if not advanced_search_engine:
         await initialize_new_features()
         if not advanced_search_engine:
@@ -7410,7 +7761,7 @@ async def advanced_search(
             from session_mgmt_mcp.advanced_search import SearchFilter
 
             filters.append(
-                SearchFilter(field="content_type", operator="eq", value=content_type)
+                SearchFilter(field="content_type", operator="eq", value=content_type),
             )
 
         # Add project filter
@@ -7422,8 +7773,10 @@ async def advanced_search(
             start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
             filters.append(
                 SearchFilter(
-                    field="timestamp", operator="range", value=(start_time, end_time)
-                )
+                    field="timestamp",
+                    operator="range",
+                    value=(start_time, end_time),
+                ),
             )
 
         # Perform search
@@ -7460,7 +7813,7 @@ async def advanced_search(
 
 @mcp.tool()
 async def search_suggestions(query: str, field: str = "content", limit: int = 5) -> str:
-    """Get search completion suggestions"""
+    """Get search completion suggestions."""
     if not advanced_search_engine:
         await initialize_new_features()
         if not advanced_search_engine:
@@ -7468,7 +7821,9 @@ async def search_suggestions(query: str, field: str = "content", limit: int = 5)
 
     try:
         suggestions = await advanced_search_engine.suggest_completions(
-            query=query, field=field, limit=limit
+            query=query,
+            field=field,
+            limit=limit,
         )
 
         if not suggestions:
@@ -7478,7 +7833,7 @@ async def search_suggestions(query: str, field: str = "content", limit: int = 5)
 
         for i, suggestion in enumerate(suggestions, 1):
             output.append(
-                f"{i}. {suggestion['text']} (frequency: {suggestion['frequency']})"
+                f"{i}. {suggestion['text']} (frequency: {suggestion['frequency']})",
             )
 
         return "\n".join(output)
@@ -7489,7 +7844,7 @@ async def search_suggestions(query: str, field: str = "content", limit: int = 5)
 
 @mcp.tool()
 async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
-    """Get search and activity metrics"""
+    """Get search and activity metrics."""
     if not advanced_search_engine:
         await initialize_new_features()
         if not advanced_search_engine:
@@ -7497,7 +7852,8 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
 
     try:
         metrics = await advanced_search_engine.aggregate_metrics(
-            metric_type=metric_type, timeframe=timeframe
+            metric_type=metric_type,
+            timeframe=timeframe,
         )
 
         if "error" in metrics:
@@ -7522,7 +7878,7 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
 
 @mcp.tool()
 async def git_worktree_list(working_directory: str | None = None) -> str:
-    """List all git worktrees for the current repository"""
+    """List all git worktrees for the current repository."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or os.getcwd())
@@ -7552,7 +7908,7 @@ async def git_worktree_list(working_directory: str | None = None) -> str:
             detached_indicator = " (detached)" if wt["is_detached"] else ""
 
             output.append(
-                f"{prefix} **{wt['branch']}{main_indicator}{detached_indicator}**"
+                f"{prefix} **{wt['branch']}{main_indicator}{detached_indicator}**",
             )
             output.append(f"   📁 {wt['path']}")
 
@@ -7573,7 +7929,7 @@ async def git_worktree_list(working_directory: str | None = None) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        session_logger.error(f"git_worktree_list failed: {e}")
+        session_logger.exception(f"git_worktree_list failed: {e}")
         return f"❌ Failed to list worktrees: {e}"
 
 
@@ -7584,7 +7940,7 @@ async def git_worktree_add(
     working_directory: str | None = None,
     create_branch: bool = False,
 ) -> str:
-    """Create a new git worktree"""
+    """Create a new git worktree."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or os.getcwd())
@@ -7622,15 +7978,17 @@ async def git_worktree_add(
         return "\n".join(output)
 
     except Exception as e:
-        session_logger.error(f"git_worktree_add failed: {e}")
+        session_logger.exception(f"git_worktree_add failed: {e}")
         return f"❌ Failed to create worktree: {e}"
 
 
 @mcp.tool()
 async def git_worktree_remove(
-    path: str, working_directory: str | None = None, force: bool = False
+    path: str,
+    working_directory: str | None = None,
+    force: bool = False,
 ) -> str:
-    """Remove an existing git worktree"""
+    """Remove an existing git worktree."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or os.getcwd())
@@ -7643,7 +8001,9 @@ async def git_worktree_remove(
 
     try:
         result = await manager.remove_worktree(
-            repository_path=working_dir, worktree_path=remove_path, force=force
+            repository_path=working_dir,
+            worktree_path=remove_path,
+            force=force,
         )
 
         if not result["success"]:
@@ -7663,13 +8023,13 @@ async def git_worktree_remove(
         return "\n".join(output)
 
     except Exception as e:
-        session_logger.error(f"git_worktree_remove failed: {e}")
+        session_logger.exception(f"git_worktree_remove failed: {e}")
         return f"❌ Failed to remove worktree: {e}"
 
 
 @mcp.tool()
 async def git_worktree_status(working_directory: str | None = None) -> str:
-    """Get comprehensive status of current worktree and all related worktrees"""
+    """Get comprehensive status of current worktree and all related worktrees."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or os.getcwd())
@@ -7725,19 +8085,19 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
 
         output.append("💡 Use `git_worktree_list` for more details")
         output.append(
-            "💡 Use `git_worktree_add <branch> <path>` to create new worktrees"
+            "💡 Use `git_worktree_add <branch> <path>` to create new worktrees",
         )
 
         return "\n".join(output)
 
     except Exception as e:
-        session_logger.error(f"git_worktree_status failed: {e}")
+        session_logger.exception(f"git_worktree_status failed: {e}")
         return f"❌ Failed to get worktree status: {e}"
 
 
 @mcp.tool()
 async def git_worktree_prune(working_directory: str | None = None) -> str:
-    """Prune stale worktree references"""
+    """Prune stale worktree references."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or os.getcwd())
@@ -7753,7 +8113,7 @@ async def git_worktree_prune(working_directory: str | None = None) -> str:
 
         if result["pruned_count"] > 0:
             output.append(
-                f"🗑️ Pruned {result['pruned_count']} stale worktree references"
+                f"🗑️ Pruned {result['pruned_count']} stale worktree references",
             )
             if result.get("output"):
                 output.append(f"📝 Details: {result['output']}")
@@ -7766,12 +8126,12 @@ async def git_worktree_prune(working_directory: str | None = None) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        session_logger.error(f"git_worktree_prune failed: {e}")
+        session_logger.exception(f"git_worktree_prune failed: {e}")
         return f"❌ Failed to prune worktrees: {e}"
 
 
-def main():
-    """Main entry point for the MCP server"""
+def main() -> None:
+    """Main entry point for the MCP server."""
     # Initialize new features on startup
     import asyncio
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unit tests for Multi-Project Coordinator
-"""
+"""Unit tests for Multi-Project Coordinator."""
 
 import asyncio
 import tempfile
@@ -17,7 +15,7 @@ from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 @pytest.fixture
 async def temp_db():
-    """Create a temporary test database"""
+    """Create a temporary test database."""
     with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as f:
         db_path = f.name
 
@@ -33,13 +31,13 @@ async def temp_db():
 
 @pytest.fixture
 async def coordinator(temp_db):
-    """Create a coordinator with test database"""
+    """Create a coordinator with test database."""
     return MultiProjectCoordinator(temp_db)
 
 
 @pytest.fixture
 async def sample_conversations(temp_db):
-    """Add sample conversations to test database"""
+    """Add sample conversations to test database."""
     conversations = [
         {
             "content": "Working on authentication system for web app. Need to implement JWT tokens.",
@@ -73,12 +71,11 @@ async def sample_conversations(temp_db):
 
 
 class TestProjectGroup:
-    """Test ProjectGroup functionality"""
+    """Test ProjectGroup functionality."""
 
     @pytest.mark.asyncio
     async def test_create_project_group(self, coordinator):
-        """Test creating a project group"""
-
+        """Test creating a project group."""
         group = await coordinator.create_project_group(
             name="Web Development",
             projects=["webapp-frontend", "webapp-backend"],
@@ -94,15 +91,16 @@ class TestProjectGroup:
 
     @pytest.mark.asyncio
     async def test_get_project_groups(self, coordinator):
-        """Test retrieving project groups"""
-
+        """Test retrieving project groups."""
         # Create test groups
         await coordinator.create_project_group(
-            name="Web Apps", projects=["webapp-frontend", "webapp-backend"]
+            name="Web Apps",
+            projects=["webapp-frontend", "webapp-backend"],
         )
 
         await coordinator.create_project_group(
-            name="DevOps", projects=["devops-tools", "monitoring"]
+            name="DevOps",
+            projects=["devops-tools", "monitoring"],
         )
 
         # Get all groups
@@ -120,12 +118,11 @@ class TestProjectGroup:
 
 
 class TestProjectDependencies:
-    """Test project dependency functionality"""
+    """Test project dependency functionality."""
 
     @pytest.mark.asyncio
     async def test_add_project_dependency(self, coordinator):
-        """Test adding project dependencies"""
-
+        """Test adding project dependencies."""
         dependency = await coordinator.add_project_dependency(
             source_project="webapp-frontend",
             target_project="webapp-backend",
@@ -141,29 +138,39 @@ class TestProjectDependencies:
 
     @pytest.mark.asyncio
     async def test_get_project_dependencies(self, coordinator):
-        """Test retrieving project dependencies"""
-
+        """Test retrieving project dependencies."""
         # Add test dependencies
         await coordinator.add_project_dependency(
-            "webapp-frontend", "webapp-backend", "uses", "API calls"
+            "webapp-frontend",
+            "webapp-backend",
+            "uses",
+            "API calls",
         )
         await coordinator.add_project_dependency(
-            "webapp-backend", "database", "uses", "Data storage"
+            "webapp-backend",
+            "database",
+            "uses",
+            "Data storage",
         )
         await coordinator.add_project_dependency(
-            "monitoring", "webapp-backend", "monitors", "Health checks"
+            "monitoring",
+            "webapp-backend",
+            "monitors",
+            "Health checks",
         )
 
         # Test outbound dependencies
         outbound = await coordinator.get_project_dependencies(
-            "webapp-backend", "outbound"
+            "webapp-backend",
+            "outbound",
         )
         assert len(outbound) == 1
         assert outbound[0].target_project == "database"
 
         # Test inbound dependencies
         inbound = await coordinator.get_project_dependencies(
-            "webapp-backend", "inbound"
+            "webapp-backend",
+            "inbound",
         )
         assert len(inbound) == 2
         source_projects = [dep.source_project for dep in inbound]
@@ -176,11 +183,13 @@ class TestProjectDependencies:
 
     @pytest.mark.asyncio
     async def test_dependency_caching(self, coordinator):
-        """Test dependency caching mechanism"""
-
+        """Test dependency caching mechanism."""
         # Add a dependency
         await coordinator.add_project_dependency(
-            "project-a", "project-b", "uses", "Test dependency"
+            "project-a",
+            "project-b",
+            "uses",
+            "Test dependency",
         )
 
         # First call should populate cache
@@ -194,7 +203,10 @@ class TestProjectDependencies:
 
         # Adding new dependency should clear cache
         await coordinator.add_project_dependency(
-            "project-a", "project-c", "uses", "Another dependency"
+            "project-a",
+            "project-c",
+            "uses",
+            "Another dependency",
         )
 
         # Next call should show updated results
@@ -203,12 +215,11 @@ class TestProjectDependencies:
 
 
 class TestSessionLinks:
-    """Test session linking functionality"""
+    """Test session linking functionality."""
 
     @pytest.mark.asyncio
     async def test_link_sessions(self, coordinator):
-        """Test creating session links"""
-
+        """Test creating session links."""
         link = await coordinator.link_sessions(
             source_session_id="session-123",
             target_session_id="session-456",
@@ -224,8 +235,7 @@ class TestSessionLinks:
 
     @pytest.mark.asyncio
     async def test_get_session_links(self, coordinator):
-        """Test retrieving session links"""
-
+        """Test retrieving session links."""
         # Add test session links
         await coordinator.link_sessions("session-1", "session-2", "continuation")
         await coordinator.link_sessions("session-1", "session-3", "related")
@@ -243,23 +253,28 @@ class TestSessionLinks:
 
 
 class TestCrossProjectSearch:
-    """Test cross-project search functionality"""
+    """Test cross-project search functionality."""
 
     @pytest.mark.asyncio
     async def test_find_related_conversations(self, coordinator, sample_conversations):
-        """Test finding conversations across related projects"""
-
+        """Test finding conversations across related projects."""
         # Set up project dependencies
         await coordinator.add_project_dependency(
-            "webapp-frontend", "webapp-backend", "uses"
+            "webapp-frontend",
+            "webapp-backend",
+            "uses",
         )
         await coordinator.add_project_dependency(
-            "webapp-backend", "devops-tools", "uses"
+            "webapp-backend",
+            "devops-tools",
+            "uses",
         )
 
         # Search for authentication-related conversations
         results = await coordinator.find_related_conversations(
-            current_project="webapp-frontend", query="authentication", limit=10
+            current_project="webapp-frontend",
+            query="authentication",
+            limit=10,
         )
 
         assert len(results) >= 1
@@ -272,12 +287,12 @@ class TestCrossProjectSearch:
 
     @pytest.mark.asyncio
     async def test_cross_project_insights(self, coordinator, sample_conversations):
-        """Test getting cross-project insights"""
-
+        """Test getting cross-project insights."""
         projects = ["webapp-frontend", "webapp-backend", "devops-tools"]
 
         insights = await coordinator.get_cross_project_insights(
-            projects=projects, time_range_days=30
+            projects=projects,
+            time_range_days=30,
         )
 
         assert "project_activity" in insights
@@ -295,15 +310,15 @@ class TestCrossProjectSearch:
 
     @pytest.mark.asyncio
     async def test_common_patterns_detection(self, coordinator, sample_conversations):
-        """Test detection of common patterns across projects"""
-
+        """Test detection of common patterns across projects."""
         # Add more conversations with common patterns
         await coordinator.reflection_db.store_conversation(
             "Working on API development using FastAPI framework",
             {"project": "webapp-frontend"},
         )
         await coordinator.reflection_db.store_conversation(
-            "API testing with FastAPI and pytest framework", {"project": "devops-tools"}
+            "API testing with FastAPI and pytest framework",
+            {"project": "devops-tools"},
         )
 
         insights = await coordinator.get_cross_project_insights(
@@ -316,19 +331,19 @@ class TestCrossProjectSearch:
 
         # Look for "fastapi" pattern across projects
         fastapi_pattern = next(
-            (p for p in patterns if "fastapi" in p["pattern"].lower()), None
+            (p for p in patterns if "fastapi" in p["pattern"].lower()),
+            None,
         )
         if fastapi_pattern:
             assert len(fastapi_pattern["projects"]) >= 2
 
 
 class TestCleanup:
-    """Test cleanup functionality"""
+    """Test cleanup functionality."""
 
     @pytest.mark.asyncio
     async def test_cleanup_old_links(self, coordinator):
-        """Test cleanup of old session links"""
-
+        """Test cleanup of old session links."""
         # Add some session links with different ages
         await coordinator.link_sessions("old-1", "old-2", "related")
         await coordinator.link_sessions("new-1", "new-2", "related")
@@ -357,20 +372,21 @@ class TestCleanup:
 
 
 class TestEdgeCases:
-    """Test edge cases and error handling"""
+    """Test edge cases and error handling."""
 
     @pytest.mark.asyncio
     async def test_duplicate_project_group(self, coordinator):
-        """Test creating duplicate project groups"""
-
+        """Test creating duplicate project groups."""
         # Create initial group
         group1 = await coordinator.create_project_group(
-            name="Test Group", projects=["project-a"]
+            name="Test Group",
+            projects=["project-a"],
         )
 
         # Create another group with same name (should work - names can be duplicate)
         group2 = await coordinator.create_project_group(
-            name="Test Group", projects=["project-b"]
+            name="Test Group",
+            projects=["project-b"],
         )
 
         assert group1.id != group2.id
@@ -378,8 +394,7 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_circular_dependencies(self, coordinator):
-        """Test handling of circular project dependencies"""
-
+        """Test handling of circular project dependencies."""
         # Create circular dependency
         await coordinator.add_project_dependency("project-a", "project-b", "uses")
         await coordinator.add_project_dependency("project-b", "project-c", "uses")
@@ -396,11 +411,12 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_empty_search_results(self, coordinator):
-        """Test handling of empty search results"""
-
+        """Test handling of empty search results."""
         # Search with project that has no dependencies
         results = await coordinator.find_related_conversations(
-            current_project="nonexistent-project", query="authentication", limit=5
+            current_project="nonexistent-project",
+            query="authentication",
+            limit=5,
         )
 
         # Should return results from the project itself (even if empty)
@@ -408,11 +424,12 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_malformed_data_handling(self, coordinator):
-        """Test handling of malformed data"""
-
+        """Test handling of malformed data."""
         # Try to create group with empty project list
         group = await coordinator.create_project_group(
-            name="Empty Group", projects=[], description="Group with no projects"
+            name="Empty Group",
+            projects=[],
+            description="Group with no projects",
         )
 
         assert group.name == "Empty Group"

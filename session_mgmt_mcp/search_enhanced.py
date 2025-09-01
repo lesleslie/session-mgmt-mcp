@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced Search Capabilities for Session Management MCP Server
+"""Enhanced Search Capabilities for Session Management MCP Server.
 
 Provides multi-modal search including code snippets, error patterns, and time-based queries.
 """
@@ -22,9 +21,9 @@ from .reflection_tools import ReflectionDatabase
 
 
 class CodeSearcher:
-    """AST-based code search for Python code snippets"""
+    """AST-based code search for Python code snippets."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.search_types = {
             "function": ast.FunctionDef,
             "class": ast.ClassDef,
@@ -38,7 +37,7 @@ class CodeSearcher:
         }
 
     def extract_code_patterns(self, content: str) -> list[dict[str, Any]]:
-        """Extract code patterns from conversation content"""
+        """Extract code patterns from conversation content."""
         patterns = []
 
         # Extract Python code blocks
@@ -87,9 +86,9 @@ class CodeSearcher:
 
 
 class ErrorPatternMatcher:
-    """Pattern matching for error messages and debugging contexts"""
+    """Pattern matching for error messages and debugging contexts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.error_patterns = {
             "python_traceback": r"Traceback \(most recent call last\):.*?(?=\n\n|\Z)",
             "python_exception": r"(\w+Error): (.+)",
@@ -113,7 +112,7 @@ class ErrorPatternMatcher:
         }
 
     def extract_error_patterns(self, content: str) -> list[dict[str, Any]]:
-        """Extract error patterns and debugging context from content"""
+        """Extract error patterns and debugging context from content."""
         patterns = []
 
         # Find error patterns
@@ -128,7 +127,7 @@ class ErrorPatternMatcher:
                         "start": match.start(),
                         "end": match.end(),
                         "groups": match.groups() if match.groups() else [],
-                    }
+                    },
                 )
 
         # Find context patterns
@@ -142,16 +141,16 @@ class ErrorPatternMatcher:
                         "relevance": "high"
                         if context_name in ["debugging", "error_handling"]
                         else "medium",
-                    }
+                    },
                 )
 
         return patterns
 
 
 class TemporalSearchParser:
-    """Parse natural language time expressions for conversation search"""
+    """Parse natural language time expressions for conversation search."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.relative_patterns = {
             "today": timedelta(hours=0),
             "yesterday": timedelta(days=1),
@@ -181,29 +180,30 @@ class TemporalSearchParser:
         """Calculate timedelta from amount and unit."""
         if unit == "minute":
             return timedelta(minutes=amount)
-        elif unit == "hour":
+        if unit == "hour":
             return timedelta(hours=amount)
-        elif unit == "day":
+        if unit == "day":
             return timedelta(days=amount)
-        elif unit == "week":
+        if unit == "week":
             return timedelta(weeks=amount)
-        elif unit == "month":
+        if unit == "month":
             return (
                 relativedelta(months=amount)
                 if DATEUTIL_AVAILABLE
                 else timedelta(days=amount * 30)
             )
-        elif unit == "year":
+        if unit == "year":
             return (
                 relativedelta(years=amount)
                 if DATEUTIL_AVAILABLE
                 else timedelta(days=amount * 365)
             )
-        else:
-            return timedelta()
+        return timedelta()
 
     def _parse_relative_patterns(
-        self, expression: str, now: datetime
+        self,
+        expression: str,
+        now: datetime,
     ) -> tuple[datetime | None, datetime | None]:
         """Parse relative time patterns."""
         for pattern, delta in self.relative_patterns.items():
@@ -218,11 +218,14 @@ class TemporalSearchParser:
         return None, None
 
     def _parse_ago_pattern(
-        self, expression: str, now: datetime
+        self,
+        expression: str,
+        now: datetime,
     ) -> tuple[datetime | None, datetime | None]:
         """Parse 'X time units ago' pattern."""
         match = re.search(
-            r"(\d+)\s+(minute|hour|day|week|month|year)s?\s+ago", expression
+            r"(\d+)\s+(minute|hour|day|week|month|year)s?\s+ago",
+            expression,
         )
         if match:
             amount = int(match.group(1))
@@ -233,11 +236,14 @@ class TemporalSearchParser:
         return None, None
 
     def _parse_last_pattern(
-        self, expression: str, now: datetime
+        self,
+        expression: str,
+        now: datetime,
     ) -> tuple[datetime | None, datetime | None]:
         """Parse 'in the last X units' pattern."""
         match = re.search(
-            r"in\s+the\s+last\s+(\d+)\s+(minute|hour|day|week|month|year)s?", expression
+            r"in\s+the\s+last\s+(\d+)\s+(minute|hour|day|week|month|year)s?",
+            expression,
         )
         if match:
             amount = int(match.group(1))
@@ -248,7 +254,8 @@ class TemporalSearchParser:
         return None, None
 
     def _parse_absolute_date(
-        self, expression: str
+        self,
+        expression: str,
     ) -> tuple[datetime | None, datetime | None]:
         """Parse absolute date expressions."""
         if not DATEUTIL_AVAILABLE:
@@ -264,9 +271,10 @@ class TemporalSearchParser:
             return None, None
 
     def parse_time_expression(
-        self, expression: str
+        self,
+        expression: str,
     ) -> tuple[datetime | None, datetime | None]:
-        """Parse time expression into start and end datetime"""
+        """Parse time expression into start and end datetime."""
         expression = expression.lower().strip()
         now = datetime.now()
 
@@ -287,24 +295,27 @@ class TemporalSearchParser:
 
 
 class EnhancedSearchEngine:
-    """Main search engine that combines all enhanced search capabilities"""
+    """Main search engine that combines all enhanced search capabilities."""
 
-    def __init__(self, reflection_db: ReflectionDatabase):
+    def __init__(self, reflection_db: ReflectionDatabase) -> None:
         self.reflection_db = reflection_db
         self.code_searcher = CodeSearcher()
         self.error_matcher = ErrorPatternMatcher()
         self.temporal_parser = TemporalSearchParser()
 
     async def search_code_patterns(
-        self, query: str, pattern_type: str | None = None, limit: int = 10
+        self,
+        query: str,
+        pattern_type: str | None = None,
+        limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Search for code patterns in conversations"""
+        """Search for code patterns in conversations."""
         results = []
 
         # Get all conversations from database
         if hasattr(self.reflection_db, "conn") and self.reflection_db.conn:
             cursor = self.reflection_db.conn.execute(
-                "SELECT id, content, project, timestamp, metadata FROM conversations"
+                "SELECT id, content, project, timestamp, metadata FROM conversations",
             )
             conversations = cursor.fetchall()
 
@@ -330,7 +341,7 @@ class EnhancedSearchEngine:
                                 "snippet": content[:500] + "..."
                                 if len(content) > 500
                                 else content,
-                            }
+                            },
                         )
 
         # Sort by relevance and limit results
@@ -338,14 +349,17 @@ class EnhancedSearchEngine:
         return results[:limit]
 
     async def search_error_patterns(
-        self, query: str, error_type: str | None = None, limit: int = 10
+        self,
+        query: str,
+        error_type: str | None = None,
+        limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Search for error patterns and debugging contexts"""
+        """Search for error patterns and debugging contexts."""
         results = []
 
         if hasattr(self.reflection_db, "conn") and self.reflection_db.conn:
             cursor = self.reflection_db.conn.execute(
-                "SELECT id, content, project, timestamp, metadata FROM conversations"
+                "SELECT id, content, project, timestamp, metadata FROM conversations",
             )
             conversations = cursor.fetchall()
 
@@ -371,7 +385,7 @@ class EnhancedSearchEngine:
                                 "snippet": content[:500] + "..."
                                 if len(content) > 500
                                 else content,
-                            }
+                            },
                         )
 
         # Sort by relevance and limit results
@@ -379,11 +393,14 @@ class EnhancedSearchEngine:
         return results[:limit]
 
     async def search_temporal(
-        self, time_expression: str, query: str | None = None, limit: int = 10
+        self,
+        time_expression: str,
+        query: str | None = None,
+        limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Search conversations within a time range"""
+        """Search conversations within a time range."""
         start_time, end_time = self.temporal_parser.parse_time_expression(
-            time_expression
+            time_expression,
         )
 
         if not start_time or not end_time:
@@ -426,13 +443,13 @@ class EnhancedSearchEngine:
                         if len(content) > 500
                         else content,
                         "relevance": relevance,
-                    }
+                    },
                 )
 
         return results[:limit]
 
     def _calculate_code_relevance(self, pattern: dict[str, Any], query: str) -> float:
-        """Calculate relevance score for code patterns"""
+        """Calculate relevance score for code patterns."""
         relevance = 0.0
         query_lower = query.lower()
 
@@ -457,7 +474,7 @@ class EnhancedSearchEngine:
         return min(relevance, 1.0)
 
     def _calculate_error_relevance(self, pattern: dict[str, Any], query: str) -> float:
-        """Calculate relevance score for error patterns"""
+        """Calculate relevance score for error patterns."""
         relevance = 0.0
         query_lower = query.lower()
 
@@ -476,7 +493,7 @@ class EnhancedSearchEngine:
         return min(relevance, 1.0)
 
     def _calculate_text_relevance(self, content: str, query: str) -> float:
-        """Simple text relevance calculation"""
+        """Simple text relevance calculation."""
         query_lower = query.lower()
         content_lower = content.lower()
 

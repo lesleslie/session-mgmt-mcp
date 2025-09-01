@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""
-Memory and reflection management MCP tools.
+"""Memory and reflection management MCP tools.
 
 This module provides tools for storing, searching, and managing reflections and conversation memories.
 """
 
 from datetime import datetime
 
-from ..utils.logging import get_session_logger
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 logger = get_session_logger()
 
@@ -21,18 +20,20 @@ async def _get_reflection_database():
     global _reflection_db, _reflection_tools_available
 
     if _reflection_tools_available is False:
-        raise ImportError("Reflection tools not available")
+        msg = "Reflection tools not available"
+        raise ImportError(msg)
 
     if _reflection_db is None:
         try:
-            from ..reflection_tools import ReflectionDatabase
+            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
             _reflection_db = ReflectionDatabase()
             _reflection_tools_available = True
         except ImportError as e:
             _reflection_tools_available = False
+            msg = f"Reflection tools not available. Install dependencies: {e}"
             raise ImportError(
-                f"Reflection tools not available. Install dependencies: {e}"
+                msg,
             )
 
     return _reflection_db
@@ -69,7 +70,7 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
             output = []
             output.append("💾 Reflection stored successfully!")
             output.append(
-                f"📝 Content: {content[:100]}{'...' if len(content) > 100 else ''}"
+                f"📝 Content: {content[:100]}{'...' if len(content) > 100 else ''}",
             )
             if tags:
                 output.append(f"🏷️ Tags: {', '.join(tags)}")
@@ -77,16 +78,17 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
 
             logger.info("Reflection stored", content_length=len(content), tags=tags)
             return "\n".join(output)
-        else:
-            return "❌ Failed to store reflection"
+        return "❌ Failed to store reflection"
 
     except Exception as e:
-        logger.error("Error storing reflection", error=str(e))
+        logger.exception("Error storing reflection", error=str(e))
         return f"❌ Error storing reflection: {e}"
 
 
 async def _quick_search_impl(
-    query: str, min_score: float = 0.7, project: str | None = None
+    query: str,
+    min_score: float = 0.7,
+    project: str | None = None,
 ) -> str:
     """Implementation for quick_search tool."""
     if not _check_reflection_tools_available():
@@ -95,7 +97,10 @@ async def _quick_search_impl(
     try:
         db = await _get_reflection_database()
         results = await db.search_reflections(
-            query=query, project=project, limit=1, min_score=min_score
+            query=query,
+            project=project,
+            limit=1,
+            min_score=min_score,
         )
 
         output = []
@@ -105,7 +110,7 @@ async def _quick_search_impl(
             result = results[0]
             output.append("📊 Found results (showing top 1)")
             output.append(
-                f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}"
+                f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}",
             )
             if result.get("project"):
                 output.append(f"📁 Project: {result['project']}")
@@ -120,12 +125,14 @@ async def _quick_search_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error in quick search", error=str(e), query=query)
+        logger.exception("Error in quick search", error=str(e), query=query)
         return f"❌ Search error: {e}"
 
 
 async def _search_summary_impl(
-    query: str, min_score: float = 0.7, project: str | None = None
+    query: str,
+    min_score: float = 0.7,
+    project: str | None = None,
 ) -> str:
     """Implementation for search_summary tool."""
     if not _check_reflection_tools_available():
@@ -134,7 +141,10 @@ async def _search_summary_impl(
     try:
         db = await _get_reflection_database()
         results = await db.search_reflections(
-            query=query, project=project, limit=20, min_score=min_score
+            query=query,
+            project=project,
+            limit=20,
+            min_score=min_score,
         )
 
         output = []
@@ -153,7 +163,9 @@ async def _search_summary_impl(
             if len(projects) > 1:
                 output.append("📁 Project distribution:")
                 for proj, count in sorted(
-                    projects.items(), key=lambda x: x[1], reverse=True
+                    projects.items(),
+                    key=lambda x: x[1],
+                    reverse=True,
                 ):
                     output.append(f"   • {proj}: {count} results")
 
@@ -187,19 +199,21 @@ async def _search_summary_impl(
         else:
             output.append("🔍 No results found")
             output.append(
-                "💡 Try different search terms or lower the min_score threshold"
+                "💡 Try different search terms or lower the min_score threshold",
             )
 
         logger.info("Search summary generated", query=query, results_count=len(results))
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error generating search summary", error=str(e), query=query)
+        logger.exception("Error generating search summary", error=str(e), query=query)
         return f"❌ Search summary error: {e}"
 
 
 async def _search_by_file_impl(
-    file_path: str, limit: int = 10, project: str | None = None
+    file_path: str,
+    limit: int = 10,
+    project: str | None = None,
 ) -> str:
     """Implementation for search_by_file tool."""
     if not _check_reflection_tools_available():
@@ -208,7 +222,9 @@ async def _search_by_file_impl(
     try:
         db = await _get_reflection_database()
         results = await db.search_reflections(
-            query=file_path, project=project, limit=limit
+            query=file_path,
+            project=project,
+            limit=limit,
         )
 
         output = []
@@ -220,7 +236,7 @@ async def _search_by_file_impl(
 
             for i, result in enumerate(results, 1):
                 output.append(
-                    f"\n{i}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}"
+                    f"\n{i}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}",
                 )
                 if result.get("project"):
                     output.append(f"   📁 Project: {result['project']}")
@@ -231,16 +247,18 @@ async def _search_by_file_impl(
         else:
             output.append("🔍 No conversations found about this file")
             output.append(
-                "💡 The file might not have been discussed in previous sessions"
+                "💡 The file might not have been discussed in previous sessions",
             )
 
         logger.info(
-            "File search performed", file_path=file_path, results_count=len(results)
+            "File search performed",
+            file_path=file_path,
+            results_count=len(results),
         )
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error searching by file", error=str(e), file_path=file_path)
+        logger.exception("Error searching by file", error=str(e), file_path=file_path)
         return f"❌ File search error: {e}"
 
 
@@ -257,7 +275,9 @@ async def _search_by_concept_impl(
     try:
         db = await _get_reflection_database()
         results = await db.search_reflections(
-            query=concept, project=project, limit=limit
+            query=concept,
+            project=project,
+            limit=limit,
         )
 
         output = []
@@ -269,7 +289,7 @@ async def _search_by_concept_impl(
 
             for i, result in enumerate(results, 1):
                 output.append(
-                    f"\n{i}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}"
+                    f"\n{i}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}",
                 )
                 if result.get("project"):
                     output.append(f"   📁 Project: {result['project']}")
@@ -287,12 +307,14 @@ async def _search_by_concept_impl(
             output.append("💡 Try related terms or broader concepts")
 
         logger.info(
-            "Concept search performed", concept=concept, results_count=len(results)
+            "Concept search performed",
+            concept=concept,
+            results_count=len(results),
         )
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error searching by concept", error=str(e), concept=concept)
+        logger.exception("Error searching by concept", error=str(e), concept=concept)
         return f"❌ Concept search error: {e}"
 
 
@@ -316,7 +338,7 @@ async def _reflection_stats_impl() -> str:
             date_range = stats.get("date_range")
             if date_range:
                 output.append(
-                    f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}"
+                    f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}",
                 )
 
             recent_activity = stats.get("recent_activity", [])
@@ -327,7 +349,7 @@ async def _reflection_stats_impl() -> str:
 
             # Database health info
             output.append(
-                f"\n🏥 Database health: {'✅ Healthy' if stats.get('total_reflections', 0) > 0 else '⚠️ Empty'}"
+                f"\n🏥 Database health: {'✅ Healthy' if stats.get('total_reflections', 0) > 0 else '⚠️ Empty'}",
             )
 
         else:
@@ -338,7 +360,7 @@ async def _reflection_stats_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error getting reflection stats", error=str(e))
+        logger.exception("Error getting reflection stats", error=str(e))
         return f"❌ Stats error: {e}"
 
 
@@ -372,37 +394,43 @@ async def _reset_reflection_database_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.error("Error resetting reflection database", error=str(e))
+        logger.exception("Error resetting reflection database", error=str(e))
         return f"❌ Reset error: {e}"
 
 
-def register_memory_tools(mcp_server):
+def register_memory_tools(mcp_server) -> None:
     """Register all memory management tools with the MCP server."""
 
     @mcp_server.tool()
     async def store_reflection(content: str, tags: list[str] | None = None) -> str:
-        """Store an important insight or reflection for future reference"""
+        """Store an important insight or reflection for future reference."""
         return await _store_reflection_impl(content, tags)
 
     @mcp_server.tool()
     async def quick_search(
-        query: str, min_score: float = 0.7, project: str | None = None
+        query: str,
+        min_score: float = 0.7,
+        project: str | None = None,
     ) -> str:
-        """Quick search that returns only the count and top result for fast overview"""
+        """Quick search that returns only the count and top result for fast overview."""
         return await _quick_search_impl(query, min_score, project)
 
     @mcp_server.tool()
     async def search_summary(
-        query: str, min_score: float = 0.7, project: str | None = None
+        query: str,
+        min_score: float = 0.7,
+        project: str | None = None,
     ) -> str:
-        """Get aggregated insights from search results without individual result details"""
+        """Get aggregated insights from search results without individual result details."""
         return await _search_summary_impl(query, min_score, project)
 
     @mcp_server.tool()
     async def search_by_file(
-        file_path: str, limit: int = 10, project: str | None = None
+        file_path: str,
+        limit: int = 10,
+        project: str | None = None,
     ) -> str:
-        """Search for conversations that analyzed a specific file"""
+        """Search for conversations that analyzed a specific file."""
         return await _search_by_file_impl(file_path, limit, project)
 
     @mcp_server.tool()
@@ -412,15 +440,15 @@ def register_memory_tools(mcp_server):
         limit: int = 10,
         project: str | None = None,
     ) -> str:
-        """Search for conversations about a specific development concept"""
+        """Search for conversations about a specific development concept."""
         return await _search_by_concept_impl(concept, include_files, limit, project)
 
     @mcp_server.tool()
     async def reflection_stats() -> str:
-        """Get statistics about the reflection database"""
+        """Get statistics about the reflection database."""
         return await _reflection_stats_impl()
 
     @mcp_server.tool()
     async def reset_reflection_database() -> str:
-        """Reset the reflection database connection to fix lock issues"""
+        """Reset the reflection database connection to fix lock issues."""
         return await _reset_reflection_database_impl()

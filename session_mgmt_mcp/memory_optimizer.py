@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Memory Optimization for Session Management MCP Server
+"""Memory Optimization for Session Management MCP Server.
 
 Provides conversation consolidation, summarization, and memory compression capabilities.
 """
@@ -15,9 +14,9 @@ from .reflection_tools import ReflectionDatabase
 
 
 class ConversationSummarizer:
-    """Handles conversation summarization using various strategies"""
+    """Handles conversation summarization using various strategies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.summarization_strategies = {
             "extractive": self._extractive_summarization,
             "template_based": self._template_based_summarization,
@@ -25,7 +24,7 @@ class ConversationSummarizer:
         }
 
     def _extractive_summarization(self, content: str, max_sentences: int = 3) -> str:
-        """Extract most important sentences from conversation"""
+        """Extract most important sentences from conversation."""
         sentences = re.split(r"[.!?]+", content)
         sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
 
@@ -87,14 +86,14 @@ class ConversationSummarizer:
         return ". ".join(top_sentences) + "."
 
     def _template_based_summarization(self, content: str, max_length: int = 300) -> str:
-        """Create summary using templates based on content patterns"""
+        """Create summary using templates based on content patterns."""
         summary_parts = []
 
         # Detect code blocks
         code_blocks = re.findall(r"```[\w]*\n(.*?)\n```", content, re.DOTALL)
         if code_blocks:
             summary_parts.append(
-                f"Code discussion involving {len(code_blocks)} code block(s)"
+                f"Code discussion involving {len(code_blocks)} code block(s)",
             )
 
         # Detect errors/exceptions
@@ -163,7 +162,7 @@ class ConversationSummarizer:
         return full_summary or "General development discussion"
 
     def _keyword_based_summarization(self, content: str, max_keywords: int = 10) -> str:
-        """Create summary based on extracted keywords"""
+        """Create summary based on extracted keywords."""
         # Clean content
         content_clean = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
         content_clean = re.sub(r"`[^`]+`", "", content_clean)
@@ -255,9 +254,11 @@ class ConversationSummarizer:
         return f"Keywords: {', '.join(keywords)}" if keywords else "General discussion"
 
     def summarize_conversation(
-        self, content: str, strategy: str = "template_based"
+        self,
+        content: str,
+        strategy: str = "template_based",
     ) -> str:
-        """Summarize a conversation using the specified strategy"""
+        """Summarize a conversation using the specified strategy."""
         if strategy not in self.summarization_strategies:
             strategy = "template_based"
 
@@ -269,15 +270,16 @@ class ConversationSummarizer:
 
 
 class ConversationClusterer:
-    """Groups related conversations for consolidation"""
+    """Groups related conversations for consolidation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.similarity_threshold = 0.6
 
     def cluster_conversations(
-        self, conversations: list[dict[str, Any]]
+        self,
+        conversations: list[dict[str, Any]],
     ) -> list[list[dict[str, Any]]]:
-        """Group conversations into clusters based on similarity"""
+        """Group conversations into clusters based on similarity."""
         if not conversations:
             return []
 
@@ -307,9 +309,11 @@ class ConversationClusterer:
         return clusters
 
     def _calculate_similarity(
-        self, conv1: dict[str, Any], conv2: dict[str, Any]
+        self,
+        conv1: dict[str, Any],
+        conv2: dict[str, Any],
     ) -> float:
-        """Calculate similarity between two conversations"""
+        """Calculate similarity between two conversations."""
         similarity = 0.0
 
         # Project similarity
@@ -339,9 +343,9 @@ class ConversationClusterer:
 
 
 class RetentionPolicyManager:
-    """Manages conversation retention policies"""
+    """Manages conversation retention policies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.default_policies = {
             "max_age_days": 365,  # Keep conversations for 1 year
             "max_conversations": 10000,  # Maximum number of conversations
@@ -359,7 +363,7 @@ class RetentionPolicyManager:
         }
 
     def calculate_importance_score(self, conversation: dict[str, Any]) -> float:
-        """Calculate importance score for a conversation"""
+        """Calculate importance score for a conversation."""
         score = 0.0
         content = conversation.get("content", "")
 
@@ -404,7 +408,7 @@ class RetentionPolicyManager:
         conversations: list[dict[str, Any]],
         policy: dict[str, Any] | None = None,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """Determine which conversations to keep vs consolidate/delete"""
+        """Determine which conversations to keep vs consolidate/delete."""
         if not policy:
             policy = self.default_policies.copy()
 
@@ -413,7 +417,9 @@ class RetentionPolicyManager:
 
         # Sort conversations by timestamp (newest first)
         sorted_conversations = sorted(
-            conversations, key=lambda x: x.get("timestamp", ""), reverse=True
+            conversations,
+            key=lambda x: x.get("timestamp", ""),
+            reverse=True,
         )
 
         cutoff_date = datetime.now() - timedelta(days=policy["consolidation_age_days"])
@@ -449,9 +455,9 @@ class RetentionPolicyManager:
 
 
 class MemoryOptimizer:
-    """Main class for memory optimization and compression"""
+    """Main class for memory optimization and compression."""
 
-    def __init__(self, reflection_db: ReflectionDatabase):
+    def __init__(self, reflection_db: ReflectionDatabase) -> None:
         self.reflection_db = reflection_db
         self.summarizer = ConversationSummarizer()
         self.clusterer = ConversationClusterer()
@@ -467,15 +473,17 @@ class MemoryOptimizer:
         }
 
     async def compress_memory(
-        self, policy: dict[str, Any] | None = None, dry_run: bool = False
+        self,
+        policy: dict[str, Any] | None = None,
+        dry_run: bool = False,
     ) -> dict[str, Any]:
-        """Main method to compress conversation memory"""
+        """Main method to compress conversation memory."""
         if not hasattr(self.reflection_db, "conn") or not self.reflection_db.conn:
             return {"error": "Database not available"}
 
         # Get all conversations
         cursor = self.reflection_db.conn.execute(
-            "SELECT id, content, project, timestamp, metadata FROM conversations ORDER BY timestamp DESC"
+            "SELECT id, content, project, timestamp, metadata FROM conversations ORDER BY timestamp DESC",
         )
         conversations = []
         for row in cursor.fetchall():
@@ -488,7 +496,7 @@ class MemoryOptimizer:
                     "timestamp": timestamp,
                     "metadata": json.loads(metadata) if metadata else {},
                     "original_size": len(content),
-                }
+                },
             )
 
         if not conversations:
@@ -500,7 +508,8 @@ class MemoryOptimizer:
         # Apply retention policy
         keep_conversations, consolidate_conversations = (
             self.retention_manager.get_conversations_for_retention(
-                conversations, policy
+                conversations,
+                policy,
             )
         )
 
@@ -525,19 +534,20 @@ class MemoryOptimizer:
         )
         total_compressed_size = 0
 
-        for i, cluster in enumerate(clusters):
+        for _i, cluster in enumerate(clusters):
             if len(cluster) <= 1:
                 continue  # Skip single-conversation clusters
 
             # Create consolidated summary
             combined_content = "\n\n---\n\n".join([conv["content"] for conv in cluster])
             summary = self.summarizer.summarize_conversation(
-                combined_content, "template_based"
+                combined_content,
+                "template_based",
             )
 
             # Create consolidated metadata
             projects = list(
-                set([conv["project"] for conv in cluster if conv["project"]])
+                {conv["project"] for conv in cluster if conv["project"]},
             )
             timestamps = [conv["timestamp"] for conv in cluster]
             min_time = min(timestamps) if timestamps else ""
@@ -577,18 +587,20 @@ class MemoryOptimizer:
                 ),
                 "space_saved_bytes": results["space_saved_estimate"],
                 "compression_ratio": results["compression_ratio"],
-            }
+            },
         )
 
         return results
 
     async def _create_consolidated_conversation(
-        self, consolidated_conv: dict[str, Any], original_cluster: list[dict[str, Any]]
-    ):
-        """Create a new consolidated conversation and remove originals"""
+        self,
+        consolidated_conv: dict[str, Any],
+        original_cluster: list[dict[str, Any]],
+    ) -> None:
+        """Create a new consolidated conversation and remove originals."""
         # Create new consolidated conversation
         consolidated_id = hashlib.md5(
-            f"consolidated_{datetime.now().isoformat()}".encode()
+            f"consolidated_{datetime.now().isoformat()}".encode(),
         ).hexdigest()
 
         metadata = {
@@ -620,18 +632,19 @@ class MemoryOptimizer:
         if original_ids:
             placeholders = ",".join(["?" for _ in original_ids])
             self.reflection_db.conn.execute(
-                f"DELETE FROM conversations WHERE id IN ({placeholders})", original_ids
+                f"DELETE FROM conversations WHERE id IN ({placeholders})",
+                original_ids,
             )
 
         # Commit changes
         self.reflection_db.conn.commit()
 
     async def get_compression_stats(self) -> dict[str, Any]:
-        """Get compression statistics"""
+        """Get compression statistics."""
         return self.compression_stats.copy()
 
     async def set_retention_policy(self, policy: dict[str, Any]) -> dict[str, Any]:
-        """Update retention policy settings"""
+        """Update retention policy settings."""
         updated_policy = self.retention_manager.default_policies.copy()
         updated_policy.update(policy)
 

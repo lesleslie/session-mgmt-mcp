@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Lazy loading utilities for optional dependencies.
+"""Lazy loading utilities for optional dependencies.
 
 This module provides lazy loading for heavy or optional dependencies to improve
 startup performance and handle missing dependencies gracefully.
@@ -9,7 +8,7 @@ startup performance and handle missing dependencies gracefully.
 import importlib
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, Never
 
 from .logging import get_session_logger
 
@@ -24,7 +23,7 @@ class LazyImport:
         module_name: str,
         fallback_value: Any = None,
         import_error_msg: str | None = None,
-    ):
+    ) -> None:
         self.module_name = module_name
         self.fallback_value = fallback_value
         self.import_error_msg = import_error_msg
@@ -40,12 +39,12 @@ class LazyImport:
             if self.fallback_value is not None:
                 return getattr(self.fallback_value, name, None)
             raise ImportError(
-                self.import_error_msg or f"Module {self.module_name} not available"
+                self.import_error_msg or f"Module {self.module_name} not available",
             )
 
         return getattr(self._module, name)
 
-    def _try_import(self):
+    def _try_import(self) -> None:
         """Attempt to import the module."""
         self._import_attempted = True
         try:
@@ -71,7 +70,7 @@ class LazyImport:
 class LazyLoader:
     """Manages lazy loading of multiple optional dependencies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._loaders: dict[str, LazyImport] = {}
 
     def add_import(
@@ -118,7 +117,9 @@ tiktoken = lazy_loader.add_import(
 )
 
 duckdb = lazy_loader.add_import(
-    "duckdb", "duckdb", error_msg="DuckDB not available. Install with: uv add duckdb"
+    "duckdb",
+    "duckdb",
+    error_msg="DuckDB not available. Install with: uv add duckdb",
 )
 
 numpy = lazy_loader.add_import(
@@ -128,7 +129,7 @@ numpy = lazy_loader.add_import(
 )
 
 
-def require_dependency(dependency_name: str, install_hint: str = None):
+def require_dependency(dependency_name: str, install_hint: str | None = None):
     """Decorator to require a specific dependency for a function."""
 
     def decorator(func: Callable) -> Callable:
@@ -156,7 +157,7 @@ def optional_dependency(dependency_name: str, fallback_result: Any = None):
             loader = lazy_loader.get_import(dependency_name)
             if not loader or not loader.available:
                 logger.info(
-                    f"Function {func.__name__} skipped - {dependency_name} not available"
+                    f"Function {func.__name__} skipped - {dependency_name} not available",
                 )
                 return fallback_result
             return func(*args, **kwargs)
@@ -169,13 +170,14 @@ def optional_dependency(dependency_name: str, fallback_result: Any = None):
 class MockModule:
     """Mock module that provides fallback implementations."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
     def __getattr__(self, name: str):
-        def mock_function(*args, **kwargs):
+        def mock_function(*args, **kwargs) -> Never:
+            msg = f"Mock function {name} called - {self.name} not available"
             raise ImportError(
-                f"Mock function {name} called - {self.name} not available"
+                msg,
             )
 
         return mock_function
@@ -185,7 +187,7 @@ def create_embedding_mock():
     """Create a mock for embedding functionality."""
 
     class MockEmbedding:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             pass
 
         def encode(self, texts, *args, **kwargs):
@@ -241,7 +243,7 @@ def get_dependency_status() -> dict[str, dict[str, Any]]:
     return status
 
 
-def log_dependency_status():
+def log_dependency_status() -> None:
     """Log the current dependency status."""
     status = get_dependency_status()
     summary = status["_summary"]

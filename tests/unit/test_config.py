@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unit tests for Configuration Management
-"""
+"""Unit tests for Configuration Management."""
 
 import os
 import tempfile
@@ -26,7 +24,7 @@ from session_mgmt_mcp.config import (
 
 @pytest.fixture
 def temp_project_dir():
-    """Create a temporary project directory"""
+    """Create a temporary project directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         project_dir = Path(temp_dir)
         yield project_dir
@@ -34,7 +32,7 @@ def temp_project_dir():
 
 @pytest.fixture
 def sample_pyproject_toml():
-    """Sample pyproject.toml content for testing"""
+    """Sample pyproject.toml content for testing."""
     return """
 [project]
 name = "session-mgmt-mcp"
@@ -81,10 +79,10 @@ max_requests_per_minute = 50
 
 
 class TestConfigDataClasses:
-    """Test configuration data classes"""
+    """Test configuration data classes."""
 
     def test_database_config_defaults(self):
-        """Test DatabaseConfig default values"""
+        """Test DatabaseConfig default values."""
         config = DatabaseConfig()
 
         assert config.path == "~/.claude/data/reflection.duckdb"
@@ -93,7 +91,7 @@ class TestConfigDataClasses:
         assert config.enable_full_text_search is True
 
     def test_search_config_defaults(self):
-        """Test SearchConfig default values"""
+        """Test SearchConfig default values."""
         config = SearchConfig()
 
         assert config.enable_semantic_search is True
@@ -102,7 +100,7 @@ class TestConfigDataClasses:
         assert config.max_facet_values == 50
 
     def test_token_optimization_config_defaults(self):
-        """Test TokenOptimizationConfig default values"""
+        """Test TokenOptimizationConfig default values."""
         config = TokenOptimizationConfig()
 
         assert config.enable_optimization is True
@@ -111,7 +109,7 @@ class TestConfigDataClasses:
         assert config.track_usage is True
 
     def test_session_config_defaults(self):
-        """Test SessionConfig default values"""
+        """Test SessionConfig default values."""
         config = SessionConfig()
 
         assert config.auto_checkpoint_interval == 1800  # 30 minutes
@@ -120,7 +118,7 @@ class TestConfigDataClasses:
         assert "git_commit" in config.default_trusted_operations
 
     def test_integration_config_defaults(self):
-        """Test IntegrationConfig default values"""
+        """Test IntegrationConfig default values."""
         config = IntegrationConfig()
 
         assert config.enable_crackerjack is True
@@ -128,7 +126,7 @@ class TestConfigDataClasses:
         assert config.global_workspace_path == "~/Projects/claude"
 
     def test_logging_config_defaults(self):
-        """Test LoggingConfig default values"""
+        """Test LoggingConfig default values."""
         config = LoggingConfig()
 
         assert config.level == "INFO"
@@ -136,7 +134,7 @@ class TestConfigDataClasses:
         assert config.log_file_path == "~/.claude/logs/session-mgmt.log"
 
     def test_security_config_defaults(self):
-        """Test SecurityConfig default values"""
+        """Test SecurityConfig default values."""
         config = SecurityConfig()
 
         assert config.anonymize_paths is False
@@ -146,11 +144,10 @@ class TestConfigDataClasses:
 
 
 class TestConfigLoader:
-    """Test ConfigLoader functionality"""
+    """Test ConfigLoader functionality."""
 
     def test_find_project_root(self, temp_project_dir):
-        """Test project root detection"""
-
+        """Test project root detection."""
         # Create pyproject.toml in temp directory
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text("""
@@ -169,8 +166,7 @@ version = "0.1.0"
             assert loader.project_root == temp_project_dir
 
     def test_load_default_config(self, temp_project_dir):
-        """Test loading default configuration when no pyproject.toml exists"""
-
+        """Test loading default configuration when no pyproject.toml exists."""
         loader = ConfigLoader(temp_project_dir)
         config = loader.load_config()
 
@@ -180,8 +176,7 @@ version = "0.1.0"
         assert config.database.enable_multi_project is True
 
     def test_load_config_from_toml(self, temp_project_dir, sample_pyproject_toml):
-        """Test loading configuration from pyproject.toml"""
-
+        """Test loading configuration from pyproject.toml."""
         # Write sample pyproject.toml
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text(sample_pyproject_toml)
@@ -216,8 +211,7 @@ version = "0.1.0"
         assert config.security.enable_rate_limiting is False
 
     def test_underscore_variant_support(self, temp_project_dir):
-        """Test support for underscore variant of tool section"""
-
+        """Test support for underscore variant of tool section."""
         toml_content = """
 [tool.session_mgmt_mcp]
 debug = true
@@ -238,8 +232,7 @@ connection_timeout = 60
         assert config.database.connection_timeout == 60
 
     def test_path_expansion(self, temp_project_dir, sample_pyproject_toml):
-        """Test user path expansion"""
-
+        """Test user path expansion."""
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text(sample_pyproject_toml)
 
@@ -251,8 +244,7 @@ connection_timeout = 60
         assert "~" not in config.database.path  # Should be expanded
 
     def test_config_validation(self, temp_project_dir):
-        """Test configuration validation"""
-
+        """Test configuration validation."""
         toml_content = """
 [tool.session-mgmt-mcp]
 server_port = 99999  # Invalid port
@@ -278,11 +270,10 @@ level = "INVALID_LEVEL"  # Invalid log level
 
 
 class TestEnvironmentVariables:
-    """Test environment variable configuration"""
+    """Test environment variable configuration."""
 
     def test_env_var_overrides(self, temp_project_dir):
-        """Test environment variable overrides"""
-
+        """Test environment variable overrides."""
         env_vars = {
             "SESSION_MGMT_HOST": "192.168.1.100",
             "SESSION_MGMT_PORT": "5000",
@@ -309,8 +300,7 @@ class TestEnvironmentVariables:
         assert config.logging.level == "WARNING"
 
     def test_env_var_type_conversion(self, temp_project_dir):
-        """Test environment variable type conversion"""
-
+        """Test environment variable type conversion."""
         env_vars = {
             "SESSION_MGMT_PORT": "not_a_number",
             "SESSION_MGMT_DEBUG": "invalid_boolean",
@@ -327,8 +317,7 @@ class TestEnvironmentVariables:
         assert config.database.connection_timeout == 30  # Default
 
     def test_boolean_env_var_parsing(self, temp_project_dir):
-        """Test boolean environment variable parsing"""
-
+        """Test boolean environment variable parsing."""
         # Test various boolean representations
         boolean_tests = [
             ("true", True),
@@ -354,11 +343,10 @@ class TestEnvironmentVariables:
 
 
 class TestConfigCaching:
-    """Test configuration caching"""
+    """Test configuration caching."""
 
     def test_config_caching(self, temp_project_dir):
-        """Test that configuration is cached"""
-
+        """Test that configuration is cached."""
         loader = ConfigLoader(temp_project_dir)
 
         # First load
@@ -371,8 +359,7 @@ class TestConfigCaching:
         assert config1 is config2
 
     def test_config_reload(self, temp_project_dir, sample_pyproject_toml):
-        """Test configuration reloading"""
-
+        """Test configuration reloading."""
         # Create initial pyproject.toml
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text(sample_pyproject_toml)
@@ -385,7 +372,8 @@ class TestConfigCaching:
 
         # Update pyproject.toml
         updated_toml = sample_pyproject_toml.replace(
-            "server_port = 3001", "server_port = 4001"
+            "server_port = 3001",
+            "server_port = 4001",
         )
         pyproject_path.write_text(updated_toml)
 
@@ -398,11 +386,10 @@ class TestConfigCaching:
 
 
 class TestGlobalConfigFunctions:
-    """Test global configuration functions"""
+    """Test global configuration functions."""
 
     def test_get_config_function(self, temp_project_dir):
-        """Test get_config() global function"""
-
+        """Test get_config() global function."""
         with patch("session_mgmt_mcp.config.ConfigLoader") as mock_loader_class:
             mock_loader = mock_loader_class.return_value
             mock_config = SessionMgmtConfig()
@@ -422,18 +409,16 @@ class TestGlobalConfigFunctions:
             assert config2 is mock_config
 
     def test_reload_config_function(self, temp_project_dir):
-        """Test reload_config() global function"""
-
+        """Test reload_config() global function."""
         config = reload_config()
         assert isinstance(config, SessionMgmtConfig)
 
 
 class TestConfigExampleGeneration:
-    """Test configuration example generation"""
+    """Test configuration example generation."""
 
     def test_get_example_config(self, temp_project_dir):
-        """Test example configuration generation"""
-
+        """Test example configuration generation."""
         loader = ConfigLoader(temp_project_dir)
         example = loader.get_example_config()
 
@@ -449,11 +434,10 @@ class TestConfigExampleGeneration:
 
 
 class TestErrorHandling:
-    """Test error handling in configuration"""
+    """Test error handling in configuration."""
 
     def test_missing_tomllib(self, temp_project_dir, sample_pyproject_toml):
-        """Test handling when tomllib is not available"""
-
+        """Test handling when tomllib is not available."""
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text(sample_pyproject_toml)
 
@@ -465,8 +449,7 @@ class TestErrorHandling:
             assert config.server_port == 3000  # Default, not the 3001 from TOML
 
     def test_corrupted_toml_file(self, temp_project_dir):
-        """Test handling of corrupted TOML file"""
-
+        """Test handling of corrupted TOML file."""
         # Create invalid TOML
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text("""
@@ -484,8 +467,7 @@ debug = true
         assert config.debug is False
 
     def test_io_error_handling(self, temp_project_dir):
-        """Test handling of I/O errors"""
-
+        """Test handling of I/O errors."""
         # Create a file that can't be read
         pyproject_path = temp_project_dir / "pyproject.toml"
         pyproject_path.write_text("[project]\nname = 'test'")
@@ -501,11 +483,10 @@ debug = true
 
 
 class TestConfigIntegration:
-    """Test configuration integration scenarios"""
+    """Test configuration integration scenarios."""
 
     def test_mixed_config_sources(self, temp_project_dir):
-        """Test mixing TOML and environment variable configuration"""
-
+        """Test mixing TOML and environment variable configuration."""
         # Create TOML with some settings
         toml_content = """
 [tool.session-mgmt-mcp]
@@ -537,8 +518,7 @@ connection_timeout = 45
         assert config.database.connection_timeout == 45  # TOML only
 
     def test_config_with_all_sections(self, temp_project_dir):
-        """Test configuration with all possible sections"""
-
+        """Test configuration with all possible sections."""
         complete_toml = """
 [project]
 name = "session-mgmt-mcp"

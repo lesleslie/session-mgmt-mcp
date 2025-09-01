@@ -1,5 +1,4 @@
-"""
-Crackerjack Integration module for progress tracking and test monitoring.
+"""Crackerjack Integration module for progress tracking and test monitoring.
 
 This module provides deep integration with Crackerjack for:
 - Progress tracking output parsing for memory enrichment
@@ -25,22 +24,34 @@ logger = logging.getLogger(__name__)
 
 
 class CrackerjackCommand(Enum):
-    """Supported Crackerjack commands"""
+    """Supported Crackerjack commands."""
 
+    # Core quality commands
+    ANALYZE = "analyze"  # Comprehensive analysis command
     CHECK = "check"
     TEST = "test"
-    FORMAT = "format"
     LINT = "lint"
+    FORMAT = "format"
+    TYPECHECK = "typecheck"  # Type checking support
+
+    # Security and complexity
     SECURITY = "security"
     COMPLEXITY = "complexity"
     COVERAGE = "coverage"
+
+    # Build and maintenance
     BUILD = "build"
     CLEAN = "clean"
+
+    # Documentation
     DOCS = "docs"
+
+    # Release management
+    RELEASE = "release"  # Release command support
 
 
 class TestStatus(Enum):
-    """Test execution status"""
+    """Test execution status."""
 
     PASSED = "passed"
     FAILED = "failed"
@@ -51,7 +62,7 @@ class TestStatus(Enum):
 
 
 class QualityMetric(Enum):
-    """Quality metrics tracked"""
+    """Quality metrics tracked."""
 
     CODE_COVERAGE = "coverage"
     COMPLEXITY = "complexity"
@@ -63,7 +74,7 @@ class QualityMetric(Enum):
 
 @dataclass
 class CrackerjackResult:
-    """Result of Crackerjack command execution"""
+    """Result of Crackerjack command execution."""
 
     command: str
     exit_code: int
@@ -80,7 +91,7 @@ class CrackerjackResult:
 
 @dataclass
 class TestResult:
-    """Individual test result information"""
+    """Individual test result information."""
 
     test_id: str
     test_name: str
@@ -96,7 +107,7 @@ class TestResult:
 
 @dataclass
 class ProgressSnapshot:
-    """Progress tracking snapshot"""
+    """Progress tracking snapshot."""
 
     timestamp: datetime
     project_path: str
@@ -112,21 +123,21 @@ class ProgressSnapshot:
 
 
 class CrackerjackOutputParser:
-    """Parses Crackerjack output for structured data extraction"""
+    """Parses Crackerjack output for structured data extraction."""
 
-    def __init__(self):
-        """Initialize output parser"""
+    def __init__(self) -> None:
+        """Initialize output parser."""
         self.patterns = {
             # Test results patterns
             "pytest_result": re.compile(
-                r"(\w+\.py)::\s*(\w+)\s*(PASSED|FAILED|SKIPPED|ERROR|XFAIL|XPASS)\s*(?:\[(\d+%)\])?\s*(?:\((.+)\))?"
+                r"(\w+\.py)::\s*(\w+)\s*(PASSED|FAILED|SKIPPED|ERROR|XFAIL|XPASS)\s*(?:\[(\d+%)\])?\s*(?:\((.+)\))?",
             ),
             "pytest_summary": re.compile(r"=+ (.+) =+"),
             "pytest_coverage": re.compile(r"TOTAL\s+\d+\s+\d+\s+(\d+)%"),
             # Lint results patterns
             "ruff_error": re.compile(r"(\S+):(\d+):(\d+):\s*(\w+):\s*(.+)"),
             "pyright_error": re.compile(
-                r"(\S+):(\d+):(\d+)\s*-\s*(error|warning|info):\s*(.+)"
+                r"(\S+):(\d+):(\d+)\s*-\s*(error|warning|info):\s*(.+)",
             ),
             # Security patterns
             "bandit_issue": re.compile(r">> Issue: \[([^\]]+)\]\s*(.+)"),
@@ -140,12 +151,27 @@ class CrackerjackOutputParser:
             "percentage": re.compile(r"(\d+(?:\.\d+)?)%"),
             "task_completion": re.compile(r"✅\s*(.+)|PASSED\s*(.+)|SUCCESS\s*(.+)"),
             "task_failure": re.compile(r"❌\s*(.+)|FAILED\s*(.+)|ERROR\s*(.+)"),
+            # New crackerjack v0.31.4+ patterns
+            "ai_agent_action": re.compile(r"🤖\s*AI Agent:\s*(.+)"),
+            "quality_gate": re.compile(r"Quality Gate:\s*(\w+)\s*\((\d+)%\)"),
+            "release_info": re.compile(r"Release:\s*(.+)\s*→\s*(.+)"),
+            "typecheck_error": re.compile(
+                r"(\S+):(\d+):(\d+)\s*-\s*(error|warning):\s*(.+)"
+            ),
+            # Enhanced progress patterns
+            "stage_progress": re.compile(r"Stage\s+(\d+)/(\d+):\s*(.+)"),
+            "eta_estimate": re.compile(r"ETA:\s*(\d+m\s*\d+s|\d+s)"),
+            "crackerjack_stage": re.compile(r"🔧\s*(.+)\s*\.\.\.\s*(.+)"),
+            "auto_fix": re.compile(r"🔧\s*Auto-fixing:\s*(.+)"),
         }
 
     def parse_output(
-        self, command: str, stdout: str, stderr: str
+        self,
+        command: str,
+        stdout: str,
+        stderr: str,
     ) -> tuple[dict[str, Any], list[str]]:
-        """Parse Crackerjack output and extract insights"""
+        """Parse Crackerjack output and extract insights."""
         parsed_data = {
             "command": command,
             "test_results": [],
@@ -190,7 +216,7 @@ class CrackerjackOutputParser:
         return parsed_data, memory_insights
 
     def _parse_test_output(self, output: str) -> dict[str, Any]:
-        """Parse pytest output for test results"""
+        """Parse pytest output for test results."""
         data = {"test_results": [], "test_summary": {}}
 
         lines = output.split("\n")
@@ -207,7 +233,7 @@ class CrackerjackOutputParser:
                         "status": status.lower(),
                         "coverage": coverage,
                         "duration": duration,
-                    }
+                    },
                 )
 
             # Summary lines
@@ -220,7 +246,7 @@ class CrackerjackOutputParser:
         return data
 
     def _parse_lint_output(self, output: str) -> dict[str, Any]:
-        """Parse lint output for code quality issues"""
+        """Parse lint output for code quality issues."""
         data = {"lint_issues": [], "lint_summary": {}}
 
         lines = output.split("\n")
@@ -239,7 +265,7 @@ class CrackerjackOutputParser:
                         "column": int(col_num),
                         "type": error_type,
                         "message": message,
-                    }
+                    },
                 )
                 total_errors += 1
 
@@ -255,7 +281,7 @@ class CrackerjackOutputParser:
                         "column": int(col_num),
                         "type": severity,
                         "message": message,
-                    }
+                    },
                 )
                 total_errors += 1
 
@@ -263,7 +289,7 @@ class CrackerjackOutputParser:
         return data
 
     def _parse_security_output(self, output: str) -> dict[str, Any]:
-        """Parse bandit security scan output"""
+        """Parse bandit security scan output."""
         data = {"security_issues": [], "security_summary": {}}
 
         lines = output.split("\n")
@@ -291,7 +317,7 @@ class CrackerjackOutputParser:
         return data
 
     def _parse_coverage_output(self, output: str) -> dict[str, Any]:
-        """Parse coverage report output"""
+        """Parse coverage report output."""
         data = {"coverage_data": {}, "coverage_summary": {}}
 
         lines = output.split("\n")
@@ -316,7 +342,7 @@ class CrackerjackOutputParser:
         return data
 
     def _parse_complexity_output(self, output: str) -> dict[str, Any]:
-        """Parse complexity analysis output"""
+        """Parse complexity analysis output."""
         data = {"complexity_data": {}, "complexity_summary": {}}
 
         lines = output.split("\n")
@@ -343,7 +369,7 @@ class CrackerjackOutputParser:
         return data
 
     def _parse_progress_output(self, output: str) -> dict[str, Any]:
-        """Parse progress indicators from output"""
+        """Parse progress indicators from output."""
         data = {"progress_info": {}}
 
         lines = output.split("\n")
@@ -389,13 +415,13 @@ class CrackerjackOutputParser:
                 "percentage": current_percentage,
                 "completed_tasks": completed_tasks,
                 "failed_tasks": failed_tasks,
-            }
+            },
         )
 
         return data
 
     def _extract_test_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from test results"""
+        """Extract memory insights from test results."""
         insights = []
         test_results = parsed_data.get("test_results", [])
 
@@ -407,28 +433,28 @@ class CrackerjackOutputParser:
             if total > 0:
                 pass_rate = (passed / total) * 100
                 insights.append(
-                    f"Test suite: {passed}/{total} tests passed ({pass_rate:.1f}% pass rate)"
+                    f"Test suite: {passed}/{total} tests passed ({pass_rate:.1f}% pass rate)",
                 )
 
                 if failed > 0:
-                    failed_files = set(
+                    failed_files = {
                         t["file"] for t in test_results if t["status"] == "failed"
-                    )
+                    }
                     insights.append(
-                        f"Test failures found in {len(failed_files)} files: {', '.join(failed_files)}"
+                        f"Test failures found in {len(failed_files)} files: {', '.join(failed_files)}",
                     )
 
                 if pass_rate == 100:
                     insights.append("All tests passing - code quality is stable")
                 elif pass_rate < 80:
                     insights.append(
-                        "Test pass rate below 80% - investigate failing tests"
+                        "Test pass rate below 80% - investigate failing tests",
                     )
 
         return insights
 
     def _extract_lint_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from lint results"""
+        """Extract memory insights from lint results."""
         insights = []
         lint_issues = parsed_data.get("lint_issues", [])
 
@@ -456,7 +482,7 @@ class CrackerjackOutputParser:
             top_files = sorted(by_file.items(), key=lambda x: x[1], reverse=True)[:3]
             if top_files and top_files[0][1] > 5:
                 insights.append(
-                    f"Files needing attention: {top_files[0][0]} ({top_files[0][1]} issues)"
+                    f"Files needing attention: {top_files[0][0]} ({top_files[0][1]} issues)",
                 )
         else:
             insights.append("Code quality: No lint issues found - code is clean")
@@ -464,7 +490,7 @@ class CrackerjackOutputParser:
         return insights
 
     def _extract_security_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from security scan"""
+        """Extract memory insights from security scan."""
         insights = []
         security_issues = parsed_data.get("security_issues", [])
 
@@ -475,24 +501,24 @@ class CrackerjackOutputParser:
             )
 
             insights.append(
-                f"Security scan: {total_issues} potential security issues found"
+                f"Security scan: {total_issues} potential security issues found",
             )
 
             if high_severity > 0:
                 insights.append(
-                    f"⚠️ {high_severity} high-severity security issues require immediate attention"
+                    f"⚠️ {high_severity} high-severity security issues require immediate attention",
                 )
             else:
                 insights.append("No high-severity security issues detected")
         else:
             insights.append(
-                "Security scan: No security issues detected - code appears secure"
+                "Security scan: No security issues detected - code appears secure",
             )
 
         return insights
 
     def _extract_coverage_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from coverage data"""
+        """Extract memory insights from coverage data."""
         insights = []
         coverage_summary = parsed_data.get("coverage_summary", {})
 
@@ -506,17 +532,17 @@ class CrackerjackOutputParser:
                 insights.append("Good test coverage - consider adding more tests")
             elif coverage >= 60:
                 insights.append(
-                    "Moderate test coverage - significant testing gaps exist"
+                    "Moderate test coverage - significant testing gaps exist",
                 )
             else:
                 insights.append(
-                    "Low test coverage - critical testing gaps need attention"
+                    "Low test coverage - critical testing gaps need attention",
                 )
 
         return insights
 
     def _extract_complexity_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from complexity analysis"""
+        """Extract memory insights from complexity analysis."""
         insights = []
         complexity_summary = parsed_data.get("complexity_summary", {})
 
@@ -527,20 +553,20 @@ class CrackerjackOutputParser:
             if total_files > 0:
                 complexity_rate = (high_complexity / total_files) * 100
                 insights.append(
-                    f"Code complexity: {high_complexity}/{total_files} files have high complexity ({complexity_rate:.1f}%)"
+                    f"Code complexity: {high_complexity}/{total_files} files have high complexity ({complexity_rate:.1f}%)",
                 )
 
                 if complexity_rate == 0:
                     insights.append("Code complexity is well managed")
                 elif complexity_rate > 20:
                     insights.append(
-                        "Consider refactoring high-complexity files for maintainability"
+                        "Consider refactoring high-complexity files for maintainability",
                     )
 
         return insights
 
     def _extract_progress_insights(self, parsed_data: dict[str, Any]) -> list[str]:
-        """Extract memory insights from progress information"""
+        """Extract memory insights from progress information."""
         insights = []
         progress_info = parsed_data.get("progress_info", {})
 
@@ -553,7 +579,7 @@ class CrackerjackOutputParser:
 
         if failed_tasks:
             insights.append(
-                f"⚠️ {len(failed_tasks)} tasks failed: {', '.join(failed_tasks[:3])}"
+                f"⚠️ {len(failed_tasks)} tasks failed: {', '.join(failed_tasks[:3])}",
             )
 
         if percentage > 0:
@@ -563,19 +589,19 @@ class CrackerjackOutputParser:
 
 
 class CrackerjackIntegration:
-    """Main integration class for Crackerjack command execution and monitoring"""
+    """Main integration class for Crackerjack command execution and monitoring."""
 
-    def __init__(self, db_path: str | None = None):
-        """Initialize Crackerjack integration"""
+    def __init__(self, db_path: str | None = None) -> None:
+        """Initialize Crackerjack integration."""
         self.db_path = db_path or str(
-            Path.home() / ".claude" / "data" / "crackerjack_integration.db"
+            Path.home() / ".claude" / "data" / "crackerjack_integration.db",
         )
         self.parser = CrackerjackOutputParser()
         self._lock = threading.Lock()
         self._init_database()
 
-    def _init_database(self):
-        """Initialize SQLite database for Crackerjack integration"""
+    def _init_database(self) -> None:
+        """Initialize SQLite database for Crackerjack integration."""
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -640,31 +666,37 @@ class CrackerjackIntegration:
 
             # Create indices
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_results_timestamp ON crackerjack_results(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_results_timestamp ON crackerjack_results(timestamp)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_results_command ON crackerjack_results(command)"
+                "CREATE INDEX IF NOT EXISTS idx_results_command ON crackerjack_results(command)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_test_results_status ON test_results(status)"
+                "CREATE INDEX IF NOT EXISTS idx_test_results_status ON test_results(status)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_progress_project ON progress_snapshots(project_path)"
+                "CREATE INDEX IF NOT EXISTS idx_progress_project ON progress_snapshots(project_path)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_type ON quality_metrics_history(metric_type)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_type ON quality_metrics_history(metric_type)",
             )
 
     async def execute_crackerjack_command(
         self,
         command: str,
-        args: list[str] = None,
+        args: list[str] | None = None,
         working_directory: str = ".",
         timeout: int = 300,
+        ai_agent_mode: bool = False,
     ) -> CrackerjackResult:
-        """Execute Crackerjack command and capture results"""
+        """Execute Crackerjack command and capture results."""
         args = args or []
-        full_command = ["crackerjack", command] + args
+
+        # Add AI agent mode support
+        if ai_agent_mode:
+            args.append("--ai-agent")
+
+        full_command = ["crackerjack", command, *args]
 
         start_time = time.time()
         result_id = f"cj_{int(start_time * 1000)}"
@@ -679,7 +711,8 @@ class CrackerjackIntegration:
             )
 
             stdout, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=timeout
+                process.communicate(),
+                timeout=timeout,
             )
 
             exit_code = process.returncode
@@ -691,7 +724,9 @@ class CrackerjackIntegration:
 
             # Parse output for insights
             parsed_data, memory_insights = self.parser.parse_output(
-                command, stdout_text, stderr_text
+                command,
+                stdout_text,
+                stderr_text,
             )
 
             # Calculate quality metrics
@@ -734,7 +769,7 @@ class CrackerjackIntegration:
                 quality_metrics={},
                 test_results=[],
                 memory_insights=[
-                    f"Command '{command}' timed out - consider optimizing or increasing timeout"
+                    f"Command '{command}' timed out - consider optimizing or increasing timeout",
                 ],
             )
 
@@ -747,23 +782,25 @@ class CrackerjackIntegration:
                 command=command,
                 exit_code=-2,
                 stdout="",
-                stderr=f"Execution error: {str(e)}",
+                stderr=f"Execution error: {e!s}",
                 execution_time=execution_time,
                 timestamp=datetime.now(),
                 working_directory=working_directory,
                 parsed_data={},
                 quality_metrics={},
                 test_results=[],
-                memory_insights=[f"Command '{command}' failed with error: {str(e)}"],
+                memory_insights=[f"Command '{command}' failed with error: {e!s}"],
             )
 
             await self._store_result(result_id, error_result)
             return error_result
 
     async def get_recent_results(
-        self, hours: int = 24, command: str | None = None
+        self,
+        hours: int = 24,
+        command: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Get recent Crackerjack execution results"""
+        """Get recent Crackerjack execution results."""
         since = datetime.now() - timedelta(hours=hours)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -789,19 +826,22 @@ class CrackerjackIntegration:
                 result = dict(row)
                 result["parsed_data"] = json.loads(result["parsed_data"] or "{}")
                 result["quality_metrics"] = json.loads(
-                    result["quality_metrics"] or "{}"
+                    result["quality_metrics"] or "{}",
                 )
                 result["memory_insights"] = json.loads(
-                    result["memory_insights"] or "[]"
+                    result["memory_insights"] or "[]",
                 )
                 results.append(result)
 
             return results
 
     async def get_quality_metrics_history(
-        self, project_path: str, metric_type: str | None = None, days: int = 30
+        self,
+        project_path: str,
+        metric_type: str | None = None,
+        days: int = 30,
     ) -> list[dict[str, Any]]:
-        """Get quality metrics history for trend analysis"""
+        """Get quality metrics history for trend analysis."""
         since = datetime.now() - timedelta(days=days)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -824,7 +864,7 @@ class CrackerjackIntegration:
             return [dict(row) for row in cursor.fetchall()]
 
     async def get_test_failure_patterns(self, days: int = 7) -> dict[str, Any]:
-        """Analyze test failure patterns for insights"""
+        """Analyze test failure patterns for insights."""
         since = datetime.now() - timedelta(days=days)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -877,10 +917,228 @@ class CrackerjackIntegration:
                 "analysis_period_days": days,
             }
 
+    async def get_quality_trends(
+        self,
+        project_path: str,
+        days: int = 30,
+    ) -> dict[str, Any]:
+        """Analyze quality trends over time."""
+        metrics_history = await self.get_quality_metrics_history(
+            project_path, None, days
+        )
+
+        # Calculate trends for each metric type
+        trends = {}
+        for metric_type in [
+            "test_pass_rate",
+            "code_coverage",
+            "lint_score",
+            "security_score",
+            "complexity_score",
+        ]:
+            metric_values = [
+                m for m in metrics_history if m["metric_type"] == metric_type
+            ]
+            if len(metric_values) >= 2:
+                # Sort by timestamp (most recent first)
+                metric_values.sort(key=lambda x: x["timestamp"], reverse=True)
+
+                # Split into recent and older halves
+                mid_point = len(metric_values) // 2
+                recent = metric_values[:mid_point] if mid_point > 0 else metric_values
+                older = metric_values[mid_point:] if mid_point > 0 else []
+
+                if recent and older:
+                    recent_avg = sum(m["metric_value"] for m in recent) / len(recent)
+                    older_avg = sum(m["metric_value"] for m in older) / len(older)
+                    change = recent_avg - older_avg
+
+                    trends[metric_type] = {
+                        "direction": "improving"
+                        if change > 0
+                        else "declining"
+                        if change < 0
+                        else "stable",
+                        "change": abs(change),
+                        "change_percentage": (abs(change) / older_avg * 100)
+                        if older_avg > 0
+                        else 0,
+                        "recent_average": recent_avg,
+                        "previous_average": older_avg,
+                        "data_points": len(metric_values),
+                        "trend_strength": "strong"
+                        if abs(change) > 5
+                        else "moderate"
+                        if abs(change) > 1
+                        else "weak",
+                    }
+                else:
+                    # Not enough data for trend analysis
+                    current_avg = sum(m["metric_value"] for m in metric_values) / len(
+                        metric_values
+                    )
+                    trends[metric_type] = {
+                        "direction": "insufficient_data",
+                        "change": 0,
+                        "change_percentage": 0,
+                        "recent_average": current_avg,
+                        "previous_average": current_avg,
+                        "data_points": len(metric_values),
+                        "trend_strength": "unknown",
+                    }
+
+        # Overall trend assessment
+        improving_metrics = sum(
+            1 for t in trends.values() if t["direction"] == "improving"
+        )
+        declining_metrics = sum(
+            1 for t in trends.values() if t["direction"] == "declining"
+        )
+
+        overall_assessment = {
+            "overall_direction": "improving"
+            if improving_metrics > declining_metrics
+            else "declining"
+            if declining_metrics > improving_metrics
+            else "stable",
+            "improving_count": improving_metrics,
+            "declining_count": declining_metrics,
+            "stable_count": len(trends) - improving_metrics - declining_metrics,
+            "analysis_period_days": days,
+        }
+
+        return {
+            "trends": trends,
+            "overall": overall_assessment,
+            "recommendations": self._generate_trend_recommendations(trends),
+        }
+
+    def _generate_trend_recommendations(self, trends: dict[str, Any]) -> list[str]:
+        """Generate recommendations based on quality trends."""
+        recommendations = []
+
+        for metric_type, trend_data in trends.items():
+            direction = trend_data["direction"]
+            strength = trend_data["trend_strength"]
+            change = trend_data["change"]
+
+            if direction == "declining" and strength in ["strong", "moderate"]:
+                if metric_type == "test_pass_rate":
+                    recommendations.append(
+                        f"⚠️ Test pass rate declining by {change:.1f}% - investigate failing tests"
+                    )
+                elif metric_type == "code_coverage":
+                    recommendations.append(
+                        f"⚠️ Code coverage declining by {change:.1f}% - add more tests"
+                    )
+                elif metric_type == "lint_score":
+                    recommendations.append(
+                        "⚠️ Code quality declining - address lint issues"
+                    )
+                elif metric_type == "security_score":
+                    recommendations.append(
+                        "🔒 Security score declining - review security findings"
+                    )
+                elif metric_type == "complexity_score":
+                    recommendations.append(
+                        "🔧 Code complexity increasing - consider refactoring"
+                    )
+
+            elif direction == "improving" and strength == "strong":
+                if (
+                    metric_type == "test_pass_rate"
+                    and trend_data["recent_average"] > 95
+                ):
+                    recommendations.append(
+                        "✅ Excellent test pass rate trend - maintain current practices"
+                    )
+                elif (
+                    metric_type == "code_coverage" and trend_data["recent_average"] > 85
+                ):
+                    recommendations.append(
+                        "✅ Great coverage improvement - continue testing efforts"
+                    )
+
+        # Add general recommendations
+        if not recommendations:
+            recommendations.append(
+                "📈 Quality metrics are stable - continue current practices"
+            )
+
+        return recommendations
+
+    async def health_check(self) -> dict[str, Any]:
+        """Check integration health and dependencies."""
+        health = {
+            "crackerjack_available": False,
+            "database_accessible": False,
+            "version_compatible": False,
+            "recommendations": [],
+            "status": "unhealthy",
+        }
+
+        try:
+            # Check crackerjack availability
+            process = await asyncio.create_subprocess_exec(
+                "crackerjack",
+                "--help",
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await process.communicate()
+            health["crackerjack_available"] = process.returncode == 0
+
+            if health["crackerjack_available"]:
+                health["recommendations"].append(
+                    "✅ Crackerjack is available and responding"
+                )
+            else:
+                health["recommendations"].append(
+                    "❌ Crackerjack not available - install with 'uv add crackerjack'"
+                )
+
+            # Check database accessibility
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("SELECT 1").fetchone()
+                health["database_accessible"] = True
+                health["recommendations"].append("✅ Database connection successful")
+
+                # Check if we have any data
+                cursor = conn.execute("SELECT COUNT(*) FROM crackerjack_results")
+                result_count = cursor.fetchone()[0]
+
+                if result_count > 0:
+                    health["recommendations"].append(
+                        f"📊 {result_count} execution records available"
+                    )
+                else:
+                    health["recommendations"].append(
+                        "📝 No execution history - run some crackerjack commands"
+                    )
+
+            # Overall status
+            if health["crackerjack_available"] and health["database_accessible"]:
+                health["status"] = "healthy"
+            elif health["database_accessible"]:
+                health["status"] = "partial"
+            else:
+                health["status"] = "unhealthy"
+
+        except sqlite3.Error as e:
+            health["database_accessible"] = False
+            health["recommendations"].append(f"❌ Database error: {e}")
+        except Exception as e:
+            health["error"] = str(e)
+            health["recommendations"].append(f"❌ Health check error: {e}")
+
+        return health
+
     def _calculate_quality_metrics(
-        self, parsed_data: dict[str, Any], exit_code: int
+        self,
+        parsed_data: dict[str, Any],
+        exit_code: int,
     ) -> dict[str, float]:
-        """Calculate quality metrics from parsed data"""
+        """Calculate quality metrics from parsed data."""
         metrics = {}
 
         # Test metrics
@@ -926,8 +1184,8 @@ class CrackerjackIntegration:
 
         return metrics
 
-    async def _store_result(self, result_id: str, result: CrackerjackResult):
-        """Store Crackerjack result in database"""
+    async def _store_result(self, result_id: str, result: CrackerjackResult) -> None:
+        """Store Crackerjack result in database."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -991,9 +1249,12 @@ class CrackerjackIntegration:
                 )
 
     async def _store_progress_snapshot(
-        self, result_id: str, result: CrackerjackResult, project_path: str
-    ):
-        """Store progress snapshot from result"""
+        self,
+        result_id: str,
+        result: CrackerjackResult,
+        project_path: str,
+    ) -> None:
+        """Store progress snapshot from result."""
         progress_info = result.parsed_data.get("progress_info", {})
 
         if progress_info:
@@ -1028,7 +1289,7 @@ _crackerjack_integration = None
 
 
 def get_crackerjack_integration() -> CrackerjackIntegration:
-    """Get global Crackerjack integration instance"""
+    """Get global Crackerjack integration instance."""
     global _crackerjack_integration
     if _crackerjack_integration is None:
         _crackerjack_integration = CrackerjackIntegration()
@@ -1038,37 +1299,62 @@ def get_crackerjack_integration() -> CrackerjackIntegration:
 # Public API functions for MCP tools
 async def execute_crackerjack_command(
     command: str,
-    args: list[str] = None,
+    args: list[str] | None = None,
     working_directory: str = ".",
     timeout: int = 300,
+    ai_agent_mode: bool = False,
 ) -> dict[str, Any]:
-    """Execute Crackerjack command and return structured results"""
+    """Execute Crackerjack command and return structured results."""
     integration = get_crackerjack_integration()
     result = await integration.execute_crackerjack_command(
-        command, args, working_directory, timeout
+        command,
+        args,
+        working_directory,
+        timeout,
+        ai_agent_mode,
     )
     return asdict(result)
 
 
 async def get_recent_crackerjack_results(
-    hours: int = 24, command: str | None = None
+    hours: int = 24,
+    command: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Get recent Crackerjack execution results"""
+    """Get recent Crackerjack execution results."""
     integration = get_crackerjack_integration()
     return await integration.get_recent_results(hours, command)
 
 
 async def get_quality_metrics_history(
-    project_path: str, metric_type: str | None = None, days: int = 30
+    project_path: str,
+    metric_type: str | None = None,
+    days: int = 30,
 ) -> list[dict[str, Any]]:
-    """Get quality metrics history for trend analysis"""
+    """Get quality metrics history for trend analysis."""
     integration = get_crackerjack_integration()
     return await integration.get_quality_metrics_history(
-        project_path, metric_type, days
+        project_path,
+        metric_type,
+        days,
     )
 
 
 async def analyze_test_failure_patterns(days: int = 7) -> dict[str, Any]:
-    """Analyze test failure patterns for insights"""
+    """Analyze test failure patterns for insights."""
     integration = get_crackerjack_integration()
     return await integration.get_test_failure_patterns(days)
+
+
+async def get_quality_trends(
+    project_path: str,
+    days: int = 30,
+) -> dict[str, Any]:
+    """Analyze quality trends over time."""
+    integration = get_crackerjack_integration()
+    return await integration.get_quality_trends(project_path, days)
+
+
+async def crackerjack_health_check() -> dict[str, Any]:
+    """Check Crackerjack integration health and dependencies."""
+    integration = get_crackerjack_integration()
+    return await integration.health_check()

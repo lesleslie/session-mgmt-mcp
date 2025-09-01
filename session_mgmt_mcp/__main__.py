@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Session Management MCP Server - Module Entry Point
+"""Session Management MCP Server - Module Entry Point.
 
 Allows running the server as: python -m session-mgmt-mcp --start-server
 """
@@ -8,10 +7,11 @@ Allows running the server as: python -m session-mgmt-mcp --start-server
 import argparse
 
 
-def main():
-    """Main entry point for the session management MCP server"""
+def main() -> None:
+    """Main entry point for the session management MCP server."""
     parser = argparse.ArgumentParser(
-        description="Session Management MCP Server", prog="session-mgmt-mcp"
+        description="Session Management MCP Server",
+        prog="session-mgmt-mcp",
     )
 
     parser.add_argument(
@@ -21,7 +21,9 @@ def main():
     )
 
     parser.add_argument(
-        "--version", action="store_true", help="Show version information"
+        "--version",
+        action="store_true",
+        help="Show version information",
     )
 
     args = parser.parse_args()

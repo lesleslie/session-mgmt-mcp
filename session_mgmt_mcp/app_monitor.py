@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Application-Aware Context Monitoring for Session Management MCP Server
+"""Application-Aware Context Monitoring for Session Management MCP Server.
 
 Monitors IDE activity and browser documentation to enrich session context.
 Excludes Slack/Discord as per Phase 4 requirements.
 """
 
 import asyncio
+import contextlib
 import json
 import sqlite3
 from collections import defaultdict
@@ -38,7 +38,7 @@ except ImportError:
 
 @dataclass
 class ActivityEvent:
-    """Represents a monitored activity event"""
+    """Represents a monitored activity event."""
 
     timestamp: str
     event_type: str  # 'file_change', 'app_focus', 'browser_nav'
@@ -49,9 +49,9 @@ class ActivityEvent:
 
 
 class IDEActivityMonitor:
-    """Monitors IDE file changes and activity"""
+    """Monitors IDE file changes and activity."""
 
-    def __init__(self, project_paths: list[str]):
+    def __init__(self, project_paths: list[str]) -> None:
         self.project_paths = project_paths
         self.observers = []
         self.activity_buffer = []
@@ -92,7 +92,7 @@ class IDEActivityMonitor:
         }
 
     def start_monitoring(self):
-        """Start file system monitoring"""
+        """Start file system monitoring."""
         if not WATCHDOG_AVAILABLE:
             return False
 
@@ -106,15 +106,15 @@ class IDEActivityMonitor:
 
         return len(self.observers) > 0
 
-    def stop_monitoring(self):
-        """Stop file system monitoring"""
+    def stop_monitoring(self) -> None:
+        """Stop file system monitoring."""
         for observer in self.observers:
             observer.stop()
             observer.join()
         self.observers.clear()
 
-    def add_activity(self, event: ActivityEvent):
-        """Add activity event to buffer"""
+    def add_activity(self, event: ActivityEvent) -> None:
+        """Add activity event to buffer."""
         self.activity_buffer.append(event)
 
         # Keep buffer size manageable
@@ -122,7 +122,7 @@ class IDEActivityMonitor:
             self.activity_buffer = self.activity_buffer[-500:]
 
     def get_recent_activity(self, minutes: int = 30) -> list[ActivityEvent]:
-        """Get recent activity within specified minutes"""
+        """Get recent activity within specified minutes."""
         cutoff = datetime.now() - timedelta(minutes=minutes)
         cutoff_str = cutoff.isoformat()
 
@@ -131,7 +131,7 @@ class IDEActivityMonitor:
         ]
 
     def get_active_files(self, minutes: int = 60) -> list[dict[str, Any]]:
-        """Get files actively being worked on"""
+        """Get files actively being worked on."""
         recent_events = self.get_recent_activity(minutes)
         file_activity = defaultdict(list)
 
@@ -158,16 +158,16 @@ class IDEActivityMonitor:
                     "event_count": len(events),
                     "last_activity": latest_event.timestamp,
                     "project_path": latest_event.project_path,
-                }
+                },
             )
 
         return sorted(active_files, key=lambda x: x["activity_score"], reverse=True)
 
 
 class IDEFileHandler(FileSystemEventHandler):
-    """Handles file system events for IDE monitoring"""
+    """Handles file system events for IDE monitoring."""
 
-    def __init__(self, monitor: IDEActivityMonitor):
+    def __init__(self, monitor: IDEActivityMonitor) -> None:
         self.monitor = monitor
         self.ignore_patterns = {
             ".git",
@@ -186,7 +186,7 @@ class IDEFileHandler(FileSystemEventHandler):
         }
 
     def should_ignore(self, file_path: str) -> bool:
-        """Check if file should be ignored"""
+        """Check if file should be ignored."""
         path = Path(file_path)
 
         # Check ignore patterns
@@ -199,12 +199,9 @@ class IDEFileHandler(FileSystemEventHandler):
             return True
 
         # Ignore temporary files
-        if path.name.startswith(".") or path.name.endswith("~"):
-            return True
+        return bool(path.name.startswith(".") or path.name.endswith("~"))
 
-        return False
-
-    def on_modified(self, event):
+    def on_modified(self, event) -> None:
         if event.is_directory or self.should_ignore(event.src_path):
             return
 
@@ -234,9 +231,9 @@ class IDEFileHandler(FileSystemEventHandler):
 
 
 class BrowserDocumentationMonitor:
-    """Monitors browser activity for documentation sites"""
+    """Monitors browser activity for documentation sites."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.doc_domains = {
             "docs.python.org",
             "developer.mozilla.org",
@@ -263,7 +260,7 @@ class BrowserDocumentationMonitor:
         self.browser_processes = set()
 
     def get_browser_processes(self) -> list[dict[str, Any]]:
-        """Get currently running browser processes"""
+        """Get currently running browser processes."""
         if not PSUTIL_AVAILABLE:
             return []
 
@@ -279,7 +276,7 @@ class BrowserDocumentationMonitor:
                             "pid": proc.info["pid"],
                             "name": proc.info["name"],
                             "create_time": proc.info["create_time"],
-                        }
+                        },
                     )
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
@@ -287,7 +284,7 @@ class BrowserDocumentationMonitor:
         return browsers
 
     def extract_documentation_context(self, url: str) -> dict[str, Any]:
-        """Extract context from documentation URLs"""
+        """Extract context from documentation URLs."""
         context = {"domain": "", "technology": "", "topic": "", "relevance": 0.0}
 
         try:
@@ -341,8 +338,8 @@ class BrowserDocumentationMonitor:
 
         return context
 
-    def add_browser_activity(self, url: str, title: str = ""):
-        """Add browser navigation activity"""
+    def add_browser_activity(self, url: str, title: str = "") -> None:
+        """Add browser navigation activity."""
         context = self.extract_documentation_context(url)
 
         activity_event = ActivityEvent(
@@ -367,9 +364,9 @@ class BrowserDocumentationMonitor:
 
 
 class ApplicationFocusMonitor:
-    """Monitors application focus changes"""
+    """Monitors application focus changes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.focus_history = []
         self.current_app = None
         self.app_categories = {
@@ -397,7 +394,7 @@ class ApplicationFocusMonitor:
         }
 
     def get_focused_application(self) -> dict[str, Any] | None:
-        """Get currently focused application"""
+        """Get currently focused application."""
         if not PSUTIL_AVAILABLE:
             return None
 
@@ -419,14 +416,14 @@ class ApplicationFocusMonitor:
         return None
 
     def _categorize_app(self, app_name: str) -> str | None:
-        """Categorize application by name"""
+        """Categorize application by name."""
         for category, keywords in self.app_categories.items():
             if any(keyword in app_name for keyword in keywords):
                 return category
         return None
 
-    def add_focus_event(self, app_info: dict[str, Any]):
-        """Add application focus event"""
+    def add_focus_event(self, app_info: dict[str, Any]) -> None:
+        """Add application focus event."""
         activity_event = ActivityEvent(
             timestamp=datetime.now().isoformat(),
             event_type="app_focus",
@@ -443,14 +440,14 @@ class ApplicationFocusMonitor:
 
 
 class ActivityDatabase:
-    """SQLite database for storing activity events"""
+    """SQLite database for storing activity events."""
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str) -> None:
         self.db_path = db_path
         self._init_database()
 
-    def _init_database(self):
-        """Initialize database tables"""
+    def _init_database(self) -> None:
+        """Initialize database tables."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS activity_events (
@@ -473,8 +470,8 @@ class ActivityDatabase:
                 CREATE INDEX IF NOT EXISTS idx_event_type ON activity_events(event_type)
             """)
 
-    def store_event(self, event: ActivityEvent):
-        """Store activity event in database"""
+    def store_event(self, event: ActivityEvent) -> None:
+        """Store activity event in database."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -499,7 +496,7 @@ class ActivityDatabase:
         event_types: list[str] | None = None,
         limit: int = 100,
     ) -> list[ActivityEvent]:
-        """Retrieve activity events from database"""
+        """Retrieve activity events from database."""
         with sqlite3.connect(self.db_path) as conn:
             query = "SELECT * FROM activity_events WHERE 1=1"
             params = []
@@ -533,27 +530,28 @@ class ActivityDatabase:
                         details=json.loads(row[4]),
                         project_path=row[5],
                         relevance_score=row[6] or 0.0,
-                    )
+                    ),
                 )
 
             return events
 
     def cleanup_old_events(self, days_to_keep: int = 30):
-        """Remove old activity events"""
+        """Remove old activity events."""
         cutoff = datetime.now() - timedelta(days=days_to_keep)
         cutoff_str = cutoff.isoformat()
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
-                "DELETE FROM activity_events WHERE timestamp < ?", (cutoff_str,)
+                "DELETE FROM activity_events WHERE timestamp < ?",
+                (cutoff_str,),
             )
             return cursor.rowcount
 
 
 class ApplicationMonitor:
-    """Main application monitoring coordinator"""
+    """Main application monitoring coordinator."""
 
-    def __init__(self, data_dir: str, project_paths: list[str] | None = None):
+    def __init__(self, data_dir: str, project_paths: list[str] | None = None) -> None:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -568,9 +566,9 @@ class ApplicationMonitor:
         self._monitoring_task = None
 
     async def start_monitoring(self):
-        """Start all monitoring components"""
+        """Start all monitoring components."""
         if self.monitoring_active:
-            return
+            return None
 
         self.monitoring_active = True
 
@@ -587,21 +585,19 @@ class ApplicationMonitor:
             "project_paths": self.project_paths,
         }
 
-    async def stop_monitoring(self):
-        """Stop all monitoring"""
+    async def stop_monitoring(self) -> None:
+        """Stop all monitoring."""
         self.monitoring_active = False
 
         if self._monitoring_task:
             self._monitoring_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._monitoring_task
-            except asyncio.CancelledError:
-                pass
 
         self.ide_monitor.stop_monitoring()
 
-    async def _monitoring_loop(self):
-        """Background monitoring loop"""
+    async def _monitoring_loop(self) -> None:
+        """Background monitoring loop."""
         while self.monitoring_active:
             try:
                 # Check application focus
@@ -632,7 +628,7 @@ class ApplicationMonitor:
                 await asyncio.sleep(60)
 
     def get_activity_summary(self, hours: int = 2) -> dict[str, Any]:
-        """Get activity summary for specified hours"""
+        """Get activity summary for specified hours."""
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=500)
 
@@ -670,7 +666,7 @@ class ApplicationMonitor:
         return summary
 
     def get_context_insights(self, hours: int = 1) -> dict[str, Any]:
-        """Get contextual insights from recent activity"""
+        """Get contextual insights from recent activity."""
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=200)
 

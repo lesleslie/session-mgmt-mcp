@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Structured logging utilities for session management.
-"""
+"""Structured logging utilities for session management."""
 
 import json
 import logging
@@ -11,9 +9,9 @@ from pathlib import Path
 
 
 class SessionLogger:
-    """Structured logging for session management with context"""
+    """Structured logging for session management with context."""
 
-    def __init__(self, log_dir: Path):
+    def __init__(self, log_dir: Path) -> None:
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = (
@@ -36,7 +34,7 @@ class SessionLogger:
 
             # Structured formatter
             formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s"
+                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s",
             )
             file_handler.setFormatter(formatter)
             console_handler.setFormatter(formatter)
@@ -44,32 +42,32 @@ class SessionLogger:
             self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
 
-    def info(self, message: str, **context):
-        """Log info with optional context"""
+    def info(self, message: str, **context) -> None:
+        """Log info with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.info(message)
 
-    def warning(self, message: str, **context):
-        """Log warning with optional context"""
+    def warning(self, message: str, **context) -> None:
+        """Log warning with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.warning(message)
 
-    def error(self, message: str, **context):
-        """Log error with optional context"""
+    def error(self, message: str, **context) -> None:
+        """Log error with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.error(message)
 
-    def debug(self, message: str, **context):
-        """Log debug with optional context"""
+    def debug(self, message: str, **context) -> None:
+        """Log debug with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.debug(message)
 
 
 def get_session_logger() -> SessionLogger:
-    """Get the global session logger instance"""
+    """Get the global session logger instance."""
     claude_dir = Path.home() / ".claude"
     return SessionLogger(claude_dir / "logs")

@@ -1,5 +1,4 @@
-"""
-Property-based tests for reflection system robustness.
+"""Property-based tests for reflection system robustness.
 
 Uses Hypothesis to generate test data and verify system properties
 under various edge cases and unexpected inputs.
@@ -18,7 +17,7 @@ from session_mgmt_mcp.server import quick_search, store_reflection
 
 # Hypothesis strategies for generating test data
 valid_content_strategy = st.text(min_size=1, max_size=10000).filter(
-    lambda x: x.strip() and not x.isspace()
+    lambda x: x.strip() and not x.isspace(),
 )
 
 tag_strategy = st.text(
@@ -30,7 +29,7 @@ tag_strategy = st.text(
 tags_list_strategy = st.lists(tag_strategy, min_size=0, max_size=10, unique=True)
 
 query_strategy = st.text(min_size=1, max_size=1000).filter(
-    lambda x: x.strip() and len(x.strip()) >= 1
+    lambda x: x.strip() and len(x.strip()) >= 1,
 )
 
 project_name_strategy = st.text(
@@ -43,11 +42,11 @@ project_name_strategy = st.text(
 @pytest.mark.unit
 @pytest.mark.property
 class TestReflectionSystemProperties:
-    """Property-based tests for reflection system"""
+    """Property-based tests for reflection system."""
 
     @pytest.fixture
     async def temp_database(self):
-        """Temporary database for property testing"""
+        """Temporary database for property testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "property_test.db"
             db = ReflectionDatabase(str(db_path))
@@ -57,15 +56,17 @@ class TestReflectionSystemProperties:
 
     @given(content=valid_content_strategy, tags=tags_list_strategy)
     @settings(
-        max_examples=50, deadline=30000
+        max_examples=50,
+        deadline=30000,
     )  # 30 second deadline for async operations
     @pytest.mark.asyncio
     async def test_store_reflection_properties(self, content, tags, temp_database):
-        """Test reflection storage properties hold for any valid input"""
-
+        """Test reflection storage properties hold for any valid input."""
         # Property: Storing valid content should always succeed
         result = await temp_database.store_reflection(
-            content=content, tags=tags, project="test-project"
+            content=content,
+            tags=tags,
+            project="test-project",
         )
 
         assert result is not None
@@ -96,11 +97,12 @@ class TestReflectionSystemProperties:
     @settings(max_examples=30)
     @pytest.mark.asyncio
     async def test_search_properties(self, query, limit, min_score, temp_database):
-        """Test search operation properties"""
-
+        """Test search operation properties."""
         # Property: Search should never crash with valid inputs
         result = await temp_database.search_reflections(
-            query=query, limit=limit, min_score=min_score
+            query=query,
+            limit=limit,
+            min_score=min_score,
         )
 
         assert isinstance(result, dict)
@@ -121,18 +123,19 @@ class TestReflectionSystemProperties:
             st.tuples(valid_content_strategy, tags_list_strategy),
             min_size=1,
             max_size=20,
-        )
+        ),
     )
     @settings(max_examples=20)
     @pytest.mark.asyncio
     async def test_bulk_operations_properties(self, reflections, temp_database):
-        """Test properties of bulk reflection operations"""
-
+        """Test properties of bulk reflection operations."""
         # Store multiple reflections
         reflection_ids = []
         for content, tags in reflections:
             reflection_id = await temp_database.store_reflection(
-                content=content, tags=tags, project="bulk-test"
+                content=content,
+                tags=tags,
+                project="bulk-test",
             )
             reflection_ids.append(reflection_id)
 
@@ -148,7 +151,8 @@ class TestReflectionSystemProperties:
         if reflections:
             first_content = reflections[0][0]
             search_result = await temp_database.search_reflections(
-                query=first_content[:30], project="bulk-test"
+                query=first_content[:30],
+                project="bulk-test",
             )
             # Should find at least some results from the project
             assert search_result["count"] >= 0
@@ -160,17 +164,16 @@ class TestReflectionSystemProperties:
             st.text().filter(lambda x: x.isspace()),  # Only whitespace
             st.integers(),  # Wrong type
             st.lists(st.integers()),  # Wrong type list
-        )
+        ),
     )
     @settings(max_examples=20)
     @pytest.mark.asyncio
     async def test_input_validation_properties(self, invalid_input):
-        """Test system handles invalid inputs gracefully"""
-
+        """Test system handles invalid inputs gracefully."""
         # Property: Invalid content should not crash the system
         try:
             with patch(
-                "session_mgmt_mcp.reflection_tools.ReflectionDatabase"
+                "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
             ) as mock_db:
                 mock_db_instance = AsyncMock()
                 mock_db.return_value = mock_db_instance
@@ -190,14 +193,16 @@ class TestReflectionSystemProperties:
 
     @given(
         project_names=st.lists(
-            project_name_strategy, min_size=1, max_size=10, unique=True
-        )
+            project_name_strategy,
+            min_size=1,
+            max_size=10,
+            unique=True,
+        ),
     )
     @settings(max_examples=15)
     @pytest.mark.asyncio
     async def test_project_isolation_properties(self, project_names, temp_database):
-        """Test project isolation properties"""
-
+        """Test project isolation properties."""
         # Store reflections in different projects
         for i, project in enumerate(project_names):
             await temp_database.store_reflection(
@@ -209,7 +214,9 @@ class TestReflectionSystemProperties:
         # Property: Each project should have independent reflections
         for project in project_names:
             project_results = await temp_database.search_reflections(
-                query="Content for project", project=project, limit=50
+                query="Content for project",
+                project=project,
+                limit=50,
             )
 
             # Should find results for the specific project
@@ -224,14 +231,13 @@ class TestReflectionSystemProperties:
 @pytest.mark.unit
 @pytest.mark.property
 class TestMCPToolProperties:
-    """Property-based tests for MCP tool interfaces"""
+    """Property-based tests for MCP tool interfaces."""
 
     @given(content=valid_content_strategy, tags=tags_list_strategy)
     @settings(max_examples=20)
     @pytest.mark.asyncio
     async def test_store_reflection_mcp_properties(self, content, tags):
-        """Test store_reflection MCP tool properties"""
-
+        """Test store_reflection MCP tool properties."""
         with patch("session_mgmt_mcp.reflection_tools.ReflectionDatabase") as mock_db:
             mock_instance = AsyncMock()
             mock_instance.store_reflection.return_value = "test-reflection-id"
@@ -256,8 +262,7 @@ class TestMCPToolProperties:
     @settings(max_examples=15)
     @pytest.mark.asyncio
     async def test_quick_search_mcp_properties(self, query, limit, min_score):
-        """Test quick_search MCP tool properties"""
-
+        """Test quick_search MCP tool properties."""
         with patch("session_mgmt_mcp.reflection_tools.ReflectionDatabase") as mock_db:
             mock_instance = AsyncMock()
             mock_instance.search_reflections.return_value = {
@@ -280,8 +285,7 @@ class TestMCPToolProperties:
     @settings(max_examples=10)
     @pytest.mark.asyncio
     async def test_concurrent_mcp_operations_properties(self, batch_size):
-        """Test concurrent MCP operations maintain consistency"""
-
+        """Test concurrent MCP operations maintain consistency."""
         with patch("session_mgmt_mcp.reflection_tools.ReflectionDatabase") as mock_db:
             mock_instance = AsyncMock()
             mock_instance.store_reflection.return_value = "concurrent-reflection-id"
@@ -291,7 +295,8 @@ class TestMCPToolProperties:
             # Property: Concurrent operations should all succeed independently
             store_tasks = [
                 store_reflection(
-                    content=f"Concurrent content {i}", tags=[f"concurrent-{i}"]
+                    content=f"Concurrent content {i}",
+                    tags=[f"concurrent-{i}"],
                 )
                 for i in range(batch_size)
             ]

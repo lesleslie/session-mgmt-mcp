@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Optimized Session Management MCP Server
+"""Optimized Session Management MCP Server.
 
 This is the refactored, modular version of the session management server.
 It's organized into focused modules for better maintainability and performance.
@@ -29,7 +28,7 @@ except ImportError:
 
         # Create a minimal mock FastMCP for testing
         class MockFastMCP:
-            def __init__(self, name):
+            def __init__(self, name) -> None:
                 self.name = name
                 self.tools = {}
                 self.prompts = {}
@@ -46,7 +45,7 @@ except ImportError:
 
                 return decorator
 
-            def run(self, *args, **kwargs):
+            def run(self, *args, **kwargs) -> None:
                 pass
 
         FastMCP = MockFastMCP
@@ -77,7 +76,7 @@ register_memory_tools(mcp)
 class SessionPermissionsManager:
     """Simplified session permissions manager."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.trusted_operations = set()
         self.auto_checkpoint = False
         self.checkpoint_frequency = 300
@@ -85,7 +84,7 @@ class SessionPermissionsManager:
     def is_operation_trusted(self, operation: str) -> bool:
         return operation in self.trusted_operations
 
-    def add_trusted_operation(self, operation: str):
+    def add_trusted_operation(self, operation: str) -> None:
         self.trusted_operations.add(operation)
 
 
@@ -94,12 +93,13 @@ permissions_manager = SessionPermissionsManager()
 
 
 @mcp.tool()
-async def permissions(action: str = "status", operation: str = None) -> str:
-    """Manage session permissions for trusted operations to avoid repeated prompts
+async def permissions(action: str = "status", operation: str | None = None) -> str:
+    """Manage session permissions for trusted operations to avoid repeated prompts.
 
     Args:
         action: Action to perform: status (show current), trust (add operation), revoke_all (reset)
         operation: Operation to trust (required for 'trust' action)
+
     """
     output = []
     output.append("🔐 Session Permissions Management")
@@ -108,17 +108,17 @@ async def permissions(action: str = "status", operation: str = None) -> str:
     if action == "status":
         if permissions_manager.trusted_operations:
             output.append(
-                f"✅ {len(permissions_manager.trusted_operations)} trusted operations:"
+                f"✅ {len(permissions_manager.trusted_operations)} trusted operations:",
             )
             for op in sorted(permissions_manager.trusted_operations):
                 output.append(f"   • {op}")
             output.append(
-                "\n💡 These operations will not prompt for permission in future sessions"
+                "\n💡 These operations will not prompt for permission in future sessions",
             )
         else:
             output.append("⚠️ No operations are currently trusted")
             output.append(
-                "💡 Operations will be automatically trusted on first successful use"
+                "💡 Operations will be automatically trusted on first successful use",
             )
 
         output.append("\n🛠️ Common Operations That Can Be Trusted:")
@@ -132,12 +132,12 @@ async def permissions(action: str = "status", operation: str = None) -> str:
         if not operation:
             output.append("❌ Error: 'operation' parameter required for 'trust' action")
             output.append(
-                "💡 Example: permissions with action='trust' and operation='uv_package_management'"
+                "💡 Example: permissions with action='trust' and operation='uv_package_management'",
             )
         else:
             permissions_manager.add_trusted_operation(operation)
             output.append(
-                f"✅ Operation '{operation}' has been added to trusted operations"
+                f"✅ Operation '{operation}' has been added to trusted operations",
             )
             output.append("💡 This operation will no longer require permission prompts")
 
@@ -157,7 +157,7 @@ async def permissions(action: str = "status", operation: str = None) -> str:
 # Additional simplified tools for compatibility
 @mcp.tool()
 async def auto_compact() -> str:
-    """Automatically trigger conversation compaction with intelligent summary"""
+    """Automatically trigger conversation compaction with intelligent summary."""
     output = []
     output.append("🗜️ Auto-Compaction Feature")
     output.append("=" * 30)
@@ -168,12 +168,12 @@ async def auto_compact() -> str:
 
 @mcp.tool()
 async def quality_monitor() -> str:
-    """Phase 3: Proactive quality monitoring with early warning system"""
+    """Phase 3: Proactive quality monitoring with early warning system."""
     output = []
     output.append("📊 Quality Monitoring")
     output.append("=" * 25)
     output.append(
-        "✅ Quality monitoring is integrated into the session management system"
+        "✅ Quality monitoring is integrated into the session management system",
     )
     output.append("💡 Use the 'status' tool to get current quality metrics")
     output.append("💡 Use the 'checkpoint' tool for comprehensive quality assessment")
@@ -181,7 +181,7 @@ async def quality_monitor() -> str:
 
 
 # Server startup
-def run_server():
+def run_server() -> None:
     """Run the optimized MCP server."""
     try:
         logger.info("Starting optimized session-mgmt-mcp server")
@@ -201,7 +201,7 @@ def run_server():
             logger.warning("Running in mock mode - FastMCP not available")
 
     except Exception as e:
-        logger.error("Server startup failed", error=str(e))
+        logger.exception("Server startup failed", error=str(e))
         sys.exit(1)
 
 

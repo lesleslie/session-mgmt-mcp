@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test suite for automatic compaction functionality in session-mgmt-mcp
+"""Test suite for automatic compaction functionality in session-mgmt-mcp.
 
 Tests the enhanced checkpoint workflow that automatically handles context compaction.
 """
@@ -24,11 +23,11 @@ from session_mgmt_mcp.server import (
 
 
 class TestAutoCompaction:
-    """Test suite for automatic compaction functionality"""
+    """Test suite for automatic compaction functionality."""
 
     @pytest.mark.asyncio
     async def test_token_analysis_recommends_compaction(self):
-        """Test that token analysis always recommends compaction during checkpoints"""
+        """Test that token analysis always recommends compaction during checkpoints."""
         result = await analyze_token_usage_patterns()
 
         # Should always recommend compaction (we modified the logic)
@@ -40,7 +39,7 @@ class TestAutoCompaction:
 
     @pytest.mark.asyncio
     async def test_strategic_compaction_includes_conversation(self):
-        """Test that strategic compaction includes conversation compaction"""
+        """Test that strategic compaction includes conversation compaction."""
         results = await perform_strategic_compaction()
 
         # Check for conversation compaction indicators
@@ -54,7 +53,7 @@ class TestAutoCompaction:
 
     @pytest.mark.asyncio
     async def test_conversation_summarization(self):
-        """Test that conversation summarization works correctly"""
+        """Test that conversation summarization works correctly."""
         summary = await summarize_current_conversation()
 
         # Should contain key components
@@ -68,14 +67,15 @@ class TestAutoCompaction:
 
     @pytest.mark.asyncio
     async def test_context_preservation_in_database(self):
-        """Test that context is preserved in reflection database"""
+        """Test that context is preserved in reflection database."""
         try:
             db = await get_reflection_database()
 
             # Store a test context summary
             test_summary = "Test context preservation for auto-compaction functionality"
             reflection_id = await db.store_reflection(
-                test_summary, ["test", "auto-compact", "context-preservation"]
+                test_summary,
+                ["test", "auto-compact", "context-preservation"],
             )
 
             assert reflection_id, "Should return reflection ID"
@@ -90,7 +90,7 @@ class TestAutoCompaction:
 
     @pytest.mark.asyncio
     async def test_enhanced_session_insights(self):
-        """Test that enhanced session insights include conversation data"""
+        """Test that enhanced session insights include conversation data."""
         results = await capture_session_insights(90.0)
 
         # Should have multiple types of insights stored
@@ -105,12 +105,11 @@ class TestAutoCompaction:
 
 
 class TestCompactionWorkflow:
-    """Test the complete compaction workflow"""
+    """Test the complete compaction workflow."""
 
     @pytest.mark.asyncio
     async def test_compaction_recommendation_flow(self):
-        """Test the complete flow from detection to recommendation"""
-
+        """Test the complete flow from detection to recommendation."""
         # Step 1: Token analysis should detect need for compaction
         token_result = await analyze_token_usage_patterns()
         assert token_result["recommend_compact"], "Step 1: Should recommend compaction"
@@ -132,8 +131,7 @@ class TestCompactionWorkflow:
 
     @pytest.mark.asyncio
     async def test_checkpoint_integration(self):
-        """Test that all components integrate properly in checkpoint"""
-
+        """Test that all components integrate properly in checkpoint."""
         # Test individual components work
         token_analysis = await analyze_token_usage_patterns()
         conversation_summary = await summarize_current_conversation()

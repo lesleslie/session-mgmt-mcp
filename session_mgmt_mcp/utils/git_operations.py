@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Git operations utilities for session management.
-"""
+"""Git operations utilities for session management."""
 
 import subprocess
 from dataclasses import dataclass
@@ -11,7 +9,7 @@ from pathlib import Path
 
 @dataclass
 class WorktreeInfo:
-    """Information about a git worktree"""
+    """Information about a git worktree."""
 
     path: Path
     branch: str
@@ -231,7 +229,10 @@ def stage_files(directory: Path, files: list[str]) -> bool:
     try:
         for file in files:
             subprocess.run(
-                ["git", "add", file], cwd=directory, capture_output=True, check=True
+                ["git", "add", file],
+                cwd=directory,
+                capture_output=True,
+                check=True,
             )
         return True
     except subprocess.CalledProcessError:
@@ -266,6 +267,7 @@ def create_commit(directory: Path, message: str) -> tuple[bool, str]:
 
     Returns:
         tuple: (success, commit_hash or error_message)
+
     """
     if not is_git_repository(directory):
         return False, "Not a git repository"
@@ -296,7 +298,8 @@ def create_commit(directory: Path, message: str) -> tuple[bool, str]:
 
 
 def _add_worktree_context_output(
-    worktree_info: WorktreeInfo | None, output: list[str]
+    worktree_info: WorktreeInfo | None,
+    output: list[str],
 ) -> None:
     """Add worktree context information to output."""
     if worktree_info:
@@ -304,12 +307,14 @@ def _add_worktree_context_output(
             output.append(f"📝 Main repository on branch '{worktree_info.branch}'")
         else:
             output.append(
-                f"🌿 Worktree on branch '{worktree_info.branch}' at {worktree_info.path}"
+                f"🌿 Worktree on branch '{worktree_info.branch}' at {worktree_info.path}",
             )
 
 
 def _create_checkpoint_message(
-    project: str, quality_score: int, worktree_info: WorktreeInfo | None
+    project: str,
+    quality_score: int,
+    worktree_info: WorktreeInfo | None,
 ) -> str:
     """Create the checkpoint commit message."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -361,18 +366,20 @@ def _handle_staging_and_commit(
         output.append(f"   Message: checkpoint: Session checkpoint - {timestamp}")
         output.append("   💡 Use 'git reset HEAD~1' to undo if needed")
         return True, result
-    else:
-        output.append(f"⚠️ Commit failed: {result}")
-        return False, result
+    output.append(f"⚠️ Commit failed: {result}")
+    return False, result
 
 
 def create_checkpoint_commit(
-    directory: Path, project: str, quality_score: int
+    directory: Path,
+    project: str,
+    quality_score: int,
 ) -> tuple[bool, str, list[str]]:
     """Create an automatic checkpoint commit.
 
     Returns:
         tuple: (success, commit_hash_or_error, output_messages)
+
     """
     output = []
 
@@ -392,7 +399,7 @@ def create_checkpoint_commit(
         # Add worktree context to output
         _add_worktree_context_output(worktree_info, output)
         output.append(
-            f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files"
+            f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files",
         )
 
         # Handle untracked files
@@ -402,13 +409,18 @@ def create_checkpoint_commit(
         # Stage and commit modified files
         if modified_files:
             success, result = _handle_staging_and_commit(
-                directory, modified_files, project, quality_score, worktree_info, output
+                directory,
+                modified_files,
+                project,
+                quality_score,
+                worktree_info,
+                output,
             )
             return success, result, output
-        elif untracked_files:
+        if untracked_files:
             output.append("ℹ️ No staged changes to commit")
             output.append(
-                "   💡 Add untracked files with 'git add' if you want to include them"
+                "   💡 Add untracked files with 'git add' if you want to include them",
             )
             return False, "No staged changes", output
 

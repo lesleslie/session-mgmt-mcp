@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Session management MCP tools.
+"""Session management MCP tools.
 
 This module provides tools for managing Claude session lifecycle including
 initialization, checkpoints, and cleanup.
@@ -10,8 +9,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from ..core import SessionLifecycleManager
-from ..utils.logging import get_session_logger
+from session_mgmt_mcp.core import SessionLifecycleManager
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 # Global session manager
 session_manager = SessionLifecycleManager()
@@ -39,7 +38,7 @@ async def _init_impl(working_directory: str | None = None) -> str:
             context = result["project_context"]
             context_items = sum(1 for detected in context.values() if detected)
             output.append(
-                f"🎯 Project context: {context_items}/{len(context)} indicators detected"
+                f"🎯 Project context: {context_items}/{len(context)} indicators detected",
             )
 
             # Add UV setup
@@ -58,7 +57,7 @@ async def _init_impl(working_directory: str | None = None) -> str:
             output.append(f"❌ Session initialization failed: {result['error']}")
 
     except Exception as e:
-        logger.error("Session initialization error", error=str(e))
+        logger.exception("Session initialization error", error=str(e))
         output.append(f"❌ Unexpected error during initialization: {e}")
 
     return "\n".join(output)
@@ -68,7 +67,7 @@ async def _checkpoint_impl() -> str:
     """Implementation for checkpoint tool."""
     output = []
     output.append(
-        f"🔍 Claude Session Checkpoint - {session_manager.current_project or 'Current Project'}"
+        f"🔍 Claude Session Checkpoint - {session_manager.current_project or 'Current Project'}",
     )
     output.append("=" * 50)
 
@@ -84,14 +83,14 @@ async def _checkpoint_impl() -> str:
 
             output.append(f"\n⏰ Checkpoint completed at: {result['timestamp']}")
             output.append(
-                "\n💡 Use this checkpoint data to track session progress and identify optimization opportunities."
+                "\n💡 Use this checkpoint data to track session progress and identify optimization opportunities.",
             )
 
         else:
             output.append(f"❌ Checkpoint failed: {result['error']}")
 
     except Exception as e:
-        logger.error("Checkpoint error", error=str(e))
+        logger.exception("Checkpoint error", error=str(e))
         output.append(f"❌ Unexpected checkpoint error: {e}")
 
     return "\n".join(output)
@@ -110,7 +109,7 @@ async def _end_impl() -> str:
             summary = result["summary"]
             output.append(f"📁 Project: {summary['project']}")
             output.append(
-                f"📊 Final quality score: {summary['final_quality_score']}/100"
+                f"📊 Final quality score: {summary['final_quality_score']}/100",
             )
             output.append(f"⏰ Session ended: {summary['session_end_time']}")
 
@@ -128,14 +127,14 @@ async def _end_impl() -> str:
 
             output.append("\n✅ Session ended successfully!")
             output.append(
-                "💡 Use the session data to improve future development workflows."
+                "💡 Use the session data to improve future development workflows.",
             )
 
         else:
             output.append(f"❌ Session end failed: {result['error']}")
 
     except Exception as e:
-        logger.error("Session end error", error=str(e))
+        logger.exception("Session end error", error=str(e))
         output.append(f"❌ Unexpected error during session end: {e}")
 
     return "\n".join(output)
@@ -161,7 +160,7 @@ async def _status_impl(working_directory: str | None = None) -> str:
             output.append(f"   • Project health: {breakdown['project_health']:.1f}/40")
             output.append(f"   • Permissions: {breakdown['permissions']:.1f}/20")
             output.append(
-                f"   • Session tools: {breakdown['session_management']:.1f}/20"
+                f"   • Session tools: {breakdown['session_management']:.1f}/20",
             )
             output.append(f"   • Tool availability: {breakdown['tools']:.1f}/20")
 
@@ -169,20 +168,20 @@ async def _status_impl(working_directory: str | None = None) -> str:
             health = result["system_health"]
             output.append("\n🏥 System health:")
             output.append(
-                f"   • UV package manager: {'✅' if health['uv_available'] else '❌'}"
+                f"   • UV package manager: {'✅' if health['uv_available'] else '❌'}",
             )
             output.append(
-                f"   • Git repository: {'✅' if health['git_repository'] else '❌'}"
+                f"   • Git repository: {'✅' if health['git_repository'] else '❌'}",
             )
             output.append(
-                f"   • Claude directory: {'✅' if health['claude_directory'] else '❌'}"
+                f"   • Claude directory: {'✅' if health['claude_directory'] else '❌'}",
             )
 
             # Project context
             context = result["project_context"]
             context_items = sum(1 for detected in context.values() if detected)
             output.append(
-                f"\n🎯 Project context: {context_items}/{len(context)} indicators"
+                f"\n🎯 Project context: {context_items}/{len(context)} indicators",
             )
 
             # Key indicators
@@ -210,7 +209,7 @@ async def _status_impl(working_directory: str | None = None) -> str:
             output.append(f"❌ Status check failed: {result['error']}")
 
     except Exception as e:
-        logger.error("Status check error", error=str(e))
+        logger.exception("Status check error", error=str(e))
         output.append(f"❌ Unexpected error during status check: {e}")
 
     return "\n".join(output)
@@ -239,6 +238,7 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
         try:
             sync_result = subprocess.run(
                 ["uv", "sync"],
+                check=False,
                 cwd=current_dir,
                 capture_output=True,
                 text=True,
@@ -251,7 +251,7 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
                 output.append(f"⚠️ UV sync had issues: {sync_result.stderr}")
         except subprocess.TimeoutExpired:
             output.append(
-                "⚠️ UV sync timed out - dependencies may need manual attention"
+                "⚠️ UV sync timed out - dependencies may need manual attention",
             )
         except Exception as e:
             output.append(f"⚠️ UV sync error: {e}")
@@ -262,33 +262,35 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
     return output
 
 
-def register_session_tools(mcp_server):
+def register_session_tools(mcp_server) -> None:
     """Register all session management tools with the MCP server."""
 
     @mcp_server.tool()
     async def init(working_directory: str | None = None) -> str:
-        """Initialize Claude session with comprehensive setup including UV dependencies and automation tools
+        """Initialize Claude session with comprehensive setup including UV dependencies and automation tools.
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _init_impl(working_directory)
 
     @mcp_server.tool()
     async def checkpoint() -> str:
-        """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations"""
+        """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations."""
         return await _checkpoint_impl()
 
     @mcp_server.tool()
     async def end() -> str:
-        """End Claude session with cleanup, learning capture, and handoff file creation"""
+        """End Claude session with cleanup, learning capture, and handoff file creation."""
         return await _end_impl()
 
     @mcp_server.tool()
     async def status(working_directory: str | None = None) -> str:
-        """Get current session status and project context information with health checks
+        """Get current session status and project context information with health checks.
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _status_impl(working_directory)

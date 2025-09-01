@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Comprehensive test runner for session-mgmt-mcp.
+"""Comprehensive test runner for session-mgmt-mcp.
 
 This script provides a unified interface for running all test suites
 with coverage reporting, quality metrics, and comprehensive output.
@@ -39,21 +38,21 @@ except ImportError as e:
     print("Running in simplified mode...")
 
     def cleanup_test_data():
-        """Simplified cleanup function"""
-        pass
+        """Simplified cleanup function."""
 
     class TestRunner:
-        """Simplified test runner"""
+        """Simplified test runner."""
 
-        def __init__(self, project_root):
+        def __init__(self, project_root) -> None:
             self.project_root = project_root
 
         def run_quick_tests(self):
-            """Run quick tests using pytest directly"""
+            """Run quick tests using pytest directly."""
             import subprocess
 
             result = subprocess.run(
                 [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=short"],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
@@ -68,7 +67,7 @@ except ImportError as e:
 
 
 def create_argument_parser():
-    """Create command line argument parser"""
+    """Create command line argument parser."""
     parser = argparse.ArgumentParser(
         description="Comprehensive test runner for session-mgmt-mcp",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -85,20 +84,31 @@ Examples:
     # Test suite selection
     suite_group = parser.add_mutually_exclusive_group()
     suite_group.add_argument(
-        "--all", action="store_true", default=True, help="Run all test suites (default)"
+        "--all",
+        action="store_true",
+        default=True,
+        help="Run all test suites (default)",
     )
     suite_group.add_argument(
-        "--quick", action="store_true", help="Run quick smoke tests only"
+        "--quick",
+        action="store_true",
+        help="Run quick smoke tests only",
     )
     suite_group.add_argument("--unit", action="store_true", help="Run unit tests only")
     suite_group.add_argument(
-        "--integration", action="store_true", help="Run integration tests only"
+        "--integration",
+        action="store_true",
+        help="Run integration tests only",
     )
     suite_group.add_argument(
-        "--performance", action="store_true", help="Run performance tests only"
+        "--performance",
+        action="store_true",
+        help="Run performance tests only",
     )
     suite_group.add_argument(
-        "--security", action="store_true", help="Run security tests only"
+        "--security",
+        action="store_true",
+        help="Run security tests only",
     )
 
     # Coverage options
@@ -110,7 +120,9 @@ Examples:
         help="Enable coverage reporting (default)",
     )
     coverage_group.add_argument(
-        "--no-coverage", action="store_true", help="Disable coverage reporting"
+        "--no-coverage",
+        action="store_true",
+        help="Disable coverage reporting",
     )
     coverage_group.add_argument(
         "--coverage-only",
@@ -122,7 +134,10 @@ Examples:
     parser.add_argument("--parallel", action="store_true", help="Run tests in parallel")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Quiet output (minimal)"
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Quiet output (minimal)",
     )
     parser.add_argument(
         "--timeout",
@@ -162,7 +177,7 @@ Examples:
 
 
 def print_banner():
-    """Print test runner banner"""
+    """Print test runner banner."""
     print("=" * 70)
     print("🧪 Session Management MCP - Comprehensive Test Harness")
     print("=" * 70)
@@ -172,7 +187,7 @@ def print_banner():
 
 
 def print_summary(results: dict, args):
-    """Print test execution summary"""
+    """Print test execution summary."""
     print("\n" + "=" * 70)
     print("📊 TEST EXECUTION SUMMARY")
     print("=" * 70)
@@ -195,7 +210,7 @@ def print_summary(results: dict, args):
             f"  {status_emoji} {suite_name.capitalize()}: "
             f"{suite_info['test_count']} tests, "
             f"{suite_info['failure_count']} failures, "
-            f"{suite_info['execution_time']:.2f}s"
+            f"{suite_info['execution_time']:.2f}s",
         )
 
     # Coverage results
@@ -232,14 +247,18 @@ def print_summary(results: dict, args):
 
 
 def check_dependencies():
-    """Check if required dependencies are available"""
+    """Check if required dependencies are available."""
     required_commands = ["pytest", "coverage"]
     missing = []
 
     for cmd in required_commands:
         try:
             result = subprocess.run(
-                [cmd, "--version"], capture_output=True, text=True, timeout=10
+                [cmd, "--version"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode != 0:
                 missing.append(cmd)
@@ -255,7 +274,7 @@ def check_dependencies():
 
 
 def _get_suite_config(args):
-    """Get test suite configuration based on arguments"""
+    """Get test suite configuration based on arguments."""
     suite_configs = {
         "coverage_only": ("📈 Generating coverage report...", "coverage"),
         "quick": ("⚡ Running quick smoke tests...", "quick"),
@@ -273,7 +292,7 @@ def _get_suite_config(args):
 
 
 def _run_single_suite(suite_type, args, runner):
-    """Run a specific test suite and return results"""
+    """Run a specific test suite and return results."""
     if suite_type == "coverage":
         return {"coverage": runner.generate_coverage_report()}
 
@@ -291,8 +310,8 @@ def _run_single_suite(suite_type, args, runner):
                     coverage=not args.no_coverage,
                     parallel=parallel,
                     verbose=args.verbose,
-                )
-            }
+                ),
+            },
         }
 
     # Default: run all tests
@@ -304,7 +323,7 @@ def _run_single_suite(suite_type, args, runner):
 
 
 def _execute_test_suite(args, runner):
-    """Execute the appropriate test suite based on arguments"""
+    """Execute the appropriate test suite based on arguments."""
     message, suite_type = _get_suite_config(args)
 
     if not args.quiet:
@@ -313,16 +332,16 @@ def _execute_test_suite(args, runner):
     return _run_single_suite(suite_type, args, runner)
 
 
-def _check_test_failures(results):
-    """Check if any tests failed"""
+def _check_test_failures(results) -> bool:
+    """Check if any tests failed."""
     for suite_results in results.get("test_results", {}).values():
         if not suite_results.get("success", False):
             return True
     return False
 
 
-def _check_coverage_failure(results, args):
-    """Check if coverage is below minimum threshold"""
+def _check_coverage_failure(results, args) -> bool:
+    """Check if coverage is below minimum threshold."""
     if not args.fail_on_coverage or args.no_coverage:
         return False
 
@@ -333,14 +352,14 @@ def _check_coverage_failure(results, args):
     if coverage_percent < args.min_coverage:
         if not args.quiet:
             print(
-                f"\n❌ Coverage below minimum: {coverage_percent:.1f}% < {args.min_coverage:.1f}%"
+                f"\n❌ Coverage below minimum: {coverage_percent:.1f}% < {args.min_coverage:.1f}%",
             )
         return True
     return False
 
 
-def _initialize_test_environment(args):
-    """Initialize test environment and validate dependencies"""
+def _initialize_test_environment(args) -> bool:
+    """Initialize test environment and validate dependencies."""
     if not args.quiet:
         print_banner()
 
@@ -354,15 +373,15 @@ def _initialize_test_environment(args):
 
 
 def _execute_tests_with_timing(args, runner):
-    """Execute tests and track timing"""
+    """Execute tests and track timing."""
     start_time = time.time()
     results = _execute_test_suite(args, runner)
     results["execution_time"] = time.time() - start_time
     return results
 
 
-def _process_and_save_results(results, args):
-    """Process results and save to files if needed"""
+def _process_and_save_results(results, args) -> None:
+    """Process results and save to files if needed."""
     # Generate summary for single suite runs
     if "summary" not in results and "test_results" in results:
         results["summary"] = TestRunner(project_root).generate_test_summary(results)
@@ -377,8 +396,8 @@ def _process_and_save_results(results, args):
         print_summary(results, args)
 
 
-def _handle_test_completion(results, args):
-    """Handle test completion and exit appropriately"""
+def _handle_test_completion(results, args) -> None:
+    """Handle test completion and exit appropriately."""
     # Check for failures
     failed_tests = _check_test_failures(results)
     coverage_failed = _check_coverage_failure(results, args)
@@ -394,8 +413,8 @@ def _handle_test_completion(results, args):
         sys.exit(0)
 
 
-def _handle_test_error(e, args):
-    """Handle test execution errors"""
+def _handle_test_error(e, args) -> None:
+    """Handle test execution errors."""
     print(f"\n💥 Unexpected error: {e}")
     if args.verbose:
         import traceback
@@ -404,8 +423,8 @@ def _handle_test_error(e, args):
     sys.exit(1)
 
 
-def _cleanup_test_environment(args):
-    """Clean up test environment"""
+def _cleanup_test_environment(args) -> None:
+    """Clean up test environment."""
     if not args.no_cleanup:
         try:
             cleanup_test_data()
@@ -415,7 +434,7 @@ def _cleanup_test_environment(args):
 
 
 def main():
-    """Main entry point"""
+    """Main entry point."""
     parser = create_argument_parser()
     args = parser.parse_args()
 

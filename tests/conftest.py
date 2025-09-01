@@ -1,5 +1,4 @@
-"""
-Global pytest configuration and fixtures for session-mgmt-mcp testing.
+"""Global pytest configuration and fixtures for session-mgmt-mcp testing.
 
 This module provides comprehensive test fixtures for:
 - MCP server testing
@@ -35,7 +34,7 @@ except ImportError:
 
     # Create mock SessionPermissionsManager for testing
     class SessionPermissionsManager:
-        def __init__(self, session_id="test"):
+        def __init__(self, session_id="test") -> None:
             self.session_id = session_id
             self.trusted_operations = set()
 
@@ -95,21 +94,24 @@ except ImportError:
 
 # Pytest configuration
 def pytest_configure(config):
-    """Configure pytest with custom settings and markers"""
+    """Configure pytest with custom settings and markers."""
     config.addinivalue_line(
-        "markers", "vcr: mark test to use VCR cassettes for HTTP recording"
+        "markers",
+        "vcr: mark test to use VCR cassettes for HTTP recording",
     )
     config.addinivalue_line(
-        "markers", "freeze_time: mark test to freeze time for deterministic testing"
+        "markers",
+        "freeze_time: mark test to freeze time for deterministic testing",
     )
     config.addinivalue_line(
-        "markers", "temp_dir: mark test that requires temporary directory"
+        "markers",
+        "temp_dir: mark test that requires temporary directory",
     )
 
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create event loop for the test session"""
+    """Create event loop for the test session."""
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
@@ -122,7 +124,7 @@ def event_loop():
 # Environment and Configuration Fixtures
 @pytest.fixture(scope="session")
 def test_env_vars():
-    """Set test environment variables"""
+    """Set test environment variables."""
     original_env = os.environ.copy()
 
     # Set test environment
@@ -145,7 +147,7 @@ def test_env_vars():
 
 @pytest.fixture
 def temp_working_dir():
-    """Create temporary working directory for tests"""
+    """Create temporary working directory for tests."""
     temp_path = Path(tempfile.mkdtemp(prefix="session_mgmt_test_"))
     original_cwd = Path.cwd()
 
@@ -159,7 +161,7 @@ def temp_working_dir():
 
 @pytest.fixture
 def temp_home_dir():
-    """Create temporary home directory structure"""
+    """Create temporary home directory structure."""
     temp_home = Path(tempfile.mkdtemp(prefix="test_home_"))
 
     # Create necessary subdirectories
@@ -178,7 +180,7 @@ def temp_home_dir():
 # Database Fixtures
 @pytest.fixture
 def temp_database():
-    """Create temporary DuckDB database for testing"""
+    """Create temporary DuckDB database for testing."""
     db_path = Path(tempfile.mkdtemp()) / "test.db"
     db_connection = duckdb.connect(str(db_path))
 
@@ -192,7 +194,7 @@ def temp_database():
 
 @pytest.fixture
 async def reflection_database(temp_home_dir):
-    """Create ReflectionDatabase instance for testing"""
+    """Create ReflectionDatabase instance for testing."""
     db_path = temp_home_dir / ".claude" / "data" / "test_reflections.db"
     db = ReflectionDatabase(str(db_path))
 
@@ -214,7 +216,7 @@ async def reflection_database(temp_home_dir):
 # Session Management Fixtures
 @pytest.fixture
 def session_permissions():
-    """Create SessionPermissionsManager instance"""
+    """Create SessionPermissionsManager instance."""
     manager = SessionPermissionsManager()
 
     # Reset to clean state
@@ -230,7 +232,7 @@ def session_permissions():
 
 @pytest.fixture
 def mock_mcp_server():
-    """Mock MCP server for testing tools"""
+    """Mock MCP server for testing tools."""
     mock_server = Mock()
     mock_server.list_tools = Mock(return_value=[])
     mock_server.call_tool = AsyncMock()
@@ -240,42 +242,41 @@ def mock_mcp_server():
 
 @pytest.fixture
 async def mcp_test_client():
-    """Create test client for MCP server"""
+    """Create test client for MCP server."""
     # Import the actual MCP instance
-    test_client = mcp
+    return mcp
 
     # Setup any necessary test configuration
-    yield test_client
 
 
 # Data Factory Fixtures
 @pytest.fixture
 def session_data():
-    """Generate test session data"""
+    """Generate test session data."""
     return SessionDataFactory()
 
 
 @pytest.fixture
 def reflection_data():
-    """Generate test reflection data"""
+    """Generate test reflection data."""
     return ReflectionDataFactory()
 
 
 @pytest.fixture
 def user_data():
-    """Generate test user data"""
+    """Generate test user data."""
     return UserDataFactory()
 
 
 @pytest.fixture
 def project_data():
-    """Generate test project data"""
+    """Generate test project data."""
     return ProjectDataFactory()
 
 
 @pytest.fixture
 def sample_reflections():
-    """Sample reflection data for testing"""
+    """Sample reflection data for testing."""
     return [
         {
             "content": "Implemented user authentication system with JWT tokens",
@@ -301,7 +302,7 @@ def sample_reflections():
 # Mock Fixtures
 @pytest.fixture
 def mock_subprocess():
-    """Mock subprocess operations"""
+    """Mock subprocess operations."""
     with patch("subprocess.run") as mock_run, patch("subprocess.Popen") as mock_popen:
         # Configure common successful responses
         mock_run.return_value.returncode = 0
@@ -319,7 +320,7 @@ def mock_subprocess():
 
 @pytest.fixture
 def mock_file_operations():
-    """Mock file system operations"""
+    """Mock file system operations."""
     with (
         patch("pathlib.Path.exists") as mock_exists,
         patch("pathlib.Path.is_file") as mock_is_file,
@@ -340,7 +341,7 @@ def mock_file_operations():
 
 @pytest.fixture
 def mock_git_operations():
-    """Mock git operations"""
+    """Mock git operations."""
     with patch("subprocess.run") as mock_run:
 
         def git_side_effect(*args, **kwargs):
@@ -368,18 +369,18 @@ def mock_git_operations():
 # Performance Testing Fixtures
 @pytest.fixture
 def performance_monitor():
-    """Monitor for performance testing"""
+    """Monitor for performance testing."""
     import time
 
     import psutil
 
     class PerformanceMonitor:
-        def __init__(self):
+        def __init__(self) -> None:
             self.process = psutil.Process()
             self.start_time = None
             self.start_memory = None
 
-        def start_monitoring(self):
+        def start_monitoring(self) -> None:
             self.start_time = time.time()
             self.start_memory = self.process.memory_info().rss / 1024 / 1024  # MB
 
@@ -399,7 +400,7 @@ def performance_monitor():
 # Time-based Testing Fixtures
 @pytest.fixture
 def freeze_time():
-    """Freeze time for consistent testing"""
+    """Freeze time for consistent testing."""
     from freezegun import freeze_time as _freeze_time
 
     with _freeze_time("2024-01-15 12:00:00") as frozen_time:
@@ -408,14 +409,14 @@ def freeze_time():
 
 @pytest.fixture
 def current_timestamp():
-    """Provide consistent timestamp for testing"""
+    """Provide consistent timestamp for testing."""
     return datetime(2024, 1, 15, 12, 0, 0)
 
 
 # Cleanup Fixtures
 @pytest.fixture(autouse=True)
 def cleanup_after_test():
-    """Automatic cleanup after each test"""
+    """Automatic cleanup after each test."""
     yield
 
     # Clean up any temporary files or state
@@ -428,7 +429,7 @@ def cleanup_after_test():
 # Integration Test Fixtures
 @pytest.fixture
 def integration_test_env(temp_working_dir, temp_home_dir, test_env_vars):
-    """Complete integration test environment"""
+    """Complete integration test environment."""
     # Create realistic project structure
     project_dir = temp_working_dir / "test-project"
     project_dir.mkdir()
@@ -447,7 +448,7 @@ version = "0.1.0"
     # Initialize git repository
     os.chdir(project_dir)
 
-    yield {
+    return {
         "project_dir": project_dir,
         "home_dir": temp_home_dir,
         "working_dir": temp_working_dir,
@@ -457,7 +458,7 @@ version = "0.1.0"
 # Concurrency Testing Fixtures
 @pytest.fixture
 def concurrent_executor():
-    """Executor for concurrent testing"""
+    """Executor for concurrent testing."""
     from concurrent.futures import ThreadPoolExecutor
 
     executor = ThreadPoolExecutor(max_workers=10)
@@ -468,21 +469,24 @@ def concurrent_executor():
 # Error Injection Fixtures
 @pytest.fixture
 def error_injector():
-    """Inject controlled errors for testing error handling"""
+    """Inject controlled errors for testing error handling."""
 
     class ErrorInjector:
-        def __init__(self):
+        def __init__(self) -> None:
             self.should_fail = False
             self.error_type = Exception
             self.error_message = "Injected test error"
 
-        def maybe_raise(self):
+        def maybe_raise(self) -> None:
             if self.should_fail:
                 raise self.error_type(self.error_message)
 
         def configure(
-            self, should_fail=True, error_type=Exception, message="Test error"
-        ):
+            self,
+            should_fail=True,
+            error_type=Exception,
+            message="Test error",
+        ) -> None:
             self.should_fail = should_fail
             self.error_type = error_type
             self.error_message = message
@@ -493,13 +497,13 @@ def error_injector():
 # Async Testing Utilities
 @pytest.fixture
 def async_mock():
-    """Create async mock for testing async functions"""
+    """Create async mock for testing async functions."""
     return AsyncMock()
 
 
 @pytest.fixture
 async def async_context_manager():
-    """Async context manager for testing"""
+    """Async context manager for testing."""
 
     class AsyncContextManager:
         async def __aenter__(self):

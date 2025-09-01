@@ -1,5 +1,4 @@
-"""
-Smart Interruption Management module for context switch detection and auto-save.
+"""Smart Interruption Management module for context switch detection and auto-save.
 
 This module provides intelligent interruption handling including:
 - Context switch detection (app/window changes)
@@ -48,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class InterruptionType(Enum):
-    """Types of interruptions detected"""
+    """Types of interruptions detected."""
 
     APP_SWITCH = "app_switch"
     WINDOW_CHANGE = "window_change"
@@ -60,7 +59,7 @@ class InterruptionType(Enum):
 
 
 class ContextState(Enum):
-    """Context preservation states"""
+    """Context preservation states."""
 
     ACTIVE = "active"
     INTERRUPTED = "interrupted"
@@ -71,7 +70,7 @@ class ContextState(Enum):
 
 @dataclass
 class InterruptionEvent:
-    """Interruption event with context information"""
+    """Interruption event with context information."""
 
     id: str
     event_type: InterruptionType
@@ -87,7 +86,7 @@ class InterruptionEvent:
 
 @dataclass
 class SessionContext:
-    """Current session context information"""
+    """Current session context information."""
 
     session_id: str
     user_id: str
@@ -106,10 +105,10 @@ class SessionContext:
 
 
 class FocusTracker:
-    """Tracks application and window focus changes"""
+    """Tracks application and window focus changes."""
 
-    def __init__(self, callback: Callable | None = None):
-        """Initialize focus tracker"""
+    def __init__(self, callback: Callable | None = None) -> None:
+        """Initialize focus tracker."""
         self.callback = callback
         self.current_app = None
         self.current_window = None
@@ -118,8 +117,8 @@ class FocusTracker:
         self.running = False
         self._monitor_thread = None
 
-    def start_monitoring(self):
-        """Start focus monitoring"""
+    def start_monitoring(self) -> None:
+        """Start focus monitoring."""
         if self.running:
             return
 
@@ -127,24 +126,24 @@ class FocusTracker:
         self._monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self._monitor_thread.start()
 
-    def stop_monitoring(self):
-        """Stop focus monitoring"""
+    def stop_monitoring(self) -> None:
+        """Stop focus monitoring."""
         self.running = False
         if self._monitor_thread and self._monitor_thread.is_alive():
             self._monitor_thread.join(timeout=2.0)
 
-    def _monitor_loop(self):
-        """Focus monitoring loop"""
+    def _monitor_loop(self) -> None:
+        """Focus monitoring loop."""
         while self.running:
             try:
                 self._check_focus_change()
                 time.sleep(1.0)  # Check every second
             except Exception as e:
-                logger.error(f"Focus monitoring error: {e}")
+                logger.exception(f"Focus monitoring error: {e}")
                 time.sleep(5.0)  # Wait longer on error
 
-    def _check_focus_change(self):
-        """Check for focus changes using cross-platform methods"""
+    def _check_focus_change(self) -> None:
+        """Check for focus changes using cross-platform methods."""
         try:
             current_app = self._get_active_application()
             current_window = self._get_active_window()
@@ -163,7 +162,7 @@ class FocusTracker:
                             "target_app": current_app,
                             "focus_duration": focus_duration,
                             "timestamp": datetime.now(),
-                        }
+                        },
                     )
 
                 self.current_app = current_app
@@ -182,7 +181,7 @@ class FocusTracker:
                             "app": current_app,
                             "focus_duration": focus_duration,
                             "timestamp": datetime.now(),
-                        }
+                        },
                     )
 
                 self.current_window = current_window
@@ -194,7 +193,7 @@ class FocusTracker:
             logger.debug(f"Focus check failed: {e}")
 
     def _get_active_application(self) -> str | None:
-        """Get currently active application name"""
+        """Get currently active application name."""
         if not PSUTIL_AVAILABLE:
             return None
 
@@ -219,24 +218,24 @@ class FocusTracker:
             return None
 
     def _get_active_window(self) -> str | None:
-        """Get currently active window title"""
+        """Get currently active window title."""
         # This would require platform-specific implementations
         # For now, return a placeholder
         return f"Window_{int(time.time() % 1000)}"
 
 
 class FileChangeHandler(FileSystemEventHandler):
-    """Handles file system change events"""
+    """Handles file system change events."""
 
-    def __init__(self, callback: Callable | None = None):
-        """Initialize file change handler"""
+    def __init__(self, callback: Callable | None = None) -> None:
+        """Initialize file change handler."""
         super().__init__()
         self.callback = callback
         self.last_events = {}
         self.debounce_time = 1.0  # Seconds
 
-    def on_modified(self, event):
-        """Handle file modification"""
+    def on_modified(self, event) -> None:
+        """Handle file modification."""
         if event.is_directory:
             return
 
@@ -257,11 +256,11 @@ class FileChangeHandler(FileSystemEventHandler):
                     "file_path": file_path,
                     "event_type": "modified",
                     "timestamp": datetime.now(),
-                }
+                },
             )
 
-    def on_created(self, event):
-        """Handle file creation"""
+    def on_created(self, event) -> None:
+        """Handle file creation."""
         if event.is_directory:
             return
 
@@ -272,11 +271,11 @@ class FileChangeHandler(FileSystemEventHandler):
                     "file_path": event.src_path,
                     "event_type": "created",
                     "timestamp": datetime.now(),
-                }
+                },
             )
 
-    def on_deleted(self, event):
-        """Handle file deletion"""
+    def on_deleted(self, event) -> None:
+        """Handle file deletion."""
         if event.is_directory:
             return
 
@@ -287,17 +286,17 @@ class FileChangeHandler(FileSystemEventHandler):
                     "file_path": event.src_path,
                     "event_type": "deleted",
                     "timestamp": datetime.now(),
-                }
+                },
             )
 
 
 class InterruptionManager:
-    """Manages interruption detection and context preservation"""
+    """Manages interruption detection and context preservation."""
 
-    def __init__(self, db_path: str | None = None):
-        """Initialize interruption manager"""
+    def __init__(self, db_path: str | None = None) -> None:
+        """Initialize interruption manager."""
         self.db_path = db_path or str(
-            Path.home() / ".claude" / "data" / "interruption_manager.db"
+            Path.home() / ".claude" / "data" / "interruption_manager.db",
         )
         self._lock = threading.Lock()
         self.current_context: SessionContext | None = None
@@ -311,8 +310,8 @@ class InterruptionManager:
         self._restoration_callbacks: list[Callable] = []
         self._init_database()
 
-    def _init_database(self):
-        """Initialize SQLite database for interruption tracking"""
+    def _init_database(self) -> None:
+        """Initialize SQLite database for interruption tracking."""
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -358,23 +357,25 @@ class InterruptionManager:
 
             # Create indices
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_interruptions_timestamp ON interruption_events(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_interruptions_timestamp ON interruption_events(timestamp)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_interruptions_user ON interruption_events(user_id)"
+                "CREATE INDEX IF NOT EXISTS idx_interruptions_user ON interruption_events(user_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_contexts_user ON session_contexts(user_id)"
+                "CREATE INDEX IF NOT EXISTS idx_contexts_user ON session_contexts(user_id)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_contexts_state ON session_contexts(state)"
+                "CREATE INDEX IF NOT EXISTS idx_contexts_state ON session_contexts(state)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_snapshots_session ON context_snapshots(session_id)"
+                "CREATE INDEX IF NOT EXISTS idx_snapshots_session ON context_snapshots(session_id)",
             )
 
-    def start_monitoring(self, working_directory: str = ".", watch_files: bool = True):
-        """Start interruption monitoring"""
+    def start_monitoring(
+        self, working_directory: str = ".", watch_files: bool = True
+    ) -> None:
+        """Start interruption monitoring."""
         # Start focus tracking
         self.focus_tracker.start_monitoring()
 
@@ -383,14 +384,16 @@ class InterruptionManager:
             try:
                 self.file_observer = Observer()
                 self.file_observer.schedule(
-                    self.file_handler, working_directory, recursive=True
+                    self.file_handler,
+                    working_directory,
+                    recursive=True,
                 )
                 self.file_observer.start()
             except Exception as e:
                 logger.warning(f"Failed to start file monitoring: {e}")
 
-    def stop_monitoring(self):
-        """Stop interruption monitoring"""
+    def stop_monitoring(self) -> None:
+        """Stop interruption monitoring."""
         # Stop focus tracking
         self.focus_tracker.stop_monitoring()
 
@@ -410,7 +413,7 @@ class InterruptionManager:
         project_id: str | None = None,
         working_directory: str = ".",
     ) -> str:
-        """Create new session context"""
+        """Create new session context."""
         session_id = f"ctx_{int(time.time() * 1000)}"
 
         context = SessionContext(
@@ -453,9 +456,11 @@ class InterruptionManager:
         return session_id
 
     async def preserve_context(
-        self, session_id: str | None = None, force: bool = False
+        self,
+        session_id: str | None = None,
+        force: bool = False,
     ) -> bool:
-        """Preserve current session context"""
+        """Preserve current session context."""
         context = self.current_context
         if not context:
             return False
@@ -502,7 +507,7 @@ class InterruptionManager:
                             {
                                 "compressed": COMPRESSION_AVAILABLE,
                                 "size": len(compressed_data),
-                            }
+                            },
                         ),
                     ),
                 )
@@ -527,16 +532,16 @@ class InterruptionManager:
                 try:
                     await callback(context, snapshot_data)
                 except Exception as e:
-                    logger.error(f"Preservation callback error: {e}")
+                    logger.exception(f"Preservation callback error: {e}")
 
             return True
 
         except Exception as e:
-            logger.error(f"Context preservation failed: {e}")
+            logger.exception(f"Context preservation failed: {e}")
             return False
 
     async def restore_context(self, session_id: str) -> SessionContext | None:
-        """Restore session context from snapshot"""
+        """Restore session context from snapshot."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
@@ -590,18 +595,20 @@ class InterruptionManager:
                 try:
                     await callback(context, snapshot_data)
                 except Exception as e:
-                    logger.error(f"Restoration callback error: {e}")
+                    logger.exception(f"Restoration callback error: {e}")
 
             return context
 
         except Exception as e:
-            logger.error(f"Context restoration failed: {e}")
+            logger.exception(f"Context restoration failed: {e}")
             return None
 
     async def get_interruption_history(
-        self, user_id: str, hours: int = 24
+        self,
+        user_id: str,
+        hours: int = 24,
     ) -> list[dict[str, Any]]:
-        """Get recent interruption history"""
+        """Get recent interruption history."""
         since = datetime.now() - timedelta(hours=hours)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -627,7 +634,7 @@ class InterruptionManager:
             return results
 
     async def get_context_statistics(self, user_id: str) -> dict[str, Any]:
-        """Get context preservation statistics"""
+        """Get context preservation statistics."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
 
@@ -688,16 +695,16 @@ class InterruptionManager:
                 "snapshots": dict(snapshot_stats) if snapshot_stats else {},
             }
 
-    def register_preservation_callback(self, callback: Callable):
-        """Register callback for context preservation"""
+    def register_preservation_callback(self, callback: Callable) -> None:
+        """Register callback for context preservation."""
         self._preservation_callbacks.append(callback)
 
-    def register_restoration_callback(self, callback: Callable):
-        """Register callback for context restoration"""
+    def register_restoration_callback(self, callback: Callable) -> None:
+        """Register callback for context restoration."""
         self._restoration_callbacks.append(callback)
 
-    def _handle_interruption(self, event_data: dict[str, Any]):
-        """Handle interruption event"""
+    def _handle_interruption(self, event_data: dict[str, Any]) -> None:
+        """Handle interruption event."""
         try:
             interruption_type = event_data["type"]
             timestamp = event_data["timestamp"]
@@ -742,10 +749,10 @@ class InterruptionManager:
                 self.current_context.last_activity = timestamp
 
         except Exception as e:
-            logger.error(f"Interruption handling error: {e}")
+            logger.exception(f"Interruption handling error: {e}")
 
-    async def _store_interruption(self, interruption: InterruptionEvent):
-        """Store interruption event in database"""
+    async def _store_interruption(self, interruption: InterruptionEvent) -> None:
+        """Store interruption event in database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute(
@@ -768,10 +775,10 @@ class InterruptionManager:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Failed to store interruption: {e}")
+            logger.exception(f"Failed to store interruption: {e}")
 
     def _capture_environment_state(self) -> dict[str, Any]:
-        """Capture current environment state"""
+        """Capture current environment state."""
         state = {
             "timestamp": datetime.now().isoformat(),
             "cwd": Path.cwd().as_posix(),
@@ -789,7 +796,7 @@ class InterruptionManager:
                             for keyword in ["code", "python", "node", "git"]
                         ):
                             state["processes"].append(
-                                {"pid": proc.info["pid"], "name": name}
+                                {"pid": proc.info["pid"], "name": name},
                             )
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         continue
@@ -804,7 +811,7 @@ _interruption_manager = None
 
 
 def get_interruption_manager() -> InterruptionManager:
-    """Get global interruption manager instance"""
+    """Get global interruption manager instance."""
     global _interruption_manager
     if _interruption_manager is None:
         _interruption_manager = InterruptionManager()
@@ -813,51 +820,56 @@ def get_interruption_manager() -> InterruptionManager:
 
 # Public API functions for MCP tools
 async def start_interruption_monitoring(
-    working_directory: str = ".", watch_files: bool = True
-):
-    """Start interruption monitoring"""
+    working_directory: str = ".",
+    watch_files: bool = True,
+) -> None:
+    """Start interruption monitoring."""
     manager = get_interruption_manager()
     manager.start_monitoring(working_directory, watch_files)
 
 
-def stop_interruption_monitoring():
-    """Stop interruption monitoring"""
+def stop_interruption_monitoring() -> None:
+    """Stop interruption monitoring."""
     manager = get_interruption_manager()
     manager.stop_monitoring()
 
 
 async def create_session_context(
-    user_id: str, project_id: str | None = None, working_directory: str = "."
+    user_id: str,
+    project_id: str | None = None,
+    working_directory: str = ".",
 ) -> str:
-    """Create new session context for interruption management"""
+    """Create new session context for interruption management."""
     manager = get_interruption_manager()
     return await manager.create_session_context(user_id, project_id, working_directory)
 
 
 async def preserve_current_context(
-    session_id: str | None = None, force: bool = False
+    session_id: str | None = None,
+    force: bool = False,
 ) -> bool:
-    """Preserve current session context"""
+    """Preserve current session context."""
     manager = get_interruption_manager()
     return await manager.preserve_context(session_id, force)
 
 
 async def restore_session_context(session_id: str) -> dict[str, Any] | None:
-    """Restore session context from snapshot"""
+    """Restore session context from snapshot."""
     manager = get_interruption_manager()
     context = await manager.restore_context(session_id)
     return asdict(context) if context else None
 
 
 async def get_interruption_history(
-    user_id: str, hours: int = 24
+    user_id: str,
+    hours: int = 24,
 ) -> list[dict[str, Any]]:
-    """Get recent interruption history for user"""
+    """Get recent interruption history for user."""
     manager = get_interruption_manager()
     return await manager.get_interruption_history(user_id, hours)
 
 
 async def get_interruption_statistics(user_id: str) -> dict[str, Any]:
-    """Get context preservation and interruption statistics"""
+    """Get context preservation and interruption statistics."""
     manager = get_interruption_manager()
     return await manager.get_context_statistics(user_id)

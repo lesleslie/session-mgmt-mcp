@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Stateless/Serverless Mode for Session Management MCP Server
+"""Stateless/Serverless Mode for Session Management MCP Server.
 
 Enables request-scoped sessions with external storage backends (Redis, S3, DynamoDB).
 Allows the session management server to operate in cloud/serverless environments.
@@ -20,7 +19,7 @@ from typing import Any
 
 @dataclass
 class SessionState:
-    """Represents complete session state for serialization"""
+    """Represents complete session state for serialization."""
 
     session_id: str
     user_id: str
@@ -35,67 +34,65 @@ class SessionState:
     metadata: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for serialization"""
+        """Convert to dictionary for serialization."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SessionState":
-        """Create from dictionary"""
+        """Create from dictionary."""
         return cls(**data)
 
     def get_compressed_size(self) -> int:
-        """Get compressed size of session state"""
+        """Get compressed size of session state."""
         serialized = json.dumps(self.to_dict())
         compressed = gzip.compress(serialized.encode("utf-8"))
         return len(compressed)
 
 
 class SessionStorage(ABC):
-    """Abstract base class for session storage backends"""
+    """Abstract base class for session storage backends."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.logger = logging.getLogger(f"serverless.{self.__class__.__name__.lower()}")
 
     @abstractmethod
     async def store_session(
-        self, session_state: SessionState, ttl_seconds: int | None = None
+        self,
+        session_state: SessionState,
+        ttl_seconds: int | None = None,
     ) -> bool:
-        """Store session state with optional TTL"""
-        pass
+        """Store session state with optional TTL."""
 
     @abstractmethod
     async def retrieve_session(self, session_id: str) -> SessionState | None:
-        """Retrieve session state by ID"""
-        pass
+        """Retrieve session state by ID."""
 
     @abstractmethod
     async def delete_session(self, session_id: str) -> bool:
-        """Delete session state"""
-        pass
+        """Delete session state."""
 
     @abstractmethod
     async def list_sessions(
-        self, user_id: str | None = None, project_id: str | None = None
+        self,
+        user_id: str | None = None,
+        project_id: str | None = None,
     ) -> list[str]:
-        """List session IDs matching criteria"""
-        pass
+        """List session IDs matching criteria."""
 
     @abstractmethod
     async def cleanup_expired_sessions(self) -> int:
-        """Clean up expired sessions, return count removed"""
-        pass
+        """Clean up expired sessions, return count removed."""
 
     @abstractmethod
     async def is_available(self) -> bool:
-        """Check if storage backend is available"""
-        pass
+        """Check if storage backend is available."""
 
 
 class RedisStorage(SessionStorage):
-    """Redis-based session storage"""
+    """Redis-based session storage."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.host = config.get("host", "localhost")
         self.port = config.get("port", 6379)
@@ -105,7 +102,7 @@ class RedisStorage(SessionStorage):
         self._redis = None
 
     async def _get_redis(self):
-        """Get or create Redis connection"""
+        """Get or create Redis connection."""
         if self._redis is None:
             try:
                 import redis.asyncio as redis
@@ -118,23 +115,26 @@ class RedisStorage(SessionStorage):
                     decode_responses=False,  # We handle encoding ourselves
                 )
             except ImportError:
+                msg = "Redis package not installed. Install with: pip install redis"
                 raise ImportError(
-                    "Redis package not installed. Install with: pip install redis"
+                    msg,
                 )
         return self._redis
 
     def _get_key(self, session_id: str) -> str:
-        """Get Redis key for session"""
+        """Get Redis key for session."""
         return f"{self.key_prefix}session:{session_id}"
 
     def _get_index_key(self, index_type: str) -> str:
-        """Get Redis key for index"""
+        """Get Redis key for index."""
         return f"{self.key_prefix}index:{index_type}"
 
     async def store_session(
-        self, session_state: SessionState, ttl_seconds: int | None = None
+        self,
+        session_state: SessionState,
+        ttl_seconds: int | None = None,
     ) -> bool:
-        """Store session in Redis with optional TTL"""
+        """Store session in Redis with optional TTL."""
         try:
             redis_client = await self._get_redis()
 
@@ -149,7 +149,7 @@ class RedisStorage(SessionStorage):
             # Update indexes
             user_index_key = self._get_index_key(f"user:{session_state.user_id}")
             project_index_key = self._get_index_key(
-                f"project:{session_state.project_id}"
+                f"project:{session_state.project_id}",
             )
 
             await redis_client.sadd(user_index_key, session_state.session_id)
@@ -163,13 +163,13 @@ class RedisStorage(SessionStorage):
             return True
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to store session {session_state.session_id}: {e}"
+            self.logger.exception(
+                f"Failed to store session {session_state.session_id}: {e}",
             )
             return False
 
     async def retrieve_session(self, session_id: str) -> SessionState | None:
-        """Retrieve session from Redis"""
+        """Retrieve session from Redis."""
         try:
             redis_client = await self._get_redis()
             key = self._get_key(session_id)
@@ -185,11 +185,11 @@ class RedisStorage(SessionStorage):
             return SessionState.from_dict(session_data)
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve session {session_id}: {e}")
+            self.logger.exception(f"Failed to retrieve session {session_id}: {e}")
             return None
 
     async def delete_session(self, session_id: str) -> bool:
-        """Delete session from Redis"""
+        """Delete session from Redis."""
         try:
             redis_client = await self._get_redis()
 
@@ -204,7 +204,7 @@ class RedisStorage(SessionStorage):
             if session_state:
                 user_index_key = self._get_index_key(f"user:{session_state.user_id}")
                 project_index_key = self._get_index_key(
-                    f"project:{session_state.project_id}"
+                    f"project:{session_state.project_id}",
                 )
 
                 await redis_client.srem(user_index_key, session_id)
@@ -213,13 +213,15 @@ class RedisStorage(SessionStorage):
             return deleted > 0
 
         except Exception as e:
-            self.logger.error(f"Failed to delete session {session_id}: {e}")
+            self.logger.exception(f"Failed to delete session {session_id}: {e}")
             return False
 
     async def list_sessions(
-        self, user_id: str | None = None, project_id: str | None = None
+        self,
+        user_id: str | None = None,
+        project_id: str | None = None,
     ) -> list[str]:
-        """List sessions by user or project"""
+        """List sessions by user or project."""
         try:
             redis_client = await self._get_redis()
 
@@ -250,11 +252,11 @@ class RedisStorage(SessionStorage):
             ]
 
         except Exception as e:
-            self.logger.error(f"Failed to list sessions: {e}")
+            self.logger.exception(f"Failed to list sessions: {e}")
             return []
 
     async def cleanup_expired_sessions(self) -> int:
-        """Clean up expired sessions"""
+        """Clean up expired sessions."""
         # Redis automatically handles TTL expiration
         # This method could scan for orphaned index entries
         try:
@@ -284,11 +286,11 @@ class RedisStorage(SessionStorage):
             return cleaned
 
         except Exception as e:
-            self.logger.error(f"Failed to cleanup expired sessions: {e}")
+            self.logger.exception(f"Failed to cleanup expired sessions: {e}")
             return 0
 
     async def is_available(self) -> bool:
-        """Check if Redis is available"""
+        """Check if Redis is available."""
         try:
             redis_client = await self._get_redis()
             await redis_client.ping()
@@ -298,9 +300,9 @@ class RedisStorage(SessionStorage):
 
 
 class S3Storage(SessionStorage):
-    """S3-based session storage"""
+    """S3-based session storage."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.bucket_name = config.get("bucket_name", "session-mgmt-mcp")
         self.region = config.get("region", "us-east-1")
@@ -310,7 +312,7 @@ class S3Storage(SessionStorage):
         self._s3_client = None
 
     async def _get_s3_client(self):
-        """Get or create S3 client"""
+        """Get or create S3 client."""
         if self._s3_client is None:
             try:
                 import boto3
@@ -327,20 +329,23 @@ class S3Storage(SessionStorage):
                     config=Config(retries={"max_attempts": 3}, max_pool_connections=50),
                 )
             except ImportError:
+                msg = "Boto3 package not installed. Install with: pip install boto3"
                 raise ImportError(
-                    "Boto3 package not installed. Install with: pip install boto3"
+                    msg,
                 )
 
         return self._s3_client
 
     def _get_key(self, session_id: str) -> str:
-        """Get S3 key for session"""
+        """Get S3 key for session."""
         return f"{self.key_prefix}{session_id}.json.gz"
 
     async def store_session(
-        self, session_state: SessionState, ttl_seconds: int | None = None
+        self,
+        session_state: SessionState,
+        ttl_seconds: int | None = None,
     ) -> bool:
-        """Store session in S3"""
+        """Store session in S3."""
         try:
             s3_client = await self._get_s3_client()
 
@@ -383,13 +388,13 @@ class S3Storage(SessionStorage):
             return True
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to store session {session_state.session_id}: {e}"
+            self.logger.exception(
+                f"Failed to store session {session_state.session_id}: {e}",
             )
             return False
 
     async def retrieve_session(self, session_id: str) -> SessionState | None:
-        """Retrieve session from S3"""
+        """Retrieve session from S3."""
         try:
             s3_client = await self._get_s3_client()
             key = self._get_key(session_id)
@@ -397,7 +402,8 @@ class S3Storage(SessionStorage):
             # Download from S3
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
-                None, lambda: s3_client.get_object(Bucket=self.bucket_name, Key=key)
+                None,
+                lambda: s3_client.get_object(Bucket=self.bucket_name, Key=key),
             )
 
             # Decompress and deserialize
@@ -408,30 +414,33 @@ class S3Storage(SessionStorage):
             return SessionState.from_dict(session_data)
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve session {session_id}: {e}")
+            self.logger.exception(f"Failed to retrieve session {session_id}: {e}")
             return None
 
     async def delete_session(self, session_id: str) -> bool:
-        """Delete session from S3"""
+        """Delete session from S3."""
         try:
             s3_client = await self._get_s3_client()
             key = self._get_key(session_id)
 
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                None, lambda: s3_client.delete_object(Bucket=self.bucket_name, Key=key)
+                None,
+                lambda: s3_client.delete_object(Bucket=self.bucket_name, Key=key),
             )
 
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to delete session {session_id}: {e}")
+            self.logger.exception(f"Failed to delete session {session_id}: {e}")
             return False
 
     async def list_sessions(
-        self, user_id: str | None = None, project_id: str | None = None
+        self,
+        user_id: str | None = None,
+        project_id: str | None = None,
     ) -> list[str]:
-        """List sessions in S3"""
+        """List sessions in S3."""
         try:
             s3_client = await self._get_s3_client()
 
@@ -440,7 +449,8 @@ class S3Storage(SessionStorage):
             response = await loop.run_in_executor(
                 None,
                 lambda: s3_client.list_objects_v2(
-                    Bucket=self.bucket_name, Prefix=self.key_prefix
+                    Bucket=self.bucket_name,
+                    Prefix=self.key_prefix,
                 ),
             )
 
@@ -469,11 +479,11 @@ class S3Storage(SessionStorage):
             return session_ids
 
         except Exception as e:
-            self.logger.error(f"Failed to list sessions: {e}")
+            self.logger.exception(f"Failed to list sessions: {e}")
             return []
 
     async def cleanup_expired_sessions(self) -> int:
-        """Clean up expired sessions from S3"""
+        """Clean up expired sessions from S3."""
         try:
             s3_client = await self._get_s3_client()
 
@@ -487,7 +497,8 @@ class S3Storage(SessionStorage):
             response = await loop.run_in_executor(
                 None,
                 lambda: s3_client.list_objects_v2(
-                    Bucket=self.bucket_name, Prefix=self.key_prefix
+                    Bucket=self.bucket_name,
+                    Prefix=self.key_prefix,
                 ),
             )
 
@@ -500,7 +511,8 @@ class S3Storage(SessionStorage):
                     await loop.run_in_executor(
                         None,
                         lambda: s3_client.delete_object(
-                            Bucket=self.bucket_name, Key=obj["Key"]
+                            Bucket=self.bucket_name,
+                            Key=obj["Key"],
                         ),
                     )
                     cleaned += 1
@@ -508,18 +520,19 @@ class S3Storage(SessionStorage):
             return cleaned
 
         except Exception as e:
-            self.logger.error(f"Failed to cleanup expired sessions: {e}")
+            self.logger.exception(f"Failed to cleanup expired sessions: {e}")
             return 0
 
     async def is_available(self) -> bool:
-        """Check if S3 is available"""
+        """Check if S3 is available."""
         try:
             s3_client = await self._get_s3_client()
 
             # Test bucket access
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                None, lambda: s3_client.head_bucket(Bucket=self.bucket_name)
+                None,
+                lambda: s3_client.head_bucket(Bucket=self.bucket_name),
             )
 
             return True
@@ -528,23 +541,25 @@ class S3Storage(SessionStorage):
 
 
 class LocalFileStorage(SessionStorage):
-    """Local file-based session storage (for development/testing)"""
+    """Local file-based session storage (for development/testing)."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.storage_dir = Path(
-            config.get("storage_dir", Path.home() / ".claude" / "data" / "sessions")
+            config.get("storage_dir", Path.home() / ".claude" / "data" / "sessions"),
         )
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_session_file(self, session_id: str) -> Path:
-        """Get file path for session"""
+        """Get file path for session."""
         return self.storage_dir / f"{session_id}.json.gz"
 
     async def store_session(
-        self, session_state: SessionState, ttl_seconds: int | None = None
+        self,
+        session_state: SessionState,
+        ttl_seconds: int | None = None,
     ) -> bool:
-        """Store session in local file"""
+        """Store session in local file."""
         try:
             # Serialize and compress session state
             serialized = json.dumps(session_state.to_dict())
@@ -558,13 +573,13 @@ class LocalFileStorage(SessionStorage):
             return True
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to store session {session_state.session_id}: {e}"
+            self.logger.exception(
+                f"Failed to store session {session_state.session_id}: {e}",
             )
             return False
 
     async def retrieve_session(self, session_id: str) -> SessionState | None:
-        """Retrieve session from local file"""
+        """Retrieve session from local file."""
         try:
             session_file = self._get_session_file(session_id)
 
@@ -581,11 +596,11 @@ class LocalFileStorage(SessionStorage):
             return SessionState.from_dict(session_data)
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve session {session_id}: {e}")
+            self.logger.exception(f"Failed to retrieve session {session_id}: {e}")
             return None
 
     async def delete_session(self, session_id: str) -> bool:
-        """Delete session file"""
+        """Delete session file."""
         try:
             session_file = self._get_session_file(session_id)
 
@@ -596,13 +611,15 @@ class LocalFileStorage(SessionStorage):
             return False
 
         except Exception as e:
-            self.logger.error(f"Failed to delete session {session_id}: {e}")
+            self.logger.exception(f"Failed to delete session {session_id}: {e}")
             return False
 
     async def list_sessions(
-        self, user_id: str | None = None, project_id: str | None = None
+        self,
+        user_id: str | None = None,
+        project_id: str | None = None,
     ) -> list[str]:
-        """List session files"""
+        """List session files."""
         try:
             session_ids = []
 
@@ -625,11 +642,11 @@ class LocalFileStorage(SessionStorage):
             return session_ids
 
         except Exception as e:
-            self.logger.error(f"Failed to list sessions: {e}")
+            self.logger.exception(f"Failed to list sessions: {e}")
             return []
 
     async def cleanup_expired_sessions(self) -> int:
-        """Clean up old session files"""
+        """Clean up old session files."""
         try:
             now = datetime.now()
             cleaned = 0
@@ -645,18 +662,18 @@ class LocalFileStorage(SessionStorage):
             return cleaned
 
         except Exception as e:
-            self.logger.error(f"Failed to cleanup expired sessions: {e}")
+            self.logger.exception(f"Failed to cleanup expired sessions: {e}")
             return 0
 
     async def is_available(self) -> bool:
-        """Check if local storage is available"""
+        """Check if local storage is available."""
         return self.storage_dir.exists() and self.storage_dir.is_dir()
 
 
 class ServerlessSessionManager:
-    """Main session manager for serverless/stateless operation"""
+    """Main session manager for serverless/stateless operation."""
 
-    def __init__(self, storage_backend: SessionStorage):
+    def __init__(self, storage_backend: SessionStorage) -> None:
         self.storage = storage_backend
         self.logger = logging.getLogger("serverless.session_manager")
         self.session_cache = {}  # In-memory cache for current request
@@ -668,7 +685,7 @@ class ServerlessSessionManager:
         session_data: dict[str, Any] | None = None,
         ttl_hours: int = 24,
     ) -> str:
-        """Create new session"""
+        """Create new session."""
         session_id = self._generate_session_id(user_id, project_id)
 
         session_state = SessionState(
@@ -692,11 +709,11 @@ class ServerlessSessionManager:
         if success:
             self.session_cache[session_id] = session_state
             return session_id
-        else:
-            raise RuntimeError("Failed to create session")
+        msg = "Failed to create session"
+        raise RuntimeError(msg)
 
     async def get_session(self, session_id: str) -> SessionState | None:
-        """Get session state"""
+        """Get session state."""
         # Check cache first
         if session_id in self.session_cache:
             return self.session_cache[session_id]
@@ -709,9 +726,12 @@ class ServerlessSessionManager:
         return session_state
 
     async def update_session(
-        self, session_id: str, updates: dict[str, Any], ttl_hours: int | None = None
+        self,
+        session_id: str,
+        updates: dict[str, Any],
+        ttl_hours: int | None = None,
     ) -> bool:
-        """Update session state"""
+        """Update session state."""
         session_state = await self.get_session(session_id)
         if not session_state:
             return False
@@ -734,7 +754,7 @@ class ServerlessSessionManager:
         return success
 
     async def delete_session(self, session_id: str) -> bool:
-        """Delete session"""
+        """Delete session."""
         # Remove from cache
         self.session_cache.pop(session_id, None)
 
@@ -742,25 +762,25 @@ class ServerlessSessionManager:
         return await self.storage.delete_session(session_id)
 
     async def list_user_sessions(self, user_id: str) -> list[str]:
-        """List sessions for user"""
+        """List sessions for user."""
         return await self.storage.list_sessions(user_id=user_id)
 
     async def list_project_sessions(self, project_id: str) -> list[str]:
-        """List sessions for project"""
+        """List sessions for project."""
         return await self.storage.list_sessions(project_id=project_id)
 
     async def cleanup_sessions(self) -> int:
-        """Clean up expired sessions"""
+        """Clean up expired sessions."""
         return await self.storage.cleanup_expired_sessions()
 
     def _generate_session_id(self, user_id: str, project_id: str) -> str:
-        """Generate unique session ID"""
+        """Generate unique session ID."""
         timestamp = datetime.now().isoformat()
         data = f"{user_id}:{project_id}:{timestamp}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]
 
     def get_session_stats(self) -> dict[str, Any]:
-        """Get session statistics"""
+        """Get session statistics."""
         return {
             "cached_sessions": len(self.session_cache),
             "storage_backend": self.storage.__class__.__name__,
@@ -771,11 +791,11 @@ class ServerlessSessionManager:
 
 
 class ServerlessConfigManager:
-    """Manages configuration for serverless mode"""
+    """Manages configuration for serverless mode."""
 
     @staticmethod
     def load_config(config_path: str | None = None) -> dict[str, Any]:
-        """Load serverless configuration"""
+        """Load serverless configuration."""
         default_config = {
             "storage_backend": "local",
             "session_ttl_hours": 24,
@@ -793,7 +813,7 @@ class ServerlessConfigManager:
                     "key_prefix": "sessions/",
                 },
                 "local": {
-                    "storage_dir": str(Path.home() / ".claude" / "data" / "sessions")
+                    "storage_dir": str(Path.home() / ".claude" / "data" / "sessions"),
                 },
             },
         }
@@ -810,22 +830,22 @@ class ServerlessConfigManager:
 
     @staticmethod
     def create_storage_backend(config: dict[str, Any]) -> SessionStorage:
-        """Create storage backend from config"""
+        """Create storage backend from config."""
         backend_type = config.get("storage_backend", "local")
         backend_config = config.get("backends", {}).get(backend_type, {})
 
         if backend_type == "redis":
             return RedisStorage(backend_config)
-        elif backend_type == "s3":
+        if backend_type == "s3":
             return S3Storage(backend_config)
-        elif backend_type == "local":
+        if backend_type == "local":
             return LocalFileStorage(backend_config)
-        else:
-            raise ValueError(f"Unsupported storage backend: {backend_type}")
+        msg = f"Unsupported storage backend: {backend_type}"
+        raise ValueError(msg)
 
     @staticmethod
     async def test_storage_backends(config: dict[str, Any]) -> dict[str, bool]:
-        """Test all configured storage backends"""
+        """Test all configured storage backends."""
         results = {}
 
         for backend_name, backend_config in config.get("backends", {}).items():
