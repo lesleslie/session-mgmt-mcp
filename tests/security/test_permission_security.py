@@ -29,14 +29,13 @@ class TestSessionPermissionSecurity:
     @pytest.fixture
     def permissions_manager(self, tmp_path):
         """Create clean permissions manager for security testing."""
-        from pathlib import Path
         claude_dir = tmp_path / ".claude"
         claude_dir.mkdir(exist_ok=True)
         manager = SessionPermissionsManager(claude_dir)
         manager.trusted_operations.clear()
-        if hasattr(manager, 'auto_checkpoint'):
+        if hasattr(manager, "auto_checkpoint"):
             manager.auto_checkpoint = False
-        if hasattr(manager, 'checkpoint_frequency'):
+        if hasattr(manager, "checkpoint_frequency"):
             manager.checkpoint_frequency = 300
         return manager
 
@@ -65,16 +64,16 @@ class TestSessionPermissionSecurity:
         claude_dir1.mkdir(exist_ok=True)
         claude_dir2 = tmp_path / ".claude2"
         claude_dir2.mkdir(exist_ok=True)
-        
+
         session1 = SessionPermissionsManager(claude_dir1)
         session2 = SessionPermissionsManager(claude_dir2)
 
         # They should be the same instance (singleton behavior with same claude_dir)
         # But with different claude_dirs, the second call creates a new singleton
-        
+
         # Clear for clean test
         session1.trusted_operations.clear()
-        if hasattr(session2, 'trusted_operations'):
+        if hasattr(session2, "trusted_operations"):
             session2.trusted_operations.clear()
 
         # Add permissions to session1

@@ -29,17 +29,17 @@ except ImportError:
         @staticmethod
         def create():
             return {"id": "test_project", "name": "Test Project"}
-    
+
     class ReflectionDataFactory:
         @staticmethod
         def create():
             return {"content": "Test reflection", "tags": ["test"]}
-    
+
     class SessionDataFactory:
         @staticmethod
         def create():
             return {"id": "test_session", "user": "test_user"}
-    
+
     class UserDataFactory:
         @staticmethod
         def create():
@@ -374,6 +374,7 @@ def pytest_configure(config):
 def performance_monitor():
     """Monitor for performance testing with memory and timing metrics."""
     import time
+
     try:
         import psutil
     except ImportError:
@@ -381,16 +382,17 @@ def performance_monitor():
         class SimplePerformanceMonitor:
             def __init__(self):
                 self.start_time = None
-            
+
             def start_monitoring(self):
                 self.start_time = time.time()
-            
+
             def stop_monitoring(self):
                 return {
                     "duration": time.time() - self.start_time if self.start_time else 0,
                     "memory_delta": 0,
                     "peak_memory": 0,
                 }
+
         return SimplePerformanceMonitor()
 
     class PerformanceMonitor:

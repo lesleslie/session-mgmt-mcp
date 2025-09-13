@@ -365,6 +365,7 @@ All tests pass and demonstrate the infrastructure works correctly for:
 ```python
 from hypothesis import given, strategies as st, settings
 
+
 @given(
     content=st.text(min_size=1, max_size=10000),
     tags=st.lists(st.text(min_size=1, max_size=50), max_size=10),
@@ -377,7 +378,7 @@ async def test_reflection_storage_properties(content, tags, reflection_db):
     result = await reflection_db.store_reflection(
         content=content, tags=tags, project="property-test"
     )
-    
+
     assert isinstance(result, str)
     assert len(result) > 0
 ```
@@ -391,12 +392,12 @@ async def test_with_performance_tracking():
     """Performance testing with baseline comparison"""
     tracker = AdvancedPerformanceTracker()
     tracker.start()
-    
+
     # Performance-sensitive operation
     start_time = time.perf_counter()
     await some_expensive_operation()
     operation_time = time.perf_counter() - start_time
-    
+
     # Record structured performance metric
     tracker.record_metric(
         PerformanceMetric(
@@ -406,10 +407,10 @@ async def test_with_performance_tracking():
             threshold=1.0,  # 1 second threshold
         )
     )
-    
+
     metrics = tracker.stop()
     analysis = tracker.analyze_regressions()
-    
+
     # Assert no performance regressions
     assert analysis["summary"]["overall_status"] == "PASS"
 ```
@@ -422,7 +423,7 @@ async def test_with_performance_tracking():
     "malicious_input",
     [
         "'; DROP TABLE reflections; --",
-        "<script>alert('xss')</script>", 
+        "<script>alert('xss')</script>",
         "../../etc/passwd",
         "\x00\x01\x02\x03",  # Binary injection
         "A" * 10000,  # Buffer overflow attempt
@@ -435,12 +436,12 @@ async def test_input_sanitization(malicious_input, reflection_db):
         result = await reflection_db.store_reflection(
             content=malicious_input, tags=["security-test"]
         )
-        
+
         # If it succeeds, verify no SQL injection occurred
         if isinstance(result, str):
             stats = await reflection_db.get_stats()
             assert stats["total_reflections"] >= 1
-            
+
     except (ValueError, TypeError) as e:
         # Acceptable to reject invalid input
         assert "invalid" in str(e).lower()
@@ -454,22 +455,22 @@ async def test_input_sanitization(malicious_input, reflection_db):
 async def test_complete_session_lifecycle(tmp_path):
     """Test end-to-end session workflow"""
     from session_mgmt_mcp.server import init, checkpoint, end, status
-    
+
     working_dir = str(tmp_path)
-    
+
     # Phase 1: Initialize session
     init_result = await init(working_directory=working_dir)
     assert init_result["success"] is True
     session_id = init_result["session_id"]
-    
+
     # Phase 2: Verify session is active
     status_result = await status(working_directory=working_dir)
     assert status_result["session"]["session_id"] == session_id
-    
-    # Phase 3: Create checkpoint  
+
+    # Phase 3: Create checkpoint
     checkpoint_result = await checkpoint()
     assert checkpoint_result["success"] is True
-    
+
     # Phase 4: End session
     end_result = await end()
     assert end_result["success"] is True
@@ -488,7 +489,7 @@ async def test_complete_session_lifecycle(tmp_path):
 
 - **Database operations**: < 100ms average, < 500ms P95
 - **MCP tool execution**: < 200ms average, < 1s P95
-- **Memory growth**: < 50MB per 1000 operations  
+- **Memory growth**: < 50MB per 1000 operations
 - **Concurrent access**: Support 50+ simultaneous operations
 
 ### Security Standards
