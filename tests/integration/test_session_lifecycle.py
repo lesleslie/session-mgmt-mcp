@@ -281,14 +281,6 @@ class TestMCPToolRegistration:
         ]
 
         # Check that the tools are available in our mock setup
-        global \
-            init, \
-            checkpoint, \
-            end, \
-            status, \
-            permissions, \
-            quick_search, \
-            store_reflection
         tool_vars = {
             "init": init,
             "checkpoint": checkpoint,

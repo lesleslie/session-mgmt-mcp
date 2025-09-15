@@ -402,9 +402,7 @@ class SecurityConfig(BaseModel):
 
         for pattern in v:
             try:
-                re.compile(
-                    pattern
-                )  # REGEX OK: Pattern validation for configuration system - legitimate use for validation
+                re.compile(pattern)  # REGEX OK: Configuration system pattern validation
             except re.error as e:
                 msg = f"Invalid regex pattern '{pattern}': {e}"
                 raise ValueError(msg) from e

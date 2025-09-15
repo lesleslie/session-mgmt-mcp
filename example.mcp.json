@@ -1,9 +1,18 @@
 {
   "mcpServers": {
-    "session-management": {
-      "command": "uvx",
-      "args": ["session-mgmt-mcp", "--start-server"],
-      "env": {}
+    "session-mgmt": {
+      "url": "http://localhost:8678/mcp",
+      "type": "http"
+    },
+    "crackerjack": {
+      "url": "http://localhost:8676/mcp",
+      "type": "http",
+      "env": {
+        "MCP_TIMEOUT": "60000",
+        "MCP_TOOL_TIMEOUT": "1800000",
+        "BASH_DEFAULT_TIMEOUT_MS": "300000",
+        "BASH_MAX_TIMEOUT_MS": "1800000"
+      }
     }
   }
 }
