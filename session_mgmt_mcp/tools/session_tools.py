@@ -162,8 +162,80 @@ async def _start_impl(working_directory: str | None = None) -> str:
     return "\n".join(output)
 
 
-async def _checkpoint_impl() -> str:
+def _get_client_working_directory() -> str | None:
+    """Auto-detect the client's working directory using multiple detection methods."""
+    import os
+    from pathlib import Path
+
+    # Method 1: Check for Claude Code environment variables
+    for env_var in ["CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"]:
+        if env_var in os.environ:
+            client_dir = os.environ[env_var]
+            if client_dir and Path(client_dir).exists():
+                return client_dir
+
+    # Method 2: Check for the temporary file used by Claude's auto-start scripts
+    # NOTE: This file may contain the server directory, so we need to validate it
+    working_dir_file = Path("/tmp/claude-git-working-dir")
+    if working_dir_file.exists():
+        try:
+            stored_dir = working_dir_file.read_text().strip()
+            # Only use if it's NOT the session-mgmt-mcp server directory
+            if (stored_dir and
+                Path(stored_dir).exists() and
+                not stored_dir.endswith("session-mgmt-mcp")):
+                return stored_dir
+        except Exception:
+            pass
+
+    # Method 3: Check parent process working directory (advanced)
+    try:
+        import psutil
+        parent_process = psutil.Process().parent()
+        if parent_process:
+            parent_cwd = parent_process.cwd()
+            # Only use if it's a different directory and exists
+            if (parent_cwd and
+                Path(parent_cwd).exists() and
+                parent_cwd != str(Path.cwd()) and
+                not parent_cwd.endswith("session-mgmt-mcp")):
+                return parent_cwd
+    except (ImportError, Exception):
+        pass
+
+    # Method 4: Look for recent git repositories in common project directories
+    for projects_dir in ["/Users/les/Projects", str(Path.home() / "Projects")]:
+        projects_path = Path(projects_dir)
+        if projects_path.exists():
+            # Find the most recently modified git repository
+            git_repos = []
+            for repo_path in projects_path.iterdir():
+                if repo_path.is_dir() and (repo_path / ".git").exists():
+                    try:
+                        # Get last modification time
+                        mtime = repo_path.stat().st_mtime
+                        git_repos.append((mtime, str(repo_path)))
+                    except Exception:
+                        continue
+
+            if git_repos:
+                # Sort by most recent first
+                git_repos.sort(reverse=True)
+
+                # Find the first repository that isn't the server directory
+                for mtime, repo_path in git_repos:
+                    if not repo_path.endswith("session-mgmt-mcp"):
+                        return repo_path
+
+    return None
+
+
+async def _checkpoint_impl(working_directory: str | None = None) -> str:
     """Implementation for checkpoint tool."""
+
+    # Auto-detect client working directory if not provided
+    if not working_directory:
+        working_directory = _get_client_working_directory()
     from session_mgmt_mcp.server_optimized import (
         _execute_auto_compact,
         should_suggest_compact,
@@ -176,7 +248,7 @@ async def _checkpoint_impl() -> str:
     output.append("=" * 50)
 
     try:
-        result = await session_manager.checkpoint_session()
+        result = await session_manager.checkpoint_session(working_directory)
 
         if result["success"]:
             # Add quality assessment output
@@ -216,14 +288,19 @@ async def _checkpoint_impl() -> str:
     return "\n".join(output)
 
 
-async def _end_impl() -> str:
+async def _end_impl(working_directory: str | None = None) -> str:
     """Implementation for end tool."""
+
+    # Auto-detect client working directory if not provided
+    if not working_directory:
+        working_directory = _get_client_working_directory()
+
     output = []
     output.append("🏁 Claude Session End - Cleanup and Handoff")
     output.append("=" * 50)
 
     try:
-        result = await session_manager.end_session()
+        result = await session_manager.end_session(working_directory)
 
         if result["success"]:
             summary = result["summary"]
@@ -401,14 +478,22 @@ def register_session_tools(mcp_server) -> None:
         return await _start_impl(working_directory)
 
     @mcp_server.tool()
-    async def checkpoint() -> str:
-        """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations."""
-        return await _checkpoint_impl()
+    async def checkpoint(working_directory: str | None = None) -> str:
+        """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations.
+
+        Args:
+            working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+        """
+        return await _checkpoint_impl(working_directory)
 
     @mcp_server.tool()
-    async def end() -> str:
-        """End Claude session with cleanup, learning capture, and handoff file creation."""
-        return await _end_impl()
+    async def end(working_directory: str | None = None) -> str:
+        """End Claude session with cleanup, learning capture, and handoff file creation.
+
+        Args:
+            working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+        """
+        return await _end_impl(working_directory)
 
     @mcp_server.tool()
     async def status(working_directory: str | None = None) -> str:

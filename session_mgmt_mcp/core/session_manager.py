@@ -324,10 +324,10 @@ class SessionLifecycleManager:
             self.logger.exception("Session initialization failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    async def checkpoint_session(self) -> dict[str, Any]:
+    async def checkpoint_session(self, working_directory: str | None = None) -> dict[str, Any]:
         """Perform a comprehensive session checkpoint."""
         try:
-            current_dir = Path.cwd()
+            current_dir = Path(working_directory) if working_directory else Path.cwd()
             self.current_project = current_dir.name
 
             # Quality assessment
@@ -357,10 +357,10 @@ class SessionLifecycleManager:
             self.logger.exception("Session checkpoint failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    async def end_session(self) -> dict[str, Any]:
+    async def end_session(self, working_directory: str | None = None) -> dict[str, Any]:
         """End the current session with cleanup and summary."""
         try:
-            current_dir = Path.cwd()
+            current_dir = Path(working_directory) if working_directory else Path.cwd()
             self.current_project = current_dir.name
 
             # Final quality assessment
