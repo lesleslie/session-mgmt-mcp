@@ -251,7 +251,7 @@ class TokenOptimizer:
             from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
 
             normalize_pattern = SAFE_PATTERNS["whitespace_normalize"]
-            normalized_content = normalize_pattern.sub(content.lower().strip())
+            normalized_content = normalize_pattern.apply(content.lower().strip())
             content_hash = hashlib.md5(normalized_content.encode()).hexdigest()
 
             if content_hash not in seen_hashes:

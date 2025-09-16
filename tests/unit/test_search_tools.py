@@ -17,15 +17,17 @@ class TestGetReflectionDatabase:
 
     def test_get_reflection_database_success(self):
         """Test successful database initialization."""
-        # This test would require actual dependencies, so we'll mock it
-        with patch(
-            "session_mgmt_mcp.tools.search_tools.ReflectionDatabase"
-        ) as mock_db_class:
+        # Mock the ReflectionDatabase class that's imported inside the function
+        with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase") as mock_reflection_db:
             mock_db_instance = AsyncMock()
-            mock_db_class.return_value = mock_db_instance
+            mock_reflection_db.return_value = mock_db_instance
 
-            # Call the function (this would normally create a real database instance)
-            # Since we're testing the function's behavior with mocks, we'll skip this for now
+            # Call the function
+            result = get_reflection_database()
+
+            # Assertions
+            assert result == mock_db_instance
+            mock_reflection_db.assert_called_once()
 
     def test_get_reflection_database_import_error(self):
         """Test database initialization when import fails."""

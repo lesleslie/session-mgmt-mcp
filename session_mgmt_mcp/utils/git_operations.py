@@ -211,11 +211,13 @@ def _parse_git_status(status_lines: list[str]) -> tuple[list[str], list[str]]:
 
     for line in status_lines:
         if line:
+            # Extract the status (first 2 characters) and file path
             status = line[:2]
-            filepath = line[3:]
+            filepath = line[2:].lstrip()  # Remove leading whitespace
+            
             if status == "??":
                 untracked_files.append(filepath)
-            elif status.strip():
+            elif status.strip():  # If status has meaningful content (not just spaces)
                 modified_files.append(filepath)
 
     return modified_files, untracked_files

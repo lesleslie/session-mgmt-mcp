@@ -88,6 +88,10 @@ class TestGitRootDetection:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
+            # Create .git directory so is_git_repository returns True
+            git_dir = repo_path / ".git"
+            git_dir.mkdir()
+            
             result = get_git_root(repo_path)
 
             assert result == Path("/path/to/repo")
@@ -503,19 +507,13 @@ class TestWorktreeInfoFunctions:
         branch_result.stderr = ""
         branch_result.returncode = 0
 
-        # Mock rev-parse HEAD command
-        head_result = Mock()
-        head_result.stdout = "abc123\n"
-        head_result.stderr = ""
-        head_result.returncode = 0
-
         # Mock rev-parse --show-toplevel command
         toplevel_result = Mock()
         toplevel_result.stdout = "/path/to/repo\n"
         toplevel_result.stderr = ""
         toplevel_result.returncode = 0
 
-        mock_run.side_effect = [branch_result, head_result, toplevel_result]
+        mock_run.side_effect = [branch_result, toplevel_result]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_path = Path(temp_dir)
@@ -591,7 +589,7 @@ class TestCheckpointCommit:
         assert len(result) > 0
         assert "Untracked files found:" in result[0]
         assert (
-            "and 5 more" in result[-2]
+            "and 5 more" in result[-3]
         )  # Should show "and X more" for files beyond 10
 
     @patch("session_mgmt_mcp.utils.git_operations.is_git_repository")
@@ -607,7 +605,7 @@ class TestCheckpointCommit:
 
             assert success is False
             assert result == "Not a git repository"
-            assert "Not a git repository - skipping commit" in output
+            assert "ℹ️ Not a git repository - skipping commit" in output
 
     @patch("session_mgmt_mcp.utils.git_operations.is_git_repository")
     @patch("session_mgmt_mcp.utils.git_operations.get_worktree_info")
@@ -628,7 +626,7 @@ class TestCheckpointCommit:
 
             assert success is True
             assert result == "clean"
-            assert "Working directory is clean - no changes to commit" in output
+            assert "✅ Working directory is clean - no changes to commit" in output
 
 
 if __name__ == "__main__":

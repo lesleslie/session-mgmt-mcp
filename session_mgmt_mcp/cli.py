@@ -31,7 +31,7 @@ app = typer.Typer(
 # Constants for typer.Option to fix FBT003 boolean positional values
 DEFAULT_FALSE = False
 
-console = Console()
+console = Console(width=74)
 
 
 def find_server_processes() -> list[psutil.Process]:

@@ -735,9 +735,10 @@ SAFE_PATTERNS: dict[str, ValidatedPattern] = {
         replacement=r" ",
         description="Normalize whitespace for content hashing",
         flags=0,
+        global_replace=True,
         test_cases=[
-            ("  multiple   spaces  ", " multiple   spaces  "),
-            ("tabs\t\tand\nnewlines\n\n", "tabs and\nnewlines\n\n"),
+            ("  multiple   spaces  ", " multiple spaces "),
+            ("tabs\t\tand\nnewlines\n\n", "tabs and newlines "),
             ("normal text", "normal text"),
         ],
     ),

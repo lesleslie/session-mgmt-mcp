@@ -132,19 +132,28 @@ class CrackerjackOutputParser:
         self.patterns = {
             # Test results patterns - use validated patterns
             "pytest_result": "pytest_result",
+            "pytest_summary": "pytest_result",  # Use same pattern for now, will need update
             "pytest_coverage": "coverage_summary",
             # Lint results patterns - use validated patterns
             "ruff_error": "ruff_error",
-            "mypy_error": "mypy_error",
+            "pyright_error": "mypy_error",  # Use mypy_error as fallback for pyright
             # Security patterns - use validated patterns
             "bandit_issue": "bandit_finding",
+            "bandit_severity": "bandit_finding",  # Use same pattern as fallback
             # Quality patterns - use validated patterns
             "quality_score": "quality_score",
             # Progress patterns - use validated patterns
             "progress_indicator": "progress_indicator",
+            "percentage": "progress_indicator",  # Use same pattern as fallback
+            "task_completion": "progress_indicator",  # Use same pattern as fallback
+            "task_failure": "progress_indicator",  # Use same pattern as fallback
             "git_commit": "git_commit_hash",
             "file_path_line": "file_path_with_line",
             "execution_time": "execution_time",
+            # Coverage patterns
+            "coverage_line": "coverage_summary",
+            # Complexity patterns
+            "complexity_score": "quality_score",  # Use quality_score as fallback
         }
 
     def parse_output(
@@ -865,7 +874,7 @@ class CrackerjackIntegration:
             conn.row_factory = sqlite3.Row
 
             where_conditions = ["timestamp >= ?"]
-            params = [since]
+            params = [since.isoformat()]
 
             if command:
                 where_conditions.append("command = ?")
@@ -906,7 +915,7 @@ class CrackerjackIntegration:
             conn.row_factory = sqlite3.Row
 
             where_conditions = ["project_path = ?", "timestamp >= ?"]
-            params = [project_path, since]
+            params = [project_path, since.isoformat()]
 
             if metric_type:
                 where_conditions.append("metric_type = ?")
@@ -937,7 +946,7 @@ class CrackerjackIntegration:
                 GROUP BY test_name, file_path, error_message
                 ORDER BY failure_count DESC
             """,
-                (since,),
+                (since.isoformat(),),
             ).fetchall()
 
             # Get flaky tests (alternating pass/fail)
@@ -952,7 +961,7 @@ class CrackerjackIntegration:
                 HAVING status_count > 1 AND total_runs >= 3
                 ORDER BY status_count DESC, total_runs DESC
             """,
-                (since,),
+                (since.isoformat(),),
             ).fetchall()
 
             # Get most failing files
@@ -965,7 +974,7 @@ class CrackerjackIntegration:
                 ORDER BY failure_count DESC
                 LIMIT 10
             """,
-                (since,),
+                (since.isoformat(),),
             ).fetchall()
 
             return {
@@ -1259,7 +1268,7 @@ class CrackerjackIntegration:
                     result.stdout,
                     result.stderr,
                     result.execution_time,
-                    result.timestamp,
+                    result.timestamp.isoformat(),
                     result.working_directory,
                     json.dumps(result.parsed_data),
                     json.dumps(result.quality_metrics),
@@ -1301,7 +1310,7 @@ class CrackerjackIntegration:
                         result.working_directory,
                         metric_name,
                         metric_value,
-                        result.timestamp,
+                        result.timestamp.isoformat(),
                         result_id,
                     ),
                 )
@@ -1336,7 +1345,7 @@ class CrackerjackIntegration:
                         json.dumps(progress_info.get("completed_tasks", [])),
                         json.dumps(progress_info.get("failed_tasks", [])),
                         json.dumps(result.quality_metrics),
-                        result.timestamp,
+                        result.timestamp.isoformat(),
                         json.dumps(result.memory_insights),
                     ),
                 )
