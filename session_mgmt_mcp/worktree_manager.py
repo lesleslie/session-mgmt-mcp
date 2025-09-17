@@ -324,7 +324,7 @@ class WorktreeManager:
             "branches": list(branches),
         }
 
-    def _save_current_session_state(self, worktree_path: Path) -> dict | None:
+    def _save_current_session_state(self, worktree_path: Path) -> dict[str, Any] | None:
         """Save the current session state for preservation during worktree switching."""
         try:
             state = {
@@ -349,7 +349,9 @@ class WorktreeManager:
             self._log(f"Failed to save session state: {e}", level="warning")
             return None
 
-    def _restore_session_state(self, worktree_path: Path, state: dict | None) -> bool:
+    def _restore_session_state(
+        self, worktree_path: Path, state: dict[str, Any] | None
+    ) -> bool:
         """Restore session state for the target worktree."""
         if not state:
             return False
@@ -391,7 +393,7 @@ class WorktreeManager:
         except Exception:
             return []
 
-    def _get_git_status(self, worktree_path: Path) -> dict:
+    def _get_git_status(self, worktree_path: Path) -> dict[str, Any]:
         """Get git status for the worktree."""
         try:
             from .utils.git_operations import get_git_status

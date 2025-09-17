@@ -91,7 +91,7 @@ class TestGitRootDetection:
             # Create .git directory so is_git_repository returns True
             git_dir = repo_path / ".git"
             git_dir.mkdir()
-            
+
             result = get_git_root(repo_path)
 
             assert result == Path("/path/to/repo")

@@ -35,7 +35,7 @@ import numpy as np
 class ReflectionDatabase:
     """Manages DuckDB database for conversation memory and reflection."""
 
-    def __init__(self, db_path: str | None = None) -> None:
+    def __init__(self, db_path: Optional[str] = None) -> None:
         self.db_path = db_path or os.path.expanduser("~/.claude/data/reflection.duckdb")
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 

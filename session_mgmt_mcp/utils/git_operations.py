@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Git operations utilities for session management."""
 
+from __future__ import annotations
+
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -20,7 +23,7 @@ class WorktreeInfo:
     prunable: bool = False
 
 
-def is_git_repository(directory) -> bool:
+def is_git_repository(directory: str | Path) -> bool:
     """Check if the given directory is a git repository or worktree."""
     if isinstance(directory, str):
         directory = Path(directory)
@@ -38,7 +41,7 @@ def is_git_worktree(directory: Path) -> bool:
     return git_path.exists() and git_path.is_file()
 
 
-def get_git_root(directory: Path) -> Path | None:
+def get_git_root(directory: str | Path) -> Path | None:
     """Get the root directory of the git repository."""
     if not is_git_repository(directory):
         return None
@@ -106,7 +109,7 @@ def get_worktree_info(directory: Path) -> WorktreeInfo | None:
         return None
 
 
-def _process_worktree_line(line: str, current_worktree: dict) -> None:
+def _process_worktree_line(line: str, current_worktree: dict[str, Any]) -> None:
     """Process a single line from git worktree list --porcelain output."""
     if line.startswith("worktree "):
         current_worktree["path"] = line[9:]  # Remove 'worktree ' prefix
@@ -139,7 +142,7 @@ def list_worktrees(directory: Path) -> list[WorktreeInfo]:
         )
 
         worktrees = []
-        current_worktree = {}
+        current_worktree: dict[str, Any] = {}
 
         for line in result.stdout.strip().split("\n"):
             if not line:
@@ -160,7 +163,7 @@ def list_worktrees(directory: Path) -> list[WorktreeInfo]:
         return []
 
 
-def _parse_worktree_entry(entry: dict) -> WorktreeInfo:
+def _parse_worktree_entry(entry: dict[str, Any]) -> WorktreeInfo:
     """Parse a single worktree entry from git worktree list output."""
     path = Path(entry.get("path", ""))
     branch = entry.get("branch", entry.get("head", "unknown"))
@@ -170,7 +173,7 @@ def _parse_worktree_entry(entry: dict) -> WorktreeInfo:
 
     return WorktreeInfo(
         path=path,
-        branch=branch,
+        branch=str(branch),
         is_bare=entry.get("bare", False),
         is_detached=entry.get("detached", False),
         is_main_worktree=is_main,
@@ -214,7 +217,7 @@ def _parse_git_status(status_lines: list[str]) -> tuple[list[str], list[str]]:
             # Extract the status (first 2 characters) and file path
             status = line[:2]
             filepath = line[2:].lstrip()  # Remove leading whitespace
-            
+
             if status == "??":
                 untracked_files.append(filepath)
             elif status.strip():  # If status has meaningful content (not just spaces)

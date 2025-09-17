@@ -22,9 +22,8 @@ try:
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
-
     # Create stub for FileSystemEventHandler when watchdog is not available
-    class FileSystemEventHandler:
+    class FileSystemEventHandler:  # type: ignore[no-redef]
         pass
 
 
@@ -48,14 +47,16 @@ class ActivityEvent:
     relevance_score: float = 0.0
 
 
-class IDEActivityMonitor:
-    """Monitors IDE file changes and activity."""
+class ProjectActivityMonitor:
+    """Monitors project activity including file changes and application focus."""
 
-    def __init__(self, project_paths: list[str]) -> None:
-        self.project_paths = project_paths
-        self.observers = []
-        self.activity_buffer = []
-        self.last_activity = {}
+    def __init__(self, project_paths: list[str] | None = None) -> None:
+        """Initialize activity monitor."""
+        self.project_paths = project_paths or []
+        self.db_path = str(Path.home() / ".claude" / "data" / "activity.db")
+        self.observers: list[Any] = []
+        self.activity_buffer: list[ActivityEvent] = []
+        self.last_activity: dict[str, Any] = {}
         self.ide_extensions = {
             ".py",
             ".js",
@@ -81,17 +82,25 @@ class IDEActivityMonitor:
             ".svelte",
             ".json",
             ".yaml",
-            ".yml",
-            ".toml",
-            ".ini",
-            ".md",
-            ".txt",
-            ".sql",
-            ".sh",
-            ".bat",
         }
 
-    def start_monitoring(self):
+    def _init_database(self) -> None:
+        """Initialize database tables."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS activity_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    application TEXT NOT NULL,
+                    details TEXT NOT NULL,
+                    project_path TEXT,
+                    relevance_score REAL DEFAULT 0.0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+    def start_monitoring(self) -> bool:
         """Start file system monitoring."""
         if not WATCHDOG_AVAILABLE:
             return False
@@ -167,7 +176,7 @@ class IDEActivityMonitor:
 class IDEFileHandler(FileSystemEventHandler):
     """Handles file system events for IDE monitoring."""
 
-    def __init__(self, monitor: IDEActivityMonitor) -> None:
+    def __init__(self, monitor: ProjectActivityMonitor) -> None:
         self.monitor = monitor
         self.ignore_patterns = {
             ".git",
@@ -201,7 +210,7 @@ class IDEFileHandler(FileSystemEventHandler):
         # Ignore temporary files
         return bool(path.name.startswith(".") or path.name.endswith("~"))
 
-    def on_modified(self, event) -> None:
+    def on_modified(self, event: Any) -> None:
         if event.is_directory or self.should_ignore(event.src_path):
             return
 
@@ -256,8 +265,8 @@ class BrowserDocumentationMonitor:
             "angular.io",
             "svelte.dev",
         }
-        self.activity_buffer = []
-        self.browser_processes = set()
+        self.activity_buffer: list[ActivityEvent] = []
+        self.browser_processes: set[str] = set()
 
     def get_browser_processes(self) -> list[dict[str, Any]]:
         """Get currently running browser processes."""
@@ -366,8 +375,8 @@ class ApplicationFocusMonitor:
     """Monitors application focus changes."""
 
     def __init__(self) -> None:
-        self.focus_history = []
-        self.current_app = None
+        self.focus_history: list[ActivityEvent] = []
+        self.current_app: str | None = None
         self.app_categories = {
             "ide": {
                 "code",
@@ -498,7 +507,7 @@ class ActivityDatabase:
         """Retrieve activity events from database."""
         with sqlite3.connect(self.db_path) as conn:
             query = "SELECT * FROM activity_events WHERE 1=1"
-            params = []
+            params: list[Any] = []
 
             if start_time:
                 query += " AND timestamp >= ?"
@@ -534,17 +543,16 @@ class ActivityDatabase:
 
             return events
 
-    def cleanup_old_events(self, days_to_keep: int = 30):
+    def cleanup_old_events(self, days_to_keep: int = 30) -> None:
         """Remove old activity events."""
         cutoff = datetime.now() - timedelta(days=days_to_keep)
         cutoff_str = cutoff.isoformat()
 
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(
+            conn.execute(
                 "DELETE FROM activity_events WHERE timestamp < ?",
                 (cutoff_str,),
             )
-            return cursor.rowcount
 
 
 class ApplicationMonitor:
@@ -557,14 +565,14 @@ class ApplicationMonitor:
         self.project_paths = project_paths or []
         self.db = ActivityDatabase(str(self.data_dir / "activity.db"))
 
-        self.ide_monitor = IDEActivityMonitor(self.project_paths)
+        self.ide_monitor = ProjectActivityMonitor(self.project_paths)
         self.browser_monitor = BrowserDocumentationMonitor()
         self.focus_monitor = ApplicationFocusMonitor()
 
         self.monitoring_active = False
-        self._monitoring_task = None
+        self._monitoring_task: asyncio.Task[Any] | None = None
 
-    async def start_monitoring(self):
+    async def start_monitoring(self) -> dict[str, Any] | None:
         """Start all monitoring components."""
         if self.monitoring_active:
             return None
@@ -601,9 +609,9 @@ class ApplicationMonitor:
             try:
                 # Check application focus
                 focused_app = self.focus_monitor.get_focused_application()
-                if focused_app and focused_app != self.focus_monitor.current_app:
+                if focused_app and focused_app.get("name") != self.focus_monitor.current_app:
                     self.focus_monitor.add_focus_event(focused_app)
-                    self.focus_monitor.current_app = focused_app
+                    self.focus_monitor.current_app = focused_app.get("name")
 
                 # Persist buffered IDE events
                 for event in self.ide_monitor.activity_buffer[-10:]:  # Last 10 events
@@ -631,7 +639,7 @@ class ApplicationMonitor:
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=500)
 
-        summary = {
+        summary: dict[str, Any] = {
             "total_events": len(events),
             "time_range_hours": hours,
             "event_types": defaultdict(int),
@@ -641,7 +649,7 @@ class ApplicationMonitor:
             "average_relevance": 0.0,
         }
 
-        total_relevance = 0
+        total_relevance: float = 0.0
         doc_sites = set()
 
         for event in events:
@@ -669,7 +677,7 @@ class ApplicationMonitor:
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=200)
 
-        insights = {
+        insights: dict[str, Any] = {
             "primary_focus": None,
             "technologies_used": set(),
             "active_projects": set(),
@@ -682,7 +690,7 @@ class ApplicationMonitor:
             return insights
 
         # Analyze primary focus
-        app_time = defaultdict(int)
+        app_time: dict[str, int] = defaultdict(int)
         last_app = None
 
         for event in events:

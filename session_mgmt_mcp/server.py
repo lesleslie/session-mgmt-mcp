@@ -68,6 +68,12 @@ class SessionLogger:
             self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
 
+    def debug(self, message: str, **context) -> None:
+        """Log debug with optional context."""
+        if context:
+            message = f"{message} | Context: {json.dumps(context)}"
+        self.logger.debug(message)
+
     def info(self, message: str, **context) -> None:
         """Log info with optional context."""
         if context:
@@ -85,6 +91,12 @@ class SessionLogger:
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.error(message)
+
+    def exception(self, message: str, **context) -> None:
+        """Log exception with optional context."""
+        if context:
+            message = f"{message} | Context: {json.dumps(context)}"
+        self.logger.exception(message)
 
 
 # Initialize logger

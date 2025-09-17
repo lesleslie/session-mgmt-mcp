@@ -10,6 +10,7 @@ This module provides intelligent interruption handling including:
 import asyncio
 import json
 import logging
+import os
 import sqlite3
 import threading
 import time
@@ -17,6 +18,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +36,7 @@ try:
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
+    Observer = object  # type: ignore[assignment]
 
 try:
     import gzip
@@ -107,15 +110,15 @@ class SessionContext:
 class FocusTracker:
     """Tracks application and window focus changes."""
 
-    def __init__(self, callback: Callable | None = None) -> None:
+    def __init__(self, callback: Callable[..., Any] | None = None) -> None:
         """Initialize focus tracker."""
         self.callback = callback
-        self.current_app = None
-        self.current_window = None
+        self.current_app: str | None = None
+        self.current_window: str | None = None
         self.last_check = time.time()
         self.focus_start = time.time()
         self.running = False
-        self._monitor_thread = None
+        self._monitor_thread: threading.Thread | None = None
 
     def start_monitoring(self) -> None:
         """Start focus monitoring."""
@@ -204,7 +207,7 @@ class FocusTracker:
                 try:
                     # Basic heuristic: look for common GUI applications
                     name = proc.info["name"]
-                    if any(
+                    if isinstance(name, str) and any(
                         gui_hint in name.lower()
                         for gui_hint in ["code", "browser", "terminal", "editor", "ide"]
                     ):
@@ -212,7 +215,7 @@ class FocusTracker:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
-            return "Unknown"
+            return None
 
         except Exception:
             return None
@@ -227,14 +230,14 @@ class FocusTracker:
 class FileChangeHandler(FileSystemEventHandler):
     """Handles file system change events."""
 
-    def __init__(self, callback: Callable | None = None) -> None:
+    def __init__(self, callback: Callable[..., Any] | None = None) -> None:
         """Initialize file change handler."""
         super().__init__()
         self.callback = callback
-        self.last_events = {}
+        self.last_events: dict[str, float] = {}
         self.debounce_time = 1.0  # Seconds
 
-    def on_modified(self, event) -> None:
+    def on_modified(self, event: Any) -> None:
         """Handle file modification."""
         if event.is_directory:
             return
@@ -259,7 +262,7 @@ class FileChangeHandler(FileSystemEventHandler):
                 },
             )
 
-    def on_created(self, event) -> None:
+    def on_created(self, event: Any) -> None:
         """Handle file creation."""
         if event.is_directory:
             return
@@ -274,7 +277,7 @@ class FileChangeHandler(FileSystemEventHandler):
                 },
             )
 
-    def on_deleted(self, event) -> None:
+    def on_deleted(self, event: Any) -> None:
         """Handle file deletion."""
         if event.is_directory:
             return
@@ -301,13 +304,13 @@ class InterruptionManager:
         self._lock = threading.Lock()
         self.current_context: SessionContext | None = None
         self.focus_tracker = FocusTracker(callback=self._handle_interruption)
-        self.file_observer: Observer | None = None
+        self.file_observer: Any = None
         self.file_handler = FileChangeHandler(callback=self._handle_interruption)
         self.auto_save_enabled = True
         self.save_threshold = 30.0  # Auto-save after 30 seconds of focus
         self.idle_threshold = 300.0  # 5 minutes idle detection
-        self._preservation_callbacks: list[Callable] = []
-        self._restoration_callbacks: list[Callable] = []
+        self._preservation_callbacks: list[Callable[..., Any]] = []
+        self._restoration_callbacks: list[Callable[..., Any]] = []
         self._init_database()
 
     def _init_database(self) -> None:
@@ -400,8 +403,9 @@ class InterruptionManager:
         # Stop file watching
         if self.file_observer:
             try:
-                self.file_observer.stop()
-                self.file_observer.join(timeout=2.0)
+                if self.file_observer:
+                    self.file_observer.stop()
+                    self.file_observer.join(timeout=2.0)
             except Exception as e:
                 logger.warning(f"Error stopping file observer: {e}")
             finally:
@@ -695,11 +699,11 @@ class InterruptionManager:
                 "snapshots": dict(snapshot_stats) if snapshot_stats else {},
             }
 
-    def register_preservation_callback(self, callback: Callable) -> None:
+    def register_preservation_callback(self, callback: Callable[..., Any]) -> None:
         """Register callback for context preservation."""
         self._preservation_callbacks.append(callback)
 
-    def register_restoration_callback(self, callback: Callable) -> None:
+    def register_restoration_callback(self, callback: Callable[..., Any]) -> None:
         """Register callback for context restoration."""
         self._restoration_callbacks.append(callback)
 
@@ -779,7 +783,7 @@ class InterruptionManager:
 
     def _capture_environment_state(self) -> dict[str, Any]:
         """Capture current environment state."""
-        state = {
+        state: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "cwd": Path.cwd().as_posix(),
             "processes": [],

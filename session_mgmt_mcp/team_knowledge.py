@@ -356,7 +356,7 @@ class TeamKnowledgeManager:
 
             # Build query with access control
             where_conditions = ["1=1"]
-            params = []
+            params: list[str | int] = []
 
             # Access control: user can see public, team reflections they have access to, or their own
             access_condition = """(
@@ -707,9 +707,12 @@ class TeamKnowledgeManager:
             ).fetchone()
             if row:
                 permissions = json.loads(row[0] or "{}")
-                return permissions.get("admin_access", False) or permissions.get(
-                    "moderate_content",
-                    False,
+                return bool(
+                    permissions.get("admin_access", False)
+                    or permissions.get(
+                        "moderate_content",
+                        False,
+                    )
                 )
 
         return False

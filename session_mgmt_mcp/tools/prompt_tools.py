@@ -7,10 +7,12 @@ architecture patterns with single responsibility principle.
 
 from __future__ import annotations
 
+from typing import Any
+
 from session_mgmt_mcp.session_commands import SESSION_COMMANDS
 
 
-def register_prompt_tools(mcp) -> None:
+def register_prompt_tools(mcp: Any) -> None:
     """Register all MCP prompt definitions.
 
     Args:
@@ -18,72 +20,72 @@ def register_prompt_tools(mcp) -> None:
 
     """
 
-    @mcp.prompt("init")
+    @mcp.prompt("init")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_init_prompt() -> str:
         """Initialize Claude session with comprehensive setup including UV dependencies, global workspace verification, and automation tools."""
         return SESSION_COMMANDS["init"]
 
-    @mcp.prompt("checkpoint")
+    @mcp.prompt("checkpoint")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_checkpoint_prompt() -> str:
         """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations."""
         return SESSION_COMMANDS["checkpoint"]
 
-    @mcp.prompt("end")
+    @mcp.prompt("end")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_end_prompt() -> str:
         """End Claude session with cleanup, learning capture, and handoff file creation."""
         return SESSION_COMMANDS["end"]
 
-    @mcp.prompt("status")
+    @mcp.prompt("status")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_status_prompt() -> str:
         """Get current session status and project context information with health checks."""
         return SESSION_COMMANDS["status"]
 
-    @mcp.prompt("permissions")
+    @mcp.prompt("permissions")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_permissions_prompt() -> str:
         """Manage session permissions for trusted operations to avoid repeated prompts."""
         return SESSION_COMMANDS["permissions"]
 
-    @mcp.prompt("reflect")
+    @mcp.prompt("reflect")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_reflect_prompt() -> str:
         """Search past conversations and store reflections with semantic similarity."""
         return SESSION_COMMANDS["reflect"]
 
-    @mcp.prompt("quick-search")
+    @mcp.prompt("quick-search")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_quick_search_prompt() -> str:
         """Quick search that returns only the count and top result for fast overview."""
         return SESSION_COMMANDS["quick-search"]
 
-    @mcp.prompt("search-summary")
+    @mcp.prompt("search-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_search_summary_prompt() -> str:
         """Get aggregated insights from search results without individual result details."""
         return SESSION_COMMANDS["search-summary"]
 
-    @mcp.prompt("reflection-stats")
+    @mcp.prompt("reflection-stats")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_session_reflection_stats_prompt() -> str:
         """Get statistics about the reflection database and conversation memory."""
         return SESSION_COMMANDS["reflection-stats"]
 
-    @mcp.prompt("crackerjack-run")
+    @mcp.prompt("crackerjack-run")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_crackerjack_run_prompt() -> str:
         """Execute a Crackerjack command and parse the output for insights."""
         return SESSION_COMMANDS["crackerjack-run"]
 
-    @mcp.prompt("crackerjack-history")
+    @mcp.prompt("crackerjack-history")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_crackerjack_history_prompt() -> str:
         """Get recent Crackerjack command execution history with parsed results."""
         return SESSION_COMMANDS["crackerjack-history"]
 
-    @mcp.prompt("crackerjack-metrics")
+    @mcp.prompt("crackerjack-metrics")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_crackerjack_metrics_prompt() -> str:
         """Get quality metrics trends from Crackerjack execution history."""
         return SESSION_COMMANDS["crackerjack-metrics"]
 
-    @mcp.prompt("crackerjack-patterns")
+    @mcp.prompt("crackerjack-patterns")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_crackerjack_patterns_prompt() -> str:
         """Analyze test failure patterns and trends for debugging insights."""
         return SESSION_COMMANDS["crackerjack-patterns"]
 
-    @mcp.prompt("compress-memory")
+    @mcp.prompt("compress-memory")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_compress_memory_prompt() -> str:
         """Compress conversation memory by consolidating old conversations into summaries."""
         return """# Memory Compression
@@ -104,7 +106,7 @@ Examples:
 
 Use this periodically to keep your conversation memory manageable and efficient."""
 
-    @mcp.prompt("compression-stats")
+    @mcp.prompt("compression-stats")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_compression_stats_prompt() -> str:
         """Get detailed statistics about memory compression history and current database status."""
         return """# Compression Statistics
@@ -120,7 +122,7 @@ This command will:
 
 Use this to monitor memory usage and compression effectiveness."""
 
-    @mcp.prompt("retention-policy")
+    @mcp.prompt("retention-policy")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_retention_policy_prompt() -> str:
         """Configure memory retention policy parameters for automatic compression."""
         return """# Retention Policy
@@ -140,7 +142,7 @@ Examples:
 
 Use this to customize how your conversation memory is managed over time."""
 
-    @mcp.prompt("auto-load-context")
+    @mcp.prompt("auto-load-context")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_auto_load_context_prompt() -> str:
         """Automatically detect current development context and load relevant conversations."""
         return """# Auto-Context Loading
@@ -162,7 +164,7 @@ Examples:
 
 Use this at the start of coding sessions to get relevant context automatically."""
 
-    @mcp.prompt("context-summary")
+    @mcp.prompt("context-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_context_summary_prompt() -> str:
         """Get a quick summary of your current development context without loading conversations."""
         return """# Context Summary
@@ -178,7 +180,7 @@ This command will:
 
 Use this to understand what context the system has detected about your current work."""
 
-    @mcp.prompt("search-code")
+    @mcp.prompt("search-code")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_search_code_prompt() -> str:
         """Search for code patterns in conversations using AST parsing."""
         return """# Code Pattern Search
@@ -198,7 +200,7 @@ Examples:
 
 Use this to find code examples and patterns from your development sessions."""
 
-    @mcp.prompt("search-errors")
+    @mcp.prompt("search-errors")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_search_errors_prompt() -> str:
         """Search for error patterns and debugging contexts in conversations."""
         return """# Error Pattern Search
@@ -218,7 +220,7 @@ Examples:
 
 Use this to quickly find solutions to similar errors you've encountered before."""
 
-    @mcp.prompt("search-temporal")
+    @mcp.prompt("search-temporal")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_search_temporal_prompt() -> str:
         """Search conversations within a specific time range using natural language."""
         return """# Temporal Search
@@ -239,7 +241,7 @@ Examples:
 
 Use this to find recent discussions or work from specific time periods."""
 
-    @mcp.prompt("start-app-monitoring")
+    @mcp.prompt("start-app-monitoring")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_start_app_monitoring_prompt() -> str:
         """Start monitoring IDE activity and browser documentation usage."""
         return """# Start Application Monitoring
@@ -260,7 +262,7 @@ Monitoring includes:
 
 Use this to automatically capture your development context for better session insights."""
 
-    @mcp.prompt("stop-app-monitoring")
+    @mcp.prompt("stop-app-monitoring")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_stop_app_monitoring_prompt() -> str:
         """Stop all application monitoring."""
         return """# Stop Application Monitoring
@@ -275,7 +277,7 @@ This command will:
 
 Use this when you want to pause monitoring or when you're done with a development session."""
 
-    @mcp.prompt("activity-summary")
+    @mcp.prompt("activity-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_activity_summary_prompt() -> str:
         """Get activity summary for recent development work."""
         return """# Activity Summary
@@ -296,7 +298,7 @@ Summary includes:
 
 Use this to understand your development patterns and identify productive sessions."""
 
-    @mcp.prompt("context-insights")
+    @mcp.prompt("context-insights")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_context_insights_prompt() -> str:
         """Get contextual insights from recent activity."""
         return """# Context Insights
@@ -318,7 +320,7 @@ Insights include:
 
 Use this to understand your current development context and optimize your workflow."""
 
-    @mcp.prompt("active-files")
+    @mcp.prompt("active-files")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_active_files_prompt() -> str:
         """Get files currently being worked on."""
         return """# Active Files
@@ -339,7 +341,7 @@ File activity is scored based on:
 
 Use this to quickly see what you're currently working on and resume interrupted tasks."""
 
-    @mcp.prompt("quality-monitor")
+    @mcp.prompt("quality-monitor")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_quality_monitor_prompt() -> str:
         """Proactive session quality monitoring with trend analysis and early warnings."""
         return """# Quality Monitor
@@ -355,7 +357,7 @@ This command will:
 
 Use this for continuous quality assurance during development."""
 
-    @mcp.prompt("auto-compact")
+    @mcp.prompt("auto-compact")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
     async def get_auto_compact_prompt() -> str:
         """Automatically trigger conversation compaction with context preservation."""
         return """# Auto Compact

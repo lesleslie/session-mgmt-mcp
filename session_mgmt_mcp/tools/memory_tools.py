@@ -4,7 +4,10 @@
 This module provides tools for storing, searching, and managing reflections and conversation memories.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 from session_mgmt_mcp.utils.logging import get_session_logger
 
@@ -15,7 +18,7 @@ _reflection_db = None
 _reflection_tools_available = None
 
 
-async def _get_reflection_database():
+async def _get_reflection_database() -> Any:
     """Get reflection database instance with lazy loading."""
     global _reflection_db, _reflection_tools_available
 
@@ -157,7 +160,7 @@ async def _search_summary_impl(
             output.append(f"📈 Total results: {len(results)}")
 
             # Project distribution
-            projects = {}
+            projects: dict[str, int] = {}
             for result in results:
                 proj = result.get("project", "Unknown")
                 projects[proj] = projects.get(proj, 0) + 1
@@ -185,7 +188,7 @@ async def _search_summary_impl(
             # Common themes
             all_content = " ".join([r["content"] for r in results])
             words = all_content.lower().split()
-            word_freq = {}
+            word_freq: dict[str, int] = {}
             for word in words:
                 if len(word) > 4:
                     word_freq[word] = word_freq.get(word, 0) + 1
@@ -401,15 +404,15 @@ async def _reset_reflection_database_impl() -> str:
         return f"❌ Reset error: {e}"
 
 
-def register_memory_tools(mcp_server) -> None:
+def register_memory_tools(mcp_server: Any) -> None:
     """Register all memory management tools with the MCP server."""
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def store_reflection(content: str, tags: list[str] | None = None) -> str:
         """Store an important insight or reflection for future reference."""
         return await _store_reflection_impl(content, tags)
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def quick_search(
         query: str,
         min_score: float = 0.7,
@@ -418,40 +421,43 @@ def register_memory_tools(mcp_server) -> None:
         """Quick search that returns only the count and top result for fast overview."""
         return await _quick_search_impl(query, min_score, project)
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def search_summary(
         query: str,
-        min_score: float = 0.7,
+        limit: int = 10,
         project: str | None = None,
+        min_score: float = 0.7,
     ) -> str:
         """Get aggregated insights from search results without individual result details."""
         return await _search_summary_impl(query, min_score, project)
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def search_by_file(
         file_path: str,
         limit: int = 10,
         project: str | None = None,
+        min_score: float = 0.7,
     ) -> str:
         """Search for conversations that analyzed a specific file."""
         return await _search_by_file_impl(file_path, limit, project)
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def search_by_concept(
         concept: str,
         include_files: bool = True,
         limit: int = 10,
         project: str | None = None,
+        min_score: float = 0.7,
     ) -> str:
         """Search for conversations about a specific development concept."""
         return await _search_by_concept_impl(concept, include_files, limit, project)
 
-    @mcp_server.tool()
-    async def reflection_stats() -> str:
+    @mcp_server.tool()  # type: ignore[misc]
+    async def reflection_stats(project: str | None = None) -> str:
         """Get statistics about the reflection database."""
         return await _reflection_stats_impl()
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def reset_reflection_database() -> str:
         """Reset the reflection database connection to fix lock issues."""
         return await _reset_reflection_database_impl()

@@ -324,7 +324,9 @@ class SessionLifecycleManager:
             self.logger.exception("Session initialization failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    async def checkpoint_session(self, working_directory: str | None = None) -> dict[str, Any]:
+    async def checkpoint_session(
+        self, working_directory: str | None = None
+    ) -> dict[str, Any]:
         """Perform a comprehensive session checkpoint."""
         try:
             current_dir = Path(working_directory) if working_directory else Path.cwd()

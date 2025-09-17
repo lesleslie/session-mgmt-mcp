@@ -27,7 +27,7 @@ class LazyImport:
         self.module_name = module_name
         self.fallback_value = fallback_value
         self.import_error_msg = import_error_msg
-        self._module = None
+        self._module: Any = None
         self._import_attempted = False
         self._import_failed = False
 
@@ -129,12 +129,14 @@ numpy = lazy_loader.add_import(
 )
 
 
-def require_dependency(dependency_name: str, install_hint: str | None = None):
+def require_dependency(
+    dependency_name: str, install_hint: str | None = None
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to require a specific dependency for a function."""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             loader = lazy_loader.get_import(dependency_name)
             if not loader or not loader.available:
                 error_msg = f"Function {func.__name__} requires {dependency_name}"
@@ -148,12 +150,14 @@ def require_dependency(dependency_name: str, install_hint: str | None = None):
     return decorator
 
 
-def optional_dependency(dependency_name: str, fallback_result: Any = None):
+def optional_dependency(
+    dependency_name: str, fallback_result: Any = None
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to handle optional dependencies gracefully."""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             loader = lazy_loader.get_import(dependency_name)
             if not loader or not loader.available:
                 logger.info(
@@ -173,8 +177,8 @@ class MockModule:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def __getattr__(self, name: str):
-        def mock_function(*args, **kwargs) -> Never:
+    def __getattr__(self, name: str) -> Callable[..., Never]:
+        def mock_function(*args: Any, **kwargs: Any) -> Never:
             msg = f"Mock function {name} called - {self.name} not available"
             raise ImportError(
                 msg,
@@ -183,14 +187,16 @@ class MockModule:
         return mock_function
 
 
-def create_embedding_mock():
+def create_embedding_mock() -> Any:
     """Create a mock for embedding functionality."""
 
     class MockEmbedding:
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
 
-        def encode(self, texts, *args, **kwargs):
+        def encode(
+            self, texts: str | list[str], *args: Any, **kwargs: Any
+        ) -> list[list[float]]:
             # Return random-like embeddings for testing
             import random
 
@@ -203,7 +209,7 @@ def create_embedding_mock():
 
 def get_dependency_status() -> dict[str, dict[str, Any]]:
     """Get comprehensive status of all dependencies."""
-    status = {}
+    status: dict[str, dict[str, Any]] = {}
 
     # Check core dependencies
     core_deps = ["duckdb"]

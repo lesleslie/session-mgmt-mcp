@@ -18,6 +18,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Match
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -142,11 +143,12 @@ class NaturalLanguageParser:
             if match:
                 try:
                     if callable(handler):
-                        if isinstance(handler(match), timedelta):
-                            return base_time + handler(match)
-                        if isinstance(handler(match), datetime):
-                            return handler(match)
-                        delta = handler(match)
+                        result = handler(match)  # type: ignore[no-untyped-call]
+                        if isinstance(result, timedelta):
+                            return base_time + result
+                        if isinstance(result, datetime):
+                            return result
+                        delta = result
                         if hasattr(delta, "days") or hasattr(delta, "months"):
                             return base_time + delta
                 except Exception:
@@ -176,12 +178,15 @@ class NaturalLanguageParser:
             )  # REGEX OK: Recurrence parsing
             if match:
                 if callable(handler):
-                    return handler(match)
-                return handler
+                    result = handler(match)
+                    if isinstance(result, str):
+                        return result
+                elif isinstance(handler, str):
+                    return handler
 
         return None
 
-    def _parse_tomorrow(self, match):
+    def _parse_tomorrow(self, match: Match[str]) -> datetime:
         """Parse 'tomorrow' with optional time."""
         tomorrow = datetime.now() + timedelta(days=1)
 
@@ -199,7 +204,7 @@ class NaturalLanguageParser:
         # Default to 9 AM tomorrow
         return tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
 
-    def _parse_next_weekday(self, match):
+    def _parse_next_weekday(self, match: Match[str]) -> datetime:
         """Parse 'next monday', etc."""
         weekdays = {
             "monday": 0,
@@ -220,7 +225,7 @@ class NaturalLanguageParser:
 
         return today + timedelta(days=days_ahead)
 
-    def _parse_specific_time(self, match):
+    def _parse_specific_time(self, match: Match[str]) -> datetime:
         """Parse 'at 3:30pm' for today."""
         hour = int(match.group(1))
         minute = int(match.group(2)) if match.group(2) else 0
@@ -244,7 +249,7 @@ class NaturalLanguageParser:
 
         return target_time
 
-    def _parse_weekday_time(self, match):
+    def _parse_weekday_time(self, match: Match[str]) -> datetime:
         """Parse 'monday at 3pm'."""
         weekdays = {
             "monday": 0,
@@ -296,8 +301,8 @@ class ReminderScheduler:
         self.parser = NaturalLanguageParser()
         self._lock = threading.Lock()
         self._running = False
-        self._scheduler_thread = None
-        self._callbacks: dict[str, list[Callable]] = {}
+        self._scheduler_thread: threading.Thread | None = None
+        self._callbacks: dict[str, list[Callable[..., Any]]] = {}
         self._init_database()
 
     def _init_database(self) -> None:
@@ -615,7 +620,7 @@ class ReminderScheduler:
             )
             return False
 
-    def register_notification_callback(self, method: str, callback: Callable) -> None:
+    def register_notification_callback(self, method: str, callback: Callable[..., Any]) -> None:
         """Register callback for notification method."""
         if method not in self._callbacks:
             self._callbacks[method] = []

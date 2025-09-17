@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from session_mgmt_mcp.tools.session_tools import _get_client_working_directory
 
+
 def test_detection():
     """Test the working directory detection function."""
     print("🔍 Testing automatic working directory detection...")
@@ -17,6 +18,7 @@ def test_detection():
     # Test each method individually
     print("🔍 Method 1: Environment variables...")
     import os
+
     for env_var in ["CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"]:
         value = os.environ.get(env_var)
         print(f"   • {env_var}: {value or 'Not set'}")
@@ -26,7 +28,9 @@ def test_detection():
     if temp_file.exists():
         content = temp_file.read_text().strip()
         print(f"   • File content: {content}")
-        print(f"   • Ends with session-mgmt-mcp: {content.endswith('session-mgmt-mcp')}")
+        print(
+            f"   • Ends with session-mgmt-mcp: {content.endswith('session-mgmt-mcp')}"
+        )
     else:
         print("   • File not found")
 
@@ -41,7 +45,9 @@ def test_detection():
                     try:
                         mtime = repo_path.stat().st_mtime
                         git_repos.append((mtime, str(repo_path)))
-                        print(f"     - Found git repo: {repo_path.name} (mtime: {mtime})")
+                        print(
+                            f"     - Found git repo: {repo_path.name} (mtime: {mtime})"
+                        )
                     except Exception as e:
                         print(f"     - Error with {repo_path}: {e}")
 
@@ -50,7 +56,9 @@ def test_detection():
                 print(f"   • Most recent: {git_repos[0][1]}")
                 for i, (mtime, path) in enumerate(git_repos[:3]):
                     is_server = path.endswith("session-mgmt-mcp")
-                    print(f"     {i+1}. {Path(path).name} ({'server' if is_server else 'candidate'})")
+                    print(
+                        f"     {i + 1}. {Path(path).name} ({'server' if is_server else 'candidate'})"
+                    )
 
     detected_dir = _get_client_working_directory()
 
@@ -94,6 +102,7 @@ def test_detection():
         print("   • Temp file: Not found")
 
     return detected_dir
+
 
 if __name__ == "__main__":
     result = test_detection()

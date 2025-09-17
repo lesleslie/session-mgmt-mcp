@@ -208,7 +208,7 @@ class CrackerjackOutputParser:
 
     def _parse_test_output(self, output: str) -> dict[str, Any]:
         """Parse pytest output for test results."""
-        data = {"test_results": [], "test_summary": {}}
+        data: dict[str, Any] = {"test_results": [], "test_summary": {}}
 
         lines = output.split("\n")
 
@@ -240,7 +240,7 @@ class CrackerjackOutputParser:
 
     def _parse_lint_output(self, output: str) -> dict[str, Any]:
         """Parse lint output for code quality issues."""
-        data = {"lint_issues": [], "lint_summary": {}}
+        data: dict[str, Any] = {"lint_issues": [], "lint_summary": {}}
 
         lines = output.split("\n")
         total_errors = 0
@@ -285,7 +285,7 @@ class CrackerjackOutputParser:
 
     def _parse_security_output(self, output: str) -> dict[str, Any]:
         """Parse bandit security scan output."""
-        data = {"security_issues": [], "security_summary": {}}
+        data: dict[str, Any] = {"security_issues": [], "security_summary": {}}
 
         lines = output.split("\n")
         current_issue = None
@@ -315,7 +315,7 @@ class CrackerjackOutputParser:
 
     def _parse_coverage_output(self, output: str) -> dict[str, Any]:
         """Parse coverage report output."""
-        data = {"coverage_data": {}, "coverage_summary": {}}
+        data: dict[str, Any] = {"coverage_data": {}, "coverage_summary": {}}
 
         lines = output.split("\n")
 
@@ -342,7 +342,7 @@ class CrackerjackOutputParser:
 
     def _parse_complexity_output(self, output: str) -> dict[str, Any]:
         """Parse complexity analysis output."""
-        data = {"complexity_data": {}, "complexity_summary": {}}
+        data: dict[str, Any] = {"complexity_data": {}, "complexity_summary": {}}
 
         lines = output.split("\n")
         total_files = 0
@@ -370,12 +370,12 @@ class CrackerjackOutputParser:
 
     def _parse_progress_output(self, output: str) -> dict[str, Any]:
         """Parse progress indicators from output."""
-        data = {"progress_info": {}}
+        data: dict[str, Any] = {"progress_info": {}}
 
         lines = output.split("\n")
         completed_tasks = []
         failed_tasks = []
-        current_percentage = 0
+        current_percentage: float = 0.0
 
         for line in lines:
             # Progress indicators
@@ -464,8 +464,8 @@ class CrackerjackOutputParser:
 
         if lint_issues:
             total_issues = len(lint_issues)
-            by_type = {}
-            by_file = {}
+            by_type: dict[str, int] = {}
+            by_file: dict[str, int] = {}
 
             for issue in lint_issues:
                 issue_type = issue.get("type", "unknown")
@@ -782,7 +782,7 @@ class CrackerjackIntegration:
                 timeout=timeout,
             )
 
-            exit_code = process.returncode
+            exit_code = process.returncode or 0
             execution_time = time.time() - start_time
 
             # Decode output
@@ -1136,7 +1136,7 @@ class CrackerjackIntegration:
 
     async def health_check(self) -> dict[str, Any]:
         """Check integration health and dependencies."""
-        health = {
+        health: dict[str, Any] = {
             "crackerjack_available": False,
             "database_accessible": False,
             "version_compatible": False,
@@ -1322,7 +1322,7 @@ class CrackerjackIntegration:
         project_path: str,
     ) -> None:
         """Store progress snapshot from result."""
-        progress_info = result.parsed_data.get("progress_info", {})
+        progress_info = result.parsed_data.get("progress_info", {}) if result.parsed_data else {}
 
         if progress_info:
             snapshot_id = f"progress_{result_id}"

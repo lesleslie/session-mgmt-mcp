@@ -18,7 +18,9 @@ class TestGetReflectionDatabase:
     def test_get_reflection_database_success(self):
         """Test successful database initialization."""
         # Mock the ReflectionDatabase class that's imported inside the function
-        with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase") as mock_reflection_db:
+        with patch(
+            "session_mgmt_mcp.tools.search_tools.ReflectionDatabase"
+        ) as mock_reflection_db:
             mock_db_instance = AsyncMock()
             mock_reflection_db.return_value = mock_db_instance
 

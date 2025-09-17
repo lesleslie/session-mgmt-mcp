@@ -126,7 +126,7 @@ class RedisStorage(SessionStorage):
         self.key_prefix = config.get("key_prefix", "session_mgmt:")
         self._redis = None
 
-    async def _get_redis(self):
+    async def _get_redis(self) -> Any:
         """Get or create Redis connection."""
         if self._redis is None:
             try:
@@ -223,7 +223,8 @@ class RedisStorage(SessionStorage):
 
             # Delete session data
             key = self._get_key(session_id)
-            deleted = await redis_client.delete(key)
+            deleted_result = await redis_client.delete(key)
+            deleted = int(deleted_result) if deleted_result is not None else 0
 
             # Clean up indexes
             if session_state:
@@ -336,7 +337,7 @@ class S3Storage(SessionStorage):
         self.secret_access_key = config.get("secret_access_key")
         self._s3_client = None
 
-    async def _get_s3_client(self):
+    async def _get_s3_client(self) -> Any:
         """Get or create S3 client."""
         if self._s3_client is None:
             try:
@@ -701,7 +702,9 @@ class ServerlessSessionManager:
     def __init__(self, storage_backend: SessionStorage) -> None:
         self.storage = storage_backend
         self.logger = logging.getLogger("serverless.session_manager")
-        self.session_cache = {}  # In-memory cache for current request
+        self.session_cache: dict[
+            str, SessionState
+        ] = {}  # In-memory cache for current request
 
     async def create_session(
         self,
@@ -871,10 +874,11 @@ class ServerlessConfigManager:
     @staticmethod
     async def test_storage_backends(config: dict[str, Any]) -> dict[str, bool]:
         """Test all configured storage backends."""
-        results = {}
+        results: dict[str, bool] = {}
 
         for backend_name, backend_config in config.get("backends", {}).items():
             try:
+                storage: SessionStorage
                 if backend_name == "redis":
                     storage = RedisStorage(backend_config)
                 elif backend_name == "s3":

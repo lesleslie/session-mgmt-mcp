@@ -88,6 +88,9 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 exclude = [
+    "tests/",
+    "test_*.py",
+    "*_test.py",
     "tests_old_backup/",
 ]
 
@@ -225,7 +228,7 @@ no-lines-before = [
 max-complexity = 15
 
 [tool.codespell]
-skip = "*/data/*"
+skip = "*/data/*,tests/*,test_*.py,*_test.py"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd,nin"
 
@@ -428,6 +431,9 @@ paths = [
 sort_by_size = true
 
 [tool.refurb]
+enable_all = true
+quiet = true
+python_version = "3.13"
 ignore = [
     "FURB101",
     "FURB103",
@@ -435,11 +441,10 @@ ignore = [
     "FURB106",
     "FURB113",
     "FURB118",
+    "FURB120",
     "FURB140",
+    "FURB184",
 ]
-enable_all = true
-quiet = true
-python_version = "3.13"
 
 [tool.creosote]
 sections = [
@@ -477,14 +482,6 @@ exclude-deps = [
 keyring-provider = "subprocess"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
-
-[tool.autotyping]
-exclude = [
-    "tests/data/*",
-    "*/conftest.py",
-]
-safe = true
-aggressive = true
 
 [dependency-groups]
 dev = [

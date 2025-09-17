@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def register_crackerjack_tools(mcp) -> None:
+def register_crackerjack_tools(mcp: Any) -> None:
     """Register all crackerjack integration MCP tools.
 
     Args:
@@ -21,7 +22,7 @@ def register_crackerjack_tools(mcp) -> None:
 
     """
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def execute_crackerjack_command(
         command: str,
         args: str = "",
@@ -93,7 +94,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Crackerjack execution failed: {e}")
             return f"❌ Crackerjack execution failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_run(
         command: str,
         args: str = "",
@@ -143,7 +144,7 @@ def register_crackerjack_tools(mcp) -> None:
                 async with db:
                     await db.store_conversation(
                         content=f"Crackerjack {command} execution: {formatted_result[:500]}...",
-                        project=Path(working_directory).name,
+                        metadata={"project": Path(working_directory).name},
                     )
 
                 output += "📝 Execution stored in session history\n"
@@ -157,7 +158,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Enhanced crackerjack run failed: {e}")
             return f"❌ Enhanced crackerjack run failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_history(
         command_filter: str = "",
         days: int = 7,
@@ -187,7 +188,7 @@ def register_crackerjack_tools(mcp) -> None:
                 output = f"📊 **Crackerjack History** (last {days} days)\n\n"
 
                 # Group by command
-                commands = {}
+                commands: dict[str, list[Any]] = {}
                 for result in results:
                     content = result.get("content", "")
                     if "crackerjack" in content.lower():
@@ -221,7 +222,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Crackerjack history failed: {e}")
             return f"❌ History retrieval failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_metrics(working_directory: str = ".", days: int = 30) -> str:
         """Get quality metrics trends from crackerjack execution history."""
         try:
@@ -264,7 +265,7 @@ def register_crackerjack_tools(mcp) -> None:
                     "complexity",
                     "coverage",
                 ]
-                keyword_counts = {}
+                keyword_counts: dict[str, int] = {}
 
                 for result in results:
                     content = result.get("content", "").lower()
@@ -287,7 +288,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Metrics analysis failed: {e}")
             return f"❌ Metrics analysis failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_patterns(days: int = 7, working_directory: str = ".") -> str:
         """Analyze test failure patterns and trends."""
         try:
@@ -316,7 +317,7 @@ def register_crackerjack_tools(mcp) -> None:
                     "assertion",
                     "timeout",
                 ]
-                patterns = {}
+                patterns: dict[str, int] = {}
 
                 for result in results:
                     content = result.get("content", "").lower()
@@ -334,14 +335,16 @@ def register_crackerjack_tools(mcp) -> None:
 
                                 # Create a match-like object with start() and end() methods
                                 class SimpleMatch:
-                                    def __init__(self, start_pos, end_pos):
+                                    def __init__(
+                                        self, start_pos: int, end_pos: int
+                                    ) -> None:
                                         self._start = start_pos
                                         self._end = end_pos
 
-                                    def start(self):
+                                    def start(self) -> int:
                                         return self._start
 
-                                    def end(self):
+                                    def end(self) -> int:
                                         return self._end
 
                                 matches.append(SimpleMatch(pos, pos + len(keyword)))
@@ -372,7 +375,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Pattern analysis failed: {e}")
             return f"❌ Pattern analysis failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_help() -> str:
         """Get comprehensive help for choosing the right crackerjack commands."""
         return """🔧 **Crackerjack Command Guide**
@@ -411,7 +414,7 @@ def register_crackerjack_tools(mcp) -> None:
 - Monitor trends with `crackerjack_metrics`
 """
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_crackerjack_results_history(
         command_filter: str = "",
         days: int = 7,
@@ -419,27 +422,30 @@ def register_crackerjack_tools(mcp) -> None:
     ) -> str:
         """Get recent Crackerjack command execution history."""
         # This is essentially the same as crackerjack_history
-        return await crackerjack_history(command_filter, days, working_directory)
+        result: str = await crackerjack_history(command_filter, days, working_directory)
+        return result
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_crackerjack_quality_metrics(
         days: int = 30,
         working_directory: str = ".",
     ) -> str:
         """Get quality metrics trends from Crackerjack execution history."""
         # This is essentially the same as crackerjack_metrics
-        return await crackerjack_metrics(working_directory, days)
+        result: str = await crackerjack_metrics(working_directory, days)
+        return result
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def analyze_crackerjack_test_patterns(
         days: int = 7,
         working_directory: str = ".",
     ) -> str:
-        """Analyze test failure patterns and trends."""
+        """Analyze test failure patterns and trends for debugging insights."""
         # This is essentially the same as crackerjack_patterns
-        return await crackerjack_patterns(days, working_directory)
+        result: str = await crackerjack_patterns(days, working_directory)
+        return result
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_quality_trends(
         days: int = 30,
         working_directory: str = ".",
@@ -513,7 +519,7 @@ def register_crackerjack_tools(mcp) -> None:
             logger.exception(f"Trend analysis failed: {e}")
             return f"❌ Trend analysis failed: {e!s}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def crackerjack_health_check() -> str:
         """Check Crackerjack integration health and provide diagnostics."""
         output = "🔧 **Crackerjack Health Check**\n\n"
@@ -575,7 +581,8 @@ def register_crackerjack_tools(mcp) -> None:
         return output
 
     # Alias for backward compatibility
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def quality_monitor() -> str:
         """Phase 3: Proactive quality monitoring with early warning system."""
-        return await crackerjack_health_check()
+        result: str = await crackerjack_health_check()
+        return result

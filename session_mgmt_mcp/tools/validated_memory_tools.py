@@ -13,6 +13,7 @@ Following crackerjack patterns:
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from session_mgmt_mcp.parameter_models import (
     ConceptSearchParams,
@@ -30,7 +31,7 @@ _reflection_db = None
 _reflection_tools_available = None
 
 
-async def _get_reflection_database():
+async def _get_reflection_database() -> Any:
     """Get reflection database instance with lazy loading."""
     global _reflection_db, _reflection_tools_available
 
@@ -69,7 +70,7 @@ def _check_reflection_tools_available() -> bool:
 
 
 # Tool implementations with parameter validation
-async def _store_reflection_validated_impl(**params) -> str:
+async def _store_reflection_validated_impl(**params: Any) -> str:
     """Implementation for store_reflection tool with parameter validation."""
     if not _check_reflection_tools_available():
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
@@ -106,7 +107,7 @@ async def _store_reflection_validated_impl(**params) -> str:
         return f"❌ Error storing reflection: {e}"
 
 
-async def _quick_search_validated_impl(**params) -> str:
+async def _quick_search_validated_impl(**params: Any) -> str:
     """Implementation for quick_search tool with parameter validation."""
     if not _check_reflection_tools_available():
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
@@ -155,7 +156,7 @@ async def _quick_search_validated_impl(**params) -> str:
         return f"❌ Search error: {e}"
 
 
-async def _search_by_file_validated_impl(**params) -> str:
+async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
     if not _check_reflection_tools_available():
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
@@ -210,7 +211,7 @@ async def _search_by_file_validated_impl(**params) -> str:
         return f"❌ File search error: {e}"
 
 
-async def _search_by_concept_validated_impl(**params) -> str:
+async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
     if not _check_reflection_tools_available():
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
@@ -269,14 +270,14 @@ async def _search_by_concept_validated_impl(**params) -> str:
         return f"❌ Concept search error: {e}"
 
 
-def register_validated_memory_tools(mcp_server) -> None:
+def register_validated_memory_tools(mcp_server: Any) -> None:
     """Register memory management tools with parameter validation.
 
     This demonstrates how to integrate Pydantic parameter validation
     with existing MCP tools for improved type safety.
     """
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]  # type: ignore[misc]
     async def store_reflection_validated(
         content: str,
         tags: list[str] | None = None,
@@ -293,7 +294,7 @@ def register_validated_memory_tools(mcp_server) -> None:
         """
         return await _store_reflection_validated_impl(content=content, tags=tags)
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def quick_search_validated(
         query: str,
         min_score: float = 0.7,
@@ -316,7 +317,7 @@ def register_validated_memory_tools(mcp_server) -> None:
             query=query, min_score=min_score, project=project, limit=limit
         )
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def search_by_file_validated(
         file_path: str,
         limit: int = 10,
@@ -337,7 +338,7 @@ def register_validated_memory_tools(mcp_server) -> None:
             file_path=file_path, limit=limit, project=project
         )
 
-    @mcp_server.tool()
+    @mcp_server.tool()  # type: ignore[misc]
     async def search_by_concept_validated(
         concept: str,
         include_files: bool = True,
@@ -369,7 +370,7 @@ class ValidationExamples:
     """Examples showing parameter validation in action."""
 
     @staticmethod
-    async def example_valid_calls():
+    async def example_valid_calls() -> list[str]:
         """Examples of valid parameter calls."""
         # Valid reflection storage
         result1 = await _store_reflection_validated_impl(
@@ -393,7 +394,7 @@ class ValidationExamples:
         return [result1, result2, result3]
 
     @staticmethod
-    async def example_validation_errors():
+    async def example_validation_errors() -> None:
         """Examples that would trigger validation errors."""
         # Empty content - would fail validation
         try:
@@ -426,10 +427,10 @@ class MigrationGuide:
     """Guide for migrating existing MCP tools to use parameter validation."""
 
     @staticmethod
-    def before_migration():
+    def before_migration() -> None:
         """Example of tool before parameter validation."""
         """
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def search_reflections(
             query: str,
             limit: int = 10,
@@ -450,10 +451,10 @@ class MigrationGuide:
         """
 
     @staticmethod
-    def after_migration():
+    def after_migration() -> None:
         """Example of tool after parameter validation."""
         """
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def search_reflections(
             query: str,
             limit: int = 10,

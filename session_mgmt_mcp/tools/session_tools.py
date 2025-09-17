@@ -181,9 +181,11 @@ def _get_client_working_directory() -> str | None:
         try:
             stored_dir = working_dir_file.read_text().strip()
             # Only use if it's NOT the session-mgmt-mcp server directory
-            if (stored_dir and
-                Path(stored_dir).exists() and
-                not stored_dir.endswith("session-mgmt-mcp")):
+            if (
+                stored_dir
+                and Path(stored_dir).exists()
+                and not stored_dir.endswith("session-mgmt-mcp")
+            ):
                 return stored_dir
         except Exception:
             pass
@@ -191,14 +193,17 @@ def _get_client_working_directory() -> str | None:
     # Method 3: Check parent process working directory (advanced)
     try:
         import psutil
+
         parent_process = psutil.Process().parent()
         if parent_process:
             parent_cwd = parent_process.cwd()
             # Only use if it's a different directory and exists
-            if (parent_cwd and
-                Path(parent_cwd).exists() and
-                parent_cwd != str(Path.cwd()) and
-                not parent_cwd.endswith("session-mgmt-mcp")):
+            if (
+                parent_cwd
+                and Path(parent_cwd).exists()
+                and parent_cwd != str(Path.cwd())
+                and not parent_cwd.endswith("session-mgmt-mcp")
+            ):
                 return parent_cwd
     except (ImportError, Exception):
         pass
@@ -232,7 +237,6 @@ def _get_client_working_directory() -> str | None:
 
 async def _checkpoint_impl(working_directory: str | None = None) -> str:
     """Implementation for checkpoint tool."""
-
     # Auto-detect client working directory if not provided
     if not working_directory:
         working_directory = _get_client_working_directory()
@@ -290,7 +294,6 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
 
 async def _end_impl(working_directory: str | None = None) -> str:
     """Implementation for end tool."""
-
     # Auto-detect client working directory if not provided
     if not working_directory:
         working_directory = _get_client_working_directory()
@@ -483,6 +486,7 @@ def register_session_tools(mcp_server) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _checkpoint_impl(working_directory)
 
@@ -492,6 +496,7 @@ def register_session_tools(mcp_server) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _end_impl(working_directory)
 

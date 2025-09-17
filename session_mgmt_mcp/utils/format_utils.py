@@ -18,7 +18,7 @@ def _format_statistics_header(user_id: str) -> list[str]:
     ]
 
 
-def _format_session_statistics(sessions: dict) -> list[str]:
+def _format_session_statistics(sessions: dict[str, Any]) -> list[str]:
     """Format session-related statistics."""
     if not sessions:
         return ["📝 No session data available"]
@@ -32,7 +32,7 @@ def _format_session_statistics(sessions: dict) -> list[str]:
     ]
 
 
-def _format_interruption_type_details(by_type: list) -> list[str]:
+def _format_interruption_type_details(by_type: list[Any]) -> list[str]:
     """Format interruption type breakdown."""
     if not by_type:
         return []
@@ -45,7 +45,7 @@ def _format_interruption_type_details(by_type: list) -> list[str]:
     return lines
 
 
-def _format_interruption_statistics(interruptions: dict) -> list[str]:
+def _format_interruption_statistics(interruptions: dict[str, Any]) -> list[str]:
     """Format interruption-related statistics."""
     if not interruptions:
         return ["🚫 No interruption data available"]
@@ -65,7 +65,7 @@ def _format_interruption_statistics(interruptions: dict) -> list[str]:
     return lines
 
 
-def _format_snapshot_statistics(snapshots: dict) -> list[str]:
+def _format_snapshot_statistics(snapshots: dict[str, Any]) -> list[str]:
     """Format snapshot-related statistics."""
     if not snapshots:
         return ["💾 No snapshot data available"]
@@ -80,7 +80,7 @@ def _format_snapshot_statistics(snapshots: dict) -> list[str]:
 
 
 def _calculate_efficiency_rates(
-    sessions: dict, interruptions: dict, snapshots: dict
+    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
 ) -> dict[str, float]:
     """Calculate efficiency metrics from statistics."""
     efficiency = {
@@ -108,7 +108,7 @@ def _calculate_efficiency_rates(
 
 
 def _format_efficiency_metrics(
-    sessions: dict, interruptions: dict, snapshots: dict
+    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
 ) -> list[str]:
     """Format efficiency and productivity metrics."""
     efficiency = _calculate_efficiency_rates(sessions, interruptions, snapshots)
@@ -122,7 +122,9 @@ def _format_efficiency_metrics(
     ]
 
 
-def _has_statistics_data(sessions: dict, interruptions: dict, snapshots: dict) -> bool:
+def _has_statistics_data(
+    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
+) -> bool:
     """Check if any meaningful statistics data exists."""
     return bool(
         sessions.get("total", 0) > 0
@@ -173,7 +175,7 @@ def _build_search_header(
     return header
 
 
-def _format_search_results(results: list) -> list[str]:
+def _format_search_results(results: list[Any]) -> list[str]:
     """Format search results for display."""
     if not results:
         return ["No results found"]
@@ -200,7 +202,7 @@ def _format_search_results(results: list) -> list[str]:
     return formatted
 
 
-def _format_monitoring_status(quality_data: dict) -> list[str]:
+def _format_monitoring_status(quality_data: dict[str, Any]) -> list[str]:
     """Format current monitoring status information."""
     lines = [
         "📊 **Current Monitoring Status**",
@@ -227,7 +229,7 @@ def _format_monitoring_status(quality_data: dict) -> list[str]:
     return lines
 
 
-def _format_quality_trend(quality_data: dict) -> list[str]:
+def _format_quality_trend(quality_data: dict[str, Any]) -> list[str]:
     """Format quality trend information."""
     trend = quality_data.get("trend", {})
     if not trend:
@@ -243,7 +245,7 @@ def _format_quality_trend(quality_data: dict) -> list[str]:
     ]
 
 
-def _format_quality_alerts(quality_data: dict) -> list[str]:
+def _format_quality_alerts(quality_data: dict[str, Any]) -> list[str]:
     """Format quality alerts and warnings."""
     alerts = quality_data.get("alerts", [])
     if not alerts:
@@ -264,7 +266,7 @@ def _format_quality_alerts(quality_data: dict) -> list[str]:
     return lines
 
 
-def _format_proactive_recommendations(quality_data: dict) -> list[str]:
+def _format_proactive_recommendations(quality_data: dict[str, Any]) -> list[str]:
     """Format proactive quality improvement recommendations."""
     recommendations = quality_data.get("recommendations", [])
     if not recommendations:

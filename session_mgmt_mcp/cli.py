@@ -5,6 +5,10 @@ Provides CLI interface matching crackerjack's server management pattern
 with boolean options instead of subcommands.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import os
 import subprocess
 import sys
@@ -77,10 +81,10 @@ def find_server_processes() -> list[psutil.Process]:
     return processes
 
 
-def get_server_status() -> dict:
+def get_server_status() -> dict[str, Any]:
     """Get comprehensive server status information."""
     processes = find_server_processes()
-    status = {
+    status: dict[str, Any] = {
         "running": len(processes) > 0,
         "process_count": len(processes),
         "processes": [],
@@ -151,7 +155,7 @@ def start_mcp_server(
     port: int | None = None,
     websocket_port: int | None = None,
     verbose: bool = False,
-) -> None:
+) -> bool:
     """Start the session management MCP server."""
     server_status = get_server_status()
 
@@ -231,6 +235,7 @@ def start_mcp_server(
             console.print("[yellow]💡 Try --verbose flag for more details[/yellow]")
         raise typer.Exit(1)
 
+    console.print("[green]✅ Server started successfully[/green]")
     return True
 
 
