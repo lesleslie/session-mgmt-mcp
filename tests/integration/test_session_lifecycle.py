@@ -13,7 +13,6 @@ import pytest
 from session_mgmt_mcp.tools.memory_tools import register_memory_tools
 from session_mgmt_mcp.tools.search_tools import register_search_tools
 from session_mgmt_mcp.tools.session_tools import register_session_tools
-from tests.fixtures.mcp_fixtures import AsyncTestCase
 
 
 # Mock MCP server for testing
@@ -47,7 +46,7 @@ store_reflection = mock_mcp.tools.get("store_reflection")
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-class TestSessionLifecycleIntegration(AsyncTestCase):
+class TestSessionLifecycleIntegration:
     """Comprehensive session lifecycle integration tests."""
 
     async def test_complete_session_workflow(

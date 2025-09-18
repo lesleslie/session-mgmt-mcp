@@ -463,5 +463,35 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker("security")
 
 
+# Session management specific fixtures
+@pytest.fixture
+async def session_permissions():
+    """Provide mock session permissions for testing."""
+    class MockSessionPermissions:
+        def __init__(self):
+            self.trusted_operations = set()
+
+        def add_trusted_operation(self, operation: str):
+            self.trusted_operations.add(operation)
+
+        def is_trusted(self, operation: str) -> bool:
+            return operation in self.trusted_operations
+
+    return MockSessionPermissions()
+
+
+@pytest.fixture
+async def temp_database(temp_db_path: str):
+    """Provide temporary database for testing."""
+    return temp_db_path
+
+
+@pytest.fixture
+async def temp_working_dir():
+    """Provide temporary working directory for testing."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
+
+
 # Async test timeout configuration
 pytestmark = pytest.mark.asyncio(scope="function")
