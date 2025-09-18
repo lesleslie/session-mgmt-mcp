@@ -18,9 +18,9 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Match
 from enum import Enum
 from pathlib import Path
+from re import Match
 from typing import Any
 
 DATEUTIL_AVAILABLE = importlib.util.find_spec("dateutil") is not None
@@ -620,7 +620,9 @@ class ReminderScheduler:
             )
             return False
 
-    def register_notification_callback(self, method: str, callback: Callable[..., Any]) -> None:
+    def register_notification_callback(
+        self, method: str, callback: Callable[..., Any]
+    ) -> None:
         """Register callback for notification method."""
         if method not in self._callbacks:
             self._callbacks[method] = []

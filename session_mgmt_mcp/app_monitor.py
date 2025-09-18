@@ -22,6 +22,7 @@ try:
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
+
     # Create stub for FileSystemEventHandler when watchdog is not available
     class FileSystemEventHandler:  # type: ignore[no-redef]
         pass
@@ -609,7 +610,10 @@ class ApplicationMonitor:
             try:
                 # Check application focus
                 focused_app = self.focus_monitor.get_focused_application()
-                if focused_app and focused_app.get("name") != self.focus_monitor.current_app:
+                if (
+                    focused_app
+                    and focused_app.get("name") != self.focus_monitor.current_app
+                ):
                     self.focus_monitor.add_focus_event(focused_app)
                     self.focus_monitor.current_app = focused_app.get("name")
 

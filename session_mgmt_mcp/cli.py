@@ -7,14 +7,13 @@ with boolean options instead of subcommands.
 
 from __future__ import annotations
 
-from typing import Any
-
 import os
 import subprocess
 import sys
 import time
 import warnings
 from pathlib import Path
+from typing import Any
 
 # Suppress transformers warnings about PyTorch/TensorFlow
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"

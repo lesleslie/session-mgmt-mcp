@@ -498,7 +498,7 @@ async def session_lifecycle(app):
 _mcp_config = _load_mcp_config()
 
 # Initialize MCP server with lifespan
-mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle, stateless_http=True)
+mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
 
 # Register extracted tool modules following crackerjack architecture patterns
 # Import session command definitions
@@ -3580,10 +3580,16 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
             f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
             file=sys.stderr,
         )
-        mcp.run(transport="streamable-http", host=host, port=port, path="/mcp")
+        mcp.run(
+            transport="streamable-http",
+            host=host,
+            port=port,
+            path="/mcp",
+            stateless_http=True,
+        )
     else:
         print("Starting Session Management MCP Server in STDIO mode", file=sys.stderr)
-        mcp.run()
+        mcp.run(stateless_http=True)
 
 
 if __name__ == "__main__":

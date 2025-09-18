@@ -7,6 +7,8 @@ This module provides efficient connection pooling and management for DuckDB oper
 import asyncio
 import atexit
 import threading
+from collections.abc import AsyncIterator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -33,7 +35,7 @@ class DatabaseConnectionPool:
         self._pool: list[Any] = []
         self._pool_lock = threading.Lock()
         self._active_connections: dict[int, Any] = {}
-        self._executor = None
+        self._executor: ThreadPoolExecutor | None = None
         self._closed = False
 
         # Ensure database directory exists
@@ -42,24 +44,25 @@ class DatabaseConnectionPool:
         # Register cleanup on exit
         atexit.register(self.close_all)
 
-    def _create_connection(self):
+    def _create_connection(self) -> Any:
         """Create a new DuckDB connection."""
         if not DUCKDB_AVAILABLE:
             msg = "DuckDB not available"
             raise ImportError(msg)
 
         try:
-            conn = duckdb.connect(self.db_path) if duckdb else None  # type: ignore[attr-defined]
+            conn = duckdb.connect(self.db_path) if duckdb else None
             # Set optimal pragmas for performance
-            conn.execute("PRAGMA threads=4")
-            conn.execute("PRAGMA memory_limit='1GB'")
-            conn.execute("PRAGMA temp_directory='/tmp'")
+            if conn:
+                conn.execute("PRAGMA threads=4")
+                conn.execute("PRAGMA memory_limit='1GB'")
+                conn.execute("PRAGMA temp_directory='/tmp'")
             return conn
         except Exception as e:
             logger.exception(f"Failed to create database connection: {e}")
             raise
 
-    def get_connection(self):
+    def get_connection(self) -> Any:
         """Get a connection from the pool or create a new one."""
         if self._closed:
             msg = "Connection pool is closed"
@@ -79,7 +82,7 @@ class DatabaseConnectionPool:
                 msg,
             )
 
-    def return_connection(self, conn) -> None:
+    def return_connection(self, conn: Any) -> None:
         """Return a connection to the pool."""
         if self._closed or not conn:
             return
@@ -97,7 +100,7 @@ class DatabaseConnectionPool:
                         logger.warning(f"Error closing excess connection: {e}")
 
     @asynccontextmanager
-    async def get_async_connection(self):
+    async def get_async_connection(self) -> AsyncIterator[Any]:
         """Async context manager for getting database connections."""
         conn = None
         try:
@@ -118,37 +121,36 @@ class DatabaseConnectionPool:
                     conn,
                 )
 
-    def _get_executor(self):
+    def _get_executor(self) -> Any:
         """Get or create thread pool executor."""
         if self._executor is None:
-            self._executor = asyncio.ThreadPoolExecutor(max_workers=2)
+            self._executor = ThreadPoolExecutor(max_workers=2)
         return self._executor
 
-    async def execute_query(self, query: str, parameters: tuple | None = None):
+    async def execute_query(
+        self, query: str, parameters: tuple[Any, ...] | None = None
+    ) -> Any:
         """Execute a query using a pooled connection."""
         async with self.get_async_connection() as conn:
             loop = asyncio.get_event_loop()
 
-            def _execute():
+            def _execute() -> Any:
                 try:
                     if parameters:
                         return conn.execute(query, parameters).fetchall()
                     return conn.execute(query).fetchall()
                 except Exception as e:
-                    logger.exception(
-                        f"Query execution error: {e}",
-                        extra={"query": query[:100]},
-                    )
+                    logger.exception(f"Query execution failed: {e}")
                     raise
 
             return await loop.run_in_executor(self._get_executor(), _execute)
 
-    async def execute_many(self, query: str, parameter_list: list):
+    async def execute_many(self, query: str, parameter_list: list[Any]) -> Any:
         """Execute a query multiple times with different parameters."""
         async with self.get_async_connection() as conn:
             loop = asyncio.get_event_loop()
 
-            def _execute_many():
+            def _execute_many() -> Any:
                 try:
                     results = []
                     for params in parameter_list:

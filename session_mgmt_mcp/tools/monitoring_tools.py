@@ -8,6 +8,7 @@ and managing session context following crackerjack architecture patterns.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ _interruption_manager = None
 _interruption_available = None
 
 
-async def _get_app_monitor():
+async def _get_app_monitor() -> Any:
     """Get application monitor instance with lazy loading."""
     global _app_monitor, _app_monitor_available
 
@@ -29,7 +30,7 @@ async def _get_app_monitor():
         try:
             from session_mgmt_mcp.app_monitor import ApplicationMonitor
 
-            _app_monitor = ApplicationMonitor()
+            _app_monitor = ApplicationMonitor(data_dir="~/.claude/data")
             _app_monitor_available = True
         except ImportError as e:
             logger.warning(f"Application monitoring not available: {e}")
@@ -39,7 +40,7 @@ async def _get_app_monitor():
     return _app_monitor
 
 
-async def _get_interruption_manager():
+async def _get_interruption_manager() -> Any:
     """Get interruption manager instance with lazy loading."""
     global _interruption_manager, _interruption_available
 
@@ -92,7 +93,7 @@ def _check_interruption_available() -> bool:
     return _interruption_available
 
 
-def register_monitoring_tools(mcp) -> None:
+def register_monitoring_tools(mcp: Any) -> None:
     """Register all monitoring and activity tracking MCP tools.
 
     Args:
@@ -100,7 +101,7 @@ def register_monitoring_tools(mcp) -> None:
 
     """
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def start_app_monitoring(project_paths: list[str] | None = None) -> str:
         """Start monitoring IDE activity and browser documentation usage.
 
@@ -140,10 +141,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error starting app monitoring", error=str(e))
+            logger.exception(f"Error starting app monitoring: {e}")
             return f"❌ Error starting monitoring: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def stop_app_monitoring() -> str:
         """Stop all application monitoring."""
         if not _check_app_monitor_available():
@@ -174,10 +175,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error stopping app monitoring", error=str(e))
+            logger.exception(f"Error stopping app monitoring: {e}")
             return f"❌ Error stopping monitoring: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_activity_summary(hours: int = 2) -> str:
         """Get activity summary for the specified number of hours.
 
@@ -238,10 +239,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error getting activity summary", error=str(e))
+            logger.exception(f"Error getting activity summary: {e}")
             return f"❌ Error getting activity summary: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_context_insights(hours: int = 1) -> str:
         """Get contextual insights from recent activity.
 
@@ -297,10 +298,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error getting context insights", error=str(e))
+            logger.exception(f"Error getting context insights: {e}")
             return f"❌ Error getting context insights: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_active_files(minutes: int = 60) -> str:
         """Get files currently being worked on.
 
@@ -343,12 +344,12 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error getting active files", error=str(e))
+            logger.exception(f"Error getting active files: {e}")
             return f"❌ Error getting active files: {e}"
 
     # Interruption Management Tools
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def start_interruption_monitoring(
         watch_files: bool = True,
         working_directory: str = ".",
@@ -389,10 +390,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error starting interruption monitoring", error=str(e))
+            logger.exception(f"Error starting interruption monitoring: {e}")
             return f"❌ Error starting interruption monitoring: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def stop_interruption_monitoring() -> str:
         """Stop interruption monitoring."""
         if not _check_interruption_available():
@@ -423,10 +424,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error stopping interruption monitoring", error=str(e))
+            logger.exception(f"Error stopping interruption monitoring: {e}")
             return f"❌ Error stopping interruption monitoring: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def create_session_context(
         user_id: str,
         project_id: str | None = None,
@@ -460,10 +461,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error creating session context", error=str(e))
+            logger.exception(f"Error creating session context: {e}")
             return f"❌ Error creating session context: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def preserve_current_context(
         session_id: str | None = None,
         force: bool = False,
@@ -496,10 +497,10 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error preserving context", error=str(e))
+            logger.exception(f"Error preserving context: {e}")
             return f"❌ Error preserving context: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def restore_session_context(session_id: str) -> str:
         """Restore session context from snapshot."""
         if not _check_interruption_available():
@@ -534,10 +535,10 @@ def register_monitoring_tools(mcp) -> None:
             return f"❌ Context not found: {session_id}"
 
         except Exception as e:
-            logger.exception("Error restoring context", error=str(e))
+            logger.exception(f"Error restoring context: {e}")
             return f"❌ Error restoring context: {e}"
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_interruption_history(user_id: str, hours: int = 24) -> str:
         """Get recent interruption history for user."""
         if not _check_interruption_available():
@@ -600,5 +601,5 @@ def register_monitoring_tools(mcp) -> None:
             return "\n".join(output)
 
         except Exception as e:
-            logger.exception("Error getting interruption history", error=str(e))
+            logger.exception(f"Error getting interruption history: {e}")
             return f"❌ Error getting interruption history: {e}"

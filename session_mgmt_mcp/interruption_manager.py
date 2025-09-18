@@ -18,7 +18,6 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
 from pathlib import Path
 from typing import Any
 

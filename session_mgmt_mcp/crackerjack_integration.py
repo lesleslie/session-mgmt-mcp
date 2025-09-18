@@ -739,20 +739,30 @@ class CrackerjackIntegration:
 
         # Map common commands to crackerjack flags
         command_mappings = {
-            "lint": ["--fast"],  # Run fast hooks (formatting and basic checks)
+            "lint": [
+                "--fast",
+                "--quick",
+            ],  # Run fast hooks (formatting and basic checks)
             "check": [
-                "--comp"
+                "--comp",
+                "--quick",
             ],  # Run comprehensive hooks (type checking, security, etc.)
-            "test": ["--test"],  # Run tests
-            "format": ["--fast"],  # Run formatting
-            "typecheck": ["--comp"],  # Type checking is part of comprehensive hooks
-            "security": ["--comp"],  # Security is part of comprehensive hooks
-            "complexity": ["--comp"],  # Complexity analysis
-            "analyze": ["--comp"],  # Full analysis
-            "build": [],  # Default run
-            "clean": ["--clean"],  # Clean code
-            "all": ["--all"],  # Run all operations
-            "run": [],  # Default behavior
+            "test": ["--run-tests", "--quick"],  # Run tests using correct flag
+            "format": ["--fast", "--quick"],  # Run formatting
+            "typecheck": [
+                "--comp",
+                "--quick",
+            ],  # Type checking is part of comprehensive hooks
+            "security": [
+                "--comp",
+                "--quick",
+            ],  # Security is part of comprehensive hooks
+            "complexity": ["--comp", "--quick"],  # Complexity analysis
+            "analyze": ["--comp", "--quick"],  # Full analysis
+            "build": ["--quick"],  # Default run with quick mode
+            "clean": ["--quick"],  # Default run (no specific clean flag visible)
+            "all": ["--all", "--quick"],  # Run all operations
+            "run": ["--quick"],  # Default behavior with quick mode
         }
 
         # Get the appropriate flags for the command
@@ -760,10 +770,10 @@ class CrackerjackIntegration:
 
         # Add AI agent mode support
         if ai_agent_mode:
-            command_flags.append("--ai-agent")
+            command_flags.append("--ai-fix")  # Use correct AI flag
 
-        # Build the full command
-        full_command = ["crackerjack", *command_flags, *args]
+        # Build the full command using python -m crackerjack
+        full_command = ["python", "-m", "crackerjack", *command_flags, *args]
 
         start_time = time.time()
         result_id = f"cj_{int(start_time * 1000)}"
@@ -1322,7 +1332,9 @@ class CrackerjackIntegration:
         project_path: str,
     ) -> None:
         """Store progress snapshot from result."""
-        progress_info = result.parsed_data.get("progress_info", {}) if result.parsed_data else {}
+        progress_info = (
+            result.parsed_data.get("progress_info", {}) if result.parsed_data else {}
+        )
 
         if progress_info:
             snapshot_id = f"progress_{result_id}"

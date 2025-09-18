@@ -56,7 +56,7 @@ class TokenOptimizer:
             "prioritize_recent": self._prioritize_recent_content,
         }
 
-    def _get_encoding(self):
+    def _get_encoding(self) -> Any:
         """Get tiktoken encoding for token counting."""
         try:
             return tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
@@ -114,7 +114,7 @@ class TokenOptimizer:
             reverse=True,
         )
 
-        optimized_results = []
+        optimized_results: list[dict[str, Any]] = []
         current_tokens = 0
         truncation_count = 0
 
@@ -200,8 +200,8 @@ class TokenOptimizer:
             }
 
         # Create chunks
-        chunks = []
-        current_chunk = []
+        chunks: list[list[dict[str, Any]]] = []
+        current_chunk: list[dict[str, Any]] = []
         current_chunk_tokens = 0
 
         for result in results:
@@ -443,9 +443,11 @@ class TokenOptimizer:
             "original_tokens": original_tokens,
             "optimized_tokens": optimized_tokens,
             "tokens_saved": original_tokens - optimized_tokens,
-            "savings_percentage": round(
-                ((original_tokens - optimized_tokens) / original_tokens) * 100,
-                1,
+            "savings_percentage": int(
+                round(
+                    ((original_tokens - optimized_tokens) / original_tokens) * 100,
+                    1,
+                )
             )
             if original_tokens > 0
             else 0,
@@ -491,7 +493,7 @@ class TokenOptimizer:
         avg_tokens = total_tokens / len(recent_usage)
 
         # Count optimizations applied
-        optimizations = {}
+        optimizations: dict[str, int] = {}
         for metric in recent_usage:
             if metric.optimization_applied:
                 optimizations[metric.optimization_applied] = (
@@ -530,7 +532,7 @@ class TokenOptimizer:
             "estimated_tokens_saved": int(estimated_savings_tokens),
         }
 
-    def cleanup_cache(self, max_age_hours: int = 1):
+    def cleanup_cache(self, max_age_hours: int = 1) -> None:
         """Clean up expired cache entries."""
         cutoff = datetime.now() - timedelta(hours=max_age_hours)
         expired_keys = []
