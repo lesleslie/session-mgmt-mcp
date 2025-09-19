@@ -252,7 +252,9 @@ class TokenOptimizer:
 
             normalize_pattern = SAFE_PATTERNS["whitespace_normalize"]
             normalized_content = normalize_pattern.apply(content.lower().strip())
-            content_hash = hashlib.md5(normalized_content.encode()).hexdigest()
+            content_hash = hashlib.md5(
+                normalized_content.encode(), usedforsecurity=False
+            ).hexdigest()
 
             if content_hash not in seen_hashes:
                 seen_hashes.add(content_hash)
@@ -305,7 +307,7 @@ class TokenOptimizer:
             # Code/technical content bonus (0-0.2)
             if any(
                 keyword in content.lower()
-                for keyword in ["def ", "class ", "function", "error", "exception"]
+                for keyword in ("def ", "class ", "function", "error", "exception")
             ):
                 score += 0.2
 
@@ -382,6 +384,7 @@ class TokenOptimizer:
         """Create cache entry for chunked results."""
         cache_key = hashlib.md5(
             f"chunks_{datetime.now().isoformat()}_{len(chunks)}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         chunk_result = ChunkResult(
@@ -406,13 +409,13 @@ class TokenOptimizer:
         chunk_result = self.chunk_cache[cache_key]
 
         # Check expiration
-        try:
+        from contextlib import suppress
+
+        with suppress(ValueError, KeyError):
             expires = datetime.fromisoformat(chunk_result.metadata["expires"])
             if datetime.now() > expires:
                 del self.chunk_cache[cache_key]
                 return None
-        except (ValueError, KeyError):
-            pass
 
         if 1 <= chunk_index <= len(chunk_result.chunks):
             chunk_data = json.loads(chunk_result.chunks[chunk_index - 1])

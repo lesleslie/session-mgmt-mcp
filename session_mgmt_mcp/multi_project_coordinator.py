@@ -162,7 +162,9 @@ class MultiProjectCoordinator:
         metadata: dict[str, Any] | None = None,
     ) -> ProjectGroup:
         """Create a new project group."""
-        group_id = hashlib.md5(f"{name}_{time.time()}".encode()).hexdigest()
+        group_id = hashlib.md5(
+            f"{name}_{time.time()}".encode(), usedforsecurity=False
+        ).hexdigest()
 
         group = ProjectGroup(
             id=group_id,
@@ -207,6 +209,7 @@ class MultiProjectCoordinator:
         """Add a dependency relationship between projects."""
         dep_id = hashlib.md5(
             f"{source_project}_{target_project}_{dependency_type}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         dependency = ProjectDependency(
@@ -265,6 +268,7 @@ class MultiProjectCoordinator:
         """Create a link between two sessions across projects."""
         link_id = hashlib.md5(
             f"{source_session_id}_{target_session_id}_{link_type}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         link = SessionLink(

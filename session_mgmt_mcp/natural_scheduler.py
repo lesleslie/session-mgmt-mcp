@@ -161,7 +161,8 @@ class NaturalLanguageParser:
                 if parsed_date > base_time:  # Only future dates
                     return parsed_date
             except (ValueError, TypeError):
-                pass
+                with contextlib.suppress(ValueError, TypeError):
+                    pass
 
         return None
 

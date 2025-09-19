@@ -132,7 +132,7 @@ class ErrorPatternMatcher:
                         "content": match.group(0),
                         "start": match.start(),
                         "end": match.end(),
-                        "groups": match.groups() if match.groups() else [],
+                        "groups": match.groups() or [],
                     },
                 )
 
@@ -146,7 +146,7 @@ class ErrorPatternMatcher:
                         "subtype": context_name,
                         "content": content,
                         "relevance": "high"
-                        if context_name in ["debugging", "error_handling"]
+                        if context_name in ("debugging", "error_handling")
                         else "medium",
                     },
                 )
@@ -322,7 +322,7 @@ class EnhancedSearchEngine:
             conversations = cursor.fetchall()
 
             for conv in conversations:
-                conv_id, content, project, timestamp, metadata = conv
+                conv_id, content, project, timestamp, _metadata = conv
                 patterns = self.code_searcher.extract_code_patterns(content)
 
                 for pattern in patterns:
@@ -366,7 +366,7 @@ class EnhancedSearchEngine:
             conversations = cursor.fetchall()
 
             for conv in conversations:
-                conv_id, content, project, timestamp, metadata = conv
+                conv_id, content, project, timestamp, _metadata = conv
                 patterns = self.error_matcher.extract_error_patterns(content)
 
                 for pattern in patterns:
@@ -426,7 +426,7 @@ class EnhancedSearchEngine:
             conversations = cursor.fetchall()
 
             for conv in conversations:
-                conv_id, content, project, timestamp, metadata = conv
+                conv_id, content, project, timestamp, _metadata = conv
 
                 # If query provided, filter by content relevance
                 if query:

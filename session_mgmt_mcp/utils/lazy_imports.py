@@ -197,12 +197,16 @@ def create_embedding_mock() -> Any:
         def encode(
             self, texts: str | list[str], *args: Any, **kwargs: Any
         ) -> list[list[float]]:
-            # Return random-like embeddings for testing
-            import random
+            # Return random-like embeddings for testing (using secrets for security)
+            import secrets
+
+            def _random_float() -> float:
+                """Generate a secure random float between 0 and 1."""
+                return secrets.randbelow(1000000) / 1000000.0
 
             if isinstance(texts, str):
-                return [[random.random() for _ in range(384)]]
-            return [[random.random() for _ in range(384)] for _ in texts]
+                return [[_random_float() for _ in range(384)]]
+            return [[_random_float() for _ in range(384)] for _ in texts]
 
     return MockEmbedding
 
@@ -229,14 +233,14 @@ def get_dependency_status() -> dict[str, dict[str, Any]]:
             "available": loader.available if loader else False,
             "required": False,
             "category": "embeddings"
-            if dep in ["transformers", "onnxruntime", "numpy"]
+            if dep in ("transformers", "onnxruntime", "numpy")
             else "optimization",
         }
 
     # Overall status
     core_available = all(status[dep]["available"] for dep in core_deps)
     embeddings_available = all(
-        status[dep]["available"] for dep in ["transformers", "onnxruntime", "numpy"]
+        status[dep]["available"] for dep in ("transformers", "onnxruntime", "numpy")
     )
 
     status["_summary"] = {
@@ -262,10 +266,10 @@ def log_dependency_status() -> None:
     )
 
     # Log missing dependencies
-    missing_core = [dep for dep in ["duckdb"] if not status[dep]["available"]]
+    missing_core = [dep for dep in ("duckdb",) if not status[dep]["available"]]
     missing_optional = [
         dep
-        for dep in ["transformers", "onnxruntime", "tiktoken", "numpy"]
+        for dep in ("transformers", "onnxruntime", "tiktoken", "numpy")
         if not status[dep]["available"]
     ]
 

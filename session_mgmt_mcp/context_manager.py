@@ -232,7 +232,9 @@ class ContextDetector:
 
         git_dir = working_path / ".git"
         if git_dir.exists():
-            try:
+            from contextlib import suppress
+
+            with suppress(OSError, PermissionError):
                 # Use new worktree-aware detection
                 worktree_info = get_worktree_info(working_path)
                 if worktree_info:
@@ -260,9 +262,6 @@ class ContextDetector:
                         git_info["platform"] = "git"
 
                 git_info["is_git_repo"] = True
-
-            except (OSError, PermissionError):
-                pass
 
         return git_info
 
@@ -329,15 +328,15 @@ class RelevanceScorer:
 
     def _score_recency(self, conversation: dict[str, Any]) -> float:
         """Score based on conversation recency."""
-        try:
+        from contextlib import suppress
+
+        with suppress(ValueError, TypeError):
             conv_time = datetime.fromisoformat(conversation.get("timestamp", ""))
             time_diff = datetime.now() - conv_time
             if time_diff.days == 0:
                 return self.scoring_weights["recency"]
             if time_diff.days <= 7:
                 return self.scoring_weights["recency"] * 0.5
-        except (ValueError, TypeError):
-            pass
         return 0.0
 
     def _get_project_keywords(self) -> dict[str, list[str]]:
@@ -480,7 +479,7 @@ class AutoContextLoader:
         }
 
         hash_string = json.dumps(hash_data, sort_keys=True)
-        return hashlib.md5(hash_string.encode()).hexdigest()[:12]
+        return hashlib.md5(hash_string.encode(), usedforsecurity=False).hexdigest()[:12]
 
     async def get_context_summary(self, working_dir: str | None = None) -> str:
         """Get a human-readable summary of current context."""

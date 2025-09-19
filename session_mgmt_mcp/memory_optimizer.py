@@ -152,10 +152,11 @@ class ConversationSummarizer:
             "optimization": "performance optimization",
         }
 
-        topics_found = []
-        for keyword, topic in impl_keywords.items():
-            if keyword in content.lower():
-                topics_found.append(topic)
+        topics_found = [
+            topic
+            for keyword, topic in impl_keywords.items()
+            if keyword in content.lower()
+        ]
 
         if topics_found:
             topics_str = ", ".join(topics_found[:3])
@@ -332,13 +333,13 @@ class ConversationClusterer:
             similarity += 0.3
 
         # Time proximity (conversations within same day)
-        try:
+        from contextlib import suppress
+
+        with suppress(ValueError, TypeError):
             time1 = datetime.fromisoformat(conv1.get("timestamp", ""))
             time2 = datetime.fromisoformat(conv2.get("timestamp", ""))
             if abs((time1 - time2).days) <= 1:
                 similarity += 0.2
-        except (ValueError, TypeError):
-            pass
 
         # Content similarity (simple keyword overlap)
         word_boundary_pattern = SAFE_PATTERNS["word_boundary"]
@@ -394,15 +395,15 @@ class RetentionPolicyManager:
 
         # Recent access (would need to track this separately)
         # For now, use recency as proxy
-        try:
+        from contextlib import suppress
+
+        with suppress(ValueError, TypeError):
             conv_time = datetime.fromisoformat(conversation.get("timestamp", ""))
             days_old = (datetime.now() - conv_time).days
             if days_old < 7:
                 score += self.importance_factors["recent_access"]
             elif days_old < 30:
                 score += self.importance_factors["recent_access"] * 0.5
-        except (ValueError, TypeError):
-            pass
 
         # Length score (longer conversations might be more important)
         content_length = len(content)
@@ -550,7 +551,7 @@ class MemoryOptimizer:
         )
         total_compressed_size = 0
 
-        for _i, cluster in enumerate(clusters):
+        for cluster in clusters:
             if len(cluster) <= 1:
                 continue  # Skip single-conversation clusters
 
@@ -617,6 +618,7 @@ class MemoryOptimizer:
         # Create new consolidated conversation
         consolidated_id = hashlib.md5(
             f"consolidated_{datetime.now().isoformat()}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         metadata = {

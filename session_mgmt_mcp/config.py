@@ -494,7 +494,9 @@ class ConfigLoader:
         for parent in current.parents:
             if (parent / "pyproject.toml").exists():
                 # Check if this is the session-mgmt-mcp project
-                try:
+                from contextlib import suppress
+
+                with suppress(Exception):
                     with (parent / "pyproject.toml").open("rb") as f:
                         if tomllib:
                             toml_data = tomllib.load(f)
@@ -503,8 +505,6 @@ class ConfigLoader:
                                 == "session-mgmt-mcp"
                             ):
                                 return parent
-                except Exception:
-                    pass
 
         # Fallback to current directory
         return current

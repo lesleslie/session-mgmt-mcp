@@ -438,7 +438,7 @@ class ApplicationFocusMonitor:
             event_type="app_focus",
             application=app_info["name"],
             details={"category": app_info["category"], "pid": app_info["pid"]},
-            relevance_score=0.6 if app_info["category"] in ["ide", "terminal"] else 0.3,
+            relevance_score=0.6 if app_info["category"] in ("ide", "terminal") else 0.3,
         )
 
         self.focus_history.append(activity_event)
@@ -529,20 +529,17 @@ class ActivityDatabase:
             cursor = conn.execute(query, params)
             rows = cursor.fetchall()
 
-            events = []
-            for row in rows:
-                events.append(
-                    ActivityEvent(
-                        timestamp=row[1],
-                        event_type=row[2],
-                        application=row[3],
-                        details=json.loads(row[4]),
-                        project_path=row[5],
-                        relevance_score=row[6] or 0.0,
-                    ),
+            return [
+                ActivityEvent(
+                    timestamp=row[1],
+                    event_type=row[2],
+                    application=row[3],
+                    details=json.loads(row[4]),
+                    project_path=row[5],
+                    relevance_score=row[6] or 0.0,
                 )
-
-            return events
+                for row in rows
+            ]
 
     def cleanup_old_events(self, days_to_keep: int = 30) -> None:
         """Remove old activity events."""
@@ -710,7 +707,7 @@ class ApplicationMonitor:
                 ext = event.details.get("file_extension", "")
                 if ext == ".py":
                     insights["technologies_used"].add("python")
-                elif ext in [".js", ".ts"]:
+                elif ext in (".js", ".ts"):
                     insights["technologies_used"].add("javascript")
                 elif ext == ".rs":
                     insights["technologies_used"].add("rust")

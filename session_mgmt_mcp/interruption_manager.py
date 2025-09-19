@@ -208,7 +208,7 @@ class FocusTracker:
                     name = proc.info["name"]
                     if isinstance(name, str) and any(
                         gui_hint in name.lower()
-                        for gui_hint in ["code", "browser", "terminal", "editor", "ide"]
+                        for gui_hint in ("code", "browser", "terminal", "editor", "ide")
                     ):
                         return name
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -428,7 +428,7 @@ class InterruptionManager:
             working_directory=working_directory,
             open_files=[],
             cursor_positions={},
-            environment_vars=dict(os.environ) if "os" in globals() else {},
+            environment_vars=os.environ.copy() if "os" in globals() else {},
             process_state={},
             last_activity=datetime.now(),
             focus_duration=0.0,
@@ -569,7 +569,7 @@ class InterruptionManager:
                 if metadata.get("compressed", False) and COMPRESSION_AVAILABLE:
                     try:
                         decompressed = gzip.decompress(compressed_data)
-                        snapshot_data = pickle.loads(decompressed)
+                        snapshot_data = pickle.loads(decompressed)  # nosec B301
                     except Exception as e:
                         logger.warning(f"Decompression failed: {e}")
                         snapshot_data = json.loads(compressed_data.decode())
@@ -717,7 +717,7 @@ class InterruptionManager:
                 self.auto_save_enabled
                 and self.current_context
                 and interruption_type
-                in [InterruptionType.APP_SWITCH, InterruptionType.FOCUS_LOST]
+                in (InterruptionType.APP_SWITCH, InterruptionType.FOCUS_LOST)
             ):
                 focus_duration = event_data.get("focus_duration", 0)
                 if focus_duration >= self.save_threshold:
@@ -796,7 +796,7 @@ class InterruptionManager:
                         name = proc.info["name"]
                         if any(
                             keyword in name.lower()
-                            for keyword in ["code", "python", "node", "git"]
+                            for keyword in ("code", "python", "node", "git")
                         ):
                             state["processes"].append(
                                 {"pid": proc.info["pid"], "name": name},

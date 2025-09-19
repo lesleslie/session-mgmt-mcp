@@ -98,7 +98,7 @@ class ReflectionDatabase:
                 model_path = os.path.expanduser(
                     "~/.claude/all-MiniLM-L6-v2/onnx/model.onnx",
                 )
-                if not os.path.exists(model_path):
+                if not Path(model_path).exists():
                     print("ONNX model not found, will use text search fallback")
                     self.onnx_session = None
                 else:
@@ -283,7 +283,9 @@ class ReflectionDatabase:
 
     async def store_conversation(self, content: str, metadata: dict[str, Any]) -> str:
         """Store conversation with optional embedding."""
-        conversation_id = hashlib.md5(f"{content}_{time.time()}".encode()).hexdigest()
+        conversation_id = hashlib.md5(
+            f"{content}_{time.time()}".encode(), usedforsecurity=False
+        ).hexdigest()
 
         if ONNX_AVAILABLE and self.onnx_session:
             try:
@@ -322,6 +324,7 @@ class ReflectionDatabase:
         """Store reflection/insight with optional embedding."""
         reflection_id = hashlib.md5(
             f"reflection_{content}_{time.time()}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         if ONNX_AVAILABLE and self.onnx_session:
@@ -475,7 +478,7 @@ class ReflectionDatabase:
                     {
                         "content": row[1],
                         "score": float(row[6]),
-                        "tags": row[3] if row[3] else [],
+                        "tags": row[3] or [],
                         "timestamp": row[4],
                         "metadata": json.loads(row[5]) if row[5] else {},
                     }
@@ -503,7 +506,7 @@ class ReflectionDatabase:
         matches = []
         for row in results:
             content_lower = row[1].lower()
-            tags_lower = " ".join(row[2] if row[2] else []).lower()
+            tags_lower = " ".join(row[2] or []).lower()
             combined_text = f"{content_lower} {tags_lower}"
 
             # Calculate match score
@@ -520,7 +523,7 @@ class ReflectionDatabase:
                     {
                         "content": row[1],
                         "score": score,
-                        "tags": row[2] if row[2] else [],
+                        "tags": row[2] or [],
                         "timestamp": row[3],
                         "metadata": json.loads(row[4]) if row[4] else {},
                     },
@@ -593,7 +596,7 @@ class ReflectionDatabase:
                 "reflections_count": refl_count,
                 "embedding_provider": provider,
                 "embedding_dimension": self.embedding_dim,
-                "database_path": str(self.db_path),
+                "database_path": self.db_path,
             }
         except Exception as e:
             return {"error": f"Failed to get stats: {e}"}

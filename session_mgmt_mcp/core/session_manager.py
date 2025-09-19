@@ -84,7 +84,7 @@ class SessionLifecycleManager:
     def _generate_quality_recommendations(
         self,
         score: int,
-        project_context: dict,
+        project_context: dict[str, Any],
         uv_available: bool,
     ) -> list[str]:
         """Generate quality improvement recommendations based on score factors."""
@@ -154,7 +154,7 @@ class SessionLifecycleManager:
             # Check for common Python frameworks
             for py_file in python_files[:10]:  # Sample first 10 files
                 try:
-                    with open(py_file, encoding="utf-8") as f:
+                    with py_file.open("utf-8") as f:
                         content = f.read(1000)  # Read first 1000 chars
                         if "import fastapi" in content or "from fastapi" in content:
                             indicators["uses_fastapi"] = True
@@ -170,7 +170,7 @@ class SessionLifecycleManager:
 
         return indicators
 
-    async def perform_quality_assessment(self) -> tuple[int, dict]:
+    async def perform_quality_assessment(self) -> tuple[int, dict[str, Any]]:
         """Perform quality assessment and return score and data."""
         quality_data = await self.calculate_quality_score()
         quality_score = quality_data["total_score"]
@@ -179,8 +179,8 @@ class SessionLifecycleManager:
     def format_quality_results(
         self,
         quality_score: int,
-        quality_data: dict,
-        checkpoint_result: dict | None = None,
+        quality_data: dict[str, Any],
+        checkpoint_result: dict[str, Any] | None = None,
     ) -> list[str]:
         """Format quality assessment results for display."""
         output = []
@@ -473,7 +473,7 @@ class SessionLifecycleManager:
             handoff_path = handoff_dir / filename
 
             # Write content to file
-            with open(handoff_path, "w", encoding="utf-8") as f:
+            with handoff_path.open("w", encoding="utf-8") as f:
                 f.write(content)
 
             return handoff_path
@@ -510,7 +510,7 @@ class SessionLifecycleManager:
     def _read_previous_session_info(self, handoff_file: Path) -> dict[str, str] | None:
         """Extract key information from previous session handoff file."""
         try:
-            with open(handoff_file, encoding="utf-8") as f:
+            with handoff_file.open(encoding="utf-8") as f:
                 content = f.read()
 
             info = {}
@@ -542,7 +542,7 @@ class SessionLifecycleManager:
                 if in_recommendations and line.startswith("##"):
                     break  # End of recommendations section
 
-            return info if info else None
+            return info or None
 
         except Exception as e:
             self.logger.debug(f"Error reading handoff file: {e}")

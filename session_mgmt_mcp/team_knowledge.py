@@ -518,7 +518,7 @@ class TeamKnowledgeManager:
             ).fetchone()
 
             stats = {
-                "team": dict(team_data),
+                "team": team_data.copy(),
                 "member_count": len(team_data["members"]),
                 "project_count": len(team_data["projects"]),
                 "reflection_stats": dict(reflection_stats),

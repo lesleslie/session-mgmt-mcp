@@ -140,7 +140,7 @@ def _extract_quality_scores_from_reflections(
 
             # Strategy 2: Checkpoint metadata
             metadata = reflection.get("metadata", {})
-            for key in ["quality_score", "score", "checkpoint_score"]:
+            for key in ("quality_score", "score", "checkpoint_score"):
                 if key in metadata:
                     try:
                         score = float(metadata[key])

@@ -11,7 +11,7 @@ import hashlib
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -390,7 +390,7 @@ class S3Storage(SessionStorage):
             # Set expiration if TTL specified
             expires = None
             if ttl_seconds:
-                expires = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+                expires = datetime.now(UTC) + timedelta(seconds=ttl_seconds)
 
             # Upload to S3
             key = self._get_key(session_state.session_id)
@@ -516,7 +516,7 @@ class S3Storage(SessionStorage):
             # S3 lifecycle policies handle expiration automatically
             # This could implement custom logic for old sessions
 
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             cleaned = 0
 
             loop = asyncio.get_event_loop()
@@ -593,7 +593,7 @@ class LocalFileStorage(SessionStorage):
 
             # Write to file
             session_file = self._get_session_file(session_state.session_id)
-            with open(session_file, "wb") as f:
+            with session_file.open("wb") as f:
                 f.write(compressed)
 
             return True
@@ -613,7 +613,7 @@ class LocalFileStorage(SessionStorage):
                 return None
 
             # Read and decompress
-            with open(session_file, "rb") as f:
+            with session_file.open("rb") as f:
                 compressed_data = f.read()
 
             serialized = gzip.decompress(compressed_data).decode("utf-8")

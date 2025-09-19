@@ -55,7 +55,7 @@ def _stage_and_commit_files(
         # Stage files
         if files_to_stage:
             for file_path in files_to_stage:
-                stage_cmd = ["git", "add", str(file_path)]
+                stage_cmd = ["git", "add", file_path]
                 result = subprocess.run(
                     stage_cmd,
                     cwd=current_dir,

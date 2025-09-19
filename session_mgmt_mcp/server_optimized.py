@@ -77,7 +77,7 @@ _connection_info = None
 @asynccontextmanager
 async def session_lifecycle(app):
     """Automatic session lifecycle for git repositories only."""
-    current_dir = Path(os.getcwd())
+    current_dir = Path.cwd()
 
     # Only auto-initialize for git repositories
     if is_git_repository(current_dir):
@@ -275,7 +275,6 @@ def should_suggest_compact() -> tuple[bool, str]:
     """Determine if compacting would be beneficial and provide reasoning.
     Returns (should_compact, reason).
     """
-    import os
     import subprocess
     from pathlib import Path
 

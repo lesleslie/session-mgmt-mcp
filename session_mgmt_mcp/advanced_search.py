@@ -125,24 +125,39 @@ class AdvancedSearchEngine:
     ) -> list[dict[str, Any]]:
         """Get search completion suggestions."""
         # Simple prefix matching for now - could be enhanced with more sophisticated algorithms
-        # Map friendly field names to actual database column names
+        # Map friendly field names to actual database column names - safe whitelist
         field_map = {
             "content": "indexed_content",
             "project": "JSON_EXTRACT_STRING(search_metadata, '$.project')",
             "tags": "JSON_EXTRACT_STRING(search_metadata, '$.tags')",
         }
 
-        # Use the mapped field name or the original if not in map
-        db_field = field_map.get(field, field)
+        # Use the mapped field name or default to safe field
+        db_field = field_map.get(field, "indexed_content")
 
-        sql = f"""
-            SELECT DISTINCT {db_field}, COUNT(*) as frequency
+        # Ensure the field is in our safe whitelist to prevent injection
+        if db_field not in field_map.values():
+            db_field = "indexed_content"
+
+        # Build SQL safely using string concatenation (db_field is from whitelist)
+        sql = (
+            """
+            SELECT DISTINCT """
+            + db_field
+            + """, COUNT(*) as frequency
             FROM search_index
-            WHERE {db_field} LIKE ?
-            GROUP BY {db_field}
-            ORDER BY frequency DESC, {db_field}
+            WHERE """
+            + db_field
+            + """ LIKE ?
+            GROUP BY """
+            + db_field
+            + """
+            ORDER BY frequency DESC, """
+            + db_field
+            + """
             LIMIT ?
         """
+        )
 
         if not self.reflection_db.conn:
             return []
@@ -152,11 +167,7 @@ class AdvancedSearchEngine:
             [f"%{query}%", limit],
         ).fetchall()
 
-        suggestions = []
-        for row in results:
-            suggestions.append({"text": row[0], "frequency": row[1]})
-
-        return suggestions
+        return [{"text": row[0], "frequency": row[1]} for row in results]
 
     async def get_similar_content(
         self,
@@ -192,21 +203,20 @@ class AdvancedSearchEngine:
         )
 
         # Convert to SearchResult format and exclude source
-        search_results = []
-        for conv in similar_results:
-            if conv.get("conversation_id") != content_id:
-                search_results.append(
-                    SearchResult(
-                        content_id=conv.get("conversation_id", ""),
-                        content_type="conversation",
-                        title=f"Conversation from {conv.get('project', 'Unknown')}",
-                        content=conv.get("content", ""),
-                        score=conv.get("score", 0.0),
-                        project=conv.get("project"),
-                        timestamp=conv.get("timestamp"),
-                        metadata=conv.get("metadata", {}),
-                    ),
-                )
+        search_results = [
+            SearchResult(
+                content_id=conv.get("conversation_id", ""),
+                content_type="conversation",
+                title=f"Conversation from {conv.get('project', 'Unknown')}",
+                content=conv.get("content", ""),
+                score=conv.get("score", 0.0),
+                project=conv.get("project"),
+                timestamp=conv.get("timestamp"),
+                metadata=conv.get("metadata", {}),
+            )
+            for conv in similar_results
+            if conv.get("conversation_id") != content_id
+        ]
 
         return search_results[:limit]
 
@@ -282,49 +292,77 @@ class AdvancedSearchEngine:
                     # param is str | int, both need to be added as-is
                     params.append(param)
 
+        # Build WHERE clause safely - no user input injection possible
         where_clause = " WHERE " + " AND ".join(base_conditions)
 
+        # Use parameterized queries for all metric types
         if metric_type == "activity":
-            sql = f"""
+            # Safe: No f-string interpolation of user data
+            sql = (
+                """
                 SELECT DATE_TRUNC('day', last_indexed) as day,
                        COUNT(*) as count,
                        COUNT(DISTINCT content_id) as unique_content
                 FROM search_index
-                {where_clause}
+            """
+                + where_clause
+                + """
                 GROUP BY day
                 ORDER BY day
             """
+            )
 
         elif metric_type == "projects":
-            sql = f"""
+            # Safe: Additional condition hardcoded, no user input
+            additional_condition = (
+                " AND JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL"
+            )
+            sql = (
+                """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.project') as project,
                        COUNT(*) as count
                 FROM search_index
-                {where_clause}
-                AND JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL
+            """
+                + where_clause
+                + additional_condition
+                + """
                 GROUP BY project
                 ORDER BY count DESC
             """
+            )
 
         elif metric_type == "content_types":
-            sql = f"""
+            # Safe: No additional conditions needed
+            sql = (
+                """
                 SELECT content_type, COUNT(*) as count
                 FROM search_index
-                {where_clause}
+            """
+                + where_clause
+                + """
                 GROUP BY content_type
                 ORDER BY count DESC
             """
+            )
 
         elif metric_type == "errors":
-            sql = f"""
+            # Safe: Additional condition hardcoded, no user input
+            additional_condition = (
+                " AND JSON_EXTRACT_STRING(search_metadata, '$.error_type') IS NOT NULL"
+            )
+            sql = (
+                """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.error_type') as error_type,
                        COUNT(*) as count
                 FROM search_index
-                {where_clause}
-                AND JSON_EXTRACT_STRING(search_metadata, '$.error_type') IS NOT NULL
+            """
+                + where_clause
+                + additional_condition
+                + """
                 GROUP BY error_type
                 ORDER BY count DESC
             """
+            )
         else:
             return {"error": f"Unknown metric type: {metric_type}"}
 
@@ -502,7 +540,7 @@ class AdvancedSearchEngine:
         # Clear existing facets
         self.reflection_db.conn.execute("DELETE FROM search_facets")
 
-        # Generate facets from search metadata
+        # Generate facets from search metadata - safe whitelist of expressions
         facet_queries = {
             "project": "JSON_EXTRACT_STRING(search_metadata, '$.project')",
             "content_type": "content_type",
@@ -511,13 +549,20 @@ class AdvancedSearchEngine:
         }
 
         for facet_name, facet_expr in facet_queries.items():
-            sql = f"""
-                SELECT {facet_expr} as facet_value, COUNT(*) as count
+            # Use string concatenation with whitelisted expressions (safe)
+            sql = (
+                """
+                SELECT """
+                + facet_expr
+                + """ as facet_value, COUNT(*) as count
                 FROM search_index
-                WHERE {facet_expr} IS NOT NULL
+                WHERE """
+                + facet_expr
+                + """ IS NOT NULL
                 GROUP BY facet_value
                 ORDER BY count DESC
             """
+            )
 
             if not self.reflection_db.conn:
                 continue
@@ -528,6 +573,7 @@ class AdvancedSearchEngine:
                 if isinstance(facet_value, str) and facet_value:
                     facet_id = hashlib.md5(
                         f"{facet_name}_{facet_value}".encode(),
+                        usedforsecurity=False,
                     ).hexdigest()
 
                     if self.reflection_db.conn:

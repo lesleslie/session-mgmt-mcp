@@ -58,7 +58,7 @@ def find_server_processes() -> list[psutil.Process]:
                 or
                 # Check if it's bound to our ports (for HTTP mode)
                 any(
-                    conn.laddr.port in [8678, 8677]
+                    conn.laddr.port in (8678, 8677)
                     for conn in proc.net_connections()
                     if conn.laddr
                 )
@@ -379,7 +379,7 @@ def show_config() -> None:
         pyproject_path = project_root / "pyproject.toml"
 
         if pyproject_path.exists():
-            with open(pyproject_path, "rb") as f:
+            with pyproject_path.open("rb") as f:
                 data = tomli.load(f)
 
             config = data.get("tool", {}).get("session-mgmt-mcp", {})

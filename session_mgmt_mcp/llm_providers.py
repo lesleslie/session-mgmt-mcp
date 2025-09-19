@@ -639,11 +639,11 @@ class LLMManager:
 
     async def get_available_providers(self) -> list[str]:
         """Get list of available providers."""
-        available = []
-        for name, provider in self.providers.items():
-            if await provider.is_available():
-                available.append(name)
-        return available
+        return [
+            name
+            for name, provider in self.providers.items()
+            if await provider.is_available()
+        ]
 
     async def generate(
         self,

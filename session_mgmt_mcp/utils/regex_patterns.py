@@ -728,6 +728,23 @@ SAFE_PATTERNS: dict[str, ValidatedPattern] = {
             ("just crackerjack", "just crackerjack"),  # No change - no command
         ],
     ),
+    # Git and system security patterns
+    "safe_branch_name": ValidatedPattern(
+        name="safe_branch_name",
+        pattern=r"^[a-zA-Z0-9_/-]+$",
+        replacement=r"\g<0>",
+        description="Validate safe Git branch names (alphanumeric, dashes, underscores, slashes)",
+        flags=0,
+        test_cases=[
+            ("main", "main"),
+            ("feature/new-feature", "feature/new-feature"),
+            ("dev_branch", "dev_branch"),
+            ("hotfix-123", "hotfix-123"),
+            ("origin/main", "origin/main"),
+            ("invalid;branch", "invalid;branch"),  # No match expected for invalid chars
+            ("branch with spaces", "branch with spaces"),  # No match expected
+        ],
+    ),
     # Token optimization patterns
     "whitespace_normalize": ValidatedPattern(
         name="whitespace_normalize",

@@ -32,6 +32,32 @@ class WorktreeManager:
         if self.session_logger:
             getattr(self.session_logger, level)(message, **context)
 
+    def _is_safe_branch_name(self, branch: str) -> bool:
+        """Security: Validate branch name is safe for shell execution."""
+        from .utils.regex_patterns import SAFE_PATTERNS
+
+        # Allow alphanumeric, dashes, underscores, slashes (for remote branches)
+        pattern = SAFE_PATTERNS["safe_branch_name"]
+        return bool(pattern.match(branch)) and len(branch) < 100
+
+    def _is_safe_path(self, path: Path) -> bool:
+        """Security: Validate path is safe and reasonable."""
+        try:
+            # Convert to absolute path for validation
+            abs_path = path.resolve()
+
+            # Check for suspicious path components
+            path_str = str(abs_path)
+
+            # Reject paths with null bytes or dangerous patterns
+            if "\x00" in path_str or ".." in path_str:
+                return False
+
+            # Check path length is reasonable
+            return not len(path_str) > 500
+        except (OSError, ValueError):
+            return False
+
     async def list_worktrees(self, directory: Path) -> dict[str, Any]:
         """List all worktrees with enhanced information."""
         if not is_git_repository(directory):
@@ -97,6 +123,20 @@ class WorktreeManager:
             }
 
         try:
+            # Security: Validate branch name to prevent injection
+            if not branch or not self._is_safe_branch_name(branch):
+                return {
+                    "success": False,
+                    "error": "Invalid branch name: must be alphanumeric with dashes/underscores only",
+                }
+
+            # Security: Validate path is within reasonable bounds
+            if not self._is_safe_path(new_path):
+                return {
+                    "success": False,
+                    "error": "Invalid path: path must be relative to current directory structure",
+                }
+
             # Build git worktree add command
             cmd = ["git", "worktree", "add"]
 
@@ -107,13 +147,15 @@ class WorktreeManager:
 
             cmd.extend([str(new_path), branch])
 
-            # Execute git worktree add
+            # Execute git worktree add with security hardening
             result = subprocess.run(
                 cmd,
                 cwd=repository_path,
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,  # Security: Prevent hanging processes
+                # Security: No shell execution to prevent injection
             )
 
             # Verify worktree was created
@@ -169,13 +211,15 @@ class WorktreeManager:
 
             cmd.append(str(worktree_path))
 
-            # Execute git worktree remove
+            # Execute git worktree remove with security hardening
             result = subprocess.run(
                 cmd,
                 cwd=repository_path,
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,  # Security: Prevent hanging processes
+                # Security: No shell execution to prevent injection
             )
 
             self._log("Removed worktree", path=str(worktree_path))
@@ -183,9 +227,7 @@ class WorktreeManager:
             return {
                 "success": True,
                 "removed_path": str(worktree_path),
-                "output": result.stdout.strip()
-                if result.stdout.strip()
-                else "Worktree removed successfully",
+                "output": result.stdout.strip() or "Worktree removed successfully",
             }
 
         except subprocess.CalledProcessError as e:
@@ -202,13 +244,15 @@ class WorktreeManager:
             return {"success": False, "error": "Directory is not a git repository"}
 
         try:
-            # Execute git worktree prune
+            # Execute git worktree prune with security hardening
             result = subprocess.run(
                 ["git", "worktree", "prune", "--verbose"],
                 cwd=repository_path,
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,  # Security: Prevent hanging processes
+                # Security: No shell execution to prevent injection
             )
 
             output_lines = (
@@ -221,9 +265,7 @@ class WorktreeManager:
             return {
                 "success": True,
                 "pruned_count": pruned_count,
-                "output": result.stdout.strip()
-                if result.stdout.strip()
-                else "No worktrees to prune",
+                "output": result.stdout.strip() or "No worktrees to prune",
             }
 
         except subprocess.CalledProcessError as e:
@@ -331,7 +373,7 @@ class WorktreeManager:
                 "timestamp": datetime.now().isoformat(),
                 "worktree_path": str(worktree_path),
                 "working_directory": str(Path.cwd()),
-                "environment": dict(os.environ),
+                "environment": os.environ.copy(),
                 "recent_files": self._get_recent_files(worktree_path),
                 "git_status": self._get_git_status(worktree_path),
             }
@@ -341,7 +383,7 @@ class WorktreeManager:
             claude_dir.mkdir(parents=True, exist_ok=True)
 
             state_file = claude_dir / f"session_state_{worktree_path.name}.json"
-            with open(state_file, "w") as f:
+            with state_file.open("w") as f:
                 json.dump(state, f, indent=2)
 
             return state

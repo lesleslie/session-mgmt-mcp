@@ -103,7 +103,7 @@ This will:
     return {
         "created": bool(created_shortcuts),
         "existed": bool(existing_shortcuts) and not created_shortcuts,
-        "shortcuts": created_shortcuts if created_shortcuts else existing_shortcuts,
+        "shortcuts": created_shortcuts or existing_shortcuts,
     }
 
 
@@ -168,7 +168,7 @@ def _get_client_working_directory() -> str | None:
     from pathlib import Path
 
     # Method 1: Check for Claude Code environment variables
-    for env_var in ["CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"]:
+    for env_var in ("CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"):
         if env_var in os.environ:
             client_dir = os.environ[env_var]
             if client_dir and Path(client_dir).exists():
@@ -176,9 +176,13 @@ def _get_client_working_directory() -> str | None:
 
     # Method 2: Check for the temporary file used by Claude's auto-start scripts
     # NOTE: This file may contain the server directory, so we need to validate it
-    working_dir_file = Path("/tmp/claude-git-working-dir")
+    import tempfile
+
+    working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
     if working_dir_file.exists():
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             stored_dir = working_dir_file.read_text().strip()
             # Only use if it's NOT the session-mgmt-mcp server directory
             if (
@@ -187,11 +191,11 @@ def _get_client_working_directory() -> str | None:
                 and not stored_dir.endswith("session-mgmt-mcp")
             ):
                 return stored_dir
-        except Exception:
-            pass
 
     # Method 3: Check parent process working directory (advanced)
-    try:
+    from contextlib import suppress
+
+    with suppress(ImportError, Exception):
         import psutil
 
         parent_process = psutil.Process().parent()
@@ -205,11 +209,9 @@ def _get_client_working_directory() -> str | None:
                 and not parent_cwd.endswith("session-mgmt-mcp")
             ):
                 return parent_cwd
-    except (ImportError, Exception):
-        pass
 
     # Method 4: Look for recent git repositories in common project directories
-    for projects_dir in ["/Users/les/Projects", str(Path.home() / "Projects")]:
+    for projects_dir in ("/Users/les/Projects", str(Path.home() / "Projects")):
         projects_path = Path(projects_dir)
         if projects_path.exists():
             # Find the most recently modified git repository
@@ -523,7 +525,7 @@ def register_session_tools(mcp_server) -> None:
             "platform": platform.system(),
             "python_version": platform.python_version(),
             "process_id": os.getpid(),
-            "working_directory": os.getcwd(),
+            "working_directory": str(Path.cwd()),
         }
 
         return f"""🏥 MCP Server Health Check

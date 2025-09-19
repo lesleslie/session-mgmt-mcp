@@ -286,13 +286,15 @@ class SessionPermissionsManager:
     def _generate_session_id(self) -> str:
         """Generate unique session ID based on current time and working directory."""
         session_data = f"{datetime.now().isoformat()}_{Path.cwd()}"
-        return hashlib.md5(session_data.encode()).hexdigest()[:12]
+        return hashlib.md5(session_data.encode(), usedforsecurity=False).hexdigest()[
+            :12
+        ]
 
     def _load_permissions(self) -> None:
         """Load previously granted permissions."""
         if self.permissions_file.exists():
             try:
-                with open(self.permissions_file) as f:
+                with self.permissions_file.open() as f:
                     data = json.load(f)
                     self.trusted_operations.update(data.get("trusted_operations", []))
             except (json.JSONDecodeError, KeyError):
@@ -305,7 +307,7 @@ class SessionPermissionsManager:
             "last_updated": datetime.now().isoformat(),
             "session_id": self.session_id,
         }
-        with open(self.permissions_file, "w") as f:
+        with self.permissions_file.open("w") as f:
             json.dump(data, f, indent=2)
 
     def is_operation_trusted(self, operation: str) -> bool:
@@ -449,7 +451,7 @@ _connection_info = None
 @asynccontextmanager
 async def session_lifecycle(app):
     """Automatic session lifecycle for git repositories only."""
-    current_dir = Path(os.getcwd())
+    current_dir = Path.cwd()
 
     # Only auto-initialize for git repositories
     if is_git_repository(current_dir):
@@ -549,7 +551,7 @@ async def auto_setup_git_working_directory() -> None:
     """Auto-detect and setup git working directory for enhanced DX."""
     try:
         # Get current working directory
-        current_dir = Path(os.getcwd())
+        current_dir = Path.cwd()
 
         # Import git utilities
         from session_mgmt_mcp.utils.git_operations import (
@@ -599,7 +601,9 @@ async def initialize_new_features() -> None:
 
     # Initialize reflection database for new features
     if REFLECTION_TOOLS_AVAILABLE:
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             db = await get_reflection_database()
 
             # Initialize multi-project coordinator
@@ -609,10 +613,6 @@ async def initialize_new_features() -> None:
             # Initialize advanced search engine
             if ADVANCED_SEARCH_AVAILABLE:
                 advanced_search_engine = AdvancedSearchEngine(db)
-
-        except Exception:
-            # Silently handle optional feature initialization failures
-            pass
 
 
 async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
@@ -1612,71 +1612,75 @@ async def analyze_advanced_context_metrics() -> dict[str, Any]:
 async def analyze_token_usage_patterns() -> dict[str, Any]:
     """Phase 3A: Intelligent token usage analysis with smart triggers."""
     try:
-        # Get conversation statistics from memory system
-        conv_stats = {"total_conversations": 0, "recent_activity": "low"}
+        from contextlib import suppress
 
-        if REFLECTION_TOOLS_AVAILABLE:
-            try:
-                db = await get_reflection_database()
-                stats = await db.get_stats()
-                conv_stats["total_conversations"] = stats.get("conversations_count", 0)
-            except Exception:
-                pass
+        with suppress(Exception):
+            # Get conversation statistics from memory system
+            conv_stats = {"total_conversations": 0, "recent_activity": "low"}
 
-        # Heuristic-based context analysis (approximation)
-        # In a real implementation, this would hook into actual context metrics
+            if REFLECTION_TOOLS_AVAILABLE:
+                with suppress(Exception):
+                    db = await get_reflection_database()
+                    stats = await db.get_stats()
+                    conv_stats["total_conversations"] = stats.get(
+                        "conversations_count", 0
+                    )
 
-        # Check session activity patterns
-        datetime.now()
+            # Heuristic-based context analysis (approximation)
+            # In a real implementation, this would hook into actual context metrics
 
-        # Estimate context usage based on activity
-        estimated_length = "moderate"
-        needs_attention = False
-        recommend_compact = False
-        recommend_clear = False
+            # Check session activity patterns
+            datetime.now()
 
-        # Smart triggers based on conversation patterns and critical context detection
+            # Estimate context usage based on activity
+            estimated_length = "moderate"
+            needs_attention = False
+            recommend_compact = False
+            recommend_clear = False
 
-        # PRIORITY: Always recommend compaction if we have significant stored content
-        # This indicates a long conversation that needs compaction
-        if conv_stats["total_conversations"] > 3:
-            # Any significant conversation history indicates compaction needed
-            estimated_length = "extensive"
-            needs_attention = True
+            # Smart triggers based on conversation patterns and critical context detection
+
+            # PRIORITY: Always recommend compaction if we have significant stored content
+            # This indicates a long conversation that needs compaction
+            if conv_stats["total_conversations"] > 3:
+                # Any significant conversation history indicates compaction needed
+                estimated_length = "extensive"
+                needs_attention = True
+                recommend_compact = True
+
+            if conv_stats["total_conversations"] > 10:
+                # Long conversation - definitely needs compaction
+                estimated_length = "very long"
+                needs_attention = True
+                recommend_compact = True
+
+            if conv_stats["total_conversations"] > 20:
+                # Extremely long - may need clear after compact
+                estimated_length = "extremely long"
+                needs_attention = True
+                recommend_compact = True
+                recommend_clear = True
+
+            # Override: ALWAYS recommend compaction during checkpoints
+            # Checkpoints typically happen during long sessions where context is an issue
+            # This ensures the "Context low" warning gets addressed
             recommend_compact = True
-
-        if conv_stats["total_conversations"] > 10:
-            # Long conversation - definitely needs compaction
-            estimated_length = "very long"
             needs_attention = True
-            recommend_compact = True
+            estimated_length = (
+                "checkpoint-session"
+                if estimated_length == "moderate"
+                else estimated_length
+            )
 
-        if conv_stats["total_conversations"] > 20:
-            # Extremely long - may need clear after compact
-            estimated_length = "extremely long"
-            needs_attention = True
-            recommend_compact = True
-            recommend_clear = True
+            status = "optimal" if not needs_attention else "needs optimization"
 
-        # Override: ALWAYS recommend compaction during checkpoints
-        # Checkpoints typically happen during long sessions where context is an issue
-        # This ensures the "Context low" warning gets addressed
-        recommend_compact = True
-        needs_attention = True
-        estimated_length = (
-            "checkpoint-session" if estimated_length == "moderate" else estimated_length
-        )
-
-        status = "optimal" if not needs_attention else "needs optimization"
-
-        return {
-            "needs_attention": needs_attention,
-            "status": status,
-            "estimated_length": estimated_length,
-            "recommend_compact": recommend_compact,
-            "recommend_clear": recommend_clear,
-            "confidence": "heuristic",
-        }
+            return {
+                "needs_attention": needs_attention,
+                "status": status,
+                "estimated_length": estimated_length,
+                "recommend_compact": recommend_compact,
+                "recommend_clear": recommend_clear,
+            }
 
     except Exception as e:
         return {
@@ -2255,7 +2259,9 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
     output.append(f"\n📈 Project maturity: {context_score}/{len(project_context)}")
 
     # Add worktree information
-    try:
+    from contextlib import suppress
+
+    with suppress(Exception):
         worktree_info = get_worktree_info(current_dir)
         if worktree_info:
             all_worktrees = list_worktrees(current_dir)
@@ -2288,10 +2294,6 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
 
             if worktree_info.is_detached:
                 output.append("   ⚠️ Detached HEAD - consider checking out a branch")
-
-    except Exception:
-        # Silently handle worktree detection failures
-        pass
 
 
 def _add_permissions_info(output: list[str]) -> None:
@@ -2361,7 +2363,9 @@ def _add_configuration_info(output: list[str]) -> None:
         output.append("• Configurable database, search, and optimization settings")
 
         # Show current optimization stats if available
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             from .token_optimizer import get_token_optimizer
 
             optimizer = get_token_optimizer()
@@ -2377,9 +2381,6 @@ def _add_configuration_info(output: list[str]) -> None:
             cache_size = len(optimizer.chunk_cache)
             if cache_size > 0:
                 output.append(f"• Active cached chunks: {cache_size}")
-
-        except Exception:
-            pass  # Don't fail status if optimization stats fail
     else:
         output.append("\n❌ Token optimization not available (install tiktoken)")
 
@@ -2548,7 +2549,7 @@ async def get_app_monitor() -> ApplicationMonitor | None:
 
     if _app_monitor is None:
         data_dir = Path.home() / ".claude" / "data" / "app_monitoring"
-        working_dir = os.environ.get("PWD", os.getcwd())
+        working_dir = os.environ.get("PWD", str(Path.cwd()))
         project_paths = [working_dir] if Path(working_dir).exists() else []
         _app_monitor = ApplicationMonitor(str(data_dir), project_paths)
 
@@ -2880,7 +2881,9 @@ async def get_interruption_statistics(user_id: str) -> str:
 async def _format_conversation_summary() -> list[str]:
     """Format the conversation summary section."""
     output = []
-    try:
+    from contextlib import suppress
+
+    with suppress(Exception):
         conversation_summary = await summarize_current_conversation()
         if conversation_summary["key_topics"]:
             output.append("\n💬 Current Session Focus:")
@@ -2891,8 +2894,6 @@ async def _format_conversation_summary() -> list[str]:
             output.append("\n✅ Key Decisions:")
             for decision in conversation_summary["decisions_made"][:2]:
                 output.append(f"   • {decision}")
-    except Exception:
-        pass
     return output
 
 
@@ -3195,7 +3196,7 @@ async def git_worktree_list(working_directory: str | None = None) -> str:
     """List all git worktrees for the current repository."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     manager = WorktreeManager(session_logger=session_logger)
 
     try:
@@ -3257,7 +3258,7 @@ async def git_worktree_add(
     """Create a new git worktree."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     new_path = Path(path)
 
     if not new_path.is_absolute():
@@ -3305,7 +3306,7 @@ async def git_worktree_remove(
     """Remove an existing git worktree."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     remove_path = Path(path)
 
     if not remove_path.is_absolute():
@@ -3346,7 +3347,7 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
     """Get comprehensive status of current worktree and all related worktrees."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     manager = WorktreeManager(session_logger=session_logger)
 
     try:
@@ -3414,7 +3415,7 @@ async def git_worktree_prune(working_directory: str | None = None) -> str:
     """Prune stale worktree references."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     manager = WorktreeManager(session_logger=session_logger)
 
     try:
@@ -3453,7 +3454,7 @@ async def git_worktree_switch(
     """Switch context between git worktrees with session preservation."""
     from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or os.getcwd())
+    working_dir = Path(working_directory or str(Path.cwd()))
     from_path = Path(from_path)
     to_path = Path(to_path)
 
@@ -3556,16 +3557,14 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     """Main entry point for the MCP server."""
     # Initialize new features on startup
     import asyncio
+    from contextlib import suppress
 
-    try:
+    with suppress(Exception):
         asyncio.run(initialize_new_features())
-    except Exception:
-        # Silently handle optional feature initialization failures
-        pass
 
     # Get host and port from config
     host = _mcp_config.get("http_host", "127.0.0.1")
-    port = http_port if http_port else _mcp_config.get("http_port", 8678)
+    port = http_port or _mcp_config.get("http_port", 8678)
 
     # Check configuration and command line flags
     config_http_enabled = _mcp_config.get("http_enabled", False)

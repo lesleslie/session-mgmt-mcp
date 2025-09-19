@@ -69,7 +69,7 @@ class WorkingDirectoryParams(BaseModel):
                 return None
             # Expand user paths
             expanded = os.path.expanduser(v)
-            if not os.path.exists(expanded):
+            if not Path(expanded).exists():
                 msg = f"Working directory does not exist: {expanded}"
                 raise ValueError(msg)
             if not Path(expanded).is_dir():
@@ -176,7 +176,7 @@ class TagParams(BaseModel):
 
             validated_tags.append(tag)
 
-        return validated_tags if validated_tags else None
+        return validated_tags or None
 
 
 class IDParams(BaseModel):

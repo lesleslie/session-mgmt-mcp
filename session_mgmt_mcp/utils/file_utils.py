@@ -77,14 +77,14 @@ def _cleanup_temp_files(current_dir: Path) -> str:
                         cleaned_items.append(f"🗑️ {item.name}")
                     elif item.is_dir():
                         # Calculate directory size
-                        try:
+                        from contextlib import suppress
+
+                        with suppress(PermissionError, OSError):
                             for subitem in item.rglob("*"):
                                 if subitem.is_file():
                                     size_mb += int(
                                         subitem.stat().st_size / (1024 * 1024)
                                     )
-                        except (PermissionError, OSError):
-                            pass  # Skip if we can't read the directory
 
                         shutil.rmtree(item, ignore_errors=True)
                         cleaned_items.append(f"📁 {item.name}/")

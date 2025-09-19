@@ -180,23 +180,23 @@ class CrackerjackOutputParser:
         full_output = f"{stdout}\n{stderr}"
 
         # Parse based on command type
-        if command in ["test", "check"]:
+        if command in ("test", "check"):
             parsed_data.update(self._parse_test_output(full_output))
             memory_insights.extend(self._extract_test_insights(parsed_data))
 
-        if command in ["lint", "format", "check"]:
+        if command in ("lint", "format", "check"):
             parsed_data.update(self._parse_lint_output(full_output))
             memory_insights.extend(self._extract_lint_insights(parsed_data))
 
-        if command in ["security", "check"]:
+        if command in ("security", "check"):
             parsed_data.update(self._parse_security_output(full_output))
             memory_insights.extend(self._extract_security_insights(parsed_data))
 
-        if command in ["coverage", "test", "check"]:
+        if command in ("coverage", "test", "check"):
             parsed_data.update(self._parse_coverage_output(full_output))
             memory_insights.extend(self._extract_coverage_insights(parsed_data))
 
-        if command in ["complexity", "check"]:
+        if command in ("complexity", "check"):
             parsed_data.update(self._parse_complexity_output(full_output))
             memory_insights.extend(self._extract_complexity_insights(parsed_data))
 
@@ -625,7 +625,7 @@ class CrackerjackIntegration:
                 text=True,
                 timeout=kwargs.get("timeout", 300),
                 cwd=kwargs.get("cwd", "."),
-                **{k: v for k, v in kwargs.items() if k not in ["timeout", "cwd"]},
+                **{k: v for k, v in kwargs.items() if k not in ("timeout", "cwd")},
             )
 
             return {
@@ -1006,13 +1006,13 @@ class CrackerjackIntegration:
 
         # Calculate trends for each metric type
         trends = {}
-        for metric_type in [
+        for metric_type in (
             "test_pass_rate",
             "code_coverage",
             "lint_score",
             "security_score",
             "complexity_score",
-        ]:
+        ):
             metric_values = [
                 m for m in metrics_history if m["metric_type"] == metric_type
             ]
@@ -1099,7 +1099,7 @@ class CrackerjackIntegration:
             strength = trend_data["trend_strength"]
             change = trend_data["change"]
 
-            if direction == "declining" and strength in ["strong", "moderate"]:
+            if direction == "declining" and strength in ("strong", "moderate"):
                 if metric_type == "test_pass_rate":
                     recommendations.append(
                         f"⚠️ Test pass rate declining by {change:.1f}% - investigate failing tests"
