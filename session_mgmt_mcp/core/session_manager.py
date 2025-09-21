@@ -403,7 +403,9 @@ class SessionLifecycleManager:
             self.logger.exception("Session end failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    def _generate_handoff_documentation(self, summary: dict, quality_data: dict) -> str:
+    def _generate_handoff_documentation(
+        self, summary: dict[str, Any], quality_data: dict[str, Any]
+    ) -> str:
         """Generate comprehensive handoff documentation in markdown format."""
         # Create markdown documentation
         lines = []

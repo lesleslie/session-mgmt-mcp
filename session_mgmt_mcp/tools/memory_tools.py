@@ -89,6 +89,33 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
         return f"❌ Error storing reflection: {e}"
 
 
+def _format_quick_search_header(query: str) -> list[str]:
+    """Format the header for quick search results."""
+    return [f"🔍 Quick search for: '{query}'"]
+
+
+def _format_quick_search_results(results: list[dict[str, Any]]) -> list[str]:
+    """Format the quick search results."""
+    output = []
+
+    if results:
+        result = results[0]
+        output.append("📊 Found results (showing top 1)")
+        output.append(
+            f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}",
+        )
+        if result.get("project"):
+            output.append(f"📁 Project: {result['project']}")
+        if result.get("score"):
+            output.append(f"⭐ Relevance: {result['score']:.2f}")
+        output.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
+    else:
+        output.append("🔍 No results found")
+        output.append("💡 Try adjusting your search terms or lowering min_score")
+
+    return output
+
+
 async def _quick_search_impl(
     query: str,
     min_score: float = 0.7,
@@ -107,23 +134,8 @@ async def _quick_search_impl(
             min_score=min_score,
         )
 
-        output = []
-        output.append(f"🔍 Quick search for: '{query}'")
-
-        if results:
-            result = results[0]
-            output.append("📊 Found results (showing top 1)")
-            output.append(
-                f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}",
-            )
-            if result.get("project"):
-                output.append(f"📁 Project: {result['project']}")
-            if result.get("score"):
-                output.append(f"⭐ Relevance: {result['score']:.2f}")
-            output.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
-        else:
-            output.append("🔍 No results found")
-            output.append("💡 Try adjusting your search terms or lowering min_score")
+        output = _format_quick_search_header(query)
+        output.extend(_format_quick_search_results(results))
 
         logger.info("Quick search performed", query=query, results_count=len(results))
         return "\n".join(output)
@@ -134,78 +146,218 @@ async def _quick_search_impl(
         return f"❌ Search error: {e}"
 
 
+async def _analyze_project_distribution(
+    results: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Analyze project distribution of search results."""
+    projects = {}
+    for result in results:
+        proj = result.get("project", "Unknown")
+        projects[proj] = projects.get(proj, 0) + 1
+
+    return projects
+
+
+async def _analyze_time_distribution(results: list[dict[str, Any]]) -> list[str]:
+    """Analyze time distribution of search results."""
+    return [r.get("timestamp") for r in results if r.get("timestamp")]
+
+
+async def _analyze_relevance_scores(
+    results: list[dict[str, Any]],
+) -> tuple[float, list[float]]:
+    """Analyze relevance scores of search results."""
+    scores = [r.get("score", 0) for r in results if r.get("score")]
+    avg_score = sum(scores) / len(scores) if scores else 0.0
+    return avg_score, scores
+
+
+async def _extract_common_themes(
+    results: list[dict[str, Any]],
+) -> list[tuple[str, int]]:
+    """Extract common themes from search results."""
+    all_content = " ".join([r["content"] for r in results])
+    words = all_content.lower().split()
+    word_freq: dict[str, int] = {}
+
+    for word in words:
+        if len(word) > 4:
+            word_freq[word] = word_freq.get(word, 0) + 1
+
+    if word_freq:
+        return sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+    return []
+
+
+async def _analyze_project_distribution(
+    results: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Analyze project distribution of search results."""
+    projects: dict[str, int] = {}
+    for result in results:
+        proj = result.get("project", "Unknown")
+        projects[proj] = projects.get(proj, 0) + 1
+    return projects
+
+
+async def _analyze_time_distribution(results: list[dict[str, Any]]) -> list[str]:
+    """Analyze time distribution of search results."""
+    return [r.get("timestamp") for r in results if r.get("timestamp")]
+
+
+async def _analyze_relevance_scores(
+    results: list[dict[str, Any]],
+) -> tuple[float, list[float]]:
+    """Analyze relevance scores of search results."""
+    scores = [r.get("score", 0) for r in results if r.get("score")]
+    avg_score = sum(scores) / len(scores) if scores else 0.0
+    return avg_score, scores
+
+
+async def _extract_common_themes(
+    results: list[dict[str, Any]],
+) -> list[tuple[str, int]]:
+    """Extract common themes from search results."""
+    all_content = " ".join([r["content"] for r in results])
+    words = all_content.lower().split()
+    word_freq: dict[str, int] = {}
+
+    for word in words:
+        if len(word) > 4:  # Skip short words
+            word_freq[word] = word_freq.get(word, 0) + 1
+
+    if word_freq:
+        return sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+    return []
+
+
+def _format_search_header(query: str) -> list[str]:
+    """Format the search summary header."""
+    output = []
+    output.append(f"📊 Search Summary for: '{query}'")
+    output.append("=" * 50)
+    return output
+
+
+def _format_no_results_message() -> list[str]:
+    """Format message for when no results are found."""
+    output = []
+    output.append("🔍 No results found")
+    output.append("💡 Try different search terms or lower the min_score threshold")
+    return output
+
+
+def _format_results_summary(results: list[dict[str, Any]]) -> list[str]:
+    """Format the basic results summary."""
+    output = []
+    output.append(f"📈 Total results: {len(results)}")
+    return output
+
+
+async def _format_project_distribution(results: list[dict[str, Any]]) -> list[str]:
+    """Format project distribution information."""
+    output = []
+    projects = await _analyze_project_distribution(results)
+    if len(projects) > 1:
+        output.append("📁 Project distribution:")
+        for proj, count in sorted(
+            projects.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        ):
+            output.append(f"   • {proj}: {count} results")
+    return output
+
+
+async def _format_time_distribution(results: list[dict[str, Any]]) -> list[str]:
+    """Format time distribution information."""
+    output = []
+    timestamps = await _analyze_time_distribution(results)
+    if timestamps:
+        output.append(f"📅 Time range: {len(timestamps)} results with dates")
+    return output
+
+
+async def _format_relevance_scores(results: list[dict[str, Any]]) -> list[str]:
+    """Format relevance scores information."""
+    output = []
+    avg_score, scores = await _analyze_relevance_scores(results)
+    if scores:
+        output.append(f"⭐ Average relevance: {avg_score:.2f}")
+    return output
+
+
+async def _format_common_themes(results: list[dict[str, Any]]) -> list[str]:
+    """Format common themes information."""
+    output = []
+    top_words = await _extract_common_themes(results)
+    if top_words:
+        output.append("🔤 Common themes:")
+        for word, freq in top_words:
+            output.append(f"   • {word}: {freq} mentions")
+    return output
+
+
+def _check_reflection_tools() -> bool:
+    """Check if reflection tools are available."""
+    return _check_reflection_tools_available()
+
+
+def _get_search_results(
+    db: Any, query: str, project: str | None, min_score: float
+) -> list[dict[str, Any]]:
+    """Get search results from the database."""
+    return db.search_reflections(
+        query=query,
+        project=project,
+        limit=20,
+        min_score=min_score,
+    )
+
+
+async def _format_search_results_summary(results: list[dict[str, Any]]) -> list[str]:
+    """Format the search results summary."""
+    output = []
+    output.extend(_format_results_summary(results))
+
+    # Project distribution
+    project_dist = await _format_project_distribution(results)
+    output.extend(project_dist)
+
+    # Time distribution
+    time_dist = await _format_time_distribution(results)
+    output.extend(time_dist)
+
+    # Average relevance score
+    relevance_scores = await _format_relevance_scores(results)
+    output.extend(relevance_scores)
+
+    # Common themes
+    common_themes = await _format_common_themes(results)
+    output.extend(common_themes)
+
+    return output
+
+
 async def _search_summary_impl(
     query: str,
     min_score: float = 0.7,
     project: str | None = None,
 ) -> str:
     """Implementation for search_summary tool."""
-    if not _check_reflection_tools_available():
+    if not _check_reflection_tools():
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
     try:
         db = await _get_reflection_database()
-        results = await db.search_reflections(
-            query=query,
-            project=project,
-            limit=20,
-            min_score=min_score,
-        )
+        results = await _get_search_results(db, query, project, min_score)
 
-        output = []
-        output.append(f"📊 Search Summary for: '{query}'")
-        output.append("=" * 50)
+        output = _format_search_header(query)
 
         if results:
-            output.append(f"📈 Total results: {len(results)}")
-
-            # Project distribution
-            projects: dict[str, int] = {}
-            for result in results:
-                proj = result.get("project", "Unknown")
-                projects[proj] = projects.get(proj, 0) + 1
-
-            if len(projects) > 1:
-                output.append("📁 Project distribution:")
-                for proj, count in sorted(
-                    projects.items(),
-                    key=lambda x: x[1],
-                    reverse=True,
-                ):
-                    output.append(f"   • {proj}: {count} results")
-
-            # Time distribution
-            timestamps = [r.get("timestamp") for r in results if r.get("timestamp")]
-            if timestamps:
-                output.append(f"📅 Time range: {len(timestamps)} results with dates")
-
-            # Average relevance score
-            scores = [r.get("score", 0) for r in results if r.get("score")]
-            if scores:
-                avg_score = sum(scores) / len(scores)
-                output.append(f"⭐ Average relevance: {avg_score:.2f}")
-
-            # Common themes
-            all_content = " ".join([r["content"] for r in results])
-            words = all_content.lower().split()
-            word_freq: dict[str, int] = {}
-            for word in words:
-                if len(word) > 4:
-                    word_freq[word] = word_freq.get(word, 0) + 1
-
-            if word_freq:
-                top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[
-                    :5
-                ]
-                output.append("🔤 Common themes:")
-                for word, freq in top_words:
-                    output.append(f"   • {word}: {freq} mentions")
-
+            output.extend(await _format_search_results_summary(results))
         else:
-            output.append("🔍 No results found")
-            output.append(
-                "💡 Try different search terms or lower the min_score threshold",
-            )
+            output.extend(_format_no_results_message())
 
         logger.info("Search summary generated", query=query, results_count=len(results))
         return "\n".join(output)
@@ -214,6 +366,22 @@ async def _search_summary_impl(
         # Use regular logging instead of exception logging which isn't available
         logger.exception(f"Error generating search summary: {e}")
         return f"❌ Search summary error: {e}"
+
+
+def _format_file_search_result(result: dict, index: int) -> list[str]:
+    """Format a single file search result."""
+    output = []
+    output.append(
+        f"\n{index}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}",
+    )
+    if result.get("project"):
+        output.append(f"   📁 Project: {result['project']}")
+    if result.get("score"):
+        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+    if result.get("timestamp"):
+        output.append(f"   📅 Date: {result['timestamp']}")
+
+    return output
 
 
 async def _search_by_file_impl(
@@ -241,15 +409,7 @@ async def _search_by_file_impl(
             output.append(f"📈 Found {len(results)} relevant conversations:")
 
             for i, result in enumerate(results, 1):
-                output.append(
-                    f"\n{i}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}",
-                )
-                if result.get("project"):
-                    output.append(f"   📁 Project: {result['project']}")
-                if result.get("score"):
-                    output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-                if result.get("timestamp"):
-                    output.append(f"   📅 Date: {result['timestamp']}")
+                output.extend(_format_file_search_result(result, i))
         else:
             output.append("🔍 No conversations found about this file")
             output.append(
@@ -266,6 +426,29 @@ async def _search_by_file_impl(
     except Exception as e:
         logger.exception("Error searching by file", error=str(e), file_path=file_path)
         return f"❌ File search error: {e}"
+
+
+def _format_concept_search_result(
+    result: dict, index: int, include_files: bool
+) -> list[str]:
+    """Format a single concept search result."""
+    output = []
+    output.append(
+        f"\n{index}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}",
+    )
+    if result.get("project"):
+        output.append(f"   📁 Project: {result['project']}")
+    if result.get("score"):
+        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+    if result.get("timestamp"):
+        output.append(f"   📅 Date: {result['timestamp']}")
+
+    if include_files and result.get("files"):
+        files = result["files"][:3]
+        if files:
+            output.append(f"   📄 Files: {', '.join(files)}")
+
+    return output
 
 
 async def _search_by_concept_impl(
@@ -294,20 +477,7 @@ async def _search_by_concept_impl(
             output.append(f"📈 Found {len(results)} related conversations:")
 
             for i, result in enumerate(results, 1):
-                output.append(
-                    f"\n{i}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}",
-                )
-                if result.get("project"):
-                    output.append(f"   📁 Project: {result['project']}")
-                if result.get("score"):
-                    output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-                if result.get("timestamp"):
-                    output.append(f"   📅 Date: {result['timestamp']}")
-
-                if include_files and result.get("files"):
-                    files = result["files"][:3]
-                    if files:
-                        output.append(f"   📄 Files: {', '.join(files)}")
+                output.extend(_format_concept_search_result(result, i, include_files))
         else:
             output.append("🔍 No conversations found about this concept")
             output.append("💡 Try related terms or broader concepts")

@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 (session-mgmt-mcp)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (session-mgmt-mcp)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="uv (session-mgmt-mcp)" project-jdk-type="Python SDK" />
 </project>

@@ -222,6 +222,44 @@ async def _get_activity_summary_impl(hours: int = 2) -> str:
         return f"❌ Error getting activity summary: {e}"
 
 
+def _format_context_insights_output(insights: dict[str, Any], hours: int) -> list[str]:
+    """Format context insights output."""
+    output = [f"🧠 Context Insights - Last {hours} Hours", ""]
+
+    if not insights.get("has_data"):
+        output.append("🔍 No context data available")
+        return output
+
+    # Current focus area
+    focus = insights.get("current_focus")
+    if focus:
+        output.append(f"🎯 Current Focus: {focus['area']}")
+        output.append(f"   Duration: {focus['duration_minutes']:.1f} minutes")
+
+    # Project patterns
+    patterns = insights.get("project_patterns", [])
+    if patterns:
+        output.append("\n📋 Project Patterns:")
+        for pattern in patterns[:3]:
+            output.append(f"   • {pattern['description']}")
+
+    # Technology context
+    tech_context = insights.get("technology_context", [])
+    if tech_context:
+        output.append("\n⚙️ Technology Context:")
+        for tech in tech_context[:5]:
+            output.append(f"   • {tech['name']}: {tech['confidence']:.0%} confidence")
+
+    # Recommendations
+    recommendations = insights.get("recommendations", [])
+    if recommendations:
+        output.append("\n💡 Recommendations:")
+        for rec in recommendations[:3]:
+            output.append(f"   • {rec}")
+
+    return output
+
+
 async def _get_context_insights_impl(hours: int = 1) -> str:
     """Get contextual insights from recent activity."""
     if not _check_app_monitor_available():
@@ -233,42 +271,7 @@ async def _get_context_insights_impl(hours: int = 1) -> str:
             return "❌ Failed to initialize application monitor"
 
         insights = await monitor.get_context_insights(hours=hours)
-
-        output = [f"🧠 Context Insights - Last {hours} Hours", ""]
-
-        if not insights.get("has_data"):
-            output.append("🔍 No context data available")
-            return "\n".join(output)
-
-        # Current focus area
-        focus = insights.get("current_focus")
-        if focus:
-            output.append(f"🎯 Current Focus: {focus['area']}")
-            output.append(f"   Duration: {focus['duration_minutes']:.1f} minutes")
-
-        # Project patterns
-        patterns = insights.get("project_patterns", [])
-        if patterns:
-            output.append("\n📋 Project Patterns:")
-            for pattern in patterns[:3]:
-                output.append(f"   • {pattern['description']}")
-
-        # Technology context
-        tech_context = insights.get("technology_context", [])
-        if tech_context:
-            output.append("\n⚙️ Technology Context:")
-            for tech in tech_context[:5]:
-                output.append(
-                    f"   • {tech['name']}: {tech['confidence']:.0%} confidence"
-                )
-
-        # Recommendations
-        recommendations = insights.get("recommendations", [])
-        if recommendations:
-            output.append("\n💡 Recommendations:")
-            for rec in recommendations[:3]:
-                output.append(f"   • {rec}")
-
+        output = _format_context_insights_output(insights, hours)
         return "\n".join(output)
 
     except Exception as e:

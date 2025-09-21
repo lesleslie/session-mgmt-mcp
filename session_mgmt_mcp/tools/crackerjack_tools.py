@@ -149,6 +149,43 @@ async def _crackerjack_run_impl(
         return f"❌ Enhanced crackerjack run failed: {e!s}"
 
 
+def _extract_crackerjack_commands(
+    results: list[dict[str, Any]],
+) -> dict[str, list[Any]]:
+    """Extract crackerjack commands from results."""
+    commands: dict[str, list[Any]] = {}
+
+    for result in results:
+        content = result.get("content", "")
+        if "crackerjack" in content.lower():
+            # Extract command from content
+
+            # Use validated pattern for command extraction
+            from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
+
+            crackerjack_cmd_pattern = SAFE_PATTERNS["crackerjack_command"]
+            match = crackerjack_cmd_pattern.search(content.lower())
+            cmd = match.group(1) if match else "unknown"
+
+            if cmd not in commands:
+                commands[cmd] = []
+            commands[cmd].append(result)
+
+    return commands
+
+
+def _format_recent_executions(results: list[dict[str, Any]]) -> str:
+    """Format recent executions for output."""
+    output = "**Recent Executions**:\n"
+
+    for i, result in enumerate(results[:10], 1):
+        timestamp = result.get("timestamp", "Unknown")
+        content = result.get("content", "")[:100]
+        output += f"{i}. ({timestamp}) {content}...\n"
+
+    return output
+
+
 async def _crackerjack_history_impl(
     command_filter: str = "",
     days: int = 7,
@@ -178,33 +215,14 @@ async def _crackerjack_history_impl(
             output = f"📊 **Crackerjack History** (last {days} days)\n\n"
 
             # Group by command
-            commands: dict[str, list[Any]] = {}
-            for result in results:
-                content = result.get("content", "")
-                if "crackerjack" in content.lower():
-                    # Extract command from content
-
-                    # Use validated pattern for command extraction
-                    from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
-
-                    crackerjack_cmd_pattern = SAFE_PATTERNS["crackerjack_command"]
-                    match = crackerjack_cmd_pattern.search(content.lower())
-                    cmd = match.group(1) if match else "unknown"
-
-                    if cmd not in commands:
-                        commands[cmd] = []
-                    commands[cmd].append(result)
+            commands = _extract_crackerjack_commands(results)
 
             # Display summary
             output += f"**Total Executions**: {len(results)}\n"
             output += f"**Commands Used**: {', '.join(commands.keys())}\n\n"
 
             # Show recent executions
-            output += "**Recent Executions**:\n"
-            for i, result in enumerate(results[:10], 1):
-                timestamp = result.get("timestamp", "Unknown")
-                content = result.get("content", "")[:100]
-                output += f"{i}. ({timestamp}) {content}...\n"
+            output += _format_recent_executions(results)
 
             return output
 
@@ -279,89 +297,123 @@ async def _crackerjack_metrics_impl(
         return f"❌ Metrics analysis failed: {e!s}"
 
 
+def _extract_failure_patterns(
+    results: list[dict[str, Any]], failure_keywords: list[str]
+) -> dict[str, int]:
+    """Extract common failure patterns from test results."""
+    patterns: dict[str, int] = {}
+
+    for result in results:
+        content = result.get("content", "").lower()
+        for keyword in failure_keywords:
+            if keyword in content:
+                # Extract context around the keyword
+
+                # Find keyword occurrences using simple string search
+                matches = []
+                start_pos = 0
+                while True:
+                    pos = content.find(keyword, start_pos)
+                    if pos == -1:
+                        break
+
+                    # Create a match-like object with start() and end() methods
+                    class SimpleMatch:
+                        def __init__(self, start_pos: int, end_pos: int) -> None:
+                            self._start = start_pos
+                            self._end = end_pos
+
+                        def start(self) -> int:
+                            return self._start
+
+                        def end(self) -> int:
+                            return self._end
+
+                    matches.append(SimpleMatch(pos, pos + len(keyword)))
+                    start_pos = pos + 1
+                for match in matches:
+                    start = max(0, match.start() - 30)
+                    end = min(len(content), match.end() + 30)
+                    context = content[start:end].strip()
+                    patterns[context] = patterns.get(context, 0) + 1
+
+    return patterns
+
+
+def _format_failure_patterns(patterns: dict[str, int]) -> str:
+    """Format failure patterns for output."""
+    output = ""
+
+    if patterns:
+        output += "**Common Failure Patterns**:\n"
+        sorted_patterns = sorted(patterns.items(), key=lambda x: x[1], reverse=True)
+
+        for i, (pattern, count) in enumerate(sorted_patterns[:10], 1):
+            output += f"{i}. ({count}x) {pattern}...\n"
+
+        output += f"\n📊 Total unique patterns: {len(patterns)}\n"
+        output += f"📊 Total failure mentions: {sum(patterns.values())}\n"
+    else:
+        output += "No clear failure patterns identified\n"
+
+    return output
+
+
+def _get_failure_keywords() -> list[str]:
+    """Get list of keywords to identify failure patterns."""
+    return [
+        "failed",
+        "error",
+        "exception",
+        "assertion",
+        "timeout",
+    ]
+
+
+async def _get_failure_pattern_results(
+    working_directory: str, limit: int = 50
+) -> list[dict[str, Any]]:
+    """Get failure pattern results from the reflection database."""
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+    db = ReflectionDatabase()
+    async with db:
+        return await db.search_conversations(
+            query="test failure error pattern",
+            project=Path(working_directory).name,
+            limit=limit,
+        )
+
+
+def _format_patterns_header(days: int, results_count: int) -> str:
+    """Format the header for the patterns output."""
+    output = f"🔍 **Test Failure Patterns** (last {days} days)\n\n"
+
+    if not results_count:
+        output += "No test failure patterns found\n"
+        output += "✅ This might indicate good code quality!\n"
+
+    return output
+
+
 async def _crackerjack_patterns_impl(
     days: int = 7, working_directory: str = "."
 ) -> str:
     """Analyze test failure patterns and trends."""
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        results = await _get_failure_pattern_results(working_directory)
 
-        db = ReflectionDatabase()
-        async with db:
-            results = await db.search_conversations(
-                query="test failure error pattern",
-                project=Path(working_directory).name,
-                limit=50,
-            )
+        output = _format_patterns_header(days, len(results))
 
-            output = f"🔍 **Test Failure Patterns** (last {days} days)\n\n"
-
-            if not results:
-                output += "No test failure patterns found\n"
-                output += "✅ This might indicate good code quality!\n"
-                return output
-
-            # Extract common failure patterns
-            failure_keywords = [
-                "failed",
-                "error",
-                "exception",
-                "assertion",
-                "timeout",
-            ]
-            patterns: dict[str, int] = {}
-
-            for result in results:
-                content = result.get("content", "").lower()
-                for keyword in failure_keywords:
-                    if keyword in content:
-                        # Extract context around the keyword
-
-                        # Find keyword occurrences using simple string search
-                        matches = []
-                        start_pos = 0
-                        while True:
-                            pos = content.find(keyword, start_pos)
-                            if pos == -1:
-                                break
-
-                            # Create a match-like object with start() and end() methods
-                            class SimpleMatch:
-                                def __init__(
-                                    self, start_pos: int, end_pos: int
-                                ) -> None:
-                                    self._start = start_pos
-                                    self._end = end_pos
-
-                                def start(self) -> int:
-                                    return self._start
-
-                                def end(self) -> int:
-                                    return self._end
-
-                            matches.append(SimpleMatch(pos, pos + len(keyword)))
-                            start_pos = pos + 1
-                        for match in matches:
-                            start = max(0, match.start() - 30)
-                            end = min(len(content), match.end() + 30)
-                            context = content[start:end].strip()
-                            patterns[context] = patterns.get(context, 0) + 1
-
-            if patterns:
-                output += "**Common Failure Patterns**:\n"
-                sorted_patterns = sorted(
-                    patterns.items(), key=lambda x: x[1], reverse=True
-                )
-
-                for i, (pattern, count) in enumerate(sorted_patterns[:10], 1):
-                    output += f"{i}. ({count}x) {pattern}...\n"
-
-                output += f"\n📊 Total unique patterns: {len(patterns)}\n"
-                output += f"📊 Total failure mentions: {sum(patterns.values())}\n"
-            else:
-                output += "No clear failure patterns identified\n"
-
+        if not results:
             return output
+
+        # Extract common failure patterns
+        failure_keywords = _get_failure_keywords()
+        patterns = _extract_failure_patterns(results, failure_keywords)
+        output += _format_failure_patterns(patterns)
+
+        return output
 
     except Exception as e:
         logger.exception(f"Pattern analysis failed: {e}")

@@ -161,7 +161,7 @@ except ImportError as e:
 # Import enhanced search tools
 try:
     # EnhancedSearchEngine will be imported when needed
-    import session_mgmt_mcp.search_enhanced  # noqa: vulture
+    import session_mgmt_mcp.search_enhanced
 
     ENHANCED_SEARCH_AVAILABLE = True
 except ImportError as e:
@@ -198,7 +198,7 @@ except ImportError as e:
 # Import auto-context loading tools
 try:
     # AutoContextLoader will be imported when needed
-    import session_mgmt_mcp.context_manager  # noqa: vulture
+    import session_mgmt_mcp.context_manager
 
     AUTO_CONTEXT_AVAILABLE = True
 except ImportError as e:
@@ -208,7 +208,7 @@ except ImportError as e:
 # Import memory optimization tools
 try:
     # MemoryOptimizer will be imported when needed
-    import session_mgmt_mcp.memory_optimizer  # noqa: vulture
+    import session_mgmt_mcp.memory_optimizer
 
     MEMORY_OPTIMIZER_AVAILABLE = True
 except ImportError as e:
@@ -248,7 +248,7 @@ except ImportError as e:
 # Import Crackerjack integration tools
 try:
     # CrackerjackIntegration will be imported when needed
-    import session_mgmt_mcp.crackerjack_integration  # noqa: vulture
+    import session_mgmt_mcp.crackerjack_integration
 
     CRACKERJACK_INTEGRATION_AVAILABLE = True
 except ImportError as e:
@@ -953,24 +953,10 @@ def _generate_quality_recommendations(
     return recommendations
 
 
-def should_suggest_compact() -> tuple[bool, str]:  # noqa: complexipy
-    """Determine if compacting would be beneficial and provide reasoning.
-    Returns (should_compact, reason).
-
-    Note: High complexity is necessary for comprehensive heuristic analysis
-    of project state, git activity, and development patterns.
-    """
-    # Heuristics for when compaction might be needed:
-    # 1. Large projects with many files
-    # 2. Active development (recent git activity)
-    # 3. Complex task sequences
-    # 4. Session duration indicators
-
+def _count_significant_files(current_dir: Path) -> int:
+    """Count significant files in project as a complexity indicator."""
+    file_count = 0
     try:
-        current_dir = Path(os.environ.get("PWD", Path.cwd()))
-
-        # Count significant files in project as a complexity indicator
-        file_count = 0
         for file_path in current_dir.rglob("*"):
             if (
                 file_path.is_file()
@@ -993,85 +979,153 @@ def should_suggest_compact() -> tuple[bool, str]:  # noqa: complexipy
                 file_count += 1
                 if file_count > 50:  # Stop counting after threshold
                     break
+    except Exception:
+        pass
+    return file_count
+
+
+def _check_git_activity(current_dir: Path) -> tuple[int, int] | None:
+    """Check for active development via git and return (recent_commits, modified_files)."""
+    git_dir = current_dir / ".git"
+    if not git_dir.exists():
+        return None
+
+    try:
+        # Check number of recent commits as activity indicator
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-20", "--since='24 hours ago'"],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=current_dir,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            recent_commits = len(
+                [line for line in result.stdout.strip().split("\\n") if line.strip()],
+            )
+        else:
+            recent_commits = 0
+
+        # Check for large number of modified files
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=current_dir,
+            timeout=5,
+        )
+        if status_result.returncode == 0:
+            modified_files = len(
+                [
+                    line
+                    for line in status_result.stdout.strip().split("\\n")
+                    if line.strip()
+                ],
+            )
+        else:
+            modified_files = 0
+
+        return recent_commits, modified_files
+
+    except (subprocess.TimeoutExpired, Exception):
+        return None
+
+
+def _evaluate_large_project_heuristic(file_count: int) -> tuple[bool, str]:
+    """Evaluate if the project is large enough to benefit from compaction."""
+    if file_count > 50:
+        return (
+            True,
+            "Large codebase with 50+ source files detected - context compaction recommended",
+        )
+    return False, ""
+
+
+def _evaluate_git_activity_heuristic(
+    git_activity: tuple[int, int] | None,
+) -> tuple[bool, str]:
+    """Evaluate if git activity suggests compaction would be beneficial."""
+    if git_activity:
+        recent_commits, modified_files = git_activity
+
+        if recent_commits >= 3:
+            return (
+                True,
+                f"High development activity ({recent_commits} commits in 24h) - compaction recommended",
+            )
+
+        if modified_files >= 10:
+            return (
+                True,
+                f"Many modified files ({modified_files}) detected - context optimization beneficial",
+            )
+
+    return False, ""
+
+
+def _evaluate_python_project_heuristic(current_dir: Path) -> tuple[bool, str]:
+    """Evaluate if this is a Python project that might benefit from compaction."""
+    if (current_dir / "tests").exists() and (current_dir / "pyproject.toml").exists():
+        return (
+            True,
+            "Python project with tests detected - compaction may improve focus",
+        )
+    return False, ""
+
+
+def _get_default_compaction_reason() -> str:
+    """Get the default reason when no strong indicators are found."""
+    return "Context appears manageable - compaction not immediately needed"
+
+
+def _get_fallback_compaction_reason() -> str:
+    """Get fallback reason when evaluation fails."""
+    return "Unable to assess context complexity - compaction may be beneficial as a precaution"
+
+
+def should_suggest_compact() -> tuple[bool, str]:
+    """Determine if compacting would be beneficial and provide reasoning.
+    Returns (should_compact, reason).
+
+    Note: High complexity is necessary for comprehensive heuristic analysis
+    of project state, git activity, and development patterns.
+    """
+    # Heuristics for when compaction might be needed:
+    # 1. Large projects with many files
+    # 2. Active development (recent git activity)
+    # 3. Complex task sequences
+    # 4. Session duration indicators
+
+    try:
+        current_dir = Path(os.environ.get("PWD", Path.cwd()))
+
+        # Count significant files in project as a complexity indicator
+        file_count = _count_significant_files(current_dir)
 
         # Large project heuristic
-        if file_count > 50:
-            return (
-                True,
-                "Large codebase with 50+ source files detected - context compaction recommended",
-            )
+        should_compact, reason = _evaluate_large_project_heuristic(file_count)
+        if should_compact:
+            return should_compact, reason
 
         # Check for active development via git
-        git_dir = current_dir / ".git"
-        if git_dir.exists():
-            try:
-                # Check number of recent commits as activity indicator
-                result = subprocess.run(
-                    ["git", "log", "--oneline", "-20", "--since='24 hours ago'"],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    cwd=current_dir,
-                    timeout=5,
-                )
-                if result.returncode == 0:
-                    recent_commits = len(
-                        [
-                            line
-                            for line in result.stdout.strip().split("\n")
-                            if line.strip()
-                        ],
-                    )
-                    if recent_commits >= 3:
-                        return (
-                            True,
-                            f"High development activity ({recent_commits} commits in 24h) - compaction recommended",
-                        )
-
-                # Check for large number of modified files
-                status_result = subprocess.run(
-                    ["git", "status", "--porcelain"],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    cwd=current_dir,
-                    timeout=5,
-                )
-                if status_result.returncode == 0:
-                    modified_files = len(
-                        [
-                            line
-                            for line in status_result.stdout.strip().split("\n")
-                            if line.strip()
-                        ],
-                    )
-                    if modified_files >= 10:
-                        return (
-                            True,
-                            f"Many modified files ({modified_files}) detected - context optimization beneficial",
-                        )
-
-            except (subprocess.TimeoutExpired, Exception):
-                pass
+        git_activity = _check_git_activity(current_dir)
+        should_compact, reason = _evaluate_git_activity_heuristic(git_activity)
+        if should_compact:
+            return should_compact, reason
 
         # Check for common patterns suggesting complex session
-        if (current_dir / "tests").exists() and (
-            current_dir / "pyproject.toml"
-        ).exists():
-            return (
-                True,
-                "Python project with tests detected - compaction may improve focus",
-            )
+        should_compact, reason = _evaluate_python_project_heuristic(current_dir)
+        if should_compact:
+            return should_compact, reason
 
         # Default to not suggesting unless we have clear indicators
-        return False, "Context appears manageable - compaction not immediately needed"
+        return False, _get_default_compaction_reason()
 
     except Exception:
         # If we can't determine, err on the side of suggesting compaction for safety
-        return (
-            True,
-            "Unable to assess context complexity - compaction may be beneficial as a precaution",
-        )
+        return True, _get_fallback_compaction_reason()
 
 
 async def _optimize_reflection_database() -> str:
@@ -1315,28 +1369,64 @@ async def _capture_intelligence_insights(
         results.append(f"🧠 Intelligence insights stored: {intel_id[:12]}...")
 
 
+def _check_session_management_availability() -> bool:
+    """Check if session management is available."""
+    return SESSION_MANAGEMENT_AVAILABLE
+
+
+def _attempt_checkpoint_session() -> dict[str, Any] | None:
+    """Attempt to get checkpoint session data."""
+    try:
+        return checkpoint_session()
+    except Exception:
+        return None
+
+
+def _extract_session_stats(checkpoint_result: dict[str, Any]) -> dict[str, Any] | None:
+    """Extract session statistics from checkpoint result."""
+    session_stats = checkpoint_result.get("session_stats", {})
+    return session_stats if session_stats else None
+
+
+def _format_metrics_summary(session_stats: dict[str, Any]) -> str:
+    """Format session metrics summary."""
+    detail_summary = (
+        f"Session metrics - Duration: {session_stats.get('duration_minutes', 0)}min, "
+    )
+    detail_summary += f"Success rate: {session_stats.get('success_rate', 0):.1f}%, "
+    detail_summary += f"Checkpoints: {session_stats.get('total_checkpoints', 0)}"
+    return detail_summary
+
+
 async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> None:
     """Capture additional session metrics if available."""
-    if SESSION_MANAGEMENT_AVAILABLE:
-        try:
-            checkpoint_result = checkpoint_session()
-            session_stats = checkpoint_result.get("session_stats", {})
-            if session_stats:
-                detail_summary = f"Session metrics - Duration: {session_stats.get('duration_minutes', 0)}min, "
-                detail_summary += (
-                    f"Success rate: {session_stats.get('success_rate', 0):.1f}%, "
-                )
-                detail_summary += (
-                    f"Checkpoints: {session_stats.get('total_checkpoints', 0)}"
-                )
+    # Check if session management is available
+    if not _check_session_management_availability():
+        return
 
-                detail_id = await db.store_reflection(
-                    detail_summary,
-                    [*tags, "session-metrics"],
-                )
-                results.append(f"📊 Session metrics stored: {detail_id[:12]}...")
-        except Exception as e:
-            results.append(f"⚠️ Session metrics capture failed: {str(e)[:50]}...")
+    try:
+        # Attempt to get checkpoint session data
+        checkpoint_result = _attempt_checkpoint_session()
+        if not checkpoint_result:
+            return
+
+        # Extract session statistics
+        session_stats = _extract_session_stats(checkpoint_result)
+        if not session_stats:
+            return
+
+        # Format metrics summary
+        detail_summary = _format_metrics_summary(session_stats)
+
+        # Store in database
+        detail_id = await db.store_reflection(
+            detail_summary,
+            [*tags, "session-metrics"],
+        )
+        results.append(f"📊 Session metrics stored: {detail_id[:12]}...")
+
+    except Exception as e:
+        results.append(f"⚠️ Session metrics capture failed: {str(e)[:50]}...")
 
 
 async def capture_session_insights(quality_score: float) -> list[str]:
@@ -2250,13 +2340,93 @@ async def _add_health_status_info(output: list[str]) -> None:
             output.append(f"   • {error}")
 
 
+async def _get_project_context_info(
+    current_dir: Path,
+) -> tuple[dict[str, Any], int, int]:
+    """Get project context information and scores."""
+    project_context = await analyze_project_context(current_dir)
+    context_score = sum(1 for detected in project_context.values() if detected)
+    max_score = len(project_context)
+    return project_context, context_score, max_score
+
+
+def _format_project_maturity_section(context_score: int, max_score: int) -> list[str]:
+    """Format the project maturity section."""
+    return [f"\n\x75 Project maturity: {context_score}/{max_score}"]
+
+
+def _format_git_worktree_header() -> str:
+    """Format the git worktree information header."""
+    return "\n\x72 Git Worktree Information:"
+
+
+def _format_current_worktree_info(worktree_info: Any) -> list[str]:
+    """Format current worktree information."""
+    output = []
+    if worktree_info.is_main_worktree:
+        output.append(
+            f"   \x73 Current: Main repository on '{worktree_info.branch}'",
+        )
+    else:
+        output.append(f"   \x73 Current: Worktree on '{worktree_info.branch}'")
+        output.append(f"   \x72 Path: {worktree_info.path}")
+    return output
+
+
+def _format_worktree_count_info(all_worktrees: list[Any]) -> list[str]:
+    """Format worktree count information."""
+    output = []
+    if len(all_worktrees) > 1:
+        output.append(f"   \x74 Total worktrees: {len(all_worktrees)}")
+    return output
+
+
+def _format_other_branches_info(
+    all_worktrees: list[Any], worktree_info: Any
+) -> list[str]:
+    """Format information about other branches."""
+    output = []
+    other_branches = [
+        wt.branch for wt in all_worktrees if wt.path != worktree_info.path
+    ]
+    if other_branches:
+        output.append(
+            f"   \x75 Other branches: {', '.join(other_branches[:3])}",
+        )
+        if len(other_branches) > 3:
+            output.append(f"   ... and {len(other_branches) - 3} more")
+    return output
+
+
+def _format_worktree_suggestions(all_worktrees: list[Any]) -> list[str]:
+    """Format worktree-related suggestions."""
+    output = []
+    if len(all_worktrees) > 1:
+        output.append("   \x74 Use 'git_worktree_list' to see all worktrees")
+    else:
+        output.append(
+            "   \x74 Use 'git_worktree_add <branch> <path>' to create parallel worktrees",
+        )
+    return output
+
+
+def _format_detached_head_warning(worktree_info: Any) -> list[str]:
+    """Format detached HEAD warning if applicable."""
+    output = []
+    if worktree_info.is_detached:
+        output.append("   \x77 Detached HEAD - consider checking out a branch")
+    return output
+
+
 async def _add_project_context_info(output: list[str], current_dir: Path) -> None:
     """Add project context information to output."""
     from .utils.git_operations import get_worktree_info, list_worktrees
 
-    project_context = await analyze_project_context(current_dir)
-    context_score = sum(1 for detected in project_context.values() if detected)
-    output.append(f"\n📈 Project maturity: {context_score}/{len(project_context)}")
+    # Get project context information
+    project_context, context_score, max_score = await _get_project_context_info(
+        current_dir
+    )
+    output.extend(_format_project_maturity_section(context_score, max_score))
 
     # Add worktree information
     from contextlib import suppress
@@ -2266,34 +2436,18 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
         if worktree_info:
             all_worktrees = list_worktrees(current_dir)
 
-            output.append("\n🌿 Git Worktree Information:")
-            if worktree_info.is_main_worktree:
-                output.append(
-                    f"   📍 Current: Main repository on '{worktree_info.branch}'",
-                )
-            else:
-                output.append(f"   📍 Current: Worktree on '{worktree_info.branch}'")
-                output.append(f"   📁 Path: {worktree_info.path}")
+            output.append(_format_git_worktree_header())
+            output.extend(_format_current_worktree_info(worktree_info))
+
+            output.extend(_format_worktree_count_info(all_worktrees))
 
             if len(all_worktrees) > 1:
-                output.append(f"   🌳 Total worktrees: {len(all_worktrees)}")
-                other_branches = [
-                    wt.branch for wt in all_worktrees if wt.path != worktree_info.path
-                ]
-                if other_branches:
-                    output.append(
-                        f"   🔀 Other branches: {', '.join(other_branches[:3])}",
-                    )
-                    if len(other_branches) > 3:
-                        output.append(f"   ... and {len(other_branches) - 3} more")
-                output.append("   💡 Use 'git_worktree_list' to see all worktrees")
+                output.extend(_format_other_branches_info(all_worktrees, worktree_info))
+                output.extend(_format_worktree_suggestions(all_worktrees))
             else:
-                output.append(
-                    "   💡 Use 'git_worktree_add <branch> <path>' to create parallel worktrees",
-                )
+                output.extend(_format_worktree_suggestions(all_worktrees))
 
-            if worktree_info.is_detached:
-                output.append("   ⚠️ Detached HEAD - consider checking out a branch")
+            output.extend(_format_detached_head_warning(worktree_info))
 
 
 def _add_permissions_info(output: list[str]) -> None:
@@ -3192,6 +3346,61 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
 
 
 @mcp.tool()
+def _format_worktree_status(wt: dict[str, Any]) -> str:
+    """Format worktree status items."""
+    status_items = []
+    if wt["locked"]:
+        status_items.append("🔒 locked")
+    if wt["prunable"]:
+        status_items.append("🗑️ prunable")
+    if not wt["exists"]:
+        status_items.append("❌ missing")
+    if wt["has_session"]:
+        status_items.append("🧠 has session")
+
+    return ", ".join(status_items)
+
+
+def _format_worktree_list_header(
+    total_count: int, repo_name: str, current_worktree: str
+) -> list[str]:
+    """Format the header for the worktree list output."""
+    return [
+        f"🌿 **Git Worktrees** ({total_count} total)\\n",
+        f"📂 Repository: {repo_name}",
+        f"🎯 Current: {current_worktree}\\n",
+    ]
+
+
+def _get_worktree_indicators(is_main: bool, is_detached: bool) -> tuple[str, str]:
+    """Get the main and detached indicators for a worktree."""
+    main_indicator = " (main)" if is_main else ""
+    detached_indicator = " (detached)" if is_detached else ""
+    return main_indicator, detached_indicator
+
+
+def _format_single_worktree(wt: dict[str, Any]) -> list[str]:
+    """Format a single worktree entry."""
+    output = []
+
+    prefix = "🔸" if wt["is_current"] else "◦"
+    main_indicator, detached_indicator = _get_worktree_indicators(
+        wt["is_main"], wt["is_detached"]
+    )
+
+    output.append(
+        f"{prefix} **{wt['branch']}{main_indicator}{detached_indicator}**",
+    )
+    output.append(f"   📁 {wt['path']}")
+
+    status_line = _format_worktree_status(wt)
+    if status_line:
+        output.append(f"   Status: {status_line}")
+    output.append("")
+
+    return output
+
+
 async def git_worktree_list(working_directory: str | None = None) -> str:
     """List all git worktrees for the current repository."""
     from .worktree_manager import WorktreeManager
@@ -3211,37 +3420,16 @@ async def git_worktree_list(working_directory: str | None = None) -> str:
                 "📝 No worktrees found. This repository only has the main working tree."
             )
 
-        output = [
-            f"🌿 **Git Worktrees** ({result['total_count']} total)\n",
-            f"📂 Repository: {working_dir.name}",
-            f"🎯 Current: {result.get('current_worktree', 'Unknown')}\n",
-        ]
+        output = _format_worktree_list_header(
+            result["total_count"],
+            working_dir.name,
+            result.get("current_worktree", "Unknown"),
+        )
 
         for wt in worktrees:
-            prefix = "🔸" if wt["is_current"] else "◦"
-            main_indicator = " (main)" if wt["is_main"] else ""
-            detached_indicator = " (detached)" if wt["is_detached"] else ""
+            output.extend(_format_single_worktree(wt))
 
-            output.append(
-                f"{prefix} **{wt['branch']}{main_indicator}{detached_indicator}**",
-            )
-            output.append(f"   📁 {wt['path']}")
-
-            status_items = []
-            if wt["locked"]:
-                status_items.append("🔒 locked")
-            if wt["prunable"]:
-                status_items.append("🗑️ prunable")
-            if not wt["exists"]:
-                status_items.append("❌ missing")
-            if wt["has_session"]:
-                status_items.append("🧠 has session")
-
-            if status_items:
-                output.append(f"   Status: {', '.join(status_items)}")
-            output.append("")
-
-        return "\n".join(output)
+        return "\\n".join(output)
 
     except Exception as e:
         session_logger.exception(f"git_worktree_list failed: {e}")
@@ -3343,6 +3531,88 @@ async def git_worktree_remove(
 
 
 @mcp.tool()
+def _format_current_worktree_info(current: dict, working_dir_name: str) -> list[str]:
+    """Format current worktree information."""
+    return [
+        "🌿 **Git Worktree Status**\n",
+        f"📂 Repository: {working_dir_name}",
+        f"🎯 Current worktree: {current['branch']}"
+        + (" (main)" if current["is_main"] else " (worktree)"),
+        f"📁 Path: {current['path']}",
+        f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
+        f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
+    ]
+
+
+def _format_session_summary(result: dict) -> list[str]:
+    """Format session summary across all worktrees."""
+    session_summary = result["session_summary"]
+    return [
+        "📊 **Multi-Worktree Summary:**",
+        f"• Total worktrees: {result['total_worktrees']}",
+        f"• Active sessions: {session_summary['active_sessions']}",
+        f"• Unique branches: {session_summary['unique_branches']}",
+        f"• Branches: {', '.join(session_summary['branches'])}\n",
+    ]
+
+
+def _format_worktree_status(wt: dict) -> str:
+    """Format status items for a worktree."""
+    status_items = []
+    if wt["has_session"]:
+        status_items.append("🧠 session")
+    if wt["prunable"]:
+        status_items.append("🗑️ prunable")
+    if not wt["exists"]:
+        status_items.append("❌ missing")
+
+    if status_items:
+        return f"   Status: {', '.join(status_items)}"
+    return ""
+
+
+def _format_current_worktree_section(
+    current: dict[str, Any], working_dir_name: str
+) -> list[str]:
+    """Format the current worktree information section."""
+    return _format_current_worktree_info(current, working_dir_name)
+
+
+def _format_session_summary_section(result: dict[str, Any]) -> list[str]:
+    """Format the session summary section."""
+    return _format_session_summary(result)
+
+
+def _format_worktree_list_header() -> str:
+    """Format the worktree list header."""
+    return "🌳 **All Worktrees:**"
+
+
+def _format_single_worktree(wt: dict[str, Any], index: int) -> list[str]:
+    """Format a single worktree entry."""
+    output = []
+    current_marker = " 👈 CURRENT" if wt["is_current"] else ""
+    main_marker = " (main)" if wt["is_main"] else ""
+
+    output.append(f"{index}. **{wt['branch']}{main_marker}**{current_marker}")
+    output.append(f"   📁 {wt['path']}")
+
+    status_line = _format_worktree_status(wt)
+    if status_line:
+        output.append(status_line)
+    output.append("")
+
+    return output
+
+
+def _format_worktree_list_footer() -> list[str]:
+    """Format the worktree list footer with helpful tips."""
+    return [
+        "💡 Use `git_worktree_list` for more details",
+        "💡 Use `git_worktree_add <branch> <path>` to create new worktrees",
+    ]
+
+
 async def git_worktree_status(working_directory: str | None = None) -> str:
     """Get comprehensive status of current worktree and all related worktrees."""
     from .worktree_manager import WorktreeManager
@@ -3358,50 +3628,17 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
 
         current = result["current_worktree"]
         all_worktrees = result["all_worktrees"]
-        session_summary = result["session_summary"]
 
-        output = [
-            "🌿 **Git Worktree Status**\n",
-            f"📂 Repository: {working_dir.name}",
-            f"🎯 Current worktree: {current['branch']}"
-            + (" (main)" if current["is_main"] else " (worktree)"),
-            f"📁 Path: {current['path']}",
-            f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
-            f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
-        ]
-
-        # Session summary across all worktrees
-        output.append("📊 **Multi-Worktree Summary:**")
-        output.append(f"• Total worktrees: {result['total_worktrees']}")
-        output.append(f"• Active sessions: {session_summary['active_sessions']}")
-        output.append(f"• Unique branches: {session_summary['unique_branches']}")
-        output.append(f"• Branches: {', '.join(session_summary['branches'])}\n")
+        # Format output sections
+        output = _format_current_worktree_section(current, working_dir.name)
+        output.extend(_format_session_summary_section(result))
 
         # List all worktrees with status
-        output.append("🌳 **All Worktrees:**")
+        output.append(_format_worktree_list_header())
         for i, wt in enumerate(all_worktrees, 1):
-            current_marker = " 👈 CURRENT" if wt["is_current"] else ""
-            main_marker = " (main)" if wt["is_main"] else ""
+            output.extend(_format_single_worktree(wt, i))
 
-            output.append(f"{i}. **{wt['branch']}{main_marker}**{current_marker}")
-            output.append(f"   📁 {wt['path']}")
-
-            status_items = []
-            if wt["has_session"]:
-                status_items.append("🧠 session")
-            if wt["prunable"]:
-                status_items.append("🗑️ prunable")
-            if not wt["exists"]:
-                status_items.append("❌ missing")
-
-            if status_items:
-                output.append(f"   Status: {', '.join(status_items)}")
-            output.append("")
-
-        output.append("💡 Use `git_worktree_list` for more details")
-        output.append(
-            "💡 Use `git_worktree_add <branch> <path>` to create new worktrees",
-        )
+        output.extend(_format_worktree_list_footer())
 
         return "\n".join(output)
 

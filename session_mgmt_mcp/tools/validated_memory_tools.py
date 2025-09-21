@@ -211,6 +211,29 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
         return f"❌ File search error: {e}"
 
 
+def _format_validated_concept_result(
+    result: dict[str, Any], index: int, include_files: bool
+) -> list[str]:
+    """Format a single validated concept search result."""
+    output = []
+    output.append(
+        f"\n{index}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}"
+    )
+    if result.get("project"):
+        output.append(f"   📁 Project: {result['project']}")
+    if result.get("score"):
+        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+    if result.get("timestamp"):
+        output.append(f"   📅 Date: {result['timestamp']}")
+
+    if include_files and result.get("files"):
+        files = result["files"][:3]
+        if files:
+            output.append(f"   📄 Files: {', '.join(files)}")
+
+    return output
+
+
 async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
     if not _check_reflection_tools_available():
@@ -239,20 +262,9 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
             output.append(f"📈 Found {len(results)} related conversations:")
 
             for i, result in enumerate(results, 1):
-                output.append(
-                    f"\n{i}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}"
+                output.extend(
+                    _format_validated_concept_result(result, i, include_files)
                 )
-                if result.get("project"):
-                    output.append(f"   📁 Project: {result['project']}")
-                if result.get("score"):
-                    output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-                if result.get("timestamp"):
-                    output.append(f"   📅 Date: {result['timestamp']}")
-
-                if include_files and result.get("files"):
-                    files = result["files"][:3]
-                    if files:
-                        output.append(f"   📄 Files: {', '.join(files)}")
         else:
             output.append("🔍 No conversations found about this concept")
             output.append("💡 Try related terms or broader concepts")

@@ -123,20 +123,11 @@ class NaturalLanguageParser:
             r"every (\d+) (day|days)": lambda m: f"FREQ=DAILY;INTERVAL={m.group(1)}",
         }
 
-    def parse_time_expression(
-        self,
-        expression: str,
-        base_time: datetime | None = None,
+    def _try_parse_relative_pattern(
+        self, expression: str, base_time: datetime, time_patterns: dict[str, Any]
     ) -> datetime | None:
-        """Parse natural language time expression."""
-        if not expression:
-            return None
-
-        base_time = base_time or datetime.now()
-        expression = expression.lower().strip()
-
-        # Try relative patterns first
-        for pattern, handler in self.time_patterns.items():
+        """Try to parse the expression using relative time patterns."""
+        for pattern, handler in time_patterns.items():
             match = re.search(
                 pattern, expression, re.IGNORECASE
             )  # REGEX OK: Time parsing
@@ -153,7 +144,13 @@ class NaturalLanguageParser:
                             return base_time + delta
                 except Exception:
                     continue
+        return None
+        return None
 
+    def _try_parse_absolute_date(
+        self, expression: str, base_time: datetime
+    ) -> datetime | None:
+        """Try to parse the expression using absolute date parsing."""
         # Try dateutil parser for absolute dates
         if DATEUTIL_AVAILABLE:
             try:
@@ -163,8 +160,32 @@ class NaturalLanguageParser:
             except (ValueError, TypeError):
                 with contextlib.suppress(ValueError, TypeError):
                     pass
-
         return None
+
+
+def parse_time_expression(
+    self,
+    expression: str,
+    base_time: datetime | None = None,
+) -> datetime | None:
+    """Parse natural language time expression."""
+    if not expression:
+        return None
+
+    base_time = base_time or datetime.now()
+    expression = expression.lower().strip()
+
+    # Try relative patterns first
+    result = _try_parse_relative_pattern(expression, base_time, self.time_patterns)
+    if result:
+        return result
+
+    # Try dateutil parser for absolute dates
+    result = _try_parse_absolute_date(expression, base_time)
+    if result:
+        return result
+
+    return None
 
     def parse_recurrence(self, expression: str) -> str | None:
         """Parse recurrence pattern from natural language."""
@@ -289,6 +310,8 @@ class NaturalLanguageParser:
 
         target_date = today + timedelta(days=days_ahead)
         return target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+    return None
 
 
 class ReminderScheduler:
@@ -668,46 +691,208 @@ class ReminderScheduler:
         for reminder in due_reminders:
             await self.execute_reminder(reminder["id"])
 
-    def _calculate_next_occurrence(
-        self,
-        last_time: datetime,
-        recurrence_rule: str,
+    def _parse_recurrence_interval(
+        self, recurrence_rule: str
+    ) -> tuple[str | None, int]:
+        """Parse frequency and interval from recurrence rule."""
+        parts = recurrence_rule.split(";")
+        interval = 1
+        freq = None
+
+        for part in parts:
+            if part.startswith("FREQ="):
+                freq = part.split("=")[1]
+            elif part.startswith("INTERVAL="):
+                interval = int(part.split("=")[1])
+
+        return freq, interval
+
+    def _calculate_simple_occurrence(
+        self, last_time: datetime, recurrence_rule: str
     ) -> datetime | None:
-        """Calculate next occurrence for recurring reminder."""
-        if not DATEUTIL_AVAILABLE:
+        """Calculate simple recurrence occurrences (daily, weekly, monthly)."""
+        if recurrence_rule.startswith("FREQ=DAILY"):
+            return last_time + timedelta(days=1)
+        if recurrence_rule.startswith("FREQ=WEEKLY"):
+            return last_time + timedelta(weeks=1)
+        if recurrence_rule.startswith("FREQ=MONTHLY"):
+            return last_time + relativedelta(months=1)
+        return None
+
+    def _calculate_interval_occurrence(
+        self, last_time: datetime, recurrence_rule: str
+    ) -> datetime | None:
+        """Calculate interval-based recurrence occurrences."""
+        if "INTERVAL=" in recurrence_rule:
+            freq, interval = self._parse_recurrence_interval(recurrence_rule)
+
+            if freq == "HOURLY":
+                return last_time + timedelta(hours=interval)
+            if freq == "MINUTELY":
+                return last_time + timedelta(minutes=interval)
+            if freq == "DAILY":
+                return last_time + timedelta(days=interval)
+        return None
+
+    def _check_dateutil_availability(self) -> bool:
+        """Check if dateutil is available for processing."""
+        return DATEUTIL_AVAILABLE
+
+    def _attempt_simple_calculation(
+        self, last_time: datetime, recurrence_rule: str
+    ) -> datetime | None:
+        """Attempt to calculate using simple occurrence rules."""
+        try:
+            return self._calculate_simple_occurrence(last_time, recurrence_rule)
+        except Exception:
             return None
 
+    def _attempt_interval_calculation(
+        self, last_time: datetime, recurrence_rule: str
+    ) -> datetime | None:
+        """Attempt to calculate using interval occurrence rules."""
         try:
-            # Simple rule parsing (extend as needed)
-            if recurrence_rule.startswith("FREQ=DAILY"):
-                return last_time + timedelta(days=1)
-            if recurrence_rule.startswith("FREQ=WEEKLY"):
-                return last_time + timedelta(weeks=1)
-            if recurrence_rule.startswith("FREQ=MONTHLY"):
-                return last_time + relativedelta(months=1)
-            if "INTERVAL=" in recurrence_rule:
-                # Parse interval from rule like "FREQ=HOURLY;INTERVAL=2"
-                parts = recurrence_rule.split(";")
-                interval = 1
-                freq = None
+            return self._calculate_interval_occurrence(last_time, recurrence_rule)
+        except Exception:
+            return None
 
-                for part in parts:
-                    if part.startswith("FREQ="):
-                        freq = part.split("=")[1]
-                    elif part.startswith("INTERVAL="):
-                        interval = int(part.split("=")[1])
+    def _check_dateutil_availability(self) -> bool:
+        """Check if dateutil is available for processing."""
+        return DATEUTIL_AVAILABLE
 
-                if freq == "HOURLY":
-                    return last_time + timedelta(hours=interval)
-                if freq == "MINUTELY":
-                    return last_time + timedelta(minutes=interval)
-                if freq == "DAILY":
-                    return last_time + timedelta(days=interval)
 
-        except Exception as e:
-            logger.exception(f"Error calculating next occurrence: {e}")
-
+def _attempt_simple_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Attempt to calculate using simple occurrence rules."""
+    try:
+        return self._calculate_simple_occurrence(last_time, recurrence_rule)
+    except Exception:
         return None
+
+
+def _attempt_interval_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Attempt to calculate using interval occurrence rules."""
+    try:
+        return self._calculate_interval_occurrence(last_time, recurrence_rule)
+    except Exception:
+        return None
+
+
+def _check_dateutil_availability(self) -> bool:
+    """Check if dateutil is available for processing."""
+    return DATEUTIL_AVAILABLE
+
+
+def _try_simple_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using simple occurrence rules."""
+    try:
+        # Attempt simple rule parsing first
+        return self._attempt_simple_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in simple calculation: {e}")
+        return None
+
+
+def _try_interval_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using interval occurrence rules."""
+    try:
+        # Attempt interval-based recurrence rules
+        return self._attempt_interval_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in interval calculation: {e}")
+        return None
+
+
+def _is_dateutil_available(self) -> bool:
+    """Check if dateutil is available for processing."""
+    return DATEUTIL_AVAILABLE
+
+
+def _try_simple_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using simple occurrence rules."""
+    try:
+        # Attempt simple rule parsing first
+        return self._attempt_simple_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in simple calculation: {e}")
+        return None
+
+
+def _try_interval_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using interval occurrence rules."""
+    try:
+        # Attempt interval-based recurrence rules
+        return self._attempt_interval_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in interval calculation: {e}")
+        return None
+
+
+def _is_dateutil_available(self) -> bool:
+    """Check if dateutil is available for processing."""
+    return DATEUTIL_AVAILABLE
+
+
+def _try_simple_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using simple occurrence rules."""
+    try:
+        # Attempt simple rule parsing first
+        return self._attempt_simple_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in simple calculation: {e}")
+        return None
+
+
+def _try_interval_calculation(
+    self, last_time: datetime, recurrence_rule: str
+) -> datetime | None:
+    """Try to calculate using interval occurrence rules."""
+    try:
+        # Attempt interval-based recurrence rules
+        return self._attempt_interval_calculation(last_time, recurrence_rule)
+    except Exception as e:
+        logger.exception(f"Error in interval calculation: {e}")
+        return None
+
+
+def _calculate_next_occurrence(
+    self,
+    last_time: datetime,
+    recurrence_rule: str,
+) -> datetime | None:
+    """Calculate next occurrence for recurring reminder."""
+    # Check if dateutil is available
+    if not self._is_dateutil_available():
+        return None
+
+    try:
+        # Try simple rule parsing first
+        result = self._try_simple_calculation(last_time, recurrence_rule)
+        if result:
+            return result
+
+        # Try interval-based recurrence rules
+        result = self._try_interval_calculation(last_time, recurrence_rule)
+        if result:
+            return result
+
+    except Exception as e:
+        logger.exception(f"Error calculating next occurrence: {e}")
+
+    return None
 
     async def _log_reminder_action(
         self,
@@ -725,6 +910,8 @@ class ReminderScheduler:
             """,
                 (reminder_id, action, datetime.now(), result, json.dumps(details)),
             )
+
+    return None
 
 
 # Global scheduler instance

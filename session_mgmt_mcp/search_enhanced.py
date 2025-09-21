@@ -5,6 +5,7 @@ Provides multi-modal search including code snippets, error patterns, and time-ba
 """
 
 import ast
+import contextlib
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -37,6 +38,47 @@ class CodeSearcher:
             "async": (ast.AsyncFunctionDef, ast.AsyncWith, ast.AsyncFor),
         }
 
+    def _extract_pattern_info(
+        self, node, pattern_type: str, code: str, block_index: int
+    ) -> dict[str, Any]:
+        """Extract pattern information from AST node."""
+        pattern_info = {
+            "type": pattern_type,
+            "content": code,
+            "block_index": block_index,
+            "line_number": getattr(node, "lineno", 0),
+        }
+
+        # Extract specific information based on node type
+        if isinstance(node, ast.FunctionDef):
+            pattern_info["name"] = node.name
+            pattern_info["args"] = [arg.arg for arg in node.args.args]
+        elif isinstance(node, ast.ClassDef):
+            pattern_info["name"] = node.name
+        elif isinstance(node, ast.Import | ast.ImportFrom):
+            if isinstance(node, ast.Import):
+                pattern_info["modules"] = [alias.name for alias in node.names]
+            else:
+                pattern_info["module"] = node.module
+                pattern_info["names"] = [alias.name for alias in node.names]
+
+        return pattern_info
+
+    def _process_code_block(self, code: str, block_index: int) -> list[dict[str, Any]]:
+        """Process a single code block and extract patterns."""
+        patterns = []
+        with contextlib.suppress(SyntaxError, ValueError):
+            # Not valid Python code, skip
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                for pattern_type, node_types in self.search_types.items():
+                    if isinstance(node, node_types):
+                        pattern_info = self._extract_pattern_info(
+                            node, pattern_type, code, block_index
+                        )
+                        patterns.append(pattern_info)
+        return patterns
+
     def extract_code_patterns(self, content: str) -> list[dict[str, Any]]:
         """Extract code patterns from conversation content."""
         patterns = []
@@ -47,42 +89,8 @@ class CodeSearcher:
         code_blocks = python_code_blocks + generic_code_blocks
 
         for i, code in enumerate(code_blocks):
-            try:
-                tree = ast.parse(code)
-                for node in ast.walk(tree):
-                    for pattern_type, node_types in self.search_types.items():
-                        if isinstance(node, node_types):
-                            pattern_info = {
-                                "type": pattern_type,
-                                "content": code,
-                                "block_index": i,
-                                "line_number": getattr(node, "lineno", 0),
-                            }
-
-                            # Extract specific information based on node type
-                            if isinstance(node, ast.FunctionDef):
-                                pattern_info["name"] = node.name
-                                pattern_info["args"] = [
-                                    arg.arg for arg in node.args.args
-                                ]
-                            elif isinstance(node, ast.ClassDef):
-                                pattern_info["name"] = node.name
-                            elif isinstance(node, ast.Import | ast.ImportFrom):
-                                if isinstance(node, ast.Import):
-                                    pattern_info["modules"] = [
-                                        alias.name for alias in node.names
-                                    ]
-                                else:
-                                    pattern_info["module"] = node.module
-                                    pattern_info["names"] = [
-                                        alias.name for alias in node.names
-                                    ]
-
-                            patterns.append(pattern_info)
-
-            except (SyntaxError, ValueError):
-                # Not valid Python code, skip
-                continue
+            block_patterns = self._process_code_block(code, i)
+            patterns.extend(block_patterns)
 
         return patterns
 

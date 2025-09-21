@@ -1,0 +1,4496 @@
+[
+  {
+    "complexity": 0,
+    "file_name": "__main__.py",
+    "function_name": "main",
+    "path": "session_mgmt_mcp/__main__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::__init__",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_build_search_query",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_rebuild_search_index",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_parse_timeframe",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_ensure_search_index",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::search_by_timeframe",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_extract_technical_terms",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::search",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::suggest_completions",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_build_filter_conditions",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::get_similar_content",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_add_highlights",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_get_last_index_update",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_calculate_facets",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::aggregate_metrics",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_index_reflections",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_index_conversations",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_update_search_facets",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::_execute_search",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ActivityDatabase::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ActivityDatabase::_init_database",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ActivityDatabase::cleanup_old_events",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ActivityDatabase::store_event",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationFocusMonitor::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "BrowserDocumentationMonitor::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::_init_database",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::get_recent_activity",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationFocusMonitor::add_focus_event",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::start_monitoring",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::stop_monitoring",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "BrowserDocumentationMonitor::add_browser_activity",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::__init__",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::add_activity",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::stop_monitoring",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationFocusMonitor::_categorize_app",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::get_activity_summary",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::on_modified",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::should_ignore",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::start_monitoring",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "app_monitor.py",
+    "function_name": "ActivityDatabase::get_events",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "app_monitor.py",
+    "function_name": "ProjectActivityMonitor::get_active_files",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationFocusMonitor::get_focused_application",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "app_monitor.py",
+    "function_name": "BrowserDocumentationMonitor::get_browser_processes",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "app_monitor.py",
+    "function_name": "BrowserDocumentationMonitor::extract_documentation_context",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::_monitoring_loop",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 21,
+    "file_name": "app_monitor.py",
+    "function_name": "ApplicationMonitor::get_context_insights",
+    "path": "session_mgmt_mcp/app_monitor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cli.py",
+    "function_name": "restart_mcp_server",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cli.py",
+    "function_name": "show_version",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "cli.py",
+    "function_name": "get_server_status",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "cli.py",
+    "function_name": "show_config",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "cli.py",
+    "function_name": "show_status",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "cli.py",
+    "function_name": "stop_mcp_server",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "cli.py",
+    "function_name": "main",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "cli.py",
+    "function_name": "show_logs",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "cli.py",
+    "function_name": "find_server_processes",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "cli.py",
+    "function_name": "start_mcp_server",
+    "path": "session_mgmt_mcp/cli.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "config.py",
+    "function_name": "ConfigLoader::get_example_config",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "config.py",
+    "function_name": "DatabaseConfig::expand_path",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "config.py",
+    "function_name": "IntegrationConfig::expand_workspace_path",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "config.py",
+    "function_name": "LoggingConfig::expand_log_path",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "config.py",
+    "function_name": "reload_config",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "config.py",
+    "function_name": "ConfigLoader::__init__",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "config.py",
+    "function_name": "SessionConfig::validate_commit_template",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "config.py",
+    "function_name": "TokenOptimizationConfig::validate_chunk_size",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "config.py",
+    "function_name": "get_config",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "config.py",
+    "function_name": "ConfigLoader::_extract_tool_config",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "config.py",
+    "function_name": "SecurityConfig::validate_patterns",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "config.py",
+    "function_name": "ConfigLoader::load_config",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "config.py",
+    "function_name": "ConfigLoader::_find_project_root",
+    "path": "session_mgmt_mcp/config.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "AutoContextLoader::__init__",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "AutoContextLoader::_generate_context_hash",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::__init__",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_initialize_context",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::__init__",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_get_project_keywords",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::score_conversation_relevance",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_project_match",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_detect_project_type",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::detect_current_context",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_file_match",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_language_match",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_tool_match",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_recency",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "context_manager.py",
+    "function_name": "AutoContextLoader::get_context_summary",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_should_ignore_file",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "context_manager.py",
+    "function_name": "RelevanceScorer::_score_project_keywords",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_detect_languages_and_tools",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_calculate_project_type_score",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_find_indicators",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_get_recent_files",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "context_manager.py",
+    "function_name": "AutoContextLoader::load_relevant_context",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 21,
+    "file_name": "context_manager.py",
+    "function_name": "ContextDetector::_get_git_info",
+    "path": "session_mgmt_mcp/context_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::__init__",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::perform_quality_assessment",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_save_handoff_documentation",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_generate_handoff_documentation",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::checkpoint_session",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::get_session_status",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::calculate_quality_score",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::end_session",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::initialize_session",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::perform_git_checkpoint",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_find_latest_handoff_file",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_generate_quality_recommendations",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::format_quality_results",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_read_previous_session_info",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::analyze_project_context",
+    "path": "session_mgmt_mcp/core/session_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::_init_database",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::get_test_failure_patterns",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::__init__",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "analyze_test_failure_patterns",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "crackerjack_health_check",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "execute_crackerjack_command",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "get_quality_metrics_history",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "get_quality_trends",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "get_recent_crackerjack_results",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::__init__",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "get_crackerjack_integration",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::_store_progress_snapshot",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::get_quality_metrics_history",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_coverage_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_progress_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_security_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::_store_result",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::execute_crackerjack_command",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_coverage_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_lint_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::parse_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_complexity_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_complexity_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_security_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::get_recent_results",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::execute_command",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_lint_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_extract_test_insights",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_test_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::health_check",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::_calculate_quality_metrics",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::_generate_trend_recommendations",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackOutputParser::_parse_progress_output",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 35,
+    "file_name": "crackerjack_integration.py",
+    "function_name": "CrackerjackIntegration::get_quality_trends",
+    "path": "session_mgmt_mcp/crackerjack_integration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "FileChangeHandler::__init__",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::__init__",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::_get_active_window",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::_init_database",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::create_session_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::register_preservation_callback",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::register_restoration_callback",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "create_session_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "get_interruption_history",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "get_interruption_statistics",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "preserve_current_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "start_interruption_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "interruption_manager.py",
+    "function_name": "stop_interruption_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::start_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::__init__",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::_store_interruption",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "interruption_manager.py",
+    "function_name": "get_interruption_manager",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "interruption_manager.py",
+    "function_name": "restore_session_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "interruption_manager.py",
+    "function_name": "FileChangeHandler::on_created",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "interruption_manager.py",
+    "function_name": "FileChangeHandler::on_deleted",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::_monitor_loop",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::stop_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::start_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "interruption_manager.py",
+    "function_name": "FileChangeHandler::on_modified",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::get_interruption_history",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::stop_monitoring",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::get_context_statistics",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::_handle_interruption",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::_check_focus_change",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "interruption_manager.py",
+    "function_name": "FocusTracker::_get_active_application",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::_capture_environment_state",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::preserve_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "interruption_manager.py",
+    "function_name": "InterruptionManager::restore_context",
+    "path": "session_mgmt_mcp/interruption_manager.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::get_models",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::__init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::_get_fallback_providers",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::_is_valid_provider",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::get_available_providers",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMProvider::__init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMProvider::generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMProvider::get_models",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMProvider::is_available",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMProvider::stream_generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::__init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::_convert_messages",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::_convert_messages",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::get_models",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::__init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::get_provider_info",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMResponse::__post_init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::_make_request",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::get_models",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::__init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::_get_client",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMMessage::__post_init__",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::_get_client",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::is_available",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::is_available",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::_initialize_providers",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::test_providers",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::is_available",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::_convert_messages",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "llm_providers.py",
+    "function_name": "OpenAIProvider::stream_generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::_load_config",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "llm_providers.py",
+    "function_name": "GeminiProvider::stream_generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 19,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::stream_generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 24,
+    "file_name": "llm_providers.py",
+    "function_name": "OllamaProvider::stream_generate",
+    "path": "session_mgmt_mcp/llm_providers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationClusterer::__init__",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationSummarizer::__init__",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_optimizer.py",
+    "function_name": "MemoryOptimizer::__init__",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_optimizer.py",
+    "function_name": "MemoryOptimizer::get_compression_stats",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_optimizer.py",
+    "function_name": "RetentionPolicyManager::__init__",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "memory_optimizer.py",
+    "function_name": "MemoryOptimizer::_create_consolidated_conversation",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "memory_optimizer.py",
+    "function_name": "MemoryOptimizer::set_retention_policy",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationSummarizer::summarize_conversation",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationSummarizer::_keyword_based_summarization",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "memory_optimizer.py",
+    "function_name": "RetentionPolicyManager::calculate_importance_score",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationClusterer::_calculate_similarity",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "memory_optimizer.py",
+    "function_name": "RetentionPolicyManager::get_conversations_for_retention",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationSummarizer::_template_based_summarization",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationClusterer::cluster_conversations",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "memory_optimizer.py",
+    "function_name": "ConversationSummarizer::_extractive_summarization",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "memory_optimizer.py",
+    "function_name": "MemoryOptimizer::compress_memory",
+    "path": "session_mgmt_mcp/memory_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::__init__",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::add_project_dependency",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::cleanup_old_links",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::create_project_group",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::link_sessions",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::_clear_dependency_cache",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::_clear_session_links_cache",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::get_project_groups",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::get_session_links",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "ProjectDependency::validate_not_self_dependency",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "ProjectDependency::validate_project_names",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "SessionLink::validate_not_self_link",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "SessionLink::validate_session_ids",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::get_cross_project_insights",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::get_project_dependencies",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "ProjectGroup::validate_projects",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::find_related_conversations",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "multi_project_coordinator.py",
+    "function_name": "MultiProjectCoordinator::_find_common_patterns",
+    "path": "session_mgmt_mcp/multi_project_coordinator.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::__init__",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::_init_database",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::_log_reminder_action",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "cancel_user_reminder",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "check_due_reminders",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "create_natural_reminder",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "list_user_reminders",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "register_session_notifications",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "start_reminder_service",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "natural_scheduler.py",
+    "function_name": "stop_reminder_service",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::_parse_next_weekday",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::__init__",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::_check_and_execute_reminders",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::register_notification_callback",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::start_scheduler",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "natural_scheduler.py",
+    "function_name": "get_reminder_scheduler",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::stop_scheduler",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::cancel_reminder",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::create_reminder",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::_parse_specific_time",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::get_due_reminders",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::_parse_tomorrow",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::_scheduler_loop",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::_parse_weekday_time",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::get_pending_reminders",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::parse_recurrence",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::execute_reminder",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 27,
+    "file_name": "natural_scheduler.py",
+    "function_name": "ReminderScheduler::_calculate_next_occurrence",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 32,
+    "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::parse_time_expression",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "parameter_models.py",
+    "function_name": "ReflectionStoreParams::validate_tags",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "parameter_models.py",
+    "function_name": "create_mcp_validator",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "CommandExecutionParams::validate_command",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "ConceptSearchParams::validate_concept",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "FileSearchParams::validate_file_path",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "ReflectionStoreParams::validate_content",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "SearchQueryParams::validate_query",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamCreationParams::validate_required_strings",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamReflectionParams::validate_author_id",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamSearchParams::validate_user_id",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamUserParams::validate_required_strings",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "parameter_models.py",
+    "function_name": "FilePathParams::validate_file_path",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parameter_models.py",
+    "function_name": "IDParams::validate_id_format",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parameter_models.py",
+    "function_name": "ProjectContextParams::validate_project",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamReflectionParams::validate_optional_ids",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamSearchParams::validate_optional_ids",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parameter_models.py",
+    "function_name": "validate_non_empty_string",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "parameter_models.py",
+    "function_name": "validate_mcp_params",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "parameter_models.py",
+    "function_name": "validate_and_expand_path",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "parameter_models.py",
+    "function_name": "WorkingDirectoryParams::validate_working_directory",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "parameter_models.py",
+    "function_name": "TeamUserParams::validate_email",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "parameter_models.py",
+    "function_name": "TagParams::validate_tags",
+    "path": "session_mgmt_mcp/parameter_models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__aenter__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__aexit__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__del__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__enter__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__exit__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_ensure_tables",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::__init__",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::search_by_file",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "reflection_tools.py",
+    "function_name": "cleanup_reflection_database",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "reflection_tools.py",
+    "function_name": "get_reflection_database",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_ensure_indices",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::close",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::get_embedding",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::store_conversation",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::store_reflection",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::get_stats",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "reflection_tools.py",
+    "function_name": "get_current_project",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::initialize",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::search_conversations",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::search_reflections",
+    "path": "session_mgmt_mcp/reflection_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "search_enhanced.py",
+    "function_name": "CodeSearcher::__init__",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::__init__",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "search_enhanced.py",
+    "function_name": "ErrorPatternMatcher::__init__",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "search_enhanced.py",
+    "function_name": "CodeSearcher::extract_code_patterns",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::_calculate_text_relevance",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::_parse_ago_pattern",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::_parse_last_pattern",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "search_enhanced.py",
+    "function_name": "CodeSearcher::_extract_pattern_info",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::__init__",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::_parse_absolute_date",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::parse_time_expression",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::_calculate_error_relevance",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "search_enhanced.py",
+    "function_name": "ErrorPatternMatcher::extract_error_patterns",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::_parse_relative_patterns",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "search_enhanced.py",
+    "function_name": "CodeSearcher::_process_code_block",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::_calculate_code_relevance",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "search_enhanced.py",
+    "function_name": "TemporalSearchParser::_calculate_delta",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::search_temporal",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::search_code_patterns",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "search_enhanced.py",
+    "function_name": "EnhancedSearchEngine::search_error_patterns",
+    "path": "session_mgmt_mcp/search_enhanced.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::_generate_session_id",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::_save_permissions",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::get_permission_status",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::is_operation_trusted",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::trust_operation",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_add_basic_status_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_add_basic_tools_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_add_fallback_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_create_empty_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_format_session_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_get_error_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_get_fallback_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_get_quality_error_result",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_perform_main_search",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_perform_quality_assessment",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "_setup_session_management",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "analyze_advanced_context_metrics",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
+    "function_name": "perform_strategic_compaction",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::debug",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::error",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::exception",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::warning",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::__new__",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::revoke_all_permissions",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_add_current_session_context",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_add_project_context_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_add_session_health_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_capture_flow_analysis",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_capture_intelligence_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_detect_other_mcp_servers",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_extract_decisions_from_content",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_extract_topics_from_content",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_generate_server_guidance",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_setup_claude_directory",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_store_context_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "analyze_context_usage",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "generate_session_intelligence",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "SessionLogger::__init__",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::__init__",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "SessionPermissionsManager::_load_permissions",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "_add_final_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "_add_permissions_and_tools_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "_format_current_worktree_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "_generate_session_tags",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "calculate_quality_score",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "start_reminder_service",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "server.py",
+    "function_name": "stop_reminder_service",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_add_crackerjack_integration_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_add_feature_status_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_add_permissions_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_analyze_conversation_flow_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_analyze_project_workflow_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_analyze_session_intelligence_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_check_workflow_drift",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_extract_next_steps_from_content",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_generate_basic_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_perform_git_checkpoint",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_process_recent_reflections",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "_setup_uv_dependencies",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "main",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server.py",
+    "function_name": "monitor_proactive_quality",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "server.py",
+    "function_name": "_analyze_project_structure",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "server.py",
+    "function_name": "cancel_user_reminder",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "server.py",
+    "function_name": "capture_session_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "server.py",
+    "function_name": "summarize_current_conversation",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "_analyze_reflection_based_intelligence",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "_analyze_token_usage_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "_capture_session_metrics",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "_format_worktree_status",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "_perform_quality_analysis",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "get_app_monitor",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "get_interruption_statistics",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "get_llm_manager",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "server.py",
+    "function_name": "get_serverless_manager",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "server.py",
+    "function_name": "_ensure_summary_defaults",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "server.py",
+    "function_name": "_handle_uv_operations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "server.py",
+    "function_name": "analyze_project_context",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "server.py",
+    "function_name": "auto_setup_git_working_directory",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "_add_health_status_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "_analyze_context_compaction",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "_run_uv_sync_and_compile",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "add_project_dependency",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "analyze_memory_patterns",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "create_natural_reminder",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "server.py",
+    "function_name": "create_project_group",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "server.py",
+    "function_name": "_analyze_quality_monitoring_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "server.py",
+    "function_name": "_generate_quality_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "server.py",
+    "function_name": "initialize_new_features",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "server.py",
+    "function_name": "_analyze_memory_recommendations",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "server.py",
+    "function_name": "git_worktree_remove",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "server.py",
+    "function_name": "reflect_on_past",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "_format_conversation_summary",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "_load_mcp_config",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "_optimize_reflection_database",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "_retry_search_with_cleanup",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "git_worktree_prune",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server.py",
+    "function_name": "session_lifecycle",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "server.py",
+    "function_name": "git_worktree_add",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "server.py",
+    "function_name": "health_check",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "server.py",
+    "function_name": "search_suggestions",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "server.py",
+    "function_name": "_add_configuration_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "server.py",
+    "function_name": "_format_quality_results",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "server.py",
+    "function_name": "session_welcome",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "server.py",
+    "function_name": "analyze_conversation_flow",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "server.py",
+    "function_name": "get_search_metrics",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "server.py",
+    "function_name": "search_across_projects",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "server.py",
+    "function_name": "git_worktree_status",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 18,
+    "file_name": "server.py",
+    "function_name": "analyze_project_workflow_patterns",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 19,
+    "file_name": "server.py",
+    "function_name": "get_project_insights",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "server.py",
+    "function_name": "_add_project_context_info",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "server.py",
+    "function_name": "advanced_search",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "server.py",
+    "function_name": "analyze_token_usage_patterns",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "server.py",
+    "function_name": "git_worktree_switch",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 21,
+    "file_name": "server.py",
+    "function_name": "list_user_reminders",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 23,
+    "file_name": "server.py",
+    "function_name": "check_due_reminders",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 35,
+    "file_name": "server.py",
+    "function_name": "git_worktree_list",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 37,
+    "file_name": "server.py",
+    "function_name": "should_suggest_compact",
+    "path": "session_mgmt_mcp/server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server_optimized.py",
+    "function_name": "SessionPermissionsManager::__init__",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server_optimized.py",
+    "function_name": "SessionPermissionsManager::add_trusted_operation",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server_optimized.py",
+    "function_name": "SessionPermissionsManager::is_operation_trusted",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server_optimized.py",
+    "function_name": "quality_monitor",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server_optimized.py",
+    "function_name": "_execute_auto_compact",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server_optimized.py",
+    "function_name": "auto_compact",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server_optimized.py",
+    "function_name": "run_server",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "server_optimized.py",
+    "function_name": "permissions",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "server_optimized.py",
+    "function_name": "session_lifecycle",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "server_optimized.py",
+    "function_name": "session_welcome",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 37,
+    "file_name": "server_optimized.py",
+    "function_name": "should_suggest_compact",
+    "path": "session_mgmt_mcp/server_optimized.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::__init__",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::_get_session_file",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::__init__",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::_get_index_key",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::_get_key",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::__init__",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::_get_key",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::__init__",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::_generate_session_id",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::cleanup_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::delete_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::get_session_stats",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::list_project_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::list_user_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionState::from_dict",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionState::get_compressed_size",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionState::to_dict",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::__init__",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::cleanup_expired_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::delete_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::is_available",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::list_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::retrieve_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionStorage::store_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::is_available",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::store_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::is_available",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::delete_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::is_available",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::retrieve_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::create_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "serverless_mode.py",
+    "function_name": "SessionState::validate_iso_timestamp",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::_get_redis",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::_get_s3_client",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::get_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::delete_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::store_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessConfigManager::create_storage_backend",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessConfigManager::load_config",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::retrieve_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::retrieve_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::delete_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::list_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::store_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessConfigManager::test_storage_backends",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::cleanup_expired_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::cleanup_expired_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "serverless_mode.py",
+    "function_name": "ServerlessSessionManager::update_session",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "serverless_mode.py",
+    "function_name": "S3Storage::list_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 18,
+    "file_name": "serverless_mode.py",
+    "function_name": "RedisStorage::cleanup_expired_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "serverless_mode.py",
+    "function_name": "LocalFileStorage::list_sessions",
+    "path": "session_mgmt_mcp/serverless_mode.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_can_access_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_init_database",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_log_access",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::add_team_reflection",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::create_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::create_user",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "add_team_reflection",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "create_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "create_team_user",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "get_team_statistics",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "get_user_team_permissions",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "join_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "search_team_knowledge",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_knowledge.py",
+    "function_name": "vote_on_reflection",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::__init__",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_get_default_permissions",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "team_knowledge.py",
+    "function_name": "get_team_knowledge_manager",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::vote_reflection",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_get_user_teams",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_get_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_can_manage_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::get_team_stats",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::get_user_permissions",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::join_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_add_user_to_team",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::_can_access_reflection",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "team_knowledge.py",
+    "function_name": "TeamKnowledgeManager::search_team_reflections",
+    "path": "session_mgmt_mcp/team_knowledge.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::__init__",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_create_chunk_cache_entry",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "get_cached_chunk",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "get_token_usage_stats",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "optimize_search_response",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "token_optimizer.py",
+    "function_name": "track_token_usage",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_calculate_token_savings",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_get_encoding",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::count_tokens",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::track_usage",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "token_optimizer.py",
+    "function_name": "get_token_optimizer",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_estimate_cost_savings",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::optimize_search_results",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_summarize_long_content",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_create_quick_summary",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::get_chunk",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_filter_duplicate_content",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::get_usage_stats",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::cleanup_cache",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_truncate_content",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_chunk_large_response",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_truncate_old_conversations",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "token_optimizer.py",
+    "function_name": "TokenOptimizer::_prioritize_recent_content",
+    "path": "session_mgmt_mcp/token_optimizer.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_help_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "register_crackerjack_tools",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_health_check_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_run_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_quality_trends_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 24,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_metrics_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 24,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_execute_crackerjack_command_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 25,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_history_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 44,
+    "file_name": "crackerjack_tools.py",
+    "function_name": "_crackerjack_patterns_impl",
+    "path": "session_mgmt_mcp/tools/crackerjack_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "memory_tools.py",
+    "function_name": "register_memory_tools",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "memory_tools.py",
+    "function_name": "_check_reflection_tools_available",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "memory_tools.py",
+    "function_name": "_get_reflection_database",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "memory_tools.py",
+    "function_name": "_format_concept_search_result",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "memory_tools.py",
+    "function_name": "_reset_reflection_database_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "memory_tools.py",
+    "function_name": "_search_by_concept_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "memory_tools.py",
+    "function_name": "_store_reflection_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "memory_tools.py",
+    "function_name": "_quick_search_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "memory_tools.py",
+    "function_name": "_reflection_stats_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "memory_tools.py",
+    "function_name": "_search_by_file_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 35,
+    "file_name": "memory_tools.py",
+    "function_name": "_search_summary_impl",
+    "path": "session_mgmt_mcp/tools/memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "monitoring_tools.py",
+    "function_name": "register_monitoring_tools",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_check_app_monitor_available",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_check_interruption_available",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_app_monitor",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_interruption_manager",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_start_interruption_monitoring_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_stop_app_monitoring_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_stop_interruption_monitoring_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_create_session_context_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_preserve_current_context_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_start_app_monitoring_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_active_files_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 20,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_interruption_history_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 23,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_restore_session_context_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 24,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_activity_summary_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 26,
+    "file_name": "monitoring_tools.py",
+    "function_name": "_get_context_insights_impl",
+    "path": "session_mgmt_mcp/tools/monitoring_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "prompt_tools.py",
+    "function_name": "register_prompt_tools",
+    "path": "session_mgmt_mcp/tools/prompt_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "serverless_tools.py",
+    "function_name": "_check_serverless_available",
+    "path": "session_mgmt_mcp/tools/serverless_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "serverless_tools.py",
+    "function_name": "_get_serverless_manager",
+    "path": "session_mgmt_mcp/tools/serverless_tools.py"
+  },
+  {
+    "complexity": 141,
+    "file_name": "serverless_tools.py",
+    "function_name": "register_serverless_tools",
+    "path": "session_mgmt_mcp/tools/serverless_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "session_tools.py",
+    "function_name": "register_session_tools",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "session_tools.py",
+    "function_name": "_create_session_shortcuts",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "session_tools.py",
+    "function_name": "_setup_uv_dependencies",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "session_tools.py",
+    "function_name": "_checkpoint_impl",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "session_tools.py",
+    "function_name": "_end_impl",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "session_tools.py",
+    "function_name": "_start_impl",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "session_tools.py",
+    "function_name": "_status_impl",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 43,
+    "file_name": "session_tools.py",
+    "function_name": "_get_client_working_directory",
+    "path": "session_mgmt_mcp/tools/session_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "team_tools.py",
+    "function_name": "register_team_tools",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "team_tools.py",
+    "function_name": "_create_team_impl",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "team_tools.py",
+    "function_name": "_format_search_scope",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "team_tools.py",
+    "function_name": "_format_search_result",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "team_tools.py",
+    "function_name": "_vote_on_reflection_impl",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "team_tools.py",
+    "function_name": "_search_team_knowledge_impl",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "team_tools.py",
+    "function_name": "_get_team_statistics_impl",
+    "path": "session_mgmt_mcp/tools/team_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "MigrationGuide::after_migration",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "MigrationGuide::before_migration",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "ValidationExamples::example_valid_calls",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "register_validated_memory_tools",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_check_reflection_tools_available",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "ValidationExamples::example_validation_errors",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_get_reflection_database",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_format_validated_concept_result",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_search_by_concept_validated_impl",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_store_reflection_validated_impl",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_quick_search_validated_impl",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 21,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_search_by_file_validated_impl",
+    "path": "session_mgmt_mcp/tools/validated_memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::__init__",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::get_stats",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::_get_executor",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "database_pool.py",
+    "function_name": "close_all_pools",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "database_pool.py",
+    "function_name": "get_database_pool",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::get_async_connection",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::execute_many",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::execute_query",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::get_connection",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::_create_connection",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::close_all",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "database_pool.py",
+    "function_name": "DatabaseConnectionPool::return_connection",
+    "path": "session_mgmt_mcp/utils/database_pool.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "file_utils.py",
+    "function_name": "_get_cleanup_patterns",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "file_utils.py",
+    "function_name": "_cleanup_item",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "file_utils.py",
+    "function_name": "_cleanup_uv_cache",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "file_utils.py",
+    "function_name": "_calculate_item_size",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "file_utils.py",
+    "function_name": "_cleanup_session_logs",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "file_utils.py",
+    "function_name": "_cleanup_temp_files",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 18,
+    "file_name": "file_utils.py",
+    "function_name": "validate_claude_directory",
+    "path": "session_mgmt_mcp/utils/file_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "format_utils.py",
+    "function_name": "_format_efficiency_metrics",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "format_utils.py",
+    "function_name": "_format_monitor_usage_guidance",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "format_utils.py",
+    "function_name": "_format_no_data_message",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "format_utils.py",
+    "function_name": "_format_statistics_header",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "format_utils.py",
+    "function_name": "_build_search_header",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "format_utils.py",
+    "function_name": "_format_monitoring_status",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "format_utils.py",
+    "function_name": "_has_statistics_data",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "format_utils.py",
+    "function_name": "_calculate_efficiency_rates",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "format_utils.py",
+    "function_name": "_format_quality_trend",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "format_utils.py",
+    "function_name": "_format_session_statistics",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "format_utils.py",
+    "function_name": "_format_snapshot_statistics",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "format_utils.py",
+    "function_name": "_format_interruption_statistics",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "format_utils.py",
+    "function_name": "_format_interruption_type_details",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "format_utils.py",
+    "function_name": "_format_proactive_recommendations",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "format_utils.py",
+    "function_name": "_format_quality_alerts",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "format_utils.py",
+    "function_name": "_format_search_results",
+    "path": "session_mgmt_mcp/utils/format_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "git_operations.py",
+    "function_name": "_process_worktree_line",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "git_operations.py",
+    "function_name": "_format_untracked_files",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "git_operations.py",
+    "function_name": "_parse_worktree_entry",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "git_operations.py",
+    "function_name": "is_git_worktree",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "git_operations.py",
+    "function_name": "_add_worktree_context_output",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "git_operations.py",
+    "function_name": "get_git_root",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "git_operations.py",
+    "function_name": "is_git_repository",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "git_operations.py",
+    "function_name": "stage_files",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "git_operations.py",
+    "function_name": "create_commit",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "git_operations.py",
+    "function_name": "get_git_status",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "git_operations.py",
+    "function_name": "get_staged_files",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "git_operations.py",
+    "function_name": "_create_checkpoint_message",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "git_operations.py",
+    "function_name": "_parse_git_status",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "git_operations.py",
+    "function_name": "get_worktree_info",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "git_operations.py",
+    "function_name": "list_worktrees",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "git_operations.py",
+    "function_name": "create_checkpoint_commit",
+    "path": "session_mgmt_mcp/utils/git_operations.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "git_utils.py",
+    "function_name": "_parse_git_status",
+    "path": "session_mgmt_mcp/utils/git_utils.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "git_utils.py",
+    "function_name": "_format_untracked_files",
+    "path": "session_mgmt_mcp/utils/git_utils.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "git_utils.py",
+    "function_name": "_optimize_git_repository",
+    "path": "session_mgmt_mcp/utils/git_utils.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "git_utils.py",
+    "function_name": "_stage_and_commit_files",
+    "path": "session_mgmt_mcp/utils/git_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyImport::__init__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyLoader::__init__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyLoader::add_import",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyLoader::check_availability",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyLoader::get_import",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "MockModule::__getattr__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "lazy_imports.py",
+    "function_name": "MockModule::__init__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyImport::_try_import",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "lazy_imports.py",
+    "function_name": "create_embedding_mock",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "lazy_imports.py",
+    "function_name": "log_dependency_status",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyImport::__bool__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyImport::available",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "lazy_imports.py",
+    "function_name": "optional_dependency",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "lazy_imports.py",
+    "function_name": "LazyImport::__getattr__",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "lazy_imports.py",
+    "function_name": "require_dependency",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "lazy_imports.py",
+    "function_name": "get_dependency_status",
+    "path": "session_mgmt_mcp/utils/lazy_imports.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "logging.py",
+    "function_name": "get_session_logger",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::debug",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::error",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::exception",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::info",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::warning",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "logging.py",
+    "function_name": "SessionLogger::__init__",
+    "path": "session_mgmt_mcp/utils/logging.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging_utils.py",
+    "function_name": "SessionLogger::error",
+    "path": "session_mgmt_mcp/utils/logging_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging_utils.py",
+    "function_name": "SessionLogger::info",
+    "path": "session_mgmt_mcp/utils/logging_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "logging_utils.py",
+    "function_name": "SessionLogger::warning",
+    "path": "session_mgmt_mcp/utils/logging_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "logging_utils.py",
+    "function_name": "SessionLogger::__init__",
+    "path": "session_mgmt_mcp/utils/logging_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "quality_utils.py",
+    "function_name": "_get_intelligence_error_result",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "quality_utils.py",
+    "function_name": "_get_time_based_recommendations",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "quality_utils.py",
+    "function_name": "_parse_integer_score",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "quality_utils.py",
+    "function_name": "_ensure_default_recommendations",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "quality_utils.py",
+    "function_name": "_parse_decimal_score",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "quality_utils.py",
+    "function_name": "_extract_quality_scores_from_reflections",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "quality_utils.py",
+    "function_name": "_parse_score_text",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "quality_utils.py",
+    "function_name": "_process_single_reflection",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "quality_utils.py",
+    "function_name": "_generate_quality_trend_recommendations",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "quality_utils.py",
+    "function_name": "_parse_fraction_score",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "quality_utils.py",
+    "function_name": "_analyze_quality_trend",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "quality_utils.py",
+    "function_name": "_extract_score_from_metadata",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "quality_utils.py",
+    "function_name": "_extract_score_from_content",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 27,
+    "file_name": "quality_utils.py",
+    "function_name": "_extract_quality_scores",
+    "path": "session_mgmt_mcp/utils/quality_utils.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::__init__",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_is_safe_branch_name",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_log",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_save_current_session_state",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_get_git_status",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_get_session_summary",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_restore_session_state",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_check_session_exists",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_is_safe_path",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::get_worktree_status",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::list_worktrees",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::prune_worktrees",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::remove_worktree",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::switch_worktree_context",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_get_recent_files",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 18,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::create_worktree",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  }
+]

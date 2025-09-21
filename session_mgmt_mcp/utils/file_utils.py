@@ -46,9 +46,9 @@ def _cleanup_session_logs() -> str:
     return f"📝 Cleaned {cleaned_count} old log files, {remaining_count} retained"
 
 
-def _cleanup_temp_files(current_dir: Path) -> str:
-    """Clean up temporary files and caches."""
-    cleanup_patterns = [
+def _get_cleanup_patterns() -> list[str]:
+    """Get list of file patterns to clean up."""
+    return [
         "**/.DS_Store",
         "**/__pycache__",
         "**/*.pyc",
@@ -63,6 +63,45 @@ def _cleanup_temp_files(current_dir: Path) -> str:
         "**/temp_*",
     ]
 
+
+def _calculate_item_size(item: Path) -> int:
+    """Calculate size of file or directory in MB."""
+    size_mb = 0
+    try:
+        if item.is_file():
+            size_mb = int(item.stat().st_size / (1024 * 1024))
+        elif item.is_dir():
+            # Calculate directory size
+            from contextlib import suppress
+
+            with suppress(PermissionError, OSError):
+                for subitem in item.rglob("*"):
+                    if subitem.is_file():
+                        size_mb += int(subitem.stat().st_size / (1024 * 1024))
+    except (OSError, PermissionError):
+        pass
+    return size_mb
+
+
+def _cleanup_item(item: Path) -> tuple[str, int]:
+    """Clean up a single item and return its display name and size."""
+    try:
+        if item.is_file():
+            size_mb = _calculate_item_size(item)
+            item.unlink()
+            return f"🗑️ {item.name}", size_mb
+        if item.is_dir():
+            size_mb = _calculate_item_size(item)
+            shutil.rmtree(item, ignore_errors=True)
+            return f"📁 {item.name}/", size_mb
+    except (PermissionError, OSError):
+        pass
+    return "", 0
+
+
+def _cleanup_temp_files(current_dir: Path) -> str:
+    """Clean up temporary files and caches."""
+    cleanup_patterns = _get_cleanup_patterns()
     cleaned_items = []
     total_size_mb = 0
 
@@ -70,26 +109,10 @@ def _cleanup_temp_files(current_dir: Path) -> str:
         try:
             for item in current_dir.glob(pattern):
                 if item.exists():
-                    size_mb = 0
-                    if item.is_file():
-                        size_mb = int(item.stat().st_size / (1024 * 1024))
-                        item.unlink()
-                        cleaned_items.append(f"🗑️ {item.name}")
-                    elif item.is_dir():
-                        # Calculate directory size
-                        from contextlib import suppress
-
-                        with suppress(PermissionError, OSError):
-                            for subitem in item.rglob("*"):
-                                if subitem.is_file():
-                                    size_mb += int(
-                                        subitem.stat().st_size / (1024 * 1024)
-                                    )
-
-                        shutil.rmtree(item, ignore_errors=True)
-                        cleaned_items.append(f"📁 {item.name}/")
-
-                    total_size_mb += size_mb
+                    display_name, size_mb = _cleanup_item(item)
+                    if display_name:
+                        cleaned_items.append(display_name)
+                        total_size_mb += size_mb
         except (PermissionError, OSError):
             # Skip patterns we can't access
             continue

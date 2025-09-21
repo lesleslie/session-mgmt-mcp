@@ -4,6 +4,7 @@
 Provides unified interface for multiple LLM providers including OpenAI, Google Gemini, and Ollama.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -590,12 +591,10 @@ class LLMManager:
         }
 
         if config_path and Path(config_path).exists():
-            try:
+            with contextlib.suppress(OSError, json.JSONDecodeError):
                 with open(config_path) as f:
                     file_config = json.load(f)
                     config.update(file_config)
-            except (OSError, json.JSONDecodeError):
-                pass
 
         # Add environment-based provider configs
         if not config["providers"].get("openai"):
@@ -686,6 +685,18 @@ class LLMManager:
         msg = "No available LLM providers"
         raise RuntimeError(msg)
 
+    def _get_fallback_providers(self, target_provider: str) -> list[str]:
+        """Get list of fallback providers excluding the target provider."""
+        return [
+            name
+            for name in self.config.get("fallback_providers", [])
+            if name in self.providers and name != target_provider
+        ]
+
+    def _is_valid_provider(self, provider_name: str) -> bool:
+        """Check if a provider is valid and available."""
+        return provider_name in self.providers
+
     async def stream_generate(
         self,
         messages: list[LLMMessage],
@@ -696,9 +707,12 @@ class LLMManager:
     ) -> AsyncGenerator[str]:
         """Stream generate response with optional fallback."""
         target_provider = provider or self.config["default_provider"]
+        fallback_providers = (
+            self._get_fallback_providers(target_provider) if use_fallback else []
+        )
 
         # Try primary provider
-        if target_provider in self.providers:
+        if self._is_valid_provider(target_provider):
             try:
                 provider_instance = self.providers[target_provider]
                 if await provider_instance.is_available():
@@ -713,24 +727,22 @@ class LLMManager:
                 self.logger.warning(f"Provider {target_provider} failed: {e}")
 
         # Try fallback providers if enabled
-        if use_fallback:
-            for fallback_name in self.config.get("fallback_providers", []):
-                if fallback_name in self.providers and fallback_name != target_provider:
-                    try:
-                        provider_instance = self.providers[fallback_name]
-                        if await provider_instance.is_available():
-                            self.logger.info(f"Falling back to {fallback_name}")
-                            async for chunk in provider_instance.stream_generate(
-                                messages,
-                                model,
-                                **kwargs,
-                            ):
-                                yield chunk
-                            return
-                    except Exception as e:
-                        self.logger.warning(
-                            f"Fallback provider {fallback_name} failed: {e}",
-                        )
+        for fallback_name in fallback_providers:
+            try:
+                provider_instance = self.providers[fallback_name]
+                if await provider_instance.is_available():
+                    self.logger.info(f"Falling back to {fallback_name}")
+                    async for chunk in provider_instance.stream_generate(
+                        messages,
+                        model,
+                        **kwargs,
+                    ):
+                        yield chunk
+                    return
+            except Exception as e:
+                self.logger.warning(
+                    f"Fallback provider {fallback_name} failed: {e}",
+                )
 
         msg = "No available LLM providers"
         raise RuntimeError(msg)

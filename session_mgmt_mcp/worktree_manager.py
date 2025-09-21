@@ -37,8 +37,10 @@ class WorktreeManager:
         from .utils.regex_patterns import SAFE_PATTERNS
 
         # Allow alphanumeric, dashes, underscores, slashes (for remote branches)
-        pattern = SAFE_PATTERNS["safe_branch_name"]
-        return bool(pattern.match(branch)) and len(branch) < 100
+        pattern = SAFE_PATTERNS[
+            "safe_branch_name"
+        ]  # REGEX OK: using validated pattern from crackerjack.services.regex_patterns
+        return bool(pattern.pattern.match(branch)) and len(branch) < 100
 
     def _is_safe_path(self, path: Path) -> bool:
         """Security: Validate path is safe and reasonable."""

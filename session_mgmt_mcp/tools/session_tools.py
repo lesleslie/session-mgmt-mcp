@@ -162,26 +162,30 @@ async def _start_impl(working_directory: str | None = None) -> str:
     return "\n".join(output)
 
 
-def _get_client_working_directory() -> str | None:
-    """Auto-detect the client's working directory using multiple detection methods."""
+def _check_environment_variables() -> str | None:
+    """Check for Claude Code environment variables."""
     import os
-    from pathlib import Path
 
     # Method 1: Check for Claude Code environment variables
     for env_var in ("CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"):
         if env_var in os.environ:
             client_dir = os.environ[env_var]
-            if client_dir and Path(client_dir).exists():
-                return client_dir
+            if client_dir:
+                from pathlib import Path
 
-    # Method 2: Check for the temporary file used by Claude's auto-start scripts
-    # NOTE: This file may contain the server directory, so we need to validate it
+                if Path(client_dir).exists():
+                    return client_dir
+    return None
+
+
+def _check_working_dir_file() -> str | None:
+    """Check for the temporary file used by Claude's auto-start scripts."""
     import tempfile
+    from contextlib import suppress
+    from pathlib import Path
 
     working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
     if working_dir_file.exists():
-        from contextlib import suppress
-
         with suppress(Exception):
             stored_dir = working_dir_file.read_text().strip()
             # Only use if it's NOT the session-mgmt-mcp server directory
@@ -191,9 +195,13 @@ def _get_client_working_directory() -> str | None:
                 and not stored_dir.endswith("session-mgmt-mcp")
             ):
                 return stored_dir
+    return None
 
-    # Method 3: Check parent process working directory (advanced)
+
+def _check_parent_process_cwd() -> str | None:
+    """Check parent process working directory (advanced)."""
     from contextlib import suppress
+    from pathlib import Path
 
     with suppress(ImportError, Exception):
         import psutil
@@ -209,8 +217,13 @@ def _get_client_working_directory() -> str | None:
                 and not parent_cwd.endswith("session-mgmt-mcp")
             ):
                 return parent_cwd
+    return None
 
-    # Method 4: Look for recent git repositories in common project directories
+
+def _find_recent_git_repository() -> str | None:
+    """Look for recent git repositories in common project directories."""
+    from pathlib import Path
+
     for projects_dir in ("/Users/les/Projects", str(Path.home() / "Projects")):
         projects_path = Path(projects_dir)
         if projects_path.exists():
@@ -233,6 +246,62 @@ def _get_client_working_directory() -> str | None:
                 for mtime, repo_path in git_repos:
                     if not repo_path.endswith("session-mgmt-mcp"):
                         return repo_path
+    return None
+
+
+def _try_get_from_environment_variables() -> str | None:
+    """Try to get client working directory from environment variables."""
+    client_dir = _check_environment_variables()
+    if client_dir:
+        return client_dir
+    return None
+
+
+def _try_get_from_working_dir_file() -> str | None:
+    """Try to get client working directory from temporary file."""
+    client_dir = _check_working_dir_file()
+    if client_dir:
+        return client_dir
+    return None
+
+
+def _try_get_from_parent_process_cwd() -> str | None:
+    """Try to get client working directory from parent process."""
+    client_dir = _check_parent_process_cwd()
+    if client_dir:
+        return client_dir
+    return None
+
+
+def _try_find_recent_git_repository() -> str | None:
+    """Try to find recent git repository in common project directories."""
+    client_dir = _find_recent_git_repository()
+    if client_dir:
+        return client_dir
+    return None
+
+
+def _get_client_working_directory() -> str | None:
+    """Auto-detect the client's working directory using multiple detection methods."""
+    # Method 1: Check for Claude Code environment variables
+    client_dir = _try_get_from_environment_variables()
+    if client_dir:
+        return client_dir
+
+    # Method 2: Check for the temporary file used by Claude's auto-start scripts
+    client_dir = _try_get_from_working_dir_file()
+    if client_dir:
+        return client_dir
+
+    # Method 3: Check parent process working directory (advanced)
+    client_dir = _try_get_from_parent_process_cwd()
+    if client_dir:
+        return client_dir
+
+    # Method 4: Look for recent git repositories in common project directories
+    client_dir = _try_find_recent_git_repository()
+    if client_dir:
+        return client_dir
 
     return None
 
