@@ -8,6 +8,7 @@ This module provides intelligent scheduling capabilities including:
 """
 
 import asyncio
+import contextlib
 import importlib.util
 import json
 import logging
@@ -145,13 +146,11 @@ class NaturalLanguageParser:
                 except Exception:
                     continue
         return None
-        return None
 
     def _try_parse_absolute_date(
         self, expression: str, base_time: datetime
     ) -> datetime | None:
         """Try to parse the expression using absolute date parsing."""
-        # Try dateutil parser for absolute dates
         if DATEUTIL_AVAILABLE:
             try:
                 parsed_date = date_parser.parse(expression, default=base_time)
@@ -162,30 +161,31 @@ class NaturalLanguageParser:
                     pass
         return None
 
+    def parse_time_expression(
+        self,
+        expression: str,
+        base_time: datetime | None = None,
+    ) -> datetime | None:
+        """Parse natural language time expression."""
+        if not expression:
+            return None
 
-def parse_time_expression(
-    self,
-    expression: str,
-    base_time: datetime | None = None,
-) -> datetime | None:
-    """Parse natural language time expression."""
-    if not expression:
+        base_time = base_time or datetime.now()
+        expression = expression.lower().strip()
+
+        # Try relative patterns first
+        result = self._try_parse_relative_pattern(
+            expression, base_time, self.time_patterns
+        )
+        if result:
+            return result
+
+        # Try dateutil parser for absolute dates
+        result = self._try_parse_absolute_date(expression, base_time)
+        if result:
+            return result
+
         return None
-
-    base_time = base_time or datetime.now()
-    expression = expression.lower().strip()
-
-    # Try relative patterns first
-    result = _try_parse_relative_pattern(expression, base_time, self.time_patterns)
-    if result:
-        return result
-
-    # Try dateutil parser for absolute dates
-    result = _try_parse_absolute_date(expression, base_time)
-    if result:
-        return result
-
-    return None
 
     def parse_recurrence(self, expression: str) -> str | None:
         """Parse recurrence pattern from natural language."""
@@ -311,10 +311,6 @@ def parse_time_expression(
         target_date = today + timedelta(days=days_ahead)
         return target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-    return None
-
-
-class ReminderScheduler:
     """Manages scheduling and execution of reminders."""
 
     def __init__(self, db_path: str | None = None) -> None:
@@ -756,143 +752,30 @@ class ReminderScheduler:
         except Exception:
             return None
 
-    def _check_dateutil_availability(self) -> bool:
-        """Check if dateutil is available for processing."""
-        return DATEUTIL_AVAILABLE
+    def _calculate_next_occurrence(
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
+    ) -> datetime | None:
+        """Calculate next occurrence for recurring reminder."""
+        if not DATEUTIL_AVAILABLE:
+            return None
 
+        try:
+            # Try simple rule parsing first
+            result = self._calculate_simple_occurrence(last_time, recurrence_rule)
+            if result:
+                return result
 
-def _attempt_simple_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Attempt to calculate using simple occurrence rules."""
-    try:
-        return self._calculate_simple_occurrence(last_time, recurrence_rule)
-    except Exception:
+            # Try interval-based recurrence rules
+            result = self._calculate_interval_occurrence(last_time, recurrence_rule)
+            if result:
+                return result
+
+        except Exception as e:
+            logger.exception(f"Error calculating next occurrence: {e}")
+
         return None
-
-
-def _attempt_interval_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Attempt to calculate using interval occurrence rules."""
-    try:
-        return self._calculate_interval_occurrence(last_time, recurrence_rule)
-    except Exception:
-        return None
-
-
-def _check_dateutil_availability(self) -> bool:
-    """Check if dateutil is available for processing."""
-    return DATEUTIL_AVAILABLE
-
-
-def _try_simple_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using simple occurrence rules."""
-    try:
-        # Attempt simple rule parsing first
-        return self._attempt_simple_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in simple calculation: {e}")
-        return None
-
-
-def _try_interval_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using interval occurrence rules."""
-    try:
-        # Attempt interval-based recurrence rules
-        return self._attempt_interval_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in interval calculation: {e}")
-        return None
-
-
-def _is_dateutil_available(self) -> bool:
-    """Check if dateutil is available for processing."""
-    return DATEUTIL_AVAILABLE
-
-
-def _try_simple_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using simple occurrence rules."""
-    try:
-        # Attempt simple rule parsing first
-        return self._attempt_simple_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in simple calculation: {e}")
-        return None
-
-
-def _try_interval_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using interval occurrence rules."""
-    try:
-        # Attempt interval-based recurrence rules
-        return self._attempt_interval_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in interval calculation: {e}")
-        return None
-
-
-def _is_dateutil_available(self) -> bool:
-    """Check if dateutil is available for processing."""
-    return DATEUTIL_AVAILABLE
-
-
-def _try_simple_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using simple occurrence rules."""
-    try:
-        # Attempt simple rule parsing first
-        return self._attempt_simple_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in simple calculation: {e}")
-        return None
-
-
-def _try_interval_calculation(
-    self, last_time: datetime, recurrence_rule: str
-) -> datetime | None:
-    """Try to calculate using interval occurrence rules."""
-    try:
-        # Attempt interval-based recurrence rules
-        return self._attempt_interval_calculation(last_time, recurrence_rule)
-    except Exception as e:
-        logger.exception(f"Error in interval calculation: {e}")
-        return None
-
-
-def _calculate_next_occurrence(
-    self,
-    last_time: datetime,
-    recurrence_rule: str,
-) -> datetime | None:
-    """Calculate next occurrence for recurring reminder."""
-    # Check if dateutil is available
-    if not self._is_dateutil_available():
-        return None
-
-    try:
-        # Try simple rule parsing first
-        result = self._try_simple_calculation(last_time, recurrence_rule)
-        if result:
-            return result
-
-        # Try interval-based recurrence rules
-        result = self._try_interval_calculation(last_time, recurrence_rule)
-        if result:
-            return result
-
-    except Exception as e:
-        logger.exception(f"Error calculating next occurrence: {e}")
-
-    return None
 
     async def _log_reminder_action(
         self,
@@ -911,14 +794,12 @@ def _calculate_next_occurrence(
                 (reminder_id, action, datetime.now(), result, json.dumps(details)),
             )
 
-    return None
-
 
 # Global scheduler instance
 _reminder_scheduler = None
 
 
-def get_reminder_scheduler() -> ReminderScheduler:
+def get_reminder_scheduler() -> "ReminderScheduler":
     """Get global reminder scheduler instance."""
     global _reminder_scheduler
     if _reminder_scheduler is None:

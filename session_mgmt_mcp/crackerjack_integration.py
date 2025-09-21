@@ -163,7 +163,22 @@ class CrackerjackOutputParser:
         stderr: str,
     ) -> tuple[dict[str, Any], list[str]]:
         """Parse Crackerjack output and extract insights."""
-        parsed_data = {
+        parsed_data = self._init_parsed_data(command)
+        memory_insights = []
+        full_output = f"{stdout}\n{stderr}"
+
+        # Apply applicable parsers based on command
+        for parser_type in self._get_applicable_parsers(command):
+            self._apply_parser(parser_type, full_output, parsed_data, memory_insights)
+
+        # Always parse progress information
+        self._apply_parser("progress", full_output, parsed_data, memory_insights)
+
+        return parsed_data, memory_insights
+
+    def _init_parsed_data(self, command: str) -> dict[str, Any]:
+        """Initialize parsed data structure."""
+        return {
             "command": command,
             "test_results": [],
             "lint_issues": [],
@@ -174,37 +189,43 @@ class CrackerjackOutputParser:
             "quality_metrics": {},
         }
 
-        memory_insights = []
+    def _get_applicable_parsers(self, command: str) -> list[str]:
+        """Get list of parsers to apply for a command."""
+        parser_map = {
+            "test": ["test", "coverage"],
+            "check": ["test", "lint", "security", "coverage", "complexity"],
+            "lint": ["lint"],
+            "format": ["lint"],
+            "security": ["security"],
+            "coverage": ["coverage"],
+            "complexity": ["complexity"],
+        }
+        return parser_map.get(command, [])
 
-        # Combine stdout and stderr for comprehensive parsing
-        full_output = f"{stdout}\n{stderr}"
+    def _apply_parser(
+        self,
+        parser_type: str,
+        output: str,
+        parsed_data: dict[str, Any],
+        insights: list[str],
+    ) -> None:
+        """Apply a specific parser and extract insights."""
+        parser_methods = {
+            "test": (self._parse_test_output, self._extract_test_insights),
+            "lint": (self._parse_lint_output, self._extract_lint_insights),
+            "security": (self._parse_security_output, self._extract_security_insights),
+            "coverage": (self._parse_coverage_output, self._extract_coverage_insights),
+            "complexity": (
+                self._parse_complexity_output,
+                self._extract_complexity_insights,
+            ),
+            "progress": (self._parse_progress_output, self._extract_progress_insights),
+        }
 
-        # Parse based on command type
-        if command in ("test", "check"):
-            parsed_data.update(self._parse_test_output(full_output))
-            memory_insights.extend(self._extract_test_insights(parsed_data))
-
-        if command in ("lint", "format", "check"):
-            parsed_data.update(self._parse_lint_output(full_output))
-            memory_insights.extend(self._extract_lint_insights(parsed_data))
-
-        if command in ("security", "check"):
-            parsed_data.update(self._parse_security_output(full_output))
-            memory_insights.extend(self._extract_security_insights(parsed_data))
-
-        if command in ("coverage", "test", "check"):
-            parsed_data.update(self._parse_coverage_output(full_output))
-            memory_insights.extend(self._extract_coverage_insights(parsed_data))
-
-        if command in ("complexity", "check"):
-            parsed_data.update(self._parse_complexity_output(full_output))
-            memory_insights.extend(self._extract_complexity_insights(parsed_data))
-
-        # Always parse progress information
-        parsed_data.update(self._parse_progress_output(full_output))
-        memory_insights.extend(self._extract_progress_insights(parsed_data))
-
-        return parsed_data, memory_insights
+        if parser_type in parser_methods:
+            parse_method, extract_method = parser_methods[parser_type]
+            parsed_data.update(parse_method(output))
+            insights.extend(extract_method(parsed_data))
 
     def _parse_test_output(self, output: str) -> dict[str, Any]:
         """Parse pytest output for test results."""
