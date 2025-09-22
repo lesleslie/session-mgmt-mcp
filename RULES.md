@@ -344,7 +344,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **AI Agent Iteration Workflow (CRITICAL)**
 
-  - AI agent mode (`--ai-agent`) follows strict iteration protocol:
+  - AI agent mode (`--ai-fix`) follows strict iteration protocol:
     1. **Fast Hooks** → Retry once if any fail (formatting fixes often cascade)
     1. **Collect ALL Test Failures** → Don't stop on first failure, gather complete list
     1. **Collect ALL Hook Issues** → Don't stop on first failure, gather complete list

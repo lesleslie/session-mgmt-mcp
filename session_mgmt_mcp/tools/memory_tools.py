@@ -18,7 +18,7 @@ _reflection_db = None
 _reflection_tools_available = None
 
 
-async def _get_reflection_database() -> Any:
+async def _get_reflection_database() -> ReflectionDatabase:
     """Get reflection database instance with lazy loading."""
     global _reflection_db, _reflection_tools_available
 
@@ -261,7 +261,7 @@ def _check_reflection_tools() -> bool:
 
 
 def _get_search_results(
-    db: Any, query: str, project: str | None, min_score: float
+    db: ReflectionDatabase, query: str, project: str | None, min_score: float
 ) -> list[dict[str, Any]]:
     """Get search results from the database."""
     return db.search_reflections(

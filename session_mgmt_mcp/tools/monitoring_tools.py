@@ -163,6 +163,46 @@ async def _stop_app_monitoring_impl() -> str:
         return f"❌ Error stopping monitoring: {e}"
 
 
+def _format_file_activity(files: list[dict[str, Any]]) -> list[str]:
+    """Format file activity section."""
+    if not files:
+        return []
+
+    output = [f"📄 File Activity ({len(files)} files):"]
+    for file_info in files[:10]:  # Show top 10
+        output.append(
+            f"   • {file_info['path']} ({file_info['access_count']} accesses)"
+        )
+    if len(files) > 10:
+        output.append(f"   • ... and {len(files) - 10} more files")
+    return output
+
+
+def _format_app_activity(apps: list[dict[str, Any]]) -> list[str]:
+    """Format application activity section."""
+    if not apps:
+        return []
+
+    output = ["\n🖥️ Application Focus:"]
+    for app_info in apps[:5]:  # Show top 5
+        duration = app_info["focus_time_minutes"]
+        output.append(f"   • {app_info['name']}: {duration:.1f} minutes")
+    return output
+
+
+def _format_productivity_metrics(metrics: dict[str, Any]) -> list[str]:
+    """Format productivity metrics section."""
+    if not metrics:
+        return []
+
+    return [
+        "\n📈 Productivity Metrics:",
+        f"   • Focus time: {metrics.get('focus_time_minutes', 0):.1f} minutes",
+        f"   • Context switches: {metrics.get('context_switches', 0)}",
+        f"   • Deep work periods: {metrics.get('deep_work_periods', 0)}",
+    ]
+
+
 async def _get_activity_summary_impl(hours: int = 2) -> str:
     """Get activity summary for the specified number of hours."""
     if not _check_app_monitor_available():
@@ -174,46 +214,23 @@ async def _get_activity_summary_impl(hours: int = 2) -> str:
             return "❌ Failed to initialize application monitor"
 
         summary = await monitor.get_activity_summary(hours=hours)
-
         output = [f"📊 Activity Summary - Last {hours} Hours", ""]
 
         if not summary.get("has_data"):
-            output.append("🔍 No activity data available")
-            output.append("💡 Start monitoring with `start_app_monitoring`")
+            output.extend(
+                [
+                    "🔍 No activity data available",
+                    "💡 Start monitoring with `start_app_monitoring`",
+                ]
+            )
             return "\n".join(output)
 
-        # File activity
-        files = summary.get("file_activity", [])
-        if files:
-            output.append(f"📄 File Activity ({len(files)} files):")
-            for file_info in files[:10]:  # Show top 10
-                output.append(
-                    f"   • {file_info['path']} ({file_info['access_count']} accesses)"
-                )
-            if len(files) > 10:
-                output.append(f"   • ... and {len(files) - 10} more files")
-
-        # Application focus
-        apps = summary.get("app_activity", [])
-        if apps:
-            output.append("\n🖥️ Application Focus:")
-            for app_info in apps[:5]:  # Show top 5
-                duration = app_info["focus_time_minutes"]
-                output.append(f"   • {app_info['name']}: {duration:.1f} minutes")
-
-        # Productivity metrics
-        metrics = summary.get("productivity_metrics", {})
-        if metrics:
-            output.append("\n📈 Productivity Metrics:")
-            output.append(
-                f"   • Focus time: {metrics.get('focus_time_minutes', 0):.1f} minutes"
-            )
-            output.append(
-                f"   • Context switches: {metrics.get('context_switches', 0)}"
-            )
-            output.append(
-                f"   • Deep work periods: {metrics.get('deep_work_periods', 0)}"
-            )
+        # Add all sections
+        output.extend(_format_file_activity(summary.get("file_activity", [])))
+        output.extend(_format_app_activity(summary.get("app_activity", [])))
+        output.extend(
+            _format_productivity_metrics(summary.get("productivity_metrics", {}))
+        )
 
         return "\n".join(output)
 

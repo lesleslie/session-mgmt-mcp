@@ -14,6 +14,42 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _format_execution_status(result) -> str:
+    """Format execution status for output."""
+    if result.exit_code == 0:
+        return "✅ **Status**: Success\n"
+    return f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+
+
+def _format_output_sections(result) -> str:
+    """Format stdout and stderr sections."""
+    output = ""
+    if result.stdout.strip():
+        output += f"\n**Output**:\n```\n{result.stdout}\n```\n"
+    if result.stderr.strip():
+        output += f"\n**Errors**:\n```\n{result.stderr}\n```\n"
+    return output
+
+
+def _format_metrics_section(result) -> str:
+    """Format metrics and insights sections."""
+    output = "\n📊 **Metrics**:\n"
+    output += f"- Execution time: {result.execution_time:.2f}s\n"
+    output += f"- Exit code: {result.exit_code}\n"
+
+    if result.quality_metrics:
+        output += "\n📈 **Quality Metrics**:\n"
+        for metric, value in result.quality_metrics.items():
+            output += f"- {metric.replace('_', ' ').title()}: {value:.1f}\n"
+
+    if result.memory_insights:
+        output += "\n🧠 **Insights**:\n"
+        for insight in result.memory_insights[:5]:  # Limit to top 5
+            output += f"- {insight}\n"
+
+    return output
+
+
 # Implementation functions (extracted from registration function)
 async def _execute_crackerjack_command_impl(
     command: str,
@@ -26,15 +62,6 @@ async def _execute_crackerjack_command_impl(
     try:
         from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
 
-        # Build full command
-        full_command = ["python", "-m", "crackerjack"]
-        if command != "crackerjack":
-            full_command.append(command)
-        if args:
-            full_command.extend(args.split())
-        if ai_agent_mode:
-            full_command.append("--ai-agent")
-
         integration = CrackerjackIntegration()
         result = await integration.execute_crackerjack_command(
             command,
@@ -46,34 +73,9 @@ async def _execute_crackerjack_command_impl(
 
         # Format response
         output = f"🔧 **Crackerjack {command}** executed\n\n"
-
-        if result.exit_code == 0:
-            output += "✅ **Status**: Success\n"
-        else:
-            output += f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
-
-        if result.stdout.strip():
-            output += f"\n**Output**:\n```\n{result.stdout}\n```\n"
-
-        if result.stderr.strip():
-            output += f"\n**Errors**:\n```\n{result.stderr}\n```\n"
-
-        # Add execution metrics
-        output += "\n📊 **Metrics**:\n"
-        output += f"- Execution time: {result.execution_time:.2f}s\n"
-        output += f"- Exit code: {result.exit_code}\n"
-
-        # Add quality metrics if available
-        if result.quality_metrics:
-            output += "\n📈 **Quality Metrics**:\n"
-            for metric, value in result.quality_metrics.items():
-                output += f"- {metric.replace('_', ' ').title()}: {value:.1f}\n"
-
-        # Add memory insights if available
-        if result.memory_insights:
-            output += "\n🧠 **Insights**:\n"
-            for insight in result.memory_insights[:5]:  # Limit to top 5
-                output += f"- {insight}\n"
+        output += _format_execution_status(result)
+        output += _format_output_sections(result)
+        output += _format_metrics_section(result)
 
         return output
 
@@ -231,6 +233,54 @@ async def _crackerjack_history_impl(
         return f"❌ History retrieval failed: {e!s}"
 
 
+def _calculate_execution_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Calculate basic execution summary statistics."""
+    success_count = sum(1 for r in results if "success" in r.get("content", "").lower())
+    failure_count = len(results) - success_count
+    return {
+        "total": len(results),
+        "success": success_count,
+        "failure": failure_count,
+        "success_rate": (success_count / len(results) * 100) if results else 0,
+    }
+
+
+def _extract_quality_keywords(results: list[dict[str, Any]]) -> dict[str, int]:
+    """Extract quality keyword counts from results."""
+    quality_keywords = ["lint", "test", "security", "complexity", "coverage"]
+    keyword_counts: dict[str, int] = {}
+
+    for result in results:
+        content = result.get("content", "").lower()
+        for keyword in quality_keywords:
+            if keyword in content:
+                keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+
+    return keyword_counts
+
+
+def _format_quality_metrics_output(
+    days: int, summary: dict[str, Any], keywords: dict[str, int]
+) -> str:
+    """Format quality metrics output."""
+    output = f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\n"
+    output += "**Execution Summary**:\n"
+    output += f"- Total runs: {summary['total']}\n"
+    output += f"- Successful: {summary['success']}\n"
+    output += f"- Failed: {summary['failure']}\n"
+    output += f"- Success rate: {summary['success_rate']:.1f}%\n\n"
+
+    if keywords:
+        output += "**Quality Focus Areas**:\n"
+        for keyword, count in sorted(
+            keywords.items(), key=lambda x: x[1], reverse=True
+        ):
+            output += f"- {keyword.title()}: {count} mentions\n"
+
+    output += "\n💡 Use `crackerjack analyze` for detailed quality analysis"
+    return output
+
+
 async def _crackerjack_metrics_impl(
     working_directory: str = ".", days: int = 30
 ) -> str:
@@ -246,55 +296,45 @@ async def _crackerjack_metrics_impl(
                 limit=100,
             )
 
-            output = f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\n"
-
             if not results:
-                output += "No quality metrics data available\n"
-                output += "💡 Run `crackerjack analyze` to generate metrics\n"
-                return output
+                return f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\nNo quality metrics data available\n💡 Run `crackerjack analyze` to generate metrics\n"
 
-            # Basic metrics analysis
-            success_count = sum(
-                1 for r in results if "success" in r.get("content", "").lower()
-            )
-            failure_count = len(results) - success_count
-
-            output += "**Execution Summary**:\n"
-            output += f"- Total runs: {len(results)}\n"
-            output += f"- Successful: {success_count}\n"
-            output += f"- Failed: {failure_count}\n"
-            output += f"- Success rate: {(success_count / len(results) * 100):.1f}%\n\n"
-
-            # Extract quality patterns
-            quality_keywords = [
-                "lint",
-                "test",
-                "security",
-                "complexity",
-                "coverage",
-            ]
-            keyword_counts: dict[str, int] = {}
-
-            for result in results:
-                content = result.get("content", "").lower()
-                for keyword in quality_keywords:
-                    if keyword in content:
-                        keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
-
-            if keyword_counts:
-                output += "**Quality Focus Areas**:\n"
-                for keyword, count in sorted(
-                    keyword_counts.items(), key=lambda x: x[1], reverse=True
-                ):
-                    output += f"- {keyword.title()}: {count} mentions\n"
-
-            output += "\n💡 Use `crackerjack analyze` for detailed quality analysis"
-
-            return output
+            summary = _calculate_execution_summary(results)
+            keywords = _extract_quality_keywords(results)
+            return _format_quality_metrics_output(days, summary, keywords)
 
     except Exception as e:
         logger.exception(f"Metrics analysis failed: {e}")
         return f"❌ Metrics analysis failed: {e!s}"
+
+
+def _find_keyword_matches(content: str, keyword: str) -> list[tuple[int, int]]:
+    """Find all occurrences of a keyword in content."""
+    matches = []
+    start_pos = 0
+    while True:
+        pos = content.find(keyword, start_pos)
+        if pos == -1:
+            break
+        matches.append((pos, pos + len(keyword)))
+        start_pos = pos + 1
+    return matches
+
+
+def _extract_context_around_keyword(
+    content: str, keyword: str, context_size: int = 30
+) -> list[str]:
+    """Extract context around keyword occurrences."""
+    matches = _find_keyword_matches(content, keyword)
+    contexts = []
+
+    for start_pos, end_pos in matches:
+        start = max(0, start_pos - context_size)
+        end = min(len(content), end_pos + context_size)
+        context = content[start:end].strip()
+        contexts.append(context)
+
+    return contexts
 
 
 def _extract_failure_patterns(
@@ -307,34 +347,8 @@ def _extract_failure_patterns(
         content = result.get("content", "").lower()
         for keyword in failure_keywords:
             if keyword in content:
-                # Extract context around the keyword
-
-                # Find keyword occurrences using simple string search
-                matches = []
-                start_pos = 0
-                while True:
-                    pos = content.find(keyword, start_pos)
-                    if pos == -1:
-                        break
-
-                    # Create a match-like object with start() and end() methods
-                    class SimpleMatch:
-                        def __init__(self, start_pos: int, end_pos: int) -> None:
-                            self._start = start_pos
-                            self._end = end_pos
-
-                        def start(self) -> int:
-                            return self._start
-
-                        def end(self) -> int:
-                            return self._end
-
-                    matches.append(SimpleMatch(pos, pos + len(keyword)))
-                    start_pos = pos + 1
-                for match in matches:
-                    start = max(0, match.start() - 30)
-                    end = min(len(content), match.end() + 30)
-                    context = content[start:end].strip()
+                contexts = _extract_context_around_keyword(content, keyword)
+                for context in contexts:
                     patterns[context] = patterns.get(context, 0) + 1
 
     return patterns
@@ -427,7 +441,7 @@ async def _crackerjack_help_impl() -> str:
 **Quick Quality Checks**:
 - `crackerjack` - Fast lint and format
 - `crackerjack -t` - Include tests
-- `crackerjack --ai-agent -t` - AI-powered autonomous fixing
+- `crackerjack --ai-fix -t` - AI-powered autonomous fixing
 
 **Analysis Commands**:
 - `crackerjack analyze` - Code quality analysis
@@ -442,7 +456,7 @@ async def _crackerjack_help_impl() -> str:
 - `crackerjack clean` - Clean temporary files
 
 **Advanced Features**:
-- `--ai-agent` - Enable autonomous AI fixing
+- `--ai-fix` - Enable autonomous AI fixing
 - `--verbose` - Detailed output
 - `--fix` - Automatically fix issues where possible
 
@@ -453,7 +467,7 @@ async def _crackerjack_help_impl() -> str:
 
 💡 **Pro Tips**:
 - Always run `crackerjack -t` before commits
-- Use `--ai-agent` for complex quality issues
+- Use `--ai-fix` for complex quality issues
 - Check `crackerjack_history` to learn from past runs
 - Monitor trends with `crackerjack_metrics`
 """
@@ -519,7 +533,7 @@ async def _crackerjack_quality_trends_impl(
 
             output += "\n**Recommendations**:\n"
             if success_rate < 70:
-                output += "- Run `crackerjack --ai-agent -t` for automated fixing\n"
+                output += "- Run `crackerjack --ai-fix -t` for automated fixing\n"
                 output += "- Increase frequency of quality checks\n"
                 output += "- Focus on test coverage improvement\n"
             else:

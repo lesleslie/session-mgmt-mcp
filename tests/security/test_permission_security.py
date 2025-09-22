@@ -530,11 +530,18 @@ class TestDatabaseSecurity:
 class TestInputValidationSecurity:
     """Test input validation and sanitization security."""
 
+    def _validate_reflection_content(self, test_input):
+        """Helper method to validate reflection content."""
+        if test_input is None:
+            return ""
+        elif isinstance(test_input, str):
+            return test_input
+        else:
+            return str(test_input)
+
     def test_reflection_content_validation(self):
         """Test validation of reflection content."""
-        # Generate security test data
         security_data = SecurityTestDataFactory()
-
         test_inputs = [
             security_data.malicious_input,
             "",  # Empty content
@@ -545,25 +552,22 @@ class TestInputValidationSecurity:
         ]
 
         for test_input in test_inputs:
-            # Test that content validation doesn't crash
-            # This would be called by the actual validation logic
             try:
-                if test_input is None:
-                    # None should be handled appropriately
-                    validated_content = ""
-                elif isinstance(test_input, str):
-                    # String should be preserved
-                    validated_content = test_input
-                else:
-                    # Other types should be converted or rejected
-                    validated_content = str(test_input)
-
-                # Validation should produce string output
+                validated_content = self._validate_reflection_content(test_input)
                 assert isinstance(validated_content, str)
-
             except Exception as e:
-                # Some inputs may legitimately fail validation
                 assert isinstance(e, ValueError | TypeError)
+
+    def _validate_project_name(self, project_name):
+        """Helper method to validate project names."""
+        if project_name is None:
+            return "default_project"
+        elif len(str(project_name)) > 255:
+            return str(project_name)[:255]
+        elif str(project_name).strip() == "":
+            return "unnamed_project"
+        else:
+            return str(project_name)
 
     def test_project_name_validation(self):
         """Test validation of project names."""
@@ -580,27 +584,29 @@ class TestInputValidationSecurity:
         ]
 
         for project_name in dangerous_project_names:
-            # Test project name validation
             try:
-                if project_name is None:
-                    validated_name = "default_project"
-                elif len(str(project_name)) > 255:
-                    # Truncate very long names
-                    validated_name = str(project_name)[:255]
-                elif str(project_name).strip() == "":
-                    # Handle empty names
-                    validated_name = "unnamed_project"
-                else:
-                    # Accept the name (with potential sanitization)
-                    validated_name = str(project_name)
-
+                validated_name = self._validate_project_name(project_name)
                 assert isinstance(validated_name, str)
                 assert len(validated_name) > 0
                 assert len(validated_name) <= 255
-
             except Exception as e:
-                # Some validation failures are acceptable
                 assert isinstance(e, ValueError | TypeError)
+
+    def _validate_tag_list(self, tags):
+        """Helper method to validate tag list."""
+        if tags is None:
+            return []
+        elif not isinstance(tags, list):
+            return [str(tags)] if tags else []
+        else:
+            validated_tags = []
+            for tag in tags[:100]:  # Limit number of tags
+                if tag is None:
+                    continue
+                tag_str = str(tag)
+                if len(tag_str.strip()) > 0 and len(tag_str) <= 100:
+                    validated_tags.append(tag_str.strip())
+            return validated_tags
 
     def test_tag_validation(self):
         """Test validation of reflection tags."""
@@ -618,30 +624,14 @@ class TestInputValidationSecurity:
 
         for tags in dangerous_tags:
             try:
-                if tags is None:
-                    validated_tags = []
-                elif not isinstance(tags, list):
-                    # Convert to list or reject
-                    validated_tags = [str(tags)] if tags else []
-                else:
-                    # Validate each tag in the list
-                    validated_tags = []
-                    for tag in tags[:100]:  # Limit number of tags
-                        if tag is None:
-                            continue
-                        tag_str = str(tag)
-                        if len(tag_str.strip()) > 0 and len(tag_str) <= 100:
-                            validated_tags.append(tag_str.strip())
-
+                validated_tags = self._validate_tag_list(tags)
                 assert isinstance(validated_tags, list)
                 assert len(validated_tags) <= 100
                 for tag in validated_tags:
                     assert isinstance(tag, str)
                     assert len(tag) > 0
                     assert len(tag) <= 100
-
             except Exception as e:
-                # Some validation failures are acceptable
                 assert isinstance(e, ValueError | TypeError)
 
 

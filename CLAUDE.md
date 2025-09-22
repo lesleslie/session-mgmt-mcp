@@ -870,7 +870,7 @@ python -m crackerjack
 python -m crackerjack -t
 
 # AI agent mode with autonomous fixing
-python -m crackerjack --ai-agent -t
+python -m crackerjack --ai-fix -t
 
 # Full release workflow
 python -m crackerjack -a patch
@@ -889,7 +889,7 @@ python -m crackerjack -a patch
 - **Use crackerjack-architect agent proactively** for all significant code changes
 - **Maintain code quality standards** - complexity ≤15, comprehensive types
 - **Follow crackerjack patterns** - the tools will enforce quality automatically
-- **Leverage AI agent auto-fixing** - `python -m crackerjack --ai-agent -t` for autonomous quality fixes
+- **Leverage AI agent auto-fixing** - `python -m crackerjack --ai-fix -t` for autonomous quality fixes
 
 ______________________________________________________________________
 

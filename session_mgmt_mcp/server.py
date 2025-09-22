@@ -160,6 +160,7 @@ except ImportError as e:
 # Import reflection tools
 try:
     from session_mgmt_mcp.reflection_tools import (
+        ReflectionDatabase,
         get_current_project,
         get_reflection_database,
     )

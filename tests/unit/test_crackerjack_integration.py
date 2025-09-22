@@ -283,7 +283,7 @@ class TestExecuteCrackerjackCommandMethod:
 
         # Verify AI agent flag is included
         call_args = mock_create_subprocess.call_args
-        expected_cmd = ["crackerjack", "--comp", "--ai-agent"]
+        expected_cmd = ["crackerjack", "--comp", "--ai-fix"]
         assert call_args[0] == tuple(expected_cmd)
 
     @patch("asyncio.create_subprocess_exec")
