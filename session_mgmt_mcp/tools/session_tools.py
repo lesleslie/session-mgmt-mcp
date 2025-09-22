@@ -5,10 +5,15 @@ This module provides tools for managing Claude session lifecycle including
 initialization, checkpoints, and cleanup.
 """
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.logging import get_session_logger
@@ -565,7 +570,7 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
     return output
 
 
-def register_session_tools(mcp_server) -> None:
+def register_session_tools(mcp_server: FastMCP) -> None:
     """Register all session management tools with the MCP server."""
 
     @mcp_server.tool()

@@ -11,6 +11,13 @@ from typing import Any
 
 from session_mgmt_mcp.utils.logging import get_session_logger
 
+# Try to import ReflectionDatabase for type annotations
+try:
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+except ImportError:
+    # For type checking when imports fail
+    ReflectionDatabase = Any  # type: ignore[misc,assignment]
+
 logger = get_session_logger()
 
 # Lazy loading for optional dependencies

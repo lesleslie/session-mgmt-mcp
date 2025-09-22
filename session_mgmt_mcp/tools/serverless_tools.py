@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 
@@ -344,7 +347,7 @@ async def _configure_serverless_storage_impl(
         return f"❌ Error configuring storage: {e}"
 
 
-def _register_session_tools(mcp) -> None:
+def _register_session_tools(mcp: FastMCP) -> None:
     """Register serverless session management tools."""
 
     @mcp.tool()
@@ -418,7 +421,7 @@ def _register_session_tools(mcp) -> None:
         return await _list_serverless_sessions_impl(user_id, project_id)
 
 
-def _register_storage_tools(mcp) -> None:
+def _register_storage_tools(mcp: FastMCP) -> None:
     """Register serverless storage management tools."""
 
     @mcp.tool()
@@ -446,7 +449,7 @@ def _register_storage_tools(mcp) -> None:
         return await _configure_serverless_storage_impl(backend, config_updates)
 
 
-def register_serverless_tools(mcp) -> None:
+def register_serverless_tools(mcp: FastMCP) -> None:
     """Register all serverless session management MCP tools.
 
     Args:

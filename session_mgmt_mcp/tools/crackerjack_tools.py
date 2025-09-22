@@ -9,19 +9,22 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
 
 logger = logging.getLogger(__name__)
 
 
-def _format_execution_status(result) -> str:
+def _format_execution_status(result: CrackerjackResult) -> str:
     """Format execution status for output."""
     if result.exit_code == 0:
         return "✅ **Status**: Success\n"
     return f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
 
 
-def _format_output_sections(result) -> str:
+def _format_output_sections(result: CrackerjackResult) -> str:
     """Format stdout and stderr sections."""
     output = ""
     if result.stdout.strip():
@@ -31,7 +34,7 @@ def _format_output_sections(result) -> str:
     return output
 
 
-def _format_metrics_section(result) -> str:
+def _format_metrics_section(result: CrackerjackResult) -> str:
     """Format metrics and insights sections."""
     output = "\n📊 **Metrics**:\n"
     output += f"- Execution time: {result.execution_time:.2f}s\n"
