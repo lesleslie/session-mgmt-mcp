@@ -91,31 +91,62 @@ class NaturalLanguageParser:
 
     def __init__(self) -> None:
         """Initialize natural language parser."""
-        self.time_patterns = {
-            # Relative time patterns
+        self.time_patterns = self._create_time_patterns()
+        self.recurrence_patterns = self._create_recurrence_patterns()
+
+    def _create_time_patterns(self) -> dict[str, Any]:
+        """Create time parsing patterns dictionary."""
+        patterns = {}
+
+        # Add relative time patterns
+        patterns.update(self._get_relative_time_patterns())
+
+        # Add specific time patterns
+        patterns.update(self._get_specific_time_patterns())
+
+        # Add session-relative patterns
+        patterns.update(self._get_session_relative_patterns())
+
+        return patterns
+
+    def _get_relative_time_patterns(self) -> dict[str, Any]:
+        """Get relative time patterns (in X minutes/hours/days)."""
+        return {
             r"in (\d+) (minute|min|minutes|mins)": lambda m: timedelta(
-                minutes=int(m.group(1)),
+                minutes=int(m.group(1))
             ),
             r"in (\d+) (hour|hours|hr|hrs)": lambda m: timedelta(hours=int(m.group(1))),
             r"in (\d+) (day|days)": lambda m: timedelta(days=int(m.group(1))),
             r"in (\d+) (week|weeks)": lambda m: timedelta(weeks=int(m.group(1))),
-            r"in (\d+) (month|months)": lambda m: relativedelta(months=int(m.group(1)))
-            if DATEUTIL_AVAILABLE
-            else timedelta(days=int(m.group(1)) * 30),
-            # Specific times
+            r"in (\d+) (month|months)": self._create_month_handler(),
+        }
+
+    def _get_specific_time_patterns(self) -> dict[str, Any]:
+        """Get specific time patterns (tomorrow, next monday, etc)."""
+        return {
             r"tomorrow( at (\d{1,2}):?(\d{2})?)?(am|pm)?": self._parse_tomorrow,
             r"next (monday|tuesday|wednesday|thursday|friday|saturday|sunday)": self._parse_next_weekday,
             r"at (\d{1,2}):?(\d{2})?\s*(am|pm)?": self._parse_specific_time,
             r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday) at (\d{1,2}):?(\d{2})?\s*(am|pm)?": self._parse_weekday_time,
-            # Session-relative
-            r"end of (session|work)": lambda m: timedelta(
-                hours=2,
-            ),  # Default session length
+        }
+
+    def _get_session_relative_patterns(self) -> dict[str, Any]:
+        """Get session-relative time patterns."""
+        return {
+            r"end of (session|work)": lambda m: timedelta(hours=2),
             r"after (break|lunch)": lambda m: timedelta(hours=1),
             r"before (meeting|call)": lambda m: timedelta(minutes=15),
         }
 
-        self.recurrence_patterns = {
+    def _create_month_handler(self) -> Any:
+        """Create month duration handler with dateutil fallback."""
+        if DATEUTIL_AVAILABLE:
+            return lambda m: relativedelta(months=int(m.group(1)))
+        return lambda m: timedelta(days=int(m.group(1)) * 30)
+
+    def _create_recurrence_patterns(self) -> dict[str, Any]:
+        """Create recurrence parsing patterns dictionary."""
+        return {
             r"every (day|daily)": "FREQ=DAILY",
             r"every (week|weekly)": "FREQ=WEEKLY",
             r"every (month|monthly)": "FREQ=MONTHLY",
@@ -168,31 +199,42 @@ class NaturalLanguageParser:
                     pass
         return None
 
-    def parse_time_expression(
-        self,
-        expression: str,
-        base_time: datetime | None = None,
-    ) -> datetime | None:
-        """Parse natural language time expression."""
-        if not expression:
+    def _validate_input(self, expression: str) -> str | None:
+        """Validate and normalize input expression."""
+        if not expression or not expression.strip():
             return None
+        return expression.lower().strip()
 
-        base_time = base_time or datetime.now()
-        expression = expression.lower().strip()
-
-        # Try relative patterns first
+    def _try_parsing_strategies(
+        self, expression: str, base_time: datetime
+    ) -> datetime | None:
+        """Try multiple parsing strategies in order."""
+        # Strategy 1: Relative patterns
         result = self._try_parse_relative_pattern(
             expression, base_time, self.time_patterns
         )
         if result:
             return result
 
-        # Try dateutil parser for absolute dates
+        # Strategy 2: Absolute date parsing
         result = self._try_parse_absolute_date(expression, base_time)
         if result:
             return result
 
         return None
+
+    def parse_time_expression(
+        self,
+        expression: str,
+        base_time: datetime | None = None,
+    ) -> datetime | None:
+        """Parse natural language time expression."""
+        normalized_expression = self._validate_input(expression)
+        if not normalized_expression:
+            return None
+
+        base_time = base_time or datetime.now()
+        return self._try_parsing_strategies(normalized_expression, base_time)
 
     def parse_recurrence(self, expression: str) -> str | None:
         """Parse recurrence pattern from natural language."""
@@ -280,6 +322,19 @@ class NaturalLanguageParser:
 
     def _parse_weekday_time(self, match: Match[str]) -> datetime:
         """Parse 'monday at 3pm'."""
+        target_weekday = self._get_weekday_number(match.group(1))
+        hour, minute = self._parse_hour_minute(
+            match.group(2), match.group(3), match.group(4)
+        )
+
+        today = datetime.now()
+        days_ahead = self._calculate_days_ahead(target_weekday, today, hour, minute)
+
+        target_date = today + timedelta(days=days_ahead)
+        return target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+    def _get_weekday_number(self, weekday_name: str) -> int:
+        """Get weekday number from name."""
         weekdays = {
             "monday": 0,
             "tuesday": 1,
@@ -289,34 +344,38 @@ class NaturalLanguageParser:
             "saturday": 5,
             "sunday": 6,
         }
+        return weekdays[weekday_name]
 
-        target_weekday = weekdays[match.group(1)]
-        hour = int(match.group(2))
-        minute = int(match.group(3)) if match.group(3) else 0
-        am_pm = match.group(4)
+    def _parse_hour_minute(
+        self, hour_str: str, minute_str: str | None, am_pm: str | None
+    ) -> tuple[int, int]:
+        """Parse hour and minute from time components."""
+        hour = int(hour_str)
+        minute = int(minute_str) if minute_str else 0
 
         if am_pm and am_pm.lower() == "pm" and hour != 12:
             hour += 12
         elif am_pm and am_pm.lower() == "am" and hour == 12:
             hour = 0
 
-        today = datetime.now()
+        return hour, minute
+
+    def _calculate_days_ahead(
+        self, target_weekday: int, today: datetime, hour: int, minute: int
+    ) -> int:
+        """Calculate how many days ahead the target weekday is."""
         days_ahead = target_weekday - today.weekday()
 
         if days_ahead < 0:  # Target day already happened this week
             days_ahead += 7
         elif days_ahead == 0:  # Today - check if time has passed
             target_time = today.replace(
-                hour=hour,
-                minute=minute,
-                second=0,
-                microsecond=0,
+                hour=hour, minute=minute, second=0, microsecond=0
             )
             if target_time <= today:
                 days_ahead = 7
 
-        target_date = today + timedelta(days=days_ahead)
-        return target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        return days_ahead
 
 
 class ReminderScheduler:

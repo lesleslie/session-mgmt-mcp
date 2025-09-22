@@ -495,59 +495,91 @@ async def _crackerjack_quality_trends_impl(
             output = f"📈 **Quality Trends Analysis** (last {days} days)\n\n"
 
             if len(results) < 5:
-                output += "Insufficient data for trend analysis\n"
-                output += "💡 Run more crackerjack commands to build trend history\n"
-                return output
+                return _format_insufficient_trend_data(output)
 
-            # Analyze success rate over time
-            success_trend = []
-            failure_trend = []
+            success_trend, failure_trend = _analyze_quality_trend_results(results)
+            success_rate = _calculate_trend_success_rate(success_trend, failure_trend)
 
-            for result in results:
-                content = result.get("content", "").lower()
-                timestamp = result.get("timestamp", "")
-
-                if "success" in content or "✅" in content:
-                    success_trend.append(timestamp)
-                elif "failed" in content or "error" in content or "❌" in content:
-                    failure_trend.append(timestamp)
-
-            # Basic trend analysis
-            total_runs = len(success_trend) + len(failure_trend)
-            success_rate = (
-                (len(success_trend) / total_runs * 100) if total_runs > 0 else 0
-            )
-
-            output += "**Overall Trends**:\n"
-            output += f"- Total quality runs: {total_runs}\n"
-            output += f"- Success rate: {success_rate:.1f}%\n"
-            output += f"- Success trend: {len(success_trend)} passes\n"
-            output += f"- Failure trend: {len(failure_trend)} issues\n\n"
-
-            # Quality insights
-            if success_rate > 80:
-                output += "🎉 **Excellent quality trend!** Your code quality is consistently high.\n"
-            elif success_rate > 60:
-                output += (
-                    "✅ **Good quality trend.** Room for improvement in consistency.\n"
-                )
-            else:
-                output += "⚠️ **Quality attention needed.** Consider more frequent quality checks.\n"
-
-            output += "\n**Recommendations**:\n"
-            if success_rate < 70:
-                output += "- Run `crackerjack --ai-fix -t` for automated fixing\n"
-                output += "- Increase frequency of quality checks\n"
-                output += "- Focus on test coverage improvement\n"
-            else:
-                output += "- Maintain current quality practices\n"
-                output += "- Consider adding complexity monitoring\n"
+            output += _format_trend_overview(success_trend, failure_trend, success_rate)
+            output += _format_trend_quality_insights(success_rate)
+            output += _format_trend_recommendations(success_rate)
 
             return output
 
     except Exception as e:
         logger.exception(f"Trend analysis failed: {e}")
         return f"❌ Trend analysis failed: {e!s}"
+
+
+def _format_insufficient_trend_data(output: str) -> str:
+    """Format output when insufficient trend data is available."""
+    output += "Insufficient data for trend analysis\n"
+    output += "💡 Run more crackerjack commands to build trend history\n"
+    return output
+
+
+def _analyze_quality_trend_results(
+    results: list[dict[str, Any]],
+) -> tuple[list[str], list[str]]:
+    """Analyze results to categorize success and failure trends."""
+    success_trend = []
+    failure_trend = []
+
+    for result in results:
+        content = result.get("content", "").lower()
+        timestamp = result.get("timestamp", "")
+
+        if "success" in content or "✅" in content:
+            success_trend.append(timestamp)
+        elif "failed" in content or "error" in content or "❌" in content:
+            failure_trend.append(timestamp)
+
+    return success_trend, failure_trend
+
+
+def _calculate_trend_success_rate(
+    success_trend: list[str], failure_trend: list[str]
+) -> float:
+    """Calculate success rate from trend data."""
+    total_runs = len(success_trend) + len(failure_trend)
+    return (len(success_trend) / total_runs * 100) if total_runs > 0 else 0
+
+
+def _format_trend_overview(
+    success_trend: list[str], failure_trend: list[str], success_rate: float
+) -> str:
+    """Format overall trends section."""
+    total_runs = len(success_trend) + len(failure_trend)
+    output = "**Overall Trends**:\n"
+    output += f"- Total quality runs: {total_runs}\n"
+    output += f"- Success rate: {success_rate:.1f}%\n"
+    output += f"- Success trend: {len(success_trend)} passes\n"
+    output += f"- Failure trend: {len(failure_trend)} issues\n\n"
+    return output
+
+
+def _format_trend_quality_insights(success_rate: float) -> str:
+    """Format quality insights based on success rate."""
+    if success_rate > 80:
+        return (
+            "🎉 **Excellent quality trend!** Your code quality is consistently high.\n"
+        )
+    if success_rate > 60:
+        return "✅ **Good quality trend.** Room for improvement in consistency.\n"
+    return "⚠️ **Quality attention needed.** Consider more frequent quality checks.\n"
+
+
+def _format_trend_recommendations(success_rate: float) -> str:
+    """Format quality recommendations based on success rate."""
+    output = "\n**Recommendations**:\n"
+    if success_rate < 70:
+        output += "- Run `crackerjack --ai-fix -t` for automated fixing\n"
+        output += "- Increase frequency of quality checks\n"
+        output += "- Focus on test coverage improvement\n"
+    else:
+        output += "- Maintain current quality practices\n"
+        output += "- Consider adding complexity monitoring\n"
+    return output
 
 
 async def _crackerjack_health_check_impl() -> str:

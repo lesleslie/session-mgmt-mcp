@@ -648,28 +648,39 @@ class LocalFileStorage(SessionStorage):
         """List session files."""
         try:
             session_ids = []
-
             for session_file in self.storage_dir.glob("*.json.gz"):
-                session_id = session_file.stem.replace(".json", "")
-
-                # Filter by user_id or project_id if specified
-                if user_id or project_id:
-                    session_state = await self.retrieve_session(session_id)
-                    if not session_state:
-                        continue
-
-                    if user_id and session_state.user_id != user_id:
-                        continue
-                    if project_id and session_state.project_id != project_id:
-                        continue
-
-                session_ids.append(session_id)
-
+                session_id = self._extract_session_id(session_file)
+                if await self._should_include_session(session_id, user_id, project_id):
+                    session_ids.append(session_id)
             return session_ids
-
         except Exception as e:
             self.logger.exception(f"Failed to list sessions: {e}")
             return []
+
+    def _extract_session_id(self, session_file: Path) -> str:
+        """Extract session ID from file path."""
+        return session_file.stem.replace(".json", "")
+
+    async def _should_include_session(
+        self, session_id: str, user_id: str | None, project_id: str | None
+    ) -> bool:
+        """Check if session should be included based on filters."""
+        if not user_id and not project_id:
+            return True
+
+        session_state = await self.retrieve_session(session_id)
+        if not session_state:
+            return False
+
+        return self._matches_filters(session_state, user_id, project_id)
+
+    def _matches_filters(
+        self, session_state: SessionState, user_id: str | None, project_id: str | None
+    ) -> bool:
+        """Check if session matches the given filters."""
+        if user_id and session_state.user_id != user_id:
+            return False
+        return not (project_id and session_state.project_id != project_id)
 
     async def cleanup_expired_sessions(self) -> int:
         """Clean up old session files."""

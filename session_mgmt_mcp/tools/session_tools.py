@@ -239,13 +239,13 @@ def _find_recent_git_repository() -> str | None:
     return None
 
 
-def _scan_directory_for_recent_repo(projects_path: "Path") -> str | None:
+def _scan_directory_for_recent_repo(projects_path: Path) -> str | None:
     """Scan a directory for the most recent git repository."""
     git_repos = _collect_git_repos(projects_path)
     return _find_most_recent_non_server_repo(git_repos)
 
 
-def _collect_git_repos(projects_path: "Path") -> list[tuple[float, str]]:
+def _collect_git_repos(projects_path: Path) -> list[tuple[float, str]]:
     """Collect all git repositories with their modification times."""
     git_repos = []
     for repo_path in projects_path.iterdir():
@@ -256,12 +256,12 @@ def _collect_git_repos(projects_path: "Path") -> list[tuple[float, str]]:
     return git_repos
 
 
-def _is_git_repository(repo_path: "Path") -> bool:
+def _is_git_repository(repo_path: Path) -> bool:
     """Check if a path is a git repository."""
     return repo_path.is_dir() and (repo_path / ".git").exists()
 
 
-def _safe_get_mtime(repo_path: "Path") -> float | None:
+def _safe_get_mtime(repo_path: Path) -> float | None:
     """Safely get modification time of a repository."""
     try:
         return repo_path.stat().st_mtime

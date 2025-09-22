@@ -91,23 +91,42 @@ class AdvancedSearchEngine:
         # Ensure search index is up to date
         await self._ensure_search_index()
 
-        # Build search query
+        # Build and execute search
         search_query = self._build_search_query(query, filters)
-
-        # Execute search
         results = await self._execute_search(
             search_query, sort_by, limit, offset, filters, content_type, timeframe
         )
 
-        # Add highlights if requested
+        # Process results with optional features
+        results = await self._process_search_results(results, query, include_highlights)
+        facet_results = await self._process_facets(query, filters, facets)
+
+        return self._format_search_response(results, facet_results, query, filters)
+
+    async def _process_search_results(
+        self, results: list[Any], query: str, include_highlights: bool
+    ) -> list[Any]:
+        """Process search results with optional highlighting."""
         if include_highlights:
-            results = await self._add_highlights(results, query)
+            return await self._add_highlights(results, query)
+        return results
 
-        # Calculate facets if requested
-        facet_results = {}
+    async def _process_facets(
+        self, query: str, filters: list[SearchFilter] | None, facets: list[str] | None
+    ) -> dict[str, Any]:
+        """Process facets if requested."""
         if facets:
-            facet_results = await self._calculate_facets(query, filters, facets)
+            return await self._calculate_facets(query, filters, facets)
+        return {}
 
+    def _format_search_response(
+        self,
+        results: list[Any],
+        facet_results: dict[str, Any],
+        query: str,
+        filters: list[SearchFilter] | None,
+    ) -> dict[str, Any]:
+        """Format the final search response."""
         return {
             "results": results,
             "facets": facet_results,
@@ -691,68 +710,116 @@ class AdvancedSearchEngine:
         timeframe: str | None = None,
     ) -> list[SearchResult]:
         """Execute the actual search."""
-        # Start building the SQL query
+        sql, params = self._build_search_sql(
+            query, content_type, timeframe, filters, sort_by, limit, offset
+        )
+
+        if not self.reflection_db.conn:
+            return []
+
+        results = self.reflection_db.conn.execute(
+            sql, self._prepare_sql_params(params)
+        ).fetchall()
+        return self._convert_sql_results_to_search_results(results)
+
+    def _build_search_sql(
+        self,
+        query: str,
+        content_type: str | None,
+        timeframe: str | None,
+        filters: list[SearchFilter] | None,
+        sort_by: str,
+        limit: int,
+        offset: int,
+    ) -> tuple[str, list[str | datetime]]:
+        """Build complete SQL query for search."""
         sql = """
             SELECT content_id, content_type, indexed_content, search_metadata, last_indexed
             FROM search_index
             WHERE indexed_content LIKE ?
         """
-        params: list[str] = [f"%{query}%"]
+        params: list[str | datetime] = [f"%{query}%"]
 
-        # Add content type filter if specified
+        sql, params = self._add_content_type_filter(sql, params, content_type)
+        sql, params = self._add_timeframe_filter(sql, params, timeframe, content_type)
+        sql, params = self._add_filter_conditions_to_sql(sql, params, filters)
+        sql = self._add_sorting_to_sql(sql, sort_by)
+        sql += " LIMIT ? OFFSET ?"
+        params.extend([str(limit), str(offset)])
+
+        return sql, params
+
+    def _add_content_type_filter(
+        self, sql: str, params: list[str | datetime], content_type: str | None
+    ) -> tuple[str, list[str | datetime]]:
+        """Add content type filter to SQL query."""
         if content_type:
             sql += " AND content_type = ?"
             params.append(content_type)
+        return sql, params
 
-            # Add timeframe filter if specified
-            if timeframe:
-                # Parse timeframe (e.g., "1d", "7d", "30d")
-                if timeframe.endswith("d"):
-                    days = int(timeframe[:-1])
-                    cutoff_date = datetime.now(UTC) - timedelta(days=days)
-                    sql += " AND last_indexed >= ?"
-                    params.append(cutoff_date.isoformat())
-                elif timeframe.endswith("h"):
-                    hours = int(timeframe[:-1])
-                    cutoff_date = datetime.now(UTC) - timedelta(hours=hours)
-                    sql += " AND last_indexed >= ?"
-                    params.append(cutoff_date.isoformat())
+    def _add_timeframe_filter(
+        self,
+        sql: str,
+        params: list[str | datetime],
+        timeframe: str | None,
+        content_type: str | None,
+    ) -> tuple[str, list[str | datetime]]:
+        """Add timeframe filter to SQL query."""
+        if (
+            timeframe and content_type
+        ):  # Only add timeframe if content_type is also specified
+            cutoff_date = self._parse_timeframe(timeframe)
+            if cutoff_date:
+                sql += " AND last_indexed >= ?"
+                params.append(cutoff_date.isoformat())
+        return sql, params
 
-        # Add filter conditions if provided
+    def _parse_timeframe(self, timeframe: str) -> datetime | None:
+        """Parse timeframe string into datetime."""
+        try:
+            if timeframe.endswith("d"):
+                days = int(timeframe[:-1])
+                return datetime.now(UTC) - timedelta(days=days)
+            if timeframe.endswith("h"):
+                hours = int(timeframe[:-1])
+                return datetime.now(UTC) - timedelta(hours=hours)
+        except ValueError:
+            pass
+        return None
+
+    def _add_filter_conditions_to_sql(
+        self, sql: str, params: list[str | datetime], filters: list[SearchFilter] | None
+    ) -> tuple[str, list[str | datetime]]:
+        """Add filter conditions to SQL query."""
         if filters:
             filter_conditions, filter_params = self._build_filter_conditions(filters)
             if filter_conditions:
                 sql += " AND " + " AND ".join(filter_conditions)
-                # Convert filter params to strings for SQL execution
-                for param in filter_params:
-                    if isinstance(param, datetime):
-                        params.append(param.isoformat())
-                    else:
-                        params.append(str(param))
+                params.extend(filter_params)
+        return sql, params
 
-        # Add sorting
+    def _add_sorting_to_sql(self, sql: str, sort_by: str) -> str:
+        """Add sorting clause to SQL query."""
         if sort_by == "date":
             sql += " ORDER BY last_indexed DESC"
         elif sort_by == "project":
             sql += " ORDER BY JSON_EXTRACT_STRING(search_metadata, '$.project')"
         else:  # relevance - simple for now
             sql += " ORDER BY LENGTH(indexed_content) DESC"  # Longer content = more relevant
+        return sql
 
-        sql += " LIMIT ? OFFSET ?"
-        params.append(str(limit))
-        params.append(str(offset))
+    def _prepare_sql_params(self, params: list[str | datetime]) -> list[str]:
+        """Prepare parameters for SQL execution."""
+        return [
+            param.isoformat() if isinstance(param, datetime) else str(param)
+            for param in params
+        ]
 
-        if not self.reflection_db.conn:
-            return []
-
-        results = self.reflection_db.conn.execute(
-            sql,
-            [
-                param.isoformat() if isinstance(param, datetime) else param
-                for param in params
-            ],
-        ).fetchall()
-
+    def _convert_sql_results_to_search_results(
+        self, results: list[tuple[Any, ...]]
+    ) -> list[SearchResult]:
+        """Convert SQL results to SearchResult objects."""
         search_results = []
         for row in results:
             (
@@ -762,7 +829,6 @@ class AdvancedSearchEngine:
                 search_metadata_json,
                 last_indexed,
             ) = row
-
             metadata = json.loads(search_metadata_json) if search_metadata_json else {}
 
             search_results.append(
@@ -770,19 +836,22 @@ class AdvancedSearchEngine:
                     content_id=content_id,
                     content_type=content_type or "unknown",
                     title=f"{(content_type or 'unknown').title()} from {metadata.get('project', 'Unknown')}",
-                    content=indexed_content[:500] + "..."
-                    if len(indexed_content) > 500
-                    else indexed_content,
+                    content=self._truncate_content(indexed_content),
                     score=0.8,  # Simple scoring for now
                     project=metadata.get("project"),
-                    timestamp=last_indexed.replace(tzinfo=UTC)
-                    if last_indexed.tzinfo is None
-                    else last_indexed,
+                    timestamp=self._ensure_timezone(last_indexed),
                     metadata=metadata,
                 ),
             )
-
         return search_results
+
+    def _truncate_content(self, content: str, max_length: int = 500) -> str:
+        """Truncate content to maximum length."""
+        return content[:max_length] + "..." if len(content) > max_length else content
+
+    def _ensure_timezone(self, timestamp: datetime) -> datetime:
+        """Ensure timestamp has timezone information."""
+        return timestamp.replace(tzinfo=UTC) if timestamp.tzinfo is None else timestamp
 
     async def _add_highlights(
         self,

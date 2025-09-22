@@ -29,43 +29,68 @@ class SessionLifecycleManager:
         """Calculate session quality score based on multiple factors."""
         current_dir = Path(os.environ.get("PWD", Path.cwd()))
 
-        # Project health indicators (40% of score)
+        # Calculate component scores
         project_context = await self.analyze_project_context(current_dir)
-        project_score = (
+        project_score = self._calculate_project_score(project_context)
+        permissions_score = self._calculate_permissions_score()
+        session_score = self._calculate_session_score()
+        tool_score = self._calculate_tool_score()
+
+        total_score = int(
+            project_score + permissions_score + session_score + tool_score
+        )
+
+        return self._format_quality_score_result(
+            total_score,
+            project_score,
+            permissions_score,
+            session_score,
+            tool_score,
+            project_context,
+            tool_score >= 20,
+        )
+
+    def _calculate_project_score(self, project_context: dict[str, bool]) -> float:
+        """Calculate project health score (40% of total)."""
+        return (
             sum(1 for detected in project_context.values() if detected)
             / len(project_context)
         ) * 40
 
-        # Permissions health (20% of score)
-        # Check if we have a permissions manager and if operations are trusted
+    def _calculate_permissions_score(self) -> int:
+        """Calculate permissions health score (20% of total)."""
         try:
             from session_mgmt_mcp.server import permissions_manager
 
             if hasattr(permissions_manager, "trusted_operations"):
                 trusted_count = len(permissions_manager.trusted_operations)
-                # Score based on number of trusted operations (max 20 points)
-                permissions_score = min(
+                return min(
                     trusted_count * 4, 20
                 )  # 4 points per trusted operation, max 20
-            else:
-                permissions_score = (
-                    10  # Basic score if we can't access trusted operations
-                )
+            return 10  # Basic score if we can't access trusted operations
         except (ImportError, AttributeError):
-            # If we can't import permissions manager or access trusted operations, use a basic score
-            permissions_score = 10
+            return 10  # Fallback score
 
-        # Session management availability (20% of score)
-        session_score = 20  # Always available in this refactored version
+    def _calculate_session_score(self) -> int:
+        """Calculate session management score (20% of total)."""
+        return 20  # Always available in this refactored version
 
-        # Tool availability (20% of score)
+    def _calculate_tool_score(self) -> int:
+        """Calculate tool availability score (20% of total)."""
         uv_available = shutil.which("uv") is not None
-        tool_score = 20 if uv_available else 10
+        return 20 if uv_available else 10
 
-        total_score = int(
-            project_score + permissions_score + session_score + tool_score,
-        )
-
+    def _format_quality_score_result(
+        self,
+        total_score: int,
+        project_score: float,
+        permissions_score: int,
+        session_score: int,
+        tool_score: int,
+        project_context: dict[str, bool],
+        uv_available: bool,
+    ) -> dict[str, Any]:
+        """Format the quality score calculation result."""
         return {
             "total_score": total_score,
             "breakdown": {
@@ -75,9 +100,7 @@ class SessionLifecycleManager:
                 "tools": tool_score,
             },
             "recommendations": self._generate_quality_recommendations(
-                total_score,
-                project_context,
-                uv_available,
+                total_score, project_context, uv_available
             ),
         }
 
@@ -120,55 +143,88 @@ class SessionLifecycleManager:
 
     async def analyze_project_context(self, project_dir: Path) -> dict[str, bool]:
         """Analyze project directory for common indicators and patterns."""
-        indicators = {
+        indicators = self._get_basic_project_indicators(project_dir)
+        self._add_python_context_indicators(project_dir, indicators)
+        return indicators
+
+    def _get_basic_project_indicators(self, project_dir: Path) -> dict[str, bool]:
+        """Get basic project structure indicators."""
+        return {
             "has_pyproject_toml": (project_dir / "pyproject.toml").exists(),
             "has_setup_py": (project_dir / "setup.py").exists(),
             "has_requirements_txt": (project_dir / "requirements.txt").exists(),
-            "has_readme": any(
-                (project_dir / name).exists()
-                for name in ("README.md", "README.rst", "README.txt", "readme.md")
-            ),
+            "has_readme": self._check_readme_exists(project_dir),
             "has_git_repo": is_git_repository(project_dir),
-            "has_venv": any(
-                (project_dir / name).exists()
-                for name in (".venv", "venv", ".env", "env")
-            ),
-            "has_tests": any(
-                (project_dir / name).exists() for name in ("tests", "test", "testing")
-            ),
+            "has_venv": self._check_venv_exists(project_dir),
+            "has_tests": self._check_tests_exist(project_dir),
             "has_src_structure": (project_dir / "src").exists(),
-            "has_docs": any(
-                (project_dir / name).exists() for name in ("docs", "documentation")
-            ),
-            "has_ci_cd": any(
-                (project_dir / name).exists()
-                for name in (".github", ".gitlab-ci.yml", ".travis.yml", "Jenkinsfile")
-            ),
+            "has_docs": self._check_docs_exist(project_dir),
+            "has_ci_cd": self._check_ci_cd_exists(project_dir),
         }
 
-        # Additional context from file patterns
+    def _check_readme_exists(self, project_dir: Path) -> bool:
+        """Check if README file exists."""
+        return any(
+            (project_dir / name).exists()
+            for name in ("README.md", "README.rst", "README.txt", "readme.md")
+        )
+
+    def _check_venv_exists(self, project_dir: Path) -> bool:
+        """Check if virtual environment exists."""
+        return any(
+            (project_dir / name).exists() for name in (".venv", "venv", ".env", "env")
+        )
+
+    def _check_tests_exist(self, project_dir: Path) -> bool:
+        """Check if test directories exist."""
+        return any(
+            (project_dir / name).exists() for name in ("tests", "test", "testing")
+        )
+
+    def _check_docs_exist(self, project_dir: Path) -> bool:
+        """Check if documentation directories exist."""
+        return any((project_dir / name).exists() for name in ("docs", "documentation"))
+
+    def _check_ci_cd_exists(self, project_dir: Path) -> bool:
+        """Check if CI/CD configuration exists."""
+        return any(
+            (project_dir / name).exists()
+            for name in (".github", ".gitlab-ci.yml", ".travis.yml", "Jenkinsfile")
+        )
+
+    def _add_python_context_indicators(
+        self, project_dir: Path, indicators: dict[str, bool]
+    ) -> None:
+        """Add Python-specific context indicators."""
         try:
             python_files = list(project_dir.glob("**/*.py"))
             indicators["has_python_files"] = len(python_files) > 0
-
-            # Check for common Python frameworks
-            for py_file in python_files[:10]:  # Sample first 10 files
-                try:
-                    with py_file.open("utf-8") as f:
-                        content = f.read(1000)  # Read first 1000 chars
-                        if "import fastapi" in content or "from fastapi" in content:
-                            indicators["uses_fastapi"] = True
-                        if "import django" in content or "from django" in content:
-                            indicators["uses_django"] = True
-                        if "import flask" in content or "from flask" in content:
-                            indicators["uses_flask"] = True
-                except (UnicodeDecodeError, PermissionError):
-                    continue
-
+            self._detect_python_frameworks(python_files, indicators)
         except Exception as e:
             self.logger.warning(f"Error analyzing Python files: {e}")
 
-        return indicators
+    def _detect_python_frameworks(
+        self, python_files: list[Path], indicators: dict[str, bool]
+    ) -> None:
+        """Detect Python frameworks from file content."""
+        for py_file in python_files[:10]:  # Sample first 10 files
+            try:
+                with py_file.open("utf-8") as f:
+                    content = f.read(1000)  # Read first 1000 chars
+                    self._check_framework_imports(content, indicators)
+            except (UnicodeDecodeError, PermissionError):
+                continue
+
+    def _check_framework_imports(
+        self, content: str, indicators: dict[str, bool]
+    ) -> None:
+        """Check for framework imports in file content."""
+        if "import fastapi" in content or "from fastapi" in content:
+            indicators["uses_fastapi"] = True
+        if "import django" in content or "from django" in content:
+            indicators["uses_django"] = True
+        if "import flask" in content or "from flask" in content:
+            indicators["uses_flask"] = True
 
     async def perform_quality_assessment(self) -> tuple[int, dict[str, Any]]:
         """Perform quality assessment and return score and data."""

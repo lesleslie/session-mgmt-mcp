@@ -491,6 +491,44 @@ class OllamaProvider(LLMProvider):
             self.logger.exception(f"Ollama generation failed: {e}")
             raise
 
+    def _prepare_stream_data(
+        self,
+        model_name: str,
+        messages: list[LLMMessage],
+        temperature: float,
+        max_tokens: int | None,
+    ) -> dict[str, Any]:
+        """Prepare data payload for streaming request."""
+        data = {
+            "model": model_name,
+            "messages": self._convert_messages(messages),
+            "stream": True,
+            "options": {"temperature": temperature},
+        }
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        return data
+
+    def _extract_chunk_content(self, line: bytes) -> str | None:
+        """Extract content from a streaming chunk line."""
+        if not line:
+            return None
+
+        try:
+            chunk_data = json.loads(line.decode("utf-8"))
+            if "message" in chunk_data and "content" in chunk_data["message"]:
+                return chunk_data["message"]["content"]
+        except json.JSONDecodeError:
+            pass
+        return None
+
+    async def _stream_from_response(self, response: Any) -> AsyncGenerator[str]:
+        """Process streaming response and yield content chunks."""
+        async for line in response.content:
+            content = self._extract_chunk_content(line)
+            if content:
+                yield content
+
     async def stream_generate(
         self,
         messages: list[LLMMessage],
@@ -509,15 +547,9 @@ class OllamaProvider(LLMProvider):
         try:
             import aiohttp
 
-            data = {
-                "model": model_name,
-                "messages": self._convert_messages(messages),
-                "stream": True,
-                "options": {"temperature": temperature},
-            }
-
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
+            data = self._prepare_stream_data(
+                model_name, messages, temperature, max_tokens
+            )
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -525,17 +557,8 @@ class OllamaProvider(LLMProvider):
                     json=data,
                     timeout=aiohttp.ClientTimeout(total=300),
                 ) as response:
-                    async for line in response.content:
-                        if line:
-                            try:
-                                chunk_data = json.loads(line.decode("utf-8"))
-                                if (
-                                    "message" in chunk_data
-                                    and "content" in chunk_data["message"]
-                                ):
-                                    yield chunk_data["message"]["content"]
-                            except json.JSONDecodeError:
-                                continue
+                    async for chunk in self._stream_from_response(response):
+                        yield chunk
 
         except Exception as e:
             self.logger.exception(f"Ollama streaming failed: {e}")

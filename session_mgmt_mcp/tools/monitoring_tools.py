@@ -468,6 +468,35 @@ async def _preserve_current_context_impl(
         return f"❌ Error preserving context: {e}"
 
 
+def _build_restored_context_details(context_data: dict[str, Any]) -> list[str]:
+    """Build detailed output for restored context data."""
+    details = ["\n📊 Restored context:"]
+
+    if context_data.get("working_directory"):
+        details.append(f"   • Working directory: {context_data['working_directory']}")
+
+    if context_data.get("active_files"):
+        details.append(f"   • Active files: {len(context_data['active_files'])}")
+
+    if context_data.get("timestamp"):
+        details.append(f"   • Saved at: {context_data['timestamp']}")
+
+    return details
+
+
+def _format_successful_restore(session_id: str, restored: dict[str, Any]) -> str:
+    """Format output for successful context restoration."""
+    output = ["🔄 Context Restored", ""]
+    output.append(f"📋 Session: {session_id}")
+    output.append("✅ Context state restored successfully")
+
+    # Add context details if available
+    if restored.get("context_data"):
+        output.extend(_build_restored_context_details(restored["context_data"]))
+
+    return "\n".join(output)
+
+
 async def _restore_session_context_impl(session_id: str) -> str:
     """Restore session context from snapshot."""
     if not _check_interruption_available():
@@ -481,24 +510,7 @@ async def _restore_session_context_impl(session_id: str) -> str:
         restored = await manager.restore_context(session_id)
 
         if restored:
-            output = ["🔄 Context Restored", ""]
-            output.append(f"📋 Session: {session_id}")
-            output.append("✅ Context state restored successfully")
-
-            # Show restored context details
-            if restored.get("context_data"):
-                data = restored["context_data"]
-                output.append("\n📊 Restored context:")
-                if data.get("working_directory"):
-                    output.append(
-                        f"   • Working directory: {data['working_directory']}"
-                    )
-                if data.get("active_files"):
-                    output.append(f"   • Active files: {len(data['active_files'])}")
-                if data.get("timestamp"):
-                    output.append(f"   • Saved at: {data['timestamp']}")
-
-            return "\n".join(output)
+            return _format_successful_restore(session_id, restored)
         return f"❌ Context not found: {session_id}"
 
     except Exception as e:

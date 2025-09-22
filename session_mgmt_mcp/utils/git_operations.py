@@ -347,6 +347,92 @@ def _create_checkpoint_message(
     return commit_message
 
 
+def _validate_git_repository(directory: Path) -> tuple[bool, str, list[str]]:
+    """Validate that the directory is a git repository."""
+    output = []
+    if not is_git_repository(directory):
+        output.append("ℹ️ Not a git repository - skipping commit")
+        return False, "Not a git repository", output
+    return True, "", output
+
+
+def _check_for_changes(directory: Path) -> tuple[list[str], list[str], list[str]]:
+    """Check for modified and untracked files."""
+    worktree_info = get_worktree_info(directory)
+    modified_files, untracked_files = get_git_status(directory)
+
+    output = []
+    if not modified_files and not untracked_files:
+        output.append("✅ Working directory is clean - no changes to commit")
+        return [], [], output
+
+    _add_worktree_context_output(worktree_info, output)
+    output.append(
+        f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files"
+    )
+
+    if untracked_files:
+        output.extend(_format_untracked_files(untracked_files))
+
+    return modified_files, untracked_files, output
+
+
+def _perform_staging_and_commit(
+    directory: Path, project: str, quality_score: int
+) -> tuple[bool, str, list[str]]:
+    """Stage changes and create commit."""
+    output = []
+
+    # Create commit message
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    commit_message = (
+        f"checkpoint: {project} (quality: {quality_score}/100) - {timestamp}"
+    )
+
+    # Stage changes
+    stage_result = subprocess.run(
+        ["git", "add", "-A"],
+        cwd=directory,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if stage_result.returncode != 0:
+        output.append(f"⚠️ Failed to stage changes: {stage_result.stderr.strip()}")
+        return False, "staging failed", output
+
+    # Create commit
+    commit_result = subprocess.run(
+        ["git", "commit", "-m", commit_message],
+        cwd=directory,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if commit_result.returncode != 0:
+        output.append(f"⚠️ Commit failed: {commit_result.stderr.strip()}")
+        return False, "commit failed", output
+
+    # Get commit hash
+    hash_result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=directory,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    commit_hash = (
+        hash_result.stdout.strip()[:8] if hash_result.returncode == 0 else "unknown"
+    )
+
+    output.append(f"✅ Checkpoint commit created successfully ({commit_hash})")
+    output.append(f"   Message: {commit_message}")
+    return True, commit_hash, output
+
+
 def create_checkpoint_commit(
     directory: Path,
     project: str,
@@ -358,89 +444,32 @@ def create_checkpoint_commit(
         tuple: (success, commit_hash_or_error, output_messages)
 
     """
-    output = []
-
-    if not is_git_repository(directory):
-        output.append("ℹ️ Not a git repository - skipping commit")
-        return False, "Not a git repository", output
+    # Validate git repository
+    valid, error, output = _validate_git_repository(directory)
+    if not valid:
+        return False, error, output
 
     try:
-        # Get worktree info for enhanced commit messages
-        worktree_info = get_worktree_info(directory)
-        modified_files, untracked_files = get_git_status(directory)
+        # Check for changes
+        modified_files, untracked_files, check_output = _check_for_changes(directory)
+        output.extend(check_output)
 
         if not modified_files and not untracked_files:
-            output.append("✅ Working directory is clean - no changes to commit")
             return True, "clean", output
 
-        # Add worktree context to output
-        _add_worktree_context_output(worktree_info, output)
-        output.append(
-            f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files",
-        )
-
-        # Handle untracked files
-        if untracked_files:
-            output.extend(_format_untracked_files(untracked_files))
-
-        # Stage and commit modified files
+        # Handle modified files
         if modified_files:
-            # Create checkpoint commit message
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            commit_message = (
-                f"checkpoint: {project} (quality: {quality_score}/100) - {timestamp}"
+            success, result, commit_output = _perform_staging_and_commit(
+                directory, project, quality_score
             )
+            output.extend(commit_output)
+            return success, result, output
 
-            # Stage all changes
-            stage_result = subprocess.run(
-                ["git", "add", "-A"],
-                cwd=directory,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
-            if stage_result.returncode != 0:
-                output.append(
-                    f"⚠️ Failed to stage changes: {stage_result.stderr.strip()}"
-                )
-                return False, "staging failed", output
-
-            # Create commit
-            commit_result = subprocess.run(
-                ["git", "commit", "-m", commit_message],
-                cwd=directory,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
-            if commit_result.returncode == 0:
-                # Get the commit hash
-                hash_result = subprocess.run(
-                    ["git", "rev-parse", "HEAD"],
-                    cwd=directory,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-
-                commit_hash = (
-                    hash_result.stdout.strip()[:8]
-                    if hash_result.returncode == 0
-                    else "unknown"
-                )
-                output.append(
-                    f"✅ Checkpoint commit created successfully ({commit_hash})"
-                )
-                output.append(f"   Message: {commit_message}")
-                return True, commit_hash, output
-            output.append(f"⚠️ Commit failed: {commit_result.stderr.strip()}")
-            return False, "commit failed", output
+        # Only untracked files remain
         if untracked_files:
             output.append("ℹ️ No staged changes to commit")
             output.append(
-                "   💡 Add untracked files with 'git add' if you want to include them",
+                "   💡 Add untracked files with 'git add' if you want to include them"
             )
             return False, "No staged changes", output
 

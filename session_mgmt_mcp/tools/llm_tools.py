@@ -64,36 +64,65 @@ async def _list_llm_providers_impl() -> str:
         if not manager:
             return "❌ Failed to initialize LLM manager"
 
-        available_providers = await manager.get_available_providers()
-        provider_info = manager.get_provider_info()
-
-        output = ["🤖 Available LLM Providers", ""]
-
-        for provider_name, info in provider_info["providers"].items():
-            status = "✅" if provider_name in available_providers else "❌"
-            output.append(f"{status} {provider_name.title()}")
-
-            if provider_name in available_providers:
-                models = info["models"][:5]  # Show first 5 models
-                for model in models:
-                    output.append(f"   • {model}")
-                if len(info["models"]) > 5:
-                    output.append(f"   • ... and {len(info['models']) - 5} more")
-            output.append("")
-
-        config = provider_info["config"]
-        output.extend(
-            [
-                f"🎯 Default Provider: {config['default_provider']}",
-                f"🔄 Fallback Providers: {', '.join(config['fallback_providers'])}",
-            ]
-        )
-
-        return "\n".join(output)
+        provider_data = await _gather_provider_data(manager)
+        return _format_provider_list(provider_data)
 
     except Exception as e:
         logger.exception(f"Error listing LLM providers: {e}")
         return f"❌ Error listing providers: {e}"
+
+
+async def _gather_provider_data(manager: Any) -> dict[str, Any]:
+    """Gather provider data from the LLM manager."""
+    return {
+        "available_providers": await manager.get_available_providers(),
+        "provider_info": manager.get_provider_info(),
+    }
+
+
+def _format_provider_list(provider_data: dict[str, Any]) -> str:
+    """Format provider information into a readable list."""
+    available_providers = provider_data["available_providers"]
+    provider_info = provider_data["provider_info"]
+
+    output = ["🤖 Available LLM Providers", ""]
+    _add_provider_details(output, provider_info["providers"], available_providers)
+    _add_config_summary(output, provider_info["config"])
+
+    return "\n".join(output)
+
+
+def _add_provider_details(
+    output: list[str], providers: dict[str, Any], available_providers: set[str]
+) -> None:
+    """Add provider details to the output list."""
+    for provider_name, info in providers.items():
+        status = "✅" if provider_name in available_providers else "❌"
+        output.append(f"{status} {provider_name.title()}")
+
+        if provider_name in available_providers:
+            _add_model_list(output, info["models"])
+        output.append("")
+
+
+def _add_model_list(output: list[str], models: list[str]) -> None:
+    """Add model list to the output with truncation."""
+    displayed_models = models[:5]  # Show first 5 models
+    for model in displayed_models:
+        output.append(f"   • {model}")
+
+    if len(models) > 5:
+        output.append(f"   • ... and {len(models) - 5} more")
+
+
+def _add_config_summary(output: list[str], config: dict[str, Any]) -> None:
+    """Add configuration summary to the output."""
+    output.extend(
+        [
+            f"🎯 Default Provider: {config['default_provider']}",
+            f"🔄 Fallback Providers: {', '.join(config['fallback_providers'])}",
+        ]
+    )
 
 
 async def _test_llm_providers_impl() -> str:
