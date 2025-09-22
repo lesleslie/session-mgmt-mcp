@@ -164,7 +164,7 @@ class CrackerjackOutputParser:
     ) -> tuple[dict[str, Any], list[str]]:
         """Parse Crackerjack output and extract insights."""
         parsed_data = self._init_parsed_data(command)
-        memory_insights = []
+        memory_insights: list[str] = []
         full_output = f"{stdout}\n{stderr}"
 
         # Apply applicable parsers based on command
@@ -747,6 +747,77 @@ class CrackerjackIntegration:
                 "CREATE INDEX IF NOT EXISTS idx_metrics_type ON quality_metrics_history(metric_type)",
             )
 
+    def _build_command_flags(self, command: str, ai_agent_mode: bool) -> list[str]:
+        """Build appropriate command flags for the given command."""
+        command_mappings = {
+            "lint": ["--fast", "--quick"],
+            "check": ["--comp", "--quick"],
+            "test": ["--run-tests", "--quick"],
+            "format": ["--fast", "--quick"],
+            "typecheck": ["--comp", "--quick"],
+            "security": ["--comp", "--quick"],
+            "complexity": ["--comp", "--quick"],
+            "analyze": ["--comp", "--quick"],
+            "build": ["--quick"],
+            "clean": ["--quick"],
+            "all": ["--all", "--quick"],
+            "run": ["--quick"],
+        }
+
+        flags = command_mappings.get(command.lower(), [])
+        if ai_agent_mode:
+            flags.append("--ai-fix")
+        return flags
+
+    async def _execute_process(
+        self, full_command: list[str], working_directory: str, timeout: int
+    ) -> tuple[int, str, str, float]:
+        """Execute the subprocess and return exit code, stdout, stderr, and execution time."""
+        start_time = time.time()
+
+        process = await asyncio.create_subprocess_exec(
+            *full_command,
+            cwd=working_directory,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        stdout, stderr = await asyncio.wait_for(
+            process.communicate(),
+            timeout=timeout,
+        )
+
+        exit_code = process.returncode or 0
+        execution_time = time.time() - start_time
+        stdout_text = stdout.decode("utf-8", errors="ignore")
+        stderr_text = stderr.decode("utf-8", errors="ignore")
+
+        return exit_code, stdout_text, stderr_text, execution_time
+
+    def _create_error_result(
+        self,
+        command: str,
+        exit_code: int,
+        stderr: str,
+        execution_time: float,
+        working_directory: str,
+        memory_insight: str,
+    ) -> CrackerjackResult:
+        """Create a standardized error result."""
+        return CrackerjackResult(
+            command=command,
+            exit_code=exit_code,
+            stdout="",
+            stderr=stderr,
+            execution_time=execution_time,
+            timestamp=datetime.now(),
+            working_directory=working_directory,
+            parsed_data={},
+            quality_metrics={},
+            test_results=[],
+            memory_insights=[memory_insight],
+        )
+
     async def execute_crackerjack_command(
         self,
         command: str,
@@ -757,80 +828,25 @@ class CrackerjackIntegration:
     ) -> CrackerjackResult:
         """Execute Crackerjack command and capture results."""
         args = args or []
-
-        # Map common commands to crackerjack flags
-        command_mappings = {
-            "lint": [
-                "--fast",
-                "--quick",
-            ],  # Run fast hooks (formatting and basic checks)
-            "check": [
-                "--comp",
-                "--quick",
-            ],  # Run comprehensive hooks (type checking, security, etc.)
-            "test": ["--run-tests", "--quick"],  # Run tests using correct flag
-            "format": ["--fast", "--quick"],  # Run formatting
-            "typecheck": [
-                "--comp",
-                "--quick",
-            ],  # Type checking is part of comprehensive hooks
-            "security": [
-                "--comp",
-                "--quick",
-            ],  # Security is part of comprehensive hooks
-            "complexity": ["--comp", "--quick"],  # Complexity analysis
-            "analyze": ["--comp", "--quick"],  # Full analysis
-            "build": ["--quick"],  # Default run with quick mode
-            "clean": ["--quick"],  # Default run (no specific clean flag visible)
-            "all": ["--all", "--quick"],  # Run all operations
-            "run": ["--quick"],  # Default behavior with quick mode
-        }
-
-        # Get the appropriate flags for the command
-        command_flags = command_mappings.get(command.lower(), [])
-
-        # Add AI agent mode support
-        if ai_agent_mode:
-            command_flags.append("--ai-fix")  # Use correct AI flag
-
-        # Build the full command using python -m crackerjack
+        command_flags = self._build_command_flags(command, ai_agent_mode)
         full_command = ["python", "-m", "crackerjack", *command_flags, *args]
 
         start_time = time.time()
         result_id = f"cj_{int(start_time * 1000)}"
 
         try:
-            # Execute command
-            process = await asyncio.create_subprocess_exec(
-                *full_command,
-                cwd=working_directory,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=timeout,
-            )
-
-            exit_code = process.returncode or 0
-            execution_time = time.time() - start_time
-
-            # Decode output
-            stdout_text = stdout.decode("utf-8", errors="ignore")
-            stderr_text = stderr.decode("utf-8", errors="ignore")
-
-            # Parse output for insights
-            parsed_data, memory_insights = self.parser.parse_output(
-                command,
+            (
+                exit_code,
                 stdout_text,
                 stderr_text,
-            )
+                execution_time,
+            ) = await self._execute_process(full_command, working_directory, timeout)
 
-            # Calculate quality metrics
+            parsed_data, memory_insights = self.parser.parse_output(
+                command, stdout_text, stderr_text
+            )
             quality_metrics = self._calculate_quality_metrics(parsed_data, exit_code)
 
-            # Create result object
             result = CrackerjackResult(
                 command=command,
                 exit_code=exit_code,
@@ -845,51 +861,33 @@ class CrackerjackIntegration:
                 memory_insights=memory_insights,
             )
 
-            # Store in database
             await self._store_result(result_id, result)
-
-            # Store progress snapshot
             await self._store_progress_snapshot(result_id, result, working_directory)
-
             return result
 
         except TimeoutError:
             execution_time = time.time() - start_time
-            error_result = CrackerjackResult(
-                command=command,
-                exit_code=-1,
-                stdout="",
-                stderr=f"Command timed out after {timeout} seconds",
-                execution_time=execution_time,
-                timestamp=datetime.now(),
-                working_directory=working_directory,
-                parsed_data={},
-                quality_metrics={},
-                test_results=[],
-                memory_insights=[
-                    f"Command '{command}' timed out - consider optimizing or increasing timeout",
-                ],
+            error_result = self._create_error_result(
+                command,
+                -1,
+                f"Command timed out after {timeout} seconds",
+                execution_time,
+                working_directory,
+                f"Command '{command}' timed out - consider optimizing or increasing timeout",
             )
-
             await self._store_result(result_id, error_result)
             return error_result
 
         except Exception as e:
             execution_time = time.time() - start_time
-            error_result = CrackerjackResult(
-                command=command,
-                exit_code=-2,
-                stdout="",
-                stderr=f"Execution error: {e!s}",
-                execution_time=execution_time,
-                timestamp=datetime.now(),
-                working_directory=working_directory,
-                parsed_data={},
-                quality_metrics={},
-                test_results=[],
-                memory_insights=[f"Command '{command}' failed with error: {e!s}"],
+            error_result = self._create_error_result(
+                command,
+                -2,
+                f"Execution error: {e!s}",
+                execution_time,
+                working_directory,
+                f"Command '{command}' failed with error: {e!s}",
             )
-
             await self._store_result(result_id, error_result)
             return error_result
 
@@ -915,7 +913,7 @@ class CrackerjackIntegration:
                 SELECT * FROM crackerjack_results
                 WHERE {" AND ".join(where_conditions)}
                 ORDER BY timestamp DESC
-            """
+            """  # nosec B608 - where_conditions built from validated parameters with proper placeholders
 
             cursor = conn.execute(query, params)
             results = []
@@ -956,7 +954,7 @@ class CrackerjackIntegration:
                 SELECT * FROM quality_metrics_history
                 WHERE {" AND ".join(where_conditions)}
                 ORDER BY timestamp DESC
-            """
+            """  # nosec B608 - where_conditions built from validated parameters with proper placeholders
 
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
@@ -1015,6 +1013,93 @@ class CrackerjackIntegration:
                 "analysis_period_days": days,
             }
 
+    def _filter_metrics_by_type(
+        self, metrics_history: list[dict[str, Any]], metric_type: str
+    ) -> list[dict[str, Any]]:
+        """Filter metrics history by type and sort by timestamp."""
+        metric_values = [m for m in metrics_history if m["metric_type"] == metric_type]
+        metric_values.sort(key=lambda x: x["timestamp"], reverse=True)
+        return metric_values
+
+    def _calculate_trend_direction(self, change: float) -> str:
+        """Determine trend direction from change value."""
+        if change > 0:
+            return "improving"
+        if change < 0:
+            return "declining"
+        return "stable"
+
+    def _calculate_trend_strength(self, change: float) -> str:
+        """Determine trend strength from absolute change value."""
+        abs_change = abs(change)
+        if abs_change > 5:
+            return "strong"
+        if abs_change > 1:
+            return "moderate"
+        return "weak"
+
+    def _create_trend_data(self, metric_values: list[dict[str, Any]]) -> dict[str, Any]:
+        """Create trend data from metric values with sufficient data."""
+        mid_point = len(metric_values) // 2
+        recent = metric_values[:mid_point] if mid_point > 0 else metric_values
+        older = metric_values[mid_point:] if mid_point > 0 else []
+
+        if not (recent and older):
+            current_avg = sum(m["metric_value"] for m in metric_values) / len(
+                metric_values
+            )
+            return {
+                "direction": "insufficient_data",
+                "change": 0,
+                "change_percentage": 0,
+                "recent_average": current_avg,
+                "previous_average": current_avg,
+                "data_points": len(metric_values),
+                "trend_strength": "unknown",
+            }
+
+        recent_avg = sum(m["metric_value"] for m in recent) / len(recent)
+        older_avg = sum(m["metric_value"] for m in older) / len(older)
+        change = recent_avg - older_avg
+
+        return {
+            "direction": self._calculate_trend_direction(change),
+            "change": abs(change),
+            "change_percentage": (abs(change) / older_avg * 100)
+            if older_avg > 0
+            else 0,
+            "recent_average": recent_avg,
+            "previous_average": older_avg,
+            "data_points": len(metric_values),
+            "trend_strength": self._calculate_trend_strength(change),
+        }
+
+    def _calculate_overall_assessment(
+        self, trends: dict[str, Any], days: int
+    ) -> dict[str, Any]:
+        """Calculate overall trend assessment from individual trend data."""
+        improving_metrics = sum(
+            1 for t in trends.values() if t["direction"] == "improving"
+        )
+        declining_metrics = sum(
+            1 for t in trends.values() if t["direction"] == "declining"
+        )
+
+        if improving_metrics > declining_metrics:
+            overall_direction = "improving"
+        elif declining_metrics > improving_metrics:
+            overall_direction = "declining"
+        else:
+            overall_direction = "stable"
+
+        return {
+            "overall_direction": overall_direction,
+            "improving_count": improving_metrics,
+            "declining_count": declining_metrics,
+            "stable_count": len(trends) - improving_metrics - declining_metrics,
+            "analysis_period_days": days,
+        }
+
     async def get_quality_trends(
         self,
         project_path: str,
@@ -1025,91 +1110,50 @@ class CrackerjackIntegration:
             project_path, None, days
         )
 
-        # Calculate trends for each metric type
-        trends = {}
-        for metric_type in (
+        metric_types = (
             "test_pass_rate",
             "code_coverage",
             "lint_score",
             "security_score",
             "complexity_score",
-        ):
-            metric_values = [
-                m for m in metrics_history if m["metric_type"] == metric_type
-            ]
+        )
+        trends = {}
+
+        for metric_type in metric_types:
+            metric_values = self._filter_metrics_by_type(metrics_history, metric_type)
             if len(metric_values) >= 2:
-                # Sort by timestamp (most recent first)
-                metric_values.sort(key=lambda x: x["timestamp"], reverse=True)
+                trends[metric_type] = self._create_trend_data(metric_values)
 
-                # Split into recent and older halves
-                mid_point = len(metric_values) // 2
-                recent = metric_values[:mid_point] if mid_point > 0 else metric_values
-                older = metric_values[mid_point:] if mid_point > 0 else []
-
-                if recent and older:
-                    recent_avg = sum(m["metric_value"] for m in recent) / len(recent)
-                    older_avg = sum(m["metric_value"] for m in older) / len(older)
-                    change = recent_avg - older_avg
-
-                    trends[metric_type] = {
-                        "direction": "improving"
-                        if change > 0
-                        else "declining"
-                        if change < 0
-                        else "stable",
-                        "change": abs(change),
-                        "change_percentage": (abs(change) / older_avg * 100)
-                        if older_avg > 0
-                        else 0,
-                        "recent_average": recent_avg,
-                        "previous_average": older_avg,
-                        "data_points": len(metric_values),
-                        "trend_strength": "strong"
-                        if abs(change) > 5
-                        else "moderate"
-                        if abs(change) > 1
-                        else "weak",
-                    }
-                else:
-                    # Not enough data for trend analysis
-                    current_avg = sum(m["metric_value"] for m in metric_values) / len(
-                        metric_values
-                    )
-                    trends[metric_type] = {
-                        "direction": "insufficient_data",
-                        "change": 0,
-                        "change_percentage": 0,
-                        "recent_average": current_avg,
-                        "previous_average": current_avg,
-                        "data_points": len(metric_values),
-                        "trend_strength": "unknown",
-                    }
-
-        # Overall trend assessment
-        improving_metrics = sum(
-            1 for t in trends.values() if t["direction"] == "improving"
-        )
-        declining_metrics = sum(
-            1 for t in trends.values() if t["direction"] == "declining"
-        )
-
-        overall_assessment = {
-            "overall_direction": "improving"
-            if improving_metrics > declining_metrics
-            else "declining"
-            if declining_metrics > improving_metrics
-            else "stable",
-            "improving_count": improving_metrics,
-            "declining_count": declining_metrics,
-            "stable_count": len(trends) - improving_metrics - declining_metrics,
-            "analysis_period_days": days,
-        }
+        overall_assessment = self._calculate_overall_assessment(trends, days)
 
         return {
             "trends": trends,
             "overall": overall_assessment,
             "recommendations": self._generate_trend_recommendations(trends),
         }
+
+    def _get_declining_recommendation(
+        self, metric_type: str, change: float
+    ) -> str | None:
+        """Get recommendation for declining metrics."""
+        recommendations_map = {
+            "test_pass_rate": f"⚠️ Test pass rate declining by {change:.1f}% - investigate failing tests",
+            "code_coverage": f"⚠️ Code coverage declining by {change:.1f}% - add more tests",
+            "lint_score": "⚠️ Code quality declining - address lint issues",
+            "security_score": "🔒 Security score declining - review security findings",
+            "complexity_score": "🔧 Code complexity increasing - consider refactoring",
+        }
+        return recommendations_map.get(metric_type)
+
+    def _get_improving_recommendation(
+        self, metric_type: str, recent_avg: float
+    ) -> str | None:
+        """Get recommendation for improving metrics with high averages."""
+        if metric_type == "test_pass_rate" and recent_avg > 95:
+            return "✅ Excellent test pass rate trend - maintain current practices"
+        if metric_type == "code_coverage" and recent_avg > 85:
+            return "✅ Great coverage improvement - continue testing efforts"
+        return None
 
     def _generate_trend_recommendations(self, trends: dict[str, Any]) -> list[str]:
         """Generate recommendations based on quality trends."""
@@ -1119,45 +1163,19 @@ class CrackerjackIntegration:
             direction = trend_data["direction"]
             strength = trend_data["trend_strength"]
             change = trend_data["change"]
+            recent_avg = trend_data["recent_average"]
 
             if direction == "declining" and strength in ("strong", "moderate"):
-                if metric_type == "test_pass_rate":
-                    recommendations.append(
-                        f"⚠️ Test pass rate declining by {change:.1f}% - investigate failing tests"
-                    )
-                elif metric_type == "code_coverage":
-                    recommendations.append(
-                        f"⚠️ Code coverage declining by {change:.1f}% - add more tests"
-                    )
-                elif metric_type == "lint_score":
-                    recommendations.append(
-                        "⚠️ Code quality declining - address lint issues"
-                    )
-                elif metric_type == "security_score":
-                    recommendations.append(
-                        "🔒 Security score declining - review security findings"
-                    )
-                elif metric_type == "complexity_score":
-                    recommendations.append(
-                        "🔧 Code complexity increasing - consider refactoring"
-                    )
-
+                recommendation = self._get_declining_recommendation(metric_type, change)
+                if recommendation:
+                    recommendations.append(recommendation)
             elif direction == "improving" and strength == "strong":
-                if (
-                    metric_type == "test_pass_rate"
-                    and trend_data["recent_average"] > 95
-                ):
-                    recommendations.append(
-                        "✅ Excellent test pass rate trend - maintain current practices"
-                    )
-                elif (
-                    metric_type == "code_coverage" and trend_data["recent_average"] > 85
-                ):
-                    recommendations.append(
-                        "✅ Great coverage improvement - continue testing efforts"
-                    )
+                recommendation = self._get_improving_recommendation(
+                    metric_type, recent_avg
+                )
+                if recommendation:
+                    recommendations.append(recommendation)
 
-        # Add general recommendations
         if not recommendations:
             recommendations.append(
                 "📈 Quality metrics are stable - continue current practices"
@@ -1235,7 +1253,7 @@ class CrackerjackIntegration:
         self,
         parsed_data: dict[str, Any],
         exit_code: int,
-    ) -> dict[str, float]:
+    ) -> dict[str, float | int]:
         """Calculate quality metrics from parsed data."""
         metrics = {}
 
@@ -1353,7 +1371,7 @@ class CrackerjackIntegration:
         project_path: str,
     ) -> None:
         """Store progress snapshot from result."""
-        progress_info = (
+        progress_info: dict[str, Any] = (
             result.parsed_data.get("progress_info", {}) if result.parsed_data else {}
         )
 

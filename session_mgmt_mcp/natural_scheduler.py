@@ -155,7 +155,14 @@ class NaturalLanguageParser:
             try:
                 parsed_date = date_parser.parse(expression, default=base_time)
                 if parsed_date > base_time:  # Only future dates
-                    return parsed_date
+                    return datetime(
+                        parsed_date.year,
+                        parsed_date.month,
+                        parsed_date.day,
+                        parsed_date.hour,
+                        parsed_date.minute,
+                        parsed_date.second,
+                    )  # type: ignore[no-any-return]
             except (ValueError, TypeError):
                 with contextlib.suppress(ValueError, TypeError):
                     pass
@@ -311,6 +318,8 @@ class NaturalLanguageParser:
         target_date = today + timedelta(days=days_ahead)
         return target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
+
+class ReminderScheduler:
     """Manages scheduling and execution of reminders."""
 
     def __init__(self, db_path: str | None = None) -> None:
@@ -477,7 +486,7 @@ class NaturalLanguageParser:
                 where_conditions.append("project_id = ?")
                 params.append(project_id)
 
-            query = f"SELECT * FROM reminders WHERE {' AND '.join(where_conditions)} ORDER BY scheduled_for"
+            query = f"SELECT * FROM reminders WHERE {' AND '.join(where_conditions)} ORDER BY scheduled_for"  # nosec B608 - where_conditions built from validated parameters with proper placeholders
 
             cursor = conn.execute(query, params)
             results = []
@@ -708,11 +717,11 @@ class NaturalLanguageParser:
     ) -> datetime | None:
         """Calculate simple recurrence occurrences (daily, weekly, monthly)."""
         if recurrence_rule.startswith("FREQ=DAILY"):
-            return last_time + timedelta(days=1)
+            return last_time + timedelta(days=1)  # type: ignore[no-any-return]
         if recurrence_rule.startswith("FREQ=WEEKLY"):
-            return last_time + timedelta(weeks=1)
+            return last_time + timedelta(weeks=1)  # type: ignore[no-any-return]
         if recurrence_rule.startswith("FREQ=MONTHLY"):
-            return last_time + relativedelta(months=1)
+            return last_time + relativedelta(months=1)  # type: ignore[no-any-return]
         return None
 
     def _calculate_interval_occurrence(
@@ -723,11 +732,11 @@ class NaturalLanguageParser:
             freq, interval = self._parse_recurrence_interval(recurrence_rule)
 
             if freq == "HOURLY":
-                return last_time + timedelta(hours=interval)
+                return last_time + timedelta(hours=interval)  # type: ignore[no-any-return]
             if freq == "MINUTELY":
-                return last_time + timedelta(minutes=interval)
+                return last_time + timedelta(minutes=interval)  # type: ignore[no-any-return]
             if freq == "DAILY":
-                return last_time + timedelta(days=interval)
+                return last_time + timedelta(days=interval)  # type: ignore[no-any-return]
         return None
 
     def _check_dateutil_availability(self) -> bool:

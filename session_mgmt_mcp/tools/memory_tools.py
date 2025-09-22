@@ -150,49 +150,6 @@ async def _analyze_project_distribution(
     results: list[dict[str, Any]],
 ) -> dict[str, int]:
     """Analyze project distribution of search results."""
-    projects = {}
-    for result in results:
-        proj = result.get("project", "Unknown")
-        projects[proj] = projects.get(proj, 0) + 1
-
-    return projects
-
-
-async def _analyze_time_distribution(results: list[dict[str, Any]]) -> list[str]:
-    """Analyze time distribution of search results."""
-    return [r.get("timestamp") for r in results if r.get("timestamp")]
-
-
-async def _analyze_relevance_scores(
-    results: list[dict[str, Any]],
-) -> tuple[float, list[float]]:
-    """Analyze relevance scores of search results."""
-    scores = [r.get("score", 0) for r in results if r.get("score")]
-    avg_score = sum(scores) / len(scores) if scores else 0.0
-    return avg_score, scores
-
-
-async def _extract_common_themes(
-    results: list[dict[str, Any]],
-) -> list[tuple[str, int]]:
-    """Extract common themes from search results."""
-    all_content = " ".join([r["content"] for r in results])
-    words = all_content.lower().split()
-    word_freq: dict[str, int] = {}
-
-    for word in words:
-        if len(word) > 4:
-            word_freq[word] = word_freq.get(word, 0) + 1
-
-    if word_freq:
-        return sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
-    return []
-
-
-async def _analyze_project_distribution(
-    results: list[dict[str, Any]],
-) -> dict[str, int]:
-    """Analyze project distribution of search results."""
     projects: dict[str, int] = {}
     for result in results:
         proj = result.get("project", "Unknown")
@@ -202,14 +159,14 @@ async def _analyze_project_distribution(
 
 async def _analyze_time_distribution(results: list[dict[str, Any]]) -> list[str]:
     """Analyze time distribution of search results."""
-    return [r.get("timestamp") for r in results if r.get("timestamp")]
+    return [r.get("timestamp", "") for r in results if r.get("timestamp")]
 
 
 async def _analyze_relevance_scores(
     results: list[dict[str, Any]],
 ) -> tuple[float, list[float]]:
     """Analyze relevance scores of search results."""
-    scores = [r.get("score", 0) for r in results if r.get("score")]
+    scores = [r.get("score", 0.0) for r in results if r.get("score") is not None]
     avg_score = sum(scores) / len(scores) if scores else 0.0
     return avg_score, scores
 
@@ -350,7 +307,7 @@ async def _search_summary_impl(
 
     try:
         db = await _get_reflection_database()
-        results = await _get_search_results(db, query, project, min_score)
+        results = _get_search_results(db, query, project, min_score)
 
         output = _format_search_header(query)
 
@@ -368,7 +325,7 @@ async def _search_summary_impl(
         return f"❌ Search summary error: {e}"
 
 
-def _format_file_search_result(result: dict, index: int) -> list[str]:
+def _format_file_search_result(result: dict[str, Any], index: int) -> list[str]:
     """Format a single file search result."""
     output = []
     output.append(
@@ -429,7 +386,7 @@ async def _search_by_file_impl(
 
 
 def _format_concept_search_result(
-    result: dict, index: int, include_files: bool
+    result: dict[str, Any], index: int, include_files: bool
 ) -> list[str]:
     """Format a single concept search result."""
     output = []

@@ -8,6 +8,7 @@ following crackerjack architecture patterns.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ _serverless_manager = None
 _serverless_available = None
 
 
-async def _get_serverless_manager():
+async def _get_serverless_manager() -> Any:
     """Get serverless manager instance with lazy loading."""
     global _serverless_manager, _serverless_available
 
@@ -26,9 +27,15 @@ async def _get_serverless_manager():
 
     if _serverless_manager is None:
         try:
-            from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
+            from session_mgmt_mcp.serverless_mode import (
+                LocalFileStorage,
+                ServerlessSessionManager,
+            )
 
-            _serverless_manager = ServerlessSessionManager()
+            storage_backend = LocalFileStorage(
+                {"storage_dir": str(Path.home() / ".claude" / "data" / "sessions")}
+            )
+            _serverless_manager = ServerlessSessionManager(storage_backend)
             _serverless_available = True
         except ImportError as e:
             logger.warning(f"Serverless mode not available: {e}")
@@ -79,7 +86,7 @@ async def _create_serverless_session_impl(
         return f"✅ Created serverless session: {session_id}\n🕐 TTL: {ttl_hours} hours"
 
     except Exception as e:
-        logger.exception("Error creating serverless session", error=str(e))
+        logger.exception(f"Error creating serverless session: {e}")
         return f"❌ Error creating session: {e}"
 
 
@@ -114,7 +121,7 @@ async def _get_serverless_session_impl(session_id: str) -> str:
         return f"❌ Session not found: {session_id}"
 
     except Exception as e:
-        logger.exception("Error getting serverless session", error=str(e))
+        logger.exception(f"Error getting serverless session: {e}")
         return f"❌ Error retrieving session: {e}"
 
 
@@ -153,7 +160,7 @@ async def _update_serverless_session_impl(
         return f"❌ Failed to update session: {session_id}"
 
     except Exception as e:
-        logger.exception("Error updating serverless session", error=str(e))
+        logger.exception(f"Error updating serverless session: {e}")
         return f"❌ Error updating session: {e}"
 
 
@@ -174,7 +181,7 @@ async def _delete_serverless_session_impl(session_id: str) -> str:
         return f"❌ Session not found: {session_id}"
 
     except Exception as e:
-        logger.exception("Error deleting serverless session", error=str(e))
+        logger.exception(f"Error deleting serverless session: {e}")
         return f"❌ Error deleting session: {e}"
 
 
@@ -218,7 +225,7 @@ async def _list_serverless_sessions_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error listing serverless sessions", error=str(e))
+        logger.exception(f"Error listing serverless sessions: {e}")
         return f"❌ Error listing sessions: {e}"
 
 
@@ -257,7 +264,7 @@ async def _test_serverless_storage_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error testing serverless storage", error=str(e))
+        logger.exception(f"Error testing serverless storage: {e}")
         return f"❌ Error testing storage: {e}"
 
 
@@ -288,7 +295,7 @@ async def _cleanup_serverless_sessions_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error cleaning up serverless sessions", error=str(e))
+        logger.exception(f"Error cleaning up serverless sessions: {e}")
         return f"❌ Error during cleanup: {e}"
 
 
@@ -333,7 +340,7 @@ async def _configure_serverless_storage_impl(
         return f"❌ Failed to configure {backend} storage backend"
 
     except Exception as e:
-        logger.exception("Error configuring serverless storage", error=str(e))
+        logger.exception(f"Error configuring serverless storage: {e}")
         return f"❌ Error configuring storage: {e}"
 
 

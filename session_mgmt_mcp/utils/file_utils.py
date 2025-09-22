@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -67,25 +68,21 @@ def _get_cleanup_patterns() -> list[str]:
 def _calculate_item_size(item: Path) -> int:
     """Calculate size of file or directory in MB."""
     size_mb = 0
-    try:
+    with suppress(OSError, PermissionError):
         if item.is_file():
             size_mb = int(item.stat().st_size / (1024 * 1024))
         elif item.is_dir():
             # Calculate directory size
-            from contextlib import suppress
-
             with suppress(PermissionError, OSError):
                 for subitem in item.rglob("*"):
                     if subitem.is_file():
                         size_mb += int(subitem.stat().st_size / (1024 * 1024))
-    except (OSError, PermissionError):
-        pass
     return size_mb
 
 
 def _cleanup_item(item: Path) -> tuple[str, int]:
     """Clean up a single item and return its display name and size."""
-    try:
+    with suppress(PermissionError, OSError):
         if item.is_file():
             size_mb = _calculate_item_size(item)
             item.unlink()
@@ -94,8 +91,6 @@ def _cleanup_item(item: Path) -> tuple[str, int]:
             size_mb = _calculate_item_size(item)
             shutil.rmtree(item, ignore_errors=True)
             return f"📁 {item.name}/", size_mb
-    except (PermissionError, OSError):
-        pass
     return "", 0
 
 

@@ -119,7 +119,7 @@ class ContextDetector:
 
     def _detect_project_type(self, working_path: Path, context: dict[str, Any]) -> None:
         """Detect the type of project."""
-        best_score = 0
+        best_score = 0.0
 
         for proj_type, indicators in self.project_types.items():
             type_score = self._calculate_project_type_score(working_path, indicators)
@@ -149,7 +149,7 @@ class ContextDetector:
                         )
 
             # Sort by modification time and return top 10
-            recent_files.sort(key=lambda x: x["modified"], reverse=True)
+            recent_files.sort(key=lambda x: str(x["modified"]), reverse=True)
             return recent_files[:10]
 
         except (OSError, PermissionError):
@@ -160,7 +160,7 @@ class ContextDetector:
         if not working_dir:
             working_dir = os.environ.get("PWD", str(Path.cwd()))
 
-        working_path = Path(working_dir)
+        working_path = Path(working_dir) if working_dir else Path.cwd()
         context = self._initialize_context(working_path)
 
         # Detect languages and tools
@@ -239,8 +239,8 @@ class ContextDetector:
                 worktree_info = get_worktree_info(working_path)
                 if worktree_info:
                     git_info["current_branch"] = worktree_info.branch
-                    git_info["is_worktree"] = not worktree_info.is_main_worktree
-                    git_info["is_detached"] = worktree_info.is_detached
+                    git_info["is_worktree"] = str(not worktree_info.is_main_worktree)
+                    git_info["is_detached"] = str(worktree_info.is_detached)
                     git_info["worktree_path"] = str(worktree_info.path)
                 else:
                     # Fallback to old method
@@ -261,7 +261,7 @@ class ContextDetector:
                     else:
                         git_info["platform"] = "git"
 
-                git_info["is_git_repo"] = True
+                git_info["is_git_repo"] = "True"
 
         return git_info
 
@@ -398,7 +398,7 @@ class AutoContextLoader:
         self.reflection_db = reflection_db
         self.context_detector = ContextDetector()
         self.relevance_scorer = RelevanceScorer()
-        self.cache = {}
+        self.cache: dict[str, Any] = {}
         self.cache_timeout = 300  # 5 minutes
 
     async def load_relevant_context(
@@ -417,6 +417,7 @@ class AutoContextLoader:
         # Check cache
         if context_hash in self.cache:
             cached_time, cached_result = self.cache[context_hash]
+            cached_result: dict[str, Any]
             if datetime.now() - cached_time < timedelta(seconds=self.cache_timeout):
                 return cached_result
 

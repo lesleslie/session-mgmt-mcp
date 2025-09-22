@@ -265,7 +265,7 @@ class TestSessionWorkflows:
                         else None,
                     ):
                         with patch(
-                            "session_mgmt_mcp.core.session_manager.permissions_manager"
+                            "session_mgmt_mcp.server.permissions_manager"
                         ) as mock_perms:
                             mock_perms.trusted_operations = (
                                 {"op1", "op2"} if i < 2 else set()
@@ -491,7 +491,7 @@ class TestSessionCrossPlatform:
                 ):
                     with patch("shutil.which", return_value=env["which_result"]):
                         with patch(
-                            "session_mgmt_mcp.core.session_manager.permissions_manager"
+                            "session_mgmt_mcp.server.permissions_manager"
                         ) as mock_perms:
                             mock_perms.trusted_operations = set()
 

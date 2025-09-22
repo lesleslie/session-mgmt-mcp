@@ -23,9 +23,9 @@ class LLMMessage:
     role: str  # 'system', 'user', 'assistant'
     content: str
     timestamp: str | None = None
-    metadata: dict[str, Any] = None
+    metadata: dict[str, Any] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.now().isoformat()
         if self.metadata is None:
@@ -42,9 +42,9 @@ class LLMResponse:
     usage: dict[str, Any]
     finish_reason: str
     timestamp: str
-    metadata: dict[str, Any] = None
+    metadata: dict[str, Any] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.metadata is None:
             self.metadata = {}
 
@@ -98,7 +98,7 @@ class OpenAIProvider(LLMProvider):
         self.default_model = config.get("default_model", "gpt-4")
         self._client = None
 
-    async def _get_client(self):
+    async def _get_client(self) -> Any:
         """Get or create OpenAI client."""
         if self._client is None:
             try:
@@ -240,7 +240,7 @@ class GeminiProvider(LLMProvider):
         self.default_model = config.get("default_model", "gemini-pro")
         self._client = None
 
-    async def _get_client(self):
+    async def _get_client(self) -> Any:
         """Get or create Gemini client."""
         if self._client is None:
             try:
@@ -257,7 +257,7 @@ class GeminiProvider(LLMProvider):
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
         """Convert LLMMessage objects to Gemini format."""
-        converted = []
+        converted: list[dict[str, Any]] = []
         for msg in messages:
             if msg.role == "system":
                 # Gemini doesn't have system role, prepend to first user message
@@ -418,7 +418,7 @@ class OllamaProvider(LLMProvider):
         super().__init__(config)
         self.base_url = config.get("base_url", "http://localhost:11434")
         self.default_model = config.get("default_model", "llama2")
-        self._available_models = []
+        self._available_models: list[str] = []
 
     async def _make_request(
         self,
@@ -462,7 +462,7 @@ class OllamaProvider(LLMProvider):
         model_name = model or self.default_model
 
         try:
-            data = {
+            data: dict[str, Any] = {
                 "model": model_name,
                 "messages": self._convert_messages(messages),
                 "options": {"temperature": temperature},

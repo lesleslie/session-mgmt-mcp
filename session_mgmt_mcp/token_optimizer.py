@@ -535,7 +535,7 @@ class TokenOptimizer:
             "estimated_tokens_saved": int(estimated_savings_tokens),
         }
 
-    def cleanup_cache(self, max_age_hours: int = 1) -> None:
+    def cleanup_cache(self, max_age_hours: int = 1) -> int:
         """Clean up expired cache entries."""
         cutoff = datetime.now() - timedelta(hours=max_age_hours)
         expired_keys = []

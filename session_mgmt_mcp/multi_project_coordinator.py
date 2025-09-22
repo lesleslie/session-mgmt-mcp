@@ -154,6 +154,13 @@ class MultiProjectCoordinator:
         self.dependency_cache: dict[str, list[ProjectDependency]] = {}
         self.session_links_cache: dict[str, list[SessionLink]] = {}
 
+    def _get_conn(self) -> Any:
+        """Get database connection, raising an error if not initialized."""
+        if self.reflection_db.conn is None:
+            msg = "Database connection not initialized"
+            raise RuntimeError(msg)
+        return self.reflection_db.conn
+
     async def create_project_group(
         self,
         name: str,
@@ -177,7 +184,7 @@ class MultiProjectCoordinator:
         # Store in database
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn().execute(
                 """
                 INSERT INTO project_groups (id, name, description, projects, created_at, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -193,7 +200,7 @@ class MultiProjectCoordinator:
             ),
         )
 
-        self.reflection_db.conn.commit()
+        self._get_conn().commit()
         self.active_project_groups[group_id] = group
 
         return group
@@ -202,7 +209,7 @@ class MultiProjectCoordinator:
         self,
         source_project: str,
         target_project: str,
-        dependency_type: str,
+        dependency_type: Literal["uses", "extends", "references", "shares_code"],
         description: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> ProjectDependency:
@@ -224,7 +231,7 @@ class MultiProjectCoordinator:
         # Store in database
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn().execute(
                 """
                 INSERT INTO project_dependencies
                 (id, source_project, target_project, dependency_type, description, created_at, metadata)
@@ -249,7 +256,7 @@ class MultiProjectCoordinator:
             ),
         )
 
-        self.reflection_db.conn.commit()
+        self._get_conn().commit()
 
         # Clear cache for affected projects
         self._clear_dependency_cache(source_project)
@@ -261,7 +268,7 @@ class MultiProjectCoordinator:
         self,
         source_session_id: str,
         target_session_id: str,
-        link_type: str,
+        link_type: Literal["related", "continuation", "reference", "dependency"],
         context: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> SessionLink:
@@ -283,7 +290,7 @@ class MultiProjectCoordinator:
         # Store in database
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn().execute(
                 """
                 INSERT INTO session_links
                 (id, source_session_id, target_session_id, link_type, context, created_at, metadata)
@@ -308,7 +315,7 @@ class MultiProjectCoordinator:
             ),
         )
 
-        self.reflection_db.conn.commit()
+        self._get_conn().commit()
 
         # Clear cache for affected sessions
         self._clear_session_links_cache(source_session_id)
@@ -332,7 +339,7 @@ class MultiProjectCoordinator:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
+            lambda: self._get_conn().execute(sql, params).fetchall(),
         )
 
         groups = []
@@ -379,11 +386,11 @@ class MultiProjectCoordinator:
             FROM project_dependencies
             WHERE {" OR ".join(conditions)}
             ORDER BY created_at DESC
-        """
+        """  # nosec B608 - conditions built from validated parameters with proper placeholders
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(sql, params).fetchall(),
+            lambda: self._get_conn().execute(sql, params).fetchall(),
         )
 
         dependencies = []
@@ -417,10 +424,12 @@ class MultiProjectCoordinator:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn()
+            .execute(
                 sql,
                 [session_id, session_id],
-            ).fetchall(),
+            )
+            .fetchall(),
         )
 
         links = []
@@ -482,7 +491,7 @@ class MultiProjectCoordinator:
     ) -> dict[str, Any]:
         """Get insights across multiple projects."""
         since_date = datetime.now(UTC) - timedelta(days=time_range_days)
-        insights = {
+        insights: dict[str, Any] = {
             "project_activity": {},
             "common_patterns": [],
             "knowledge_gaps": [],
@@ -501,10 +510,12 @@ class MultiProjectCoordinator:
 
             result = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self.reflection_db.conn.execute(
+                lambda: self._get_conn()
+                .execute(
                     sql,
                     [project, since_date],
-                ).fetchone(),
+                )
+                .fetchone(),
             )
 
             if result:
@@ -538,14 +549,16 @@ class MultiProjectCoordinator:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn()
+            .execute(
                 sql,
                 [projects, since_date],
-            ).fetchall(),
+            )
+            .fetchall(),
         )
 
         # Simple keyword frequency analysis
-        project_keywords = {}
+        project_keywords: dict[str, dict[str, int]] = {}
         for project, content in results:
             if project not in project_keywords:
                 project_keywords[project] = {}
@@ -559,7 +572,7 @@ class MultiProjectCoordinator:
                     )
 
         # Find keywords common across multiple projects
-        common_keywords = {}
+        common_keywords: dict[str, list[tuple[str, int]]] = {}
         for project, keywords in project_keywords.items():
             for word, count in keywords.items():
                 if word not in common_keywords:
@@ -595,29 +608,31 @@ class MultiProjectCoordinator:
         if session_id in self.session_links_cache:
             del self.session_links_cache[session_id]
 
-    async def cleanup_old_links(self, max_age_days: int = 365):
+    async def cleanup_old_links(self, max_age_days: int = 365) -> dict[str, Any]:
         """Clean up old session links and dependencies."""
         cutoff_date = datetime.now(UTC) - timedelta(days=max_age_days)
 
         # Count old links before deletion
         count_before = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn()
+            .execute(
                 "SELECT COUNT(*) FROM session_links WHERE created_at < ?",
                 [cutoff_date],
-            ).fetchone()[0],
+            )
+            .fetchone()[0],
         )
 
         # Clean up old session links
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.reflection_db.conn.execute(
+            lambda: self._get_conn().execute(
                 "DELETE FROM session_links WHERE created_at < ?",
                 [cutoff_date],
             ),
         )
 
-        self.reflection_db.conn.commit()
+        self._get_conn().commit()
 
         # Clear caches
         self.session_links_cache.clear()

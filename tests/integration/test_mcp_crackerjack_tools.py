@@ -26,8 +26,8 @@ class TestMCPCrackerjackToolRegistration:
     async def test_tools_registered(self, mcp_server):
         """Test that crackerjack tools are properly registered."""
         # Get list of registered tools
-        tools = mcp_server.list_tools()
-        tool_names = [tool["name"] for tool in tools]
+        tools = await mcp_server.get_tools()
+        tool_names = list(tools.keys())
 
         # Should have crackerjack tools
         expected_tools = ["execute_crackerjack_command", "crackerjack_run"]
@@ -38,13 +38,10 @@ class TestMCPCrackerjackToolRegistration:
     @pytest.mark.asyncio
     async def test_execute_crackerjack_command_tool_exists(self, mcp_server):
         """Test that execute_crackerjack_command tool is accessible."""
-        tools = mcp_server.list_tools()
+        tools = await mcp_server.get_tools()
 
         # Find the execute_crackerjack_command tool
-        execute_tool = next(
-            (tool for tool in tools if tool["name"] == "execute_crackerjack_command"),
-            None,
-        )
+        execute_tool = tools.get("execute_crackerjack_command")
 
         assert execute_tool is not None, "execute_crackerjack_command tool not found"
 
@@ -56,7 +53,7 @@ class TestMCPCrackerjackToolRegistration:
             "timeout",
             "ai_agent_mode",
         ]
-        tool_params = list(execute_tool["inputSchema"]["properties"].keys())
+        tool_params = list(execute_tool.parameters["properties"].keys())
 
         for param in expected_params:
             assert param in tool_params, f"Parameter '{param}' missing from tool schema"
@@ -101,11 +98,11 @@ class TestMCPToolExecution:
         mock_execute.return_value = mock_result
 
         # Get the tool function
-        tools = {tool["name"]: tool for tool in mcp_server.list_tools()}
+        tools = await mcp_server.get_tools()
         tools["execute_crackerjack_command"]
 
         # Execute the tool via MCP
-        result = await mcp_server.call_tool(
+        result = await mcp_server._call_tool(
             "execute_crackerjack_command", {"command": "lint", "working_directory": "."}
         )
 
@@ -136,7 +133,7 @@ class TestMCPToolExecution:
         )
 
         # Execute the tool
-        result = await mcp_server.call_tool(
+        result = await mcp_server._call_tool(
             "execute_crackerjack_command", {"command": "lint"}
         )
 
@@ -224,7 +221,7 @@ class TestMCPToolExecution:
         mock_execute.return_value = mock_result
 
         # Execute crackerjack_run tool
-        result = await mcp_server.call_tool("crackerjack_run", {"command": "check"})
+        result = await mcp_server._call_tool("crackerjack_run", {"command": "check"})
 
         # Should call the integration method
         mock_execute.assert_called_once()
@@ -257,7 +254,7 @@ class TestErrorHandlingAndRecovery:
             mock_class.return_value = mock_instance
 
             # This should be handled gracefully
-            result = await mcp_server.call_tool(
+            result = await mcp_server._call_tool(
                 "execute_crackerjack_command", {"command": "lint"}
             )
 
@@ -273,7 +270,7 @@ class TestErrorHandlingAndRecovery:
             "builtins.__import__",
             side_effect=ImportError("No module named 'crackerjack_integration'"),
         ):
-            result = await mcp_server.call_tool(
+            result = await mcp_server._call_tool(
                 "execute_crackerjack_command", {"command": "lint"}
             )
 
@@ -289,7 +286,7 @@ class TestErrorHandlingAndRecovery:
         # Simulate timeout
         mock_execute.side_effect = TimeoutError("Command timed out")
 
-        result = await mcp_server.call_tool(
+        result = await mcp_server._call_tool(
             "execute_crackerjack_command", {"command": "test", "timeout": 1}
         )
 
@@ -323,7 +320,7 @@ class TestErrorHandlingAndRecovery:
         )
         mock_execute.return_value = mock_result
 
-        result = await mcp_server.call_tool(
+        result = await mcp_server._call_tool(
             "execute_crackerjack_command", {"command": "lint"}
         )
 
@@ -357,7 +354,7 @@ class TestRealIntegration:
         mock_create_subprocess.return_value = mock_process
 
         # Execute the tool
-        result = await mcp_server.call_tool(
+        result = await mcp_server._call_tool(
             "execute_crackerjack_command", {"command": "lint", "working_directory": "."}
         )
 
@@ -401,7 +398,7 @@ class TestRealIntegration:
         for command, expected_cmd in test_cases:
             mock_create_subprocess.reset_mock()
 
-            result = await mcp_server.call_tool(
+            result = await mcp_server._call_tool(
                 "execute_crackerjack_command", {"command": command}
             )
 

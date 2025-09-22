@@ -8,6 +8,7 @@ following crackerjack architecture patterns.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ _llm_manager = None
 _llm_available = None
 
 
-async def _get_llm_manager():
+async def _get_llm_manager() -> Any:
     """Get LLM manager instance with lazy loading."""
     global _llm_manager, _llm_available
 
@@ -91,7 +92,7 @@ async def _list_llm_providers_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error listing LLM providers", error=str(e))
+        logger.exception(f"Error listing LLM providers: {e}")
         return f"❌ Error listing providers: {e}"
 
 
@@ -129,7 +130,7 @@ async def _test_llm_providers_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error testing LLM providers", error=str(e))
+        logger.exception(f"Error testing LLM providers: {e}")
         return f"❌ Error testing providers: {e}"
 
 
@@ -186,7 +187,7 @@ async def _generate_with_llm_impl(
         return f"❌ Generation failed: {result['error']}"
 
     except Exception as e:
-        logger.exception("Error generating with LLM", error=str(e))
+        logger.exception(f"Error generating with LLM: {e}")
         return f"❌ Error generating text: {e}"
 
 
@@ -240,7 +241,7 @@ async def _chat_with_llm_impl(
         return f"❌ Chat failed: {result['error']}"
 
     except Exception as e:
-        logger.exception("Error chatting with LLM", error=str(e))
+        logger.exception(f"Error chatting with LLM: {e}")
         return f"❌ Error in chat: {e}"
 
 
@@ -276,7 +277,7 @@ async def _build_provider_config_data(
     api_key: str | None = None,
     base_url: str | None = None,
     default_model: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Build provider configuration data."""
     config_data = {}
     if api_key:
@@ -324,7 +325,7 @@ async def _configure_llm_provider_impl(
         return f"❌ Configuration failed: {result['error']}"
 
     except Exception as e:
-        logger.exception("Error configuring LLM provider", error=str(e))
+        logger.exception(f"Error configuring LLM provider: {e}")
         return f"❌ Error configuring provider: {e}"
 
 

@@ -15,16 +15,20 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 # Helper functions for common validation patterns
 def validate_non_empty_string(v: Any, field_name: str) -> str:
     """Validate and normalize non-empty string."""
     if not isinstance(v, str):
-        return v
+        msg = f"{field_name} must be a string"
+        raise TypeError(msg)
     stripped = v.strip()
     if not stripped:
         msg = f"{field_name} cannot be empty"
@@ -35,7 +39,8 @@ def validate_non_empty_string(v: Any, field_name: str) -> str:
 def validate_and_expand_path(v: Any, field_name: str) -> str:
     """Validate and expand file paths."""
     if not isinstance(v, str):
-        return v
+        msg = f"{field_name} must be a string"
+        raise TypeError(msg)
     if field_name.endswith(("_path", "_directory")):
         expanded = os.path.expanduser(v.strip()) if v.strip() else v
         if (
@@ -586,7 +591,7 @@ class TeamSearchParams(SearchQueryParams):
 
 
 # Validation helper functions
-def validate_mcp_params(model_class: type[BaseModel], **params) -> dict[str, Any]:
+def validate_mcp_params(model_class: type[BaseModel], **params: Any) -> dict[str, Any]:
     """Helper function to validate MCP tool parameters using a Pydantic model.
 
     Args:
@@ -625,7 +630,9 @@ def validate_mcp_params(model_class: type[BaseModel], **params) -> dict[str, Any
         raise ValueError(msg) from e
 
 
-def create_mcp_validator(model_class: type[BaseModel]):
+def create_mcp_validator(
+    model_class: type[BaseModel],
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator factory to create MCP tool parameter validators.
 
     Args:
@@ -638,15 +645,14 @@ def create_mcp_validator(model_class: type[BaseModel]):
         @mcp.tool()
         @create_mcp_validator(SearchQueryParams)
         async def search_reflections(**params) -> str:
-            # params are already validated here
+            # params are now validated and typed
             query = params['query']
-            limit = params['limit']
             # ... implementation
 
     """
 
-    def decorator(func):
-        async def wrapper(**params):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        async def wrapper(**params: Any) -> Any:
             validated_params = validate_mcp_params(model_class, **params)
             return await func(**validated_params)
 

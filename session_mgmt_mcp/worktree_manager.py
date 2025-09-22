@@ -18,13 +18,12 @@ from .utils.git_operations import (
     is_git_repository,
     list_worktrees,
 )
-from .utils.logging import SessionLogger
 
 
 class WorktreeManager:
     """Manages git worktrees with session coordination."""
 
-    def __init__(self, session_logger: SessionLogger | None = None) -> None:
+    def __init__(self, session_logger: Any = None) -> None:
         self.session_logger = session_logger
 
     def _log(self, message: str, level: str = "info", **context: Any) -> None:

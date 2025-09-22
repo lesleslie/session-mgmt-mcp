@@ -47,9 +47,9 @@ class SearchResult:
     score: float
     project: str | None = None
     timestamp: datetime | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-    highlights: list[str] = field(default_factory=list)
-    facets: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
+    highlights: list[str] = field(default_factory=list[Any])
+    facets: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 class AdvancedSearchEngine:
@@ -140,7 +140,7 @@ class AdvancedSearchEngine:
             db_field = "indexed_content"
 
         # Build SQL safely using string concatenation (db_field is from whitelist)
-        sql = (
+        sql = (  # nosec B608 - db_field comes from validated whitelist, not user input
             """
             SELECT DISTINCT """
             + db_field
@@ -265,7 +265,7 @@ class AdvancedSearchEngine:
                 "highlights": result.highlights,
                 "facets": result.facets,
             }
-            result_dicts.append(result_dict)
+            result_dicts.append(result_dict[str, Any])
 
         return result_dicts
 
@@ -298,7 +298,7 @@ class AdvancedSearchEngine:
         # Use parameterized queries for all metric types
         if metric_type == "activity":
             # Safe: No f-string interpolation of user data
-            sql = (
+            sql = (  # nosec B608 - where_clause built from validated parameters
                 """
                 SELECT DATE_TRUNC('day', last_indexed) as day,
                        COUNT(*) as count,
@@ -317,7 +317,7 @@ class AdvancedSearchEngine:
             additional_condition = (
                 " AND JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL"
             )
-            sql = (
+            sql = (  # nosec B608 - clauses built from validated parameters
                 """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.project') as project,
                        COUNT(*) as count
@@ -333,7 +333,7 @@ class AdvancedSearchEngine:
 
         elif metric_type == "content_types":
             # Safe: No additional conditions needed
-            sql = (
+            sql = (  # nosec B608 - where_clause built from validated parameters
                 """
                 SELECT content_type, COUNT(*) as count
                 FROM search_index
@@ -350,7 +350,7 @@ class AdvancedSearchEngine:
             additional_condition = (
                 " AND JSON_EXTRACT_STRING(search_metadata, '$.error_type') IS NOT NULL"
             )
-            sql = (
+            sql = (  # nosec B608 - clauses built from validated parameters
                 """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.error_type') as error_type,
                        COUNT(*) as count
@@ -550,7 +550,7 @@ class AdvancedSearchEngine:
 
         for facet_name, facet_expr in facet_queries.items():
             # Use string concatenation with whitelisted expressions (safe)
-            sql = (
+            sql = (  # nosec B608 - facet_expr from validated whitelist of safe expressions
                 """
                 SELECT """
                 + facet_expr

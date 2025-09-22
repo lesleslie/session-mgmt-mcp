@@ -38,7 +38,7 @@ async def _create_team_impl(
         return f"❌ Failed to create team: {e!s}"
 
 
-def _format_search_result(result: dict, index: int) -> str:
+def _format_search_result(result: dict[str, Any], index: int) -> str:
     """Format a single search result."""
     output = f"**{index}.** "
 

@@ -11,7 +11,8 @@ import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from types import TracebackType
+from typing import Any, Self
 
 # Database and embedding imports
 try:
@@ -44,20 +45,30 @@ class ReflectionDatabase:
         self.tokenizer = None
         self.embedding_dim = 384  # all-MiniLM-L6-v2 dimension
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: vulture
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:  # noqa: vulture
         """Context manager exit with cleanup."""
         self.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         """Async context manager entry."""
         await self.initialize()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):  # noqa: vulture
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:  # noqa: vulture
         """Async context manager exit with cleanup."""
         self.close()
 
@@ -65,7 +76,7 @@ class ReflectionDatabase:
         """Close database connection."""
         if self.conn:
             try:
-                self.conn.close()
+                self._get_conn().close()
             except Exception:
                 pass  # Ignore errors during cleanup
             finally:
@@ -89,9 +100,10 @@ class ReflectionDatabase:
         # Initialize ONNX embedding model
         if ONNX_AVAILABLE:
             try:
-                # Load tokenizer
+                # Load tokenizer with revision pinning for security
                 self.tokenizer = AutoTokenizer.from_pretrained(
                     "sentence-transformers/all-MiniLM-L6-v2",
+                    revision="7dbbc90392e2f80f3d3c277d6e90027e55de9125",  # Pin to specific commit
                 )
 
                 # Try to load ONNX model
@@ -113,10 +125,17 @@ class ReflectionDatabase:
         # Create tables if they don't exist
         await self._ensure_tables()
 
+    def _get_conn(self) -> duckdb.DuckDBPyConnection:
+        """Get database connection, raising an error if not initialized."""
+        if self.conn is None:
+            msg = "Database connection not initialized"
+            raise RuntimeError(msg)
+        return self.conn
+
     async def _ensure_tables(self) -> None:
         """Ensure required tables exist."""
         # Create conversations table
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS conversations (
                 id VARCHAR PRIMARY KEY,
                 content TEXT NOT NULL,
@@ -128,7 +147,7 @@ class ReflectionDatabase:
         """)
 
         # Create reflections table
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS reflections (
                 id VARCHAR PRIMARY KEY,
                 content TEXT NOT NULL,
@@ -140,7 +159,7 @@ class ReflectionDatabase:
         """)
 
         # Create project_groups table for multi-project coordination
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS project_groups (
                 id VARCHAR PRIMARY KEY,
                 name VARCHAR NOT NULL,
@@ -152,7 +171,7 @@ class ReflectionDatabase:
         """)
 
         # Create project_dependencies table for project relationships
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS project_dependencies (
                 id VARCHAR PRIMARY KEY,
                 source_project VARCHAR NOT NULL,
@@ -166,7 +185,7 @@ class ReflectionDatabase:
         """)
 
         # Create session_links table for cross-project session coordination
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS session_links (
                 id VARCHAR PRIMARY KEY,
                 source_session_id VARCHAR NOT NULL,
@@ -180,7 +199,7 @@ class ReflectionDatabase:
         """)
 
         # Create search_index table for advanced search capabilities
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS search_index (
                 id VARCHAR PRIMARY KEY,
                 content_type VARCHAR NOT NULL,  -- 'conversation', 'reflection', 'file', 'project'
@@ -193,7 +212,7 @@ class ReflectionDatabase:
         """)
 
         # Create search_facets table for faceted search
-        self.conn.execute("""
+        self._get_conn().execute("""
             CREATE TABLE IF NOT EXISTS search_facets (
                 id VARCHAR PRIMARY KEY,
                 content_type VARCHAR NOT NULL,
@@ -207,7 +226,7 @@ class ReflectionDatabase:
         # Create indices for better performance
         await self._ensure_indices()
 
-        self.conn.commit()
+        self._get_conn().commit()
 
     async def _ensure_indices(self) -> None:
         """Create indices for better query performance."""
@@ -230,7 +249,7 @@ class ReflectionDatabase:
 
         for index_sql in indices:
             try:
-                self.conn.execute(index_sql)
+                self._get_conn().execute(index_sql)
             except Exception as e:
                 # Some indices might not be supported in all DuckDB versions, continue
                 print(f"Index creation skipped: {e}")
@@ -239,7 +258,7 @@ class ReflectionDatabase:
         """Get embedding for text using ONNX model."""
         if self.onnx_session and self.tokenizer:
 
-            def _get_embedding():
+            def _get_embedding() -> list[float]:
                 # Tokenize text
                 encoded = self.tokenizer(
                     text,
@@ -287,6 +306,8 @@ class ReflectionDatabase:
             f"{content}_{time.time()}".encode(), usedforsecurity=False
         ).hexdigest()
 
+        embedding: list[float] | None = None
+
         if ONNX_AVAILABLE and self.onnx_session:
             try:
                 embedding = await self.get_embedding(content)
@@ -297,7 +318,7 @@ class ReflectionDatabase:
 
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(
+            lambda: self._get_conn().execute(
                 """
                 INSERT INTO conversations (id, content, embedding, project, timestamp, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -313,7 +334,7 @@ class ReflectionDatabase:
             ),
         )
 
-        self.conn.commit()
+        self._get_conn().commit()
         return conversation_id
 
     async def store_reflection(
@@ -327,6 +348,8 @@ class ReflectionDatabase:
             usedforsecurity=False,
         ).hexdigest()
 
+        embedding: list[float] | None = None
+
         if ONNX_AVAILABLE and self.onnx_session:
             try:
                 embedding = await self.get_embedding(content)
@@ -337,7 +360,7 @@ class ReflectionDatabase:
 
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(
+            lambda: self._get_conn().execute(
                 """
                 INSERT INTO reflections (id, content, embedding, tags, timestamp, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -353,7 +376,7 @@ class ReflectionDatabase:
             ),
         )
 
-        self.conn.commit()
+        self._get_conn().commit()
         return reflection_id
 
     async def search_conversations(
@@ -376,7 +399,7 @@ class ReflectionDatabase:
                     FROM conversations
                     WHERE embedding IS NOT NULL
                 """
-                params = [query_embedding]
+                params: list[Any] = [query_embedding]
 
                 if project:
                     sql += " AND project = ?"
@@ -390,7 +413,7 @@ class ReflectionDatabase:
 
                 results = await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: self.conn.execute(sql, params).fetchall(),
+                    lambda: self._get_conn().execute(sql, params).fetchall(),
                 )
 
                 return [
@@ -421,7 +444,7 @@ class ReflectionDatabase:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(sql, params).fetchall(),
+            lambda: self._get_conn().execute(sql, params).fetchall(),
         )
 
         # Simple text matching score
@@ -471,7 +494,9 @@ class ReflectionDatabase:
 
                 results = await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: self.conn.execute(sql, [query_embedding, limit]).fetchall(),
+                    lambda: self._get_conn()
+                    .execute(sql, [query_embedding, limit])
+                    .fetchall(),
                 )
 
                 semantic_results = [
@@ -499,7 +524,7 @@ class ReflectionDatabase:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(sql).fetchall(),
+            lambda: self._get_conn().execute(sql).fetchall(),
         )
 
         # Simple text matching score for reflections
@@ -545,7 +570,7 @@ class ReflectionDatabase:
             FROM conversations
             WHERE content LIKE ?
         """
-        params = [f"%{file_path}%"]
+        params: list[Any] = [f"%{file_path}%"]
 
         if project:
             sql += " AND project = ?"
@@ -556,7 +581,7 @@ class ReflectionDatabase:
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self.conn.execute(sql, params).fetchall(),
+            lambda: self._get_conn().execute(sql, params).fetchall(),
         )
 
         return [
@@ -574,16 +599,20 @@ class ReflectionDatabase:
         try:
             conv_count = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self.conn.execute(
+                lambda: self._get_conn()
+                .execute(
                     "SELECT COUNT(*) FROM conversations",
-                ).fetchone()[0],
+                )
+                .fetchone()[0],
             )
 
             refl_count = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self.conn.execute(
+                lambda: self._get_conn()
+                .execute(
                     "SELECT COUNT(*) FROM reflections",
-                ).fetchone()[0],
+                )
+                .fetchone()[0],
             )
 
             provider = (

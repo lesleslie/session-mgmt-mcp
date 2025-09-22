@@ -526,7 +526,7 @@ def _find_best_error_excerpt(content: str) -> str:
     return best_excerpt
 
 
-def _format_error_result(result: dict) -> str:
+def _format_error_result(result: dict[str, Any]) -> str:
     """Format a single error search result."""
     output = ""
     if result.get("timestamp"):

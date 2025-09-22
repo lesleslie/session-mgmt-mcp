@@ -15,38 +15,38 @@ from session_mgmt_mcp.tools.search_tools import (
 class TestGetReflectionDatabase:
     """Test get_reflection_database function."""
 
-    def test_get_reflection_database_success(self):
+    async def test_get_reflection_database_success(self):
         """Test successful database initialization."""
         # Mock the ReflectionDatabase class that's imported inside the function
         with patch(
-            "session_mgmt_mcp.tools.search_tools.ReflectionDatabase"
+            "session_mgmt_mcp.reflection_tools.ReflectionDatabase"
         ) as mock_reflection_db:
             mock_db_instance = AsyncMock()
             mock_reflection_db.return_value = mock_db_instance
 
             # Call the function
-            result = get_reflection_database()
+            result = await get_reflection_database()
 
             # Assertions
             assert result == mock_db_instance
             mock_reflection_db.assert_called_once()
 
-    def test_get_reflection_database_import_error(self):
+    async def test_get_reflection_database_import_error(self):
         """Test database initialization when import fails."""
         with patch(
-            "session_mgmt_mcp.tools.search_tools.ReflectionDatabase",
+            "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
             side_effect=ImportError,
         ):
-            result = get_reflection_database()
+            result = await get_reflection_database()
             assert result is None
 
-    def test_get_reflection_database_general_exception(self):
+    async def test_get_reflection_database_general_exception(self):
         """Test database initialization when general exception occurs."""
         with patch(
-            "session_mgmt_mcp.tools.search_tools.ReflectionDatabase",
+            "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
             side_effect=Exception,
         ):
-            result = get_reflection_database()
+            result = await get_reflection_database()
             assert result is None
 
 

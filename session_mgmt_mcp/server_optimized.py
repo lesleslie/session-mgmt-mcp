@@ -6,7 +6,10 @@ It's organized into focused modules for better maintainability and performance.
 """
 
 import sys
+from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
@@ -28,19 +31,23 @@ except ImportError:
 
         # Create a minimal mock FastMCP for testing
         class MockFastMCP:
-            def __init__(self, name) -> None:
+            def __init__(self, name: str) -> None:
                 self.name = name
-                self.tools = {}
-                self.prompts = {}
+                self.tools: dict[str, Any] = {}
+                self.prompts: dict[str, Any] = {}
 
-            def tool(self, *args, **kwargs):
-                def decorator(func):
+            def tool(
+                self, *args, **kwargs
+            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
 
                 return decorator
 
-            def prompt(self, *args, **kwargs):
-                def decorator(func):
+            def prompt(
+                self, *args, **kwargs
+            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
 
                 return decorator
@@ -193,7 +200,7 @@ class SessionPermissionsManager:
     """Simplified session permissions manager."""
 
     def __init__(self) -> None:
-        self.trusted_operations = set()
+        self.trusted_operations: set[str] = set()
         self.auto_checkpoint = False
         self.checkpoint_frequency = 300
 
@@ -274,7 +281,7 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
 def _count_significant_files(current_dir: Path) -> int:
     """Count significant files in project as a complexity indicator."""
     file_count = 0
-    try:
+    with suppress(Exception):
         for file_path in current_dir.rglob("*"):
             if (
                 file_path.is_file()
@@ -297,8 +304,6 @@ def _count_significant_files(current_dir: Path) -> int:
                 file_count += 1
                 if file_count > 50:  # Stop counting after threshold
                     break
-    except Exception:
-        pass
     return file_count
 
 

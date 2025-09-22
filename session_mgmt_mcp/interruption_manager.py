@@ -578,7 +578,7 @@ class InterruptionManager:
 
                 # Restore context
                 context_dict = snapshot_data["context"]
-                context = SessionContext(**context_dict)
+                context = SessionContext(**context_dict[str, Any])
                 context.recovery_attempts += 1
 
                 self.current_context = context

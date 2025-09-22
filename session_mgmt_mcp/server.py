@@ -18,10 +18,11 @@ import shutil
 import subprocess
 import sys
 import warnings
-from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, Self
 
 # Suppress transformers warnings about PyTorch/TensorFlow for cleaner CLI output
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
@@ -30,7 +31,7 @@ warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 try:
     import tomli
 except ImportError:
-    tomli = None
+    tomli = None  # type: ignore[assignment]
 
 
 # Configure structured logging
@@ -68,31 +69,31 @@ class SessionLogger:
             self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
 
-    def debug(self, message: str, **context) -> None:
+    def debug(self, message: str, **context: Any) -> None:
         """Log debug with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.debug(message)
 
-    def info(self, message: str, **context) -> None:
+    def info(self, message: str, **context: Any) -> None:
         """Log info with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.info(message)
 
-    def warning(self, message: str, **context) -> None:
+    def warning(self, message: str, **context: Any) -> None:
         """Log warning with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.warning(message)
 
-    def error(self, message: str, **context) -> None:
+    def error(self, message: str, **context: Any) -> None:
         """Log error with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.error(message)
 
-    def exception(self, message: str, **context) -> None:
+    def exception(self, message: str, **context: Any) -> None:
         """Log exception with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
@@ -117,34 +118,44 @@ except ImportError:
 
         # Create a minimal mock FastMCP for testing
         class MockFastMCP:
-            def __init__(self, name) -> None:
+            def __init__(self, name: str) -> None:
                 self.name = name
-                self.tools = {}
-                self.prompts = {}
+                self.tools: dict[str, Any] = {}
+                self.prompts: dict[str, Any] = {}
 
-            def tool(self, *args, **kwargs):
-                def decorator(func):
+            def tool(
+                self, *args: Any, **kwargs: Any
+            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
 
                 return decorator
 
-            def prompt(self, *args, **kwargs):
-                def decorator(func):
+            def prompt(
+                self, *args: Any, **kwargs: Any
+            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
 
                 return decorator
 
-            def run(self, *args, **kwargs) -> None:
+            def run(self, *args: Any, **kwargs: Any) -> None:
                 pass
 
-        FastMCP = MockFastMCP
+        FastMCP = MockFastMCP  # type: ignore[no-redef]
         MCP_AVAILABLE = False
     else:
         print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
         sys.exit(1)
 
-# Session management availability (no longer using global workspace)
-SESSION_MANAGEMENT_AVAILABLE = False
+# Import session management core
+try:
+    from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+
+    SESSION_MANAGEMENT_AVAILABLE = True
+except ImportError as e:
+    print(f"Session management core import failed: {e}", file=sys.stderr)
+    SESSION_MANAGEMENT_AVAILABLE = False
 
 # Import reflection tools
 try:
@@ -167,6 +178,22 @@ try:
 except ImportError as e:
     print(f"Enhanced search import failed: {e}", file=sys.stderr)
     ENHANCED_SEARCH_AVAILABLE = False
+
+# Import utility functions
+try:
+    from session_mgmt_mcp.tools.search_tools import _optimize_search_results_impl
+    from session_mgmt_mcp.utils.format_utils import _format_session_statistics
+
+    UTILITY_FUNCTIONS_AVAILABLE = True
+except ImportError as e:
+    print(f"Utility functions import failed: {e}", file=sys.stderr)
+    UTILITY_FUNCTIONS_AVAILABLE = False
+
+# Global feature instances (initialized on-demand)
+multi_project_coordinator: Any = None
+advanced_search_engine: Any = None
+app_config: Any = None
+current_project: str | None = None
 
 # Import multi-project coordination tools
 try:
@@ -259,10 +286,11 @@ except ImportError as e:
 class SessionPermissionsManager:
     """Manages session permissions to avoid repeated prompts for trusted operations."""
 
-    _instance = None
-    _session_id = None
+    _instance: Self | None = None
+    _session_id: str | None = None
+    _initialized: bool = False
 
-    def __new__(cls, claude_dir: Path):
+    def __new__(cls, claude_dir: Path) -> Self:  # type: ignore[misc]
         """Singleton pattern to ensure consistent session ID across tool calls."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -449,7 +477,7 @@ _connection_info = None
 
 # Lifespan handler for automatic session management
 @asynccontextmanager
-async def session_lifecycle(app):
+async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only."""
     current_dir = Path.cwd()
 
@@ -480,6 +508,7 @@ async def session_lifecycle(app):
         except Exception as e:
             session_logger.warning(f"Auto-init failed (non-critical): {e}")
     else:
+        # Not a git repository - no auto-initialization
         session_logger.debug("Non-git directory - skipping auto-initialization")
 
     yield  # Server runs normally
@@ -658,7 +687,7 @@ async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
         }
 
 
-def _setup_claude_directory(output: list[str]) -> dict:
+def _setup_claude_directory(output: list[str]) -> dict[str, Any]:
     """Setup Claude directory and return validation results."""
     output.append("\n📋 Phase 1: Claude directory setup...")
 
@@ -784,7 +813,7 @@ async def _analyze_project_structure(
     output: list[str],
     current_dir: Path,
     current_project: str,
-) -> tuple[dict, int]:
+) -> tuple[dict[str, Any], int]:
     """Analyze project structure and add information to output."""
     output.append(f"\n🎯 Phase 5: Project context analysis for {current_project}...")
 
@@ -813,8 +842,8 @@ def _add_final_summary(
     output: list[str],
     current_project: str,
     context_score: int,
-    project_context: dict,
-    claude_validation: dict,
+    project_context: dict[str, Any],
+    claude_validation: dict[str, Any],
 ) -> None:
     """Add final summary information to output."""
     output.append("\n" + "=" * 60)
@@ -912,7 +941,7 @@ async def calculate_quality_score() -> dict[str, Any]:
 
 def _generate_quality_recommendations(
     score: int,
-    project_context: dict,
+    project_context: dict[str, Any],
     permissions_count: int,
     uv_available: bool,
 ) -> list[str]:
@@ -956,7 +985,7 @@ def _generate_quality_recommendations(
 def _count_significant_files(current_dir: Path) -> int:
     """Count significant files in project as a complexity indicator."""
     file_count = 0
-    try:
+    with suppress(Exception):
         for file_path in current_dir.rglob("*"):
             if (
                 file_path.is_file()
@@ -979,8 +1008,6 @@ def _count_significant_files(current_dir: Path) -> int:
                 file_count += 1
                 if file_count > 50:  # Stop counting after threshold
                     break
-    except Exception:
-        pass
     return file_count
 
 
@@ -1216,7 +1243,7 @@ async def _analyze_context_compaction() -> list[str]:
     return results
 
 
-async def _store_context_summary(conversation_summary: dict) -> None:
+async def _store_context_summary(conversation_summary: dict[str, Any]) -> None:
     """Store comprehensive context summary."""
     try:
         db = await get_reflection_database()
@@ -1337,7 +1364,7 @@ def _generate_session_tags(quality_score: float) -> list[str]:
     return tags
 
 
-async def _capture_flow_analysis(db, tags: list[str], results: list[str]) -> None:
+async def _capture_flow_analysis(db: Any, tags: list[str], results: list[str]) -> None:
     """Capture conversation flow insights."""
     flow_analysis = await analyze_conversation_flow()
     flow_summary = f"Session pattern: {flow_analysis['pattern_type']}. "
@@ -1374,10 +1401,18 @@ def _check_session_management_availability() -> bool:
     return SESSION_MANAGEMENT_AVAILABLE
 
 
-def _attempt_checkpoint_session() -> dict[str, Any] | None:
+async def _attempt_checkpoint_session() -> dict[str, Any] | None:
     """Attempt to get checkpoint session data."""
     try:
-        return checkpoint_session()
+        if not SESSION_MANAGEMENT_AVAILABLE:
+            return None
+
+        session_manager = SessionLifecycleManager()
+        working_directory = os.environ.get("PWD", str(Path.cwd()))
+        result = await session_manager.checkpoint_session(working_directory)
+        if isinstance(result, dict):
+            return result
+        return None
     except Exception:
         return None
 
@@ -1385,7 +1420,7 @@ def _attempt_checkpoint_session() -> dict[str, Any] | None:
 def _extract_session_stats(checkpoint_result: dict[str, Any]) -> dict[str, Any] | None:
     """Extract session statistics from checkpoint result."""
     session_stats = checkpoint_result.get("session_stats", {})
-    return session_stats if session_stats else None
+    return session_stats or None
 
 
 def _format_metrics_summary(session_stats: dict[str, Any]) -> str:
@@ -1406,7 +1441,7 @@ async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> N
 
     try:
         # Attempt to get checkpoint session data
-        checkpoint_result = _attempt_checkpoint_session()
+        checkpoint_result = await _attempt_checkpoint_session()
         if not checkpoint_result:
             return
 
@@ -1706,7 +1741,10 @@ async def analyze_token_usage_patterns() -> dict[str, Any]:
 
         with suppress(Exception):
             # Get conversation statistics from memory system
-            conv_stats = {"total_conversations": 0, "recent_activity": "low"}
+            conv_stats: dict[str, int] = {
+                "total_conversations": 0,
+                "recent_activity": 0,
+            }
 
             if REFLECTION_TOOLS_AVAILABLE:
                 with suppress(Exception):
@@ -2236,7 +2274,7 @@ async def _perform_git_checkpoint(
 
 async def health_check() -> dict[str, Any]:
     """Comprehensive health check for MCP server and toolkit availability."""
-    health_status = {
+    health_status: dict[str, Any] = {
         "overall_healthy": True,
         "checks": {},
         "warnings": [],
@@ -2423,7 +2461,7 @@ async def _add_project_context_info(output: list[str], current_dir: Path) -> Non
     from .utils.git_operations import get_worktree_info, list_worktrees
 
     # Get project context information
-    project_context, context_score, max_score = await _get_project_context_info(
+    _project_context, context_score, max_score = await _get_project_context_info(
         current_dir
     )
     output.extend(_format_project_maturity_section(context_score, max_score))
@@ -2670,7 +2708,7 @@ async def reflect_on_past(
             return f"🔍 No relevant conversations found for query: '{query}'\n💡 Try adjusting the search terms or lowering min_score."
 
         # Apply token optimization if available
-        results, optimization_info = await _optimize_search_results(
+        results, optimization_info = await _optimize_search_results_impl(
             results,
             optimize_tokens,
             max_tokens,
@@ -2678,7 +2716,7 @@ async def reflect_on_past(
         )
 
         # Build and format output
-        output = _build_search_header(results, query, current_proj, optimization_info)
+        output = _build_search_header(query, len(results), optimization_info)
         output.extend(_format_search_results(results))
 
         return "\n".join(output)
@@ -2687,6 +2725,20 @@ async def reflect_on_past(
         if _should_retry_search(e):
             return await _retry_search_with_cleanup(query, limit, min_score, project)
         return f"❌ Error searching conversations: {e}"
+
+
+def _should_retry_search(error: Exception) -> bool:
+    """Determine if a search error warrants a retry with cleanup."""
+    # Retry for database connection issues or temporary errors
+    error_msg = str(error).lower()
+    retry_conditions = [
+        "database is locked",
+        "connection failed",
+        "temporary failure",
+        "timeout",
+        "index not found",
+    ]
+    return any(condition in error_msg for condition in retry_conditions)
 
 
 # Token Optimization Tools
@@ -2710,8 +2762,9 @@ async def get_app_monitor() -> ApplicationMonitor | None:
     return _app_monitor
 
 
-# Global LLM manager instance
+# Global instances
 _llm_manager = None
+_app_monitor = None
 
 
 async def get_llm_manager() -> LLMManager | None:
@@ -3087,7 +3140,7 @@ The project group is now available for cross-project coordination and knowledge 
 async def add_project_dependency(
     source_project: str,
     target_project: str,
-    dependency_type: str,
+    dependency_type: Literal["uses", "extends", "references", "shares_code"],
     description: str = "",
 ) -> str:
     """Add a dependency relationship between projects."""
@@ -3544,7 +3597,7 @@ def _format_current_worktree_info(current: dict, working_dir_name: str) -> list[
     ]
 
 
-def _format_session_summary(result: dict) -> list[str]:
+def _format_session_summary(result: dict[str, Any]) -> list[str]:
     """Format session summary across all worktrees."""
     session_summary = result["session_summary"]
     return [
@@ -3556,7 +3609,7 @@ def _format_session_summary(result: dict) -> list[str]:
     ]
 
 
-def _format_worktree_status(wt: dict) -> str:
+def _format_worktree_status(wt: dict[str, Any]) -> str:
     """Format status items for a worktree."""
     status_items = []
     if wt["has_session"]:
@@ -3583,7 +3636,7 @@ def _format_session_summary_section(result: dict[str, Any]) -> list[str]:
     return _format_session_summary(result)
 
 
-def _format_worktree_list_header() -> str:
+def _format_worktree_list_header_simple() -> str:
     """Format the worktree list header."""
     return "🌳 **All Worktrees:**"
 
@@ -3634,7 +3687,7 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
         output.extend(_format_session_summary_section(result))
 
         # List all worktrees with status
-        output.append(_format_worktree_list_header())
+        output.append(_format_worktree_list_header_simple())
         for i, wt in enumerate(all_worktrees, 1):
             output.extend(_format_single_worktree(wt, i))
 
@@ -3704,7 +3757,7 @@ async def git_worktree_switch(
     manager = WorktreeManager(session_logger=session_logger)
 
     try:
-        result = await manager.switch_worktree_context(from_path, to_path)
+        result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
 
         if not result["success"]:
             return f"❌ {result['error']}"

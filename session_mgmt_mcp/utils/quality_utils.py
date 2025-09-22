@@ -7,12 +7,13 @@ crackerjack architecture patterns with single responsibility principle.
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any
 
 
 def _extract_score_from_content(content: str) -> float | None:
     """Extract score from reflection content."""
-    try:
+    with suppress(ValueError, TypeError, AttributeError):
         # Parse common quality score formats
         if "quality score:" in content:
             # Extract score after "quality score:"
@@ -20,29 +21,23 @@ def _extract_score_from_content(content: str) -> float | None:
             if len(parts) > 1:
                 score_text = parts[1].split()[0]  # Get first word after
                 return _parse_score_text(score_text)
-    except (ValueError, TypeError, AttributeError):
-        # Skip malformed scores
-        pass
     return None
 
 
 def _extract_score_from_metadata(reflection: dict[str, Any]) -> float | None:
     """Extract score from reflection metadata."""
-    try:
+    with suppress(ValueError, TypeError, AttributeError):
         metadata = reflection.get("metadata", {})
         if "quality_score" in metadata:
             score = float(metadata["quality_score"])
             if 0 <= score <= 100:
                 return score
-    except (ValueError, TypeError, AttributeError):
-        # Skip malformed scores
-        pass
     return None
 
 
 def _parse_score_text(score_text: str) -> float | None:
     """Parse various score text formats into normalized 0-100 score."""
-    try:
+    with suppress(ValueError, TypeError, IndexError):
         # Handle formats like "85/100", "0.85", "85"
         if "/" in score_text:
             numerator = float(score_text.split("/")[0])
@@ -55,9 +50,6 @@ def _parse_score_text(score_text: str) -> float | None:
 
         if 0 <= score <= 100:
             return score
-    except (ValueError, TypeError, IndexError):
-        # Skip malformed scores
-        pass
     return None
 
 
@@ -144,123 +136,7 @@ def _analyze_quality_trend(quality_scores: list[float]) -> tuple[str, list[str],
     return trend, insights, improving
 
 
-def _extract_score_from_content(content: str) -> float | None:
-    """Extract score from content using quality patterns."""
-    quality_patterns = [
-        "quality score:",
-        "code quality:",
-        "overall score:",
-        "quality rating:",
-    ]
-
-    content_lower = content.lower()
-    for pattern in quality_patterns:
-        if pattern in content_lower:
-            parts = content_lower.split(pattern)
-            if len(parts) > 1:
-                score_text = parts[1].strip().split()[0]
-                score = _parse_score_text(score_text)
-                if score is not None:
-                    return score
-    return None
-
-
-def _extract_score_from_metadata(metadata: dict) -> float | None:
-    """Extract score from metadata."""
-    for key in ("quality_score", "score", "checkpoint_score"):
-        if key in metadata:
-            try:
-                score = float(metadata[key])
-                if 0 <= score <= 100:
-                    return score
-            except (ValueError, TypeError):
-                continue
-    return None
-
-
-def _process_single_reflection(reflection: dict[str, Any]) -> float | None:
-    """Process a single reflection and extract quality score."""
-    try:
-        content = reflection.get("content", "")
-
-        # Strategy 1: Direct quality score mentions
-        score = _extract_score_from_content(content)
-        if score is not None:
-            return score
-
-        # Strategy 2: Checkpoint metadata
-        metadata = reflection.get("metadata", {})
-        score = _extract_score_from_metadata(metadata)
-        if score is not None:
-            return score
-    except Exception:
-        # Skip problematic reflections
-        pass
-    return None
-
-
-def _extract_quality_scores_from_reflections(
-    reflections: list[dict[str, Any]],
-) -> list[float]:
-    """Enhanced quality score extraction with multiple parsing strategies."""
-    scores = []
-
-    for reflection in reflections:
-        score = _process_single_reflection(reflection)
-        if score is not None:
-            scores.append(score)
-
-    return scores
-
-
-def _parse_fraction_score(score_text: str) -> float | None:
-    """Parse fraction format scores (e.g., 85/100)."""
-    parts = score_text.split("/")
-    if len(parts) == 2:
-        numerator = float(parts[0])
-        denominator = float(parts[1])
-        if denominator > 0:
-            score = (numerator / denominator) * 100
-            return score if 0 <= score <= 100 else None
-    return None
-
-
-def _parse_decimal_score(score_text: str) -> float | None:
-    """Parse decimal format scores (e.g., 0.85 or 85)."""
-    score = float(score_text)
-    if 0 <= score <= 1.0:
-        return score * 100
-    if 0 <= score <= 100:
-        return score
-    return None
-
-
-def _parse_integer_score(score_text: str) -> float | None:
-    """Parse integer format scores (e.g., 85)."""
-    score = float(score_text)
-    return score if 0 <= score <= 100 else None
-
-
-def _parse_score_text(score_text: str) -> float | None:
-    """Parse various score text formats into normalized 0-100 score."""
-    try:
-        score_text = score_text.replace(",", "").strip()
-
-        # Handle fraction format (85/100)
-        if "/" in score_text:
-            return _parse_fraction_score(score_text)
-
-        # Handle decimal format (0.85)
-        if "." in score_text:
-            return _parse_decimal_score(score_text)
-
-        # Handle integer format (85)
-        return _parse_integer_score(score_text)
-
-    except (ValueError, IndexError):
-        return None
-
-    return None
+# Remove the duplicate function
 
 
 def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:

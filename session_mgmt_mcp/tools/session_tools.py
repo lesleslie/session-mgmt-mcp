@@ -8,6 +8,7 @@ initialization, checkpoints, and cleanup.
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.logging import get_session_logger
@@ -17,7 +18,7 @@ session_manager = SessionLifecycleManager()
 logger = get_session_logger()
 
 
-def _create_session_shortcuts() -> dict:
+def _create_session_shortcuts() -> dict[str, Any]:
     """Create Claude Code slash command shortcuts for session management.
 
     Creates /start, /checkpoint, and /end shortcuts in ~/.claude/commands/

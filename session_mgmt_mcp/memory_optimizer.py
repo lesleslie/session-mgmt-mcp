@@ -32,7 +32,7 @@ class ConversationSummarizer:
         # Score sentences based on various factors
         scored_sentences = []
         for sentence in sentences[:20]:  # Limit to prevent performance issues
-            score = 0
+            score = 0.0
 
             # Length score (prefer medium-length sentences)
             length = len(sentence.split())
@@ -254,7 +254,7 @@ class ConversationSummarizer:
         }
 
         # Count word frequencies
-        word_counts = {}
+        word_counts: dict[str, int] = {}
         for word in words:
             if word not in stop_words and len(word) > 3:
                 word_counts[word] = word_counts.get(word, 0) + 1
@@ -481,7 +481,7 @@ class MemoryOptimizer:
         self.retention_manager = RetentionPolicyManager()
 
         # Compression statistics
-        self.compression_stats = {
+        self.compression_stats: dict[str, None | int | float | str] = {
             "last_run": None,
             "conversations_processed": 0,
             "conversations_consolidated": 0,
@@ -650,7 +650,7 @@ class MemoryOptimizer:
         if original_ids:
             placeholders = ",".join(["?" for _ in original_ids])
             self.reflection_db.conn.execute(
-                f"DELETE FROM conversations WHERE id IN ({placeholders})",
+                f"DELETE FROM conversations WHERE id IN ({placeholders})",  # nosec B608 - properly parameterized query
                 original_ids,
             )
 
