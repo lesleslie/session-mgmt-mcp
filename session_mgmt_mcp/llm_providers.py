@@ -64,7 +64,7 @@ class LLMProvider(ABC):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate a response from the LLM."""
 
@@ -75,7 +75,7 @@ class LLMProvider(ABC):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AsyncGenerator[str]:
         """Generate a streaming response from the LLM."""
 
@@ -125,7 +125,7 @@ class OpenAIProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate response using OpenAI API."""
         if not await self.is_available():
@@ -174,7 +174,7 @@ class OpenAIProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AsyncGenerator[str]:
         """Stream response using OpenAI API."""
         if not await self.is_available():
@@ -281,7 +281,7 @@ class GeminiProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate response using Gemini API."""
         if not await self.is_available():
@@ -345,7 +345,7 @@ class GeminiProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AsyncGenerator[str]:
         """Stream response using Gemini API."""
         if not await self.is_available():
@@ -452,7 +452,7 @@ class OllamaProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate response using Ollama API."""
         if not await self.is_available():
@@ -497,7 +497,7 @@ class OllamaProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AsyncGenerator[str]:
         """Stream response using Ollama API."""
         if not await self.is_available():
@@ -650,7 +650,7 @@ class LLMManager:
         provider: str | None = None,
         model: str | None = None,
         use_fallback: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate response with optional fallback."""
         target_provider = provider or self.config["default_provider"]
@@ -703,7 +703,7 @@ class LLMManager:
         provider: str | None = None,
         model: str | None = None,
         use_fallback: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> AsyncGenerator[str]:
         """Stream generate response with optional fallback."""
         target_provider = provider or self.config["default_provider"]

@@ -1379,7 +1379,7 @@ async def _capture_flow_analysis(db: Any, tags: list[str], results: list[str]) -
 
 
 async def _capture_intelligence_insights(
-    db,
+    db: ReflectionDatabase,
     tags: list[str],
     results: list[str],
 ) -> None:
@@ -2019,7 +2019,7 @@ async def _analyze_reflection_based_intelligence() -> list[str]:
         recent_reflections = await db.search_reflections("checkpoint", limit=3)
 
         if recent_reflections:
-            recent_scores = _extract_quality_scores_from_reflections(recent_reflections)
+            recent_scores = _extract_quality_scores(recent_reflections)
             return _generate_quality_trend_recommendations(recent_scores)
 
     except Exception:
@@ -2927,6 +2927,58 @@ async def cancel_user_reminder(reminder_id: str) -> str:
         return f"❌ Error cancelling reminder: {e}"
 
 
+def _format_reminder_basic_info(reminder: dict[str, Any], index: int) -> list[str]:
+    """Format basic reminder information."""
+    lines = [
+        f"\n🔥 #{index} OVERDUE",
+        f"🆔 ID: {reminder['id']}",
+        f"📝 Title: {reminder['title']}",
+    ]
+
+    if reminder["description"]:
+        lines.append(f"📄 Description: {reminder['description']}")
+
+    lines.extend(
+        [
+            f"🕐 Scheduled: {reminder['scheduled_for']}",
+            f"👤 User: {reminder['user_id']}",
+        ]
+    )
+
+    if reminder.get("project_id"):
+        lines.append(f"📁 Project: {reminder['project_id']}")
+
+    return lines
+
+
+def _calculate_overdue_time(scheduled_for: str) -> str:
+    """Calculate and format overdue time."""
+    try:
+        from datetime import datetime
+
+        scheduled = datetime.fromisoformat(scheduled_for)
+        now = datetime.now()
+        overdue = now - scheduled
+
+        if overdue.total_seconds() > 0:
+            hours = int(overdue.total_seconds() // 3600)
+            minutes = int((overdue.total_seconds() % 3600) // 60)
+            if hours > 0:
+                return f"⏱️ Overdue: {hours}h {minutes}m"
+            return f"⏱️ Overdue: {minutes}m"
+        return "⏱️ Not yet due"
+    except Exception:
+        return "⏱️ Overdue: calculation failed"
+
+
+def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
+    """Format a single reminder for output."""
+    lines = _format_reminder_basic_info(reminder, index)
+    overdue_time = _calculate_overdue_time(reminder["scheduled_for"])
+    lines.append(overdue_time)
+    return lines
+
+
 @mcp.tool()
 async def check_due_reminders() -> str:
     """Check for reminders that are due now."""
@@ -2938,42 +2990,16 @@ async def check_due_reminders() -> str:
         if not due_reminders:
             return "✅ No reminders are currently due\n⏰ All scheduled reminders are in the future"
 
-        output = []
-        output.append(f"🚨 {len(due_reminders)} reminders are DUE NOW!")
-        output.append("=" * 50)
+        output = [
+            f"🚨 {len(due_reminders)} reminders are DUE NOW!",
+            "=" * 50,
+        ]
 
         for i, reminder in enumerate(due_reminders, 1):
-            output.append(f"\n🔥 #{i} OVERDUE")
-            output.append(f"🆔 ID: {reminder['id']}")
-            output.append(f"📝 Title: {reminder['title']}")
-            if reminder["description"]:
-                output.append(f"📄 Description: {reminder['description']}")
-            output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
-            output.append(f"👤 User: {reminder['user_id']}")
-            if reminder.get("project_id"):
-                output.append(f"📁 Project: {reminder['project_id']}")
-
-            # Calculate how overdue
-            try:
-                from datetime import datetime
-
-                scheduled = datetime.fromisoformat(
-                    reminder["scheduled_for"],
-                )
-                now = datetime.now()
-                overdue = now - scheduled
-                if overdue.total_seconds() > 0:
-                    hours = int(overdue.total_seconds() // 3600)
-                    minutes = int((overdue.total_seconds() % 3600) // 60)
-                    if hours > 0:
-                        output.append(f"⏱️ Overdue: {hours}h {minutes}m")
-                    else:
-                        output.append(f"⏱️ Overdue: {minutes}m")
-            except Exception:
-                output.append("⏱️ Overdue: calculation failed")
+            output.extend(_format_single_reminder(reminder, i))
 
         output.append(
-            "\n💡 These reminders should be processed by the background scheduler",
+            "\n💡 These reminders should be processed by the background scheduler"
         )
         return "\n".join(output)
 
@@ -3879,6 +3905,66 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     else:
         print("Starting Session Management MCP Server in STDIO mode", file=sys.stderr)
         mcp.run(stateless_http=True)
+
+
+def _ensure_default_recommendations(priority_actions: list[str]) -> list[str]:
+    """Ensure we always have default recommendations available."""
+    if not priority_actions:
+        return [
+            "Run quality checks with `crackerjack lint`",
+            "Check test coverage with `pytest --cov`",
+            "Review recent git commits for patterns",
+        ]
+    return priority_actions
+
+
+def _format_interruption_statistics(interruptions: list[dict[str, Any]]) -> list[str]:
+    """Format interruption statistics for display."""
+    if not interruptions:
+        return ["📊 **Interruption Patterns**: No recent interruptions"]
+
+    output = ["📊 **Interruption Patterns**:"]
+    total = len(interruptions)
+    output.append(f"   • Total interruptions: {total}")
+
+    # Group by type if available
+    types = {}
+    for interruption in interruptions:
+        int_type = interruption.get("type", "unknown")
+        types[int_type] = types.get(int_type, 0) + 1
+
+    for int_type, count in types.items():
+        output.append(f"   • {int_type}: {count}")
+
+    return output
+
+
+def _format_snapshot_statistics(snapshots: list[dict[str, Any]]) -> list[str]:
+    """Format snapshot statistics for display."""
+    if not snapshots:
+        return ["💾 **Context Snapshots**: No snapshots available"]
+
+    output = ["💾 **Context Snapshots**:"]
+    output.append(f"   • Total snapshots: {len(snapshots)}")
+
+    # Show most recent snapshot info
+    if snapshots:
+        recent = snapshots[-1]
+        if "timestamp" in recent:
+            output.append(f"   • Most recent: {recent['timestamp']}")
+        if "size" in recent:
+            output.append(f"   • Snapshot size: {recent['size']} bytes")
+
+    return output
+
+
+def _has_statistics_data(
+    sessions: list[dict[str, Any]],
+    interruptions: list[dict[str, Any]],
+    snapshots: list[dict[str, Any]],
+) -> bool:
+    """Check if we have any statistics data to display."""
+    return bool(sessions or interruptions or snapshots)
 
 
 if __name__ == "__main__":
