@@ -156,6 +156,44 @@ async def _quick_search_validated_impl(**params: Any) -> str:
         return f"❌ Search error: {e}"
 
 
+def _format_file_search_header(file_path: str) -> list[str]:
+    """Format header for file search results."""
+    output = []
+    output.append(f"📁 Searching conversations about: {file_path}")
+    output.append("=" * 50)
+    return output
+
+
+def _format_file_search_result(result: dict, index: int) -> list[str]:
+    """Format a single file search result."""
+    output = []
+    output.append(
+        f"\n{index}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}"
+    )
+    if result.get("project"):
+        output.append(f"   📁 Project: {result['project']}")
+    if result.get("score"):
+        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+    if result.get("timestamp"):
+        output.append(f"   📅 Date: {result['timestamp']}")
+    return output
+
+
+def _format_file_search_results(results: list, file_path: str) -> list[str]:
+    """Format the complete file search results."""
+    output = _format_file_search_header(file_path)
+
+    if results:
+        output.append(f"📈 Found {len(results)} relevant conversations:")
+        for i, result in enumerate(results, 1):
+            output.extend(_format_file_search_result(result, i))
+    else:
+        output.append("🔍 No conversations found about this file")
+        output.append("💡 The file might not have been discussed in previous sessions")
+
+    return output
+
+
 async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
     if not _check_reflection_tools_available():
@@ -175,28 +213,7 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
             limit=limit,
         )
 
-        output = []
-        output.append(f"📁 Searching conversations about: {file_path}")
-        output.append("=" * 50)
-
-        if results:
-            output.append(f"📈 Found {len(results)} relevant conversations:")
-
-            for i, result in enumerate(results, 1):
-                output.append(
-                    f"\n{i}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}"
-                )
-                if result.get("project"):
-                    output.append(f"   📁 Project: {result['project']}")
-                if result.get("score"):
-                    output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-                if result.get("timestamp"):
-                    output.append(f"   📅 Date: {result['timestamp']}")
-        else:
-            output.append("🔍 No conversations found about this file")
-            output.append(
-                "💡 The file might not have been discussed in previous sessions"
-            )
+        output = _format_file_search_results(results, file_path)
 
         logger.info(
             "File search performed", file_path=file_path, results_count=len(results)

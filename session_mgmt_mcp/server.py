@@ -2851,6 +2851,69 @@ async def create_natural_reminder(
         return f"❌ Error creating reminder: {e}"
 
 
+def _format_no_reminders_message(user_id: str, project_id: str | None) -> list[str]:
+    """Format message when no reminders are found."""
+    output = []
+    output.append("📋 No pending reminders found")
+    output.append(f"👤 User: {user_id}")
+    if project_id:
+        output.append(f"📁 Project: {project_id}")
+    output.append(
+        "💡 Use 'create_natural_reminder' to set up time-based reminders",
+    )
+    return output
+
+
+def _format_reminders_header(
+    reminders: list, user_id: str, project_id: str | None
+) -> list[str]:
+    """Format header for reminders list."""
+    output = []
+    output.append(f"⏰ Found {len(reminders)} pending reminders")
+    output.append(f"👤 User: {user_id}")
+    if project_id:
+        output.append(f"📁 Project: {project_id}")
+    output.append("=" * 50)
+    return output
+
+
+def _format_single_reminder(reminder: dict, index: int) -> list[str]:
+    """Format a single reminder for display."""
+    output = []
+    output.append(f"\n#{index}")
+    output.append(f"🆔 ID: {reminder['id']}")
+    output.append(f"📝 Title: {reminder['title']}")
+
+    if reminder["description"]:
+        output.append(f"📄 Description: {reminder['description']}")
+
+    output.append(
+        f"🔄 Type: {reminder['reminder_type'].replace('_', ' ').title()}",
+    )
+    output.append(f"📊 Status: {reminder['status'].replace('_', ' ').title()}")
+    output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
+    output.append(f"📅 Created: {reminder['created_at']}")
+
+    if reminder.get("recurrence_rule"):
+        output.append(f"🔁 Recurrence: {reminder['recurrence_rule']}")
+    if reminder.get("context_triggers"):
+        output.append(f"🎯 Triggers: {', '.join(reminder['context_triggers'])}")
+
+    return output
+
+
+def _format_reminders_list(
+    reminders: list, user_id: str, project_id: str | None
+) -> list[str]:
+    """Format the complete reminders list."""
+    output = _format_reminders_header(reminders, user_id, project_id)
+
+    for i, reminder in enumerate(reminders, 1):
+        output.extend(_format_single_reminder(reminder, i))
+
+    return output
+
+
 @mcp.tool()
 async def list_user_reminders(
     user_id: str = "default",
@@ -2863,40 +2926,10 @@ async def list_user_reminders(
         reminders = await _list_user_reminders(user_id, project_id)
 
         if not reminders:
-            output = []
-            output.append("📋 No pending reminders found")
-            output.append(f"👤 User: {user_id}")
-            if project_id:
-                output.append(f"📁 Project: {project_id}")
-            output.append(
-                "💡 Use 'create_natural_reminder' to set up time-based reminders",
-            )
+            output = _format_no_reminders_message(user_id, project_id)
             return "\n".join(output)
 
-        output = []
-        output.append(f"⏰ Found {len(reminders)} pending reminders")
-        output.append(f"👤 User: {user_id}")
-        if project_id:
-            output.append(f"📁 Project: {project_id}")
-        output.append("=" * 50)
-
-        for i, reminder in enumerate(reminders, 1):
-            output.append(f"\n#{i}")
-            output.append(f"🆔 ID: {reminder['id']}")
-            output.append(f"📝 Title: {reminder['title']}")
-            if reminder["description"]:
-                output.append(f"📄 Description: {reminder['description']}")
-            output.append(
-                f"🔄 Type: {reminder['reminder_type'].replace('_', ' ').title()}",
-            )
-            output.append(f"📊 Status: {reminder['status'].replace('_', ' ').title()}")
-            output.append(f"🕐 Scheduled: {reminder['scheduled_for']}")
-            output.append(f"📅 Created: {reminder['created_at']}")
-            if reminder.get("recurrence_rule"):
-                output.append(f"🔁 Recurrence: {reminder['recurrence_rule']}")
-            if reminder.get("context_triggers"):
-                output.append(f"🎯 Triggers: {', '.join(reminder['context_triggers'])}")
-
+        output = _format_reminders_list(reminders, user_id, project_id)
         return "\n".join(output)
 
     except ImportError:

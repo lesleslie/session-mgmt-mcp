@@ -157,50 +157,70 @@ class ContextDetector:
 
     def detect_current_context(self, working_dir: str | None = None) -> dict[str, Any]:
         """Detect current development context."""
-        if not working_dir:
-            working_dir = os.environ.get("PWD", str(Path.cwd()))
-
-        working_path = Path(working_dir) if working_dir else Path.cwd()
+        working_path = self._resolve_working_path(working_dir)
         context = self._initialize_context(working_path)
 
-        # Detect languages and tools
-        self._detect_languages_and_tools(working_path, context)
-
-        # Detect project type
-        self._detect_project_type(working_path, context)
-
-        # Get recent files
-        context["recent_files"] = self._get_recent_files(working_path)
-
-        # Get git information
-        context["git_info"] = self._get_git_info(working_path)
-
-        # Get comprehensive worktree information
-        worktree_info = get_worktree_info(working_path)
-        if worktree_info:
-            context["worktree_info"] = {
-                "path": str(worktree_info.path),
-                "branch": worktree_info.branch,
-                "is_main_worktree": worktree_info.is_main_worktree,
-                "is_detached": worktree_info.is_detached,
-                "is_bare": worktree_info.is_bare,
-                "locked": worktree_info.locked,
-                "prunable": worktree_info.prunable,
-            }
-
-            # Get list of all worktrees for cross-worktree context
-            all_worktrees = list_worktrees(working_path)
-            context["all_worktrees"] = [
-                {
-                    "path": str(wt.path),
-                    "branch": wt.branch,
-                    "is_main": wt.is_main_worktree,
-                    "is_current": wt.path == worktree_info.path,
-                }
-                for wt in all_worktrees
-            ]
+        self._gather_project_context(working_path, context)
+        self._gather_git_context(working_path, context)
 
         return context
+
+    def _resolve_working_path(self, working_dir: str | None) -> Path:
+        """Resolve the working directory path."""
+        if not working_dir:
+            working_dir = os.environ.get("PWD", str(Path.cwd()))
+        return Path(working_dir) if working_dir else Path.cwd()
+
+    def _gather_project_context(
+        self, working_path: Path, context: dict[str, Any]
+    ) -> None:
+        """Gather project-specific context information."""
+        self._detect_languages_and_tools(working_path, context)
+        self._detect_project_type(working_path, context)
+        context["recent_files"] = self._get_recent_files(working_path)
+
+    def _gather_git_context(self, working_path: Path, context: dict[str, Any]) -> None:
+        """Gather Git and worktree context information."""
+        context["git_info"] = self._get_git_info(working_path)
+        self._add_worktree_context(working_path, context)
+
+    def _add_worktree_context(
+        self, working_path: Path, context: dict[str, Any]
+    ) -> None:
+        """Add worktree information to context."""
+        worktree_info = get_worktree_info(working_path)
+        if worktree_info:
+            context["worktree_info"] = self._format_worktree_info(worktree_info)
+            context["all_worktrees"] = self._get_all_worktrees_info(
+                working_path, worktree_info
+            )
+
+    def _format_worktree_info(self, worktree_info: Any) -> dict[str, Any]:
+        """Format worktree information for context."""
+        return {
+            "path": str(worktree_info.path),
+            "branch": worktree_info.branch,
+            "is_main_worktree": worktree_info.is_main_worktree,
+            "is_detached": worktree_info.is_detached,
+            "is_bare": worktree_info.is_bare,
+            "locked": worktree_info.locked,
+            "prunable": worktree_info.prunable,
+        }
+
+    def _get_all_worktrees_info(
+        self, working_path: Path, current_worktree: Any
+    ) -> list[dict[str, Any]]:
+        """Get information about all worktrees."""
+        all_worktrees = list_worktrees(working_path)
+        return [
+            {
+                "path": str(wt.path),
+                "branch": wt.branch,
+                "is_main": wt.is_main_worktree,
+                "is_current": wt.path == current_worktree.path,
+            }
+            for wt in all_worktrees
+        ]
 
     def _should_ignore_file(self, file_path: Path) -> bool:
         """Check if file should be ignored."""
@@ -228,42 +248,67 @@ class ContextDetector:
 
     def _get_git_info(self, working_path: Path) -> dict[str, Any]:
         """Get git repository information."""
-        git_info = {}
-
         git_dir = working_path / ".git"
-        if git_dir.exists():
-            from contextlib import suppress
+        if not git_dir.exists():
+            return {}
 
-            with suppress(OSError, PermissionError):
-                # Use new worktree-aware detection
-                worktree_info = get_worktree_info(working_path)
-                if worktree_info:
-                    git_info["current_branch"] = worktree_info.branch
-                    git_info["is_worktree"] = str(not worktree_info.is_main_worktree)
-                    git_info["is_detached"] = str(worktree_info.is_detached)
-                    git_info["worktree_path"] = str(worktree_info.path)
-                else:
-                    # Fallback to old method
-                    head_file = git_dir / "HEAD"
-                    if head_file.exists():
-                        head_content = head_file.read_text().strip()
-                        if head_content.startswith("ref: refs/heads/"):
-                            git_info["current_branch"] = head_content.split("/")[-1]
+        from contextlib import suppress
 
-                # Get remote info (simplified)
-                config_file = git_dir / "config"
-                if config_file.exists():
-                    config_content = config_file.read_text()
-                    if "github.com" in config_content:
-                        git_info["platform"] = "github"
-                    elif "gitlab.com" in config_content:
-                        git_info["platform"] = "gitlab"
-                    else:
-                        git_info["platform"] = "git"
-
-                git_info["is_git_repo"] = "True"
+        git_info = {}
+        with suppress(OSError, PermissionError):
+            self._extract_branch_info(git_dir, git_info, working_path)
+            self._extract_platform_info(git_dir, git_info)
+            git_info["is_git_repo"] = "True"
 
         return git_info
+
+    def _extract_branch_info(
+        self, git_dir: Path, git_info: dict[str, Any], working_path: Path
+    ) -> None:
+        """Extract git branch information using worktree-aware detection."""
+        worktree_info = get_worktree_info(working_path)
+        if worktree_info:
+            self._populate_worktree_info(git_info, worktree_info)
+        else:
+            self._fallback_branch_detection(git_dir, git_info)
+
+    def _populate_worktree_info(
+        self, git_info: dict[str, Any], worktree_info: Any
+    ) -> None:
+        """Populate git info from worktree information."""
+        git_info["current_branch"] = worktree_info.branch
+        git_info["is_worktree"] = str(not worktree_info.is_main_worktree)
+        git_info["is_detached"] = str(worktree_info.is_detached)
+        git_info["worktree_path"] = str(worktree_info.path)
+
+    def _fallback_branch_detection(
+        self, git_dir: Path, git_info: dict[str, Any]
+    ) -> None:
+        """Fallback method for branch detection when worktree info unavailable."""
+        head_file = git_dir / "HEAD"
+        if not head_file.exists():
+            return
+
+        head_content = head_file.read_text().strip()
+        if head_content.startswith("ref: refs/heads/"):
+            git_info["current_branch"] = head_content.split("/")[-1]
+
+    def _extract_platform_info(self, git_dir: Path, git_info: dict[str, Any]) -> None:
+        """Extract git platform information from config."""
+        config_file = git_dir / "config"
+        if not config_file.exists():
+            return
+
+        config_content = config_file.read_text()
+        git_info["platform"] = self._determine_git_platform(config_content)
+
+    def _determine_git_platform(self, config_content: str) -> str:
+        """Determine git platform from config content."""
+        if "github.com" in config_content:
+            return "github"
+        if "gitlab.com" in config_content:
+            return "gitlab"
+        return "git"
 
 
 class RelevanceScorer:

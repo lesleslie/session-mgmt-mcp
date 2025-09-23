@@ -640,7 +640,16 @@ class ApplicationMonitor:
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=500)
 
-        summary: dict[str, Any] = {
+        summary = self._create_activity_summary_template(hours, events)
+        self._aggregate_event_data(events, summary)
+        self._add_additional_context(hours, summary)
+        return self._finalize_summary(summary)
+
+    def _create_activity_summary_template(
+        self, hours: int, events: list[Any]
+    ) -> dict[str, Any]:
+        """Create the base summary template."""
+        return {
             "total_events": len(events),
             "time_range_hours": hours,
             "event_types": defaultdict(int),
@@ -650,6 +659,8 @@ class ApplicationMonitor:
             "average_relevance": 0.0,
         }
 
+    def _aggregate_event_data(self, events: list[Any], summary: dict[str, Any]) -> None:
+        """Aggregate event data into the summary."""
         total_relevance: float = 0.0
         doc_sites = set()
 
@@ -664,13 +675,16 @@ class ApplicationMonitor:
         if events:
             summary["average_relevance"] = total_relevance / len(events)
 
-        summary["active_files"] = self.ide_monitor.get_active_files(hours * 60)
         summary["documentation_sites"] = list(doc_sites)
 
-        # Convert defaultdict to regular dict for JSON serialization
+    def _add_additional_context(self, hours: int, summary: dict[str, Any]) -> None:
+        """Add additional context information to the summary."""
+        summary["active_files"] = self.ide_monitor.get_active_files(hours * 60)
+
+    def _finalize_summary(self, summary: dict[str, Any]) -> dict[str, Any]:
+        """Finalize summary by converting collections for JSON serialization."""
         summary["event_types"] = dict(summary["event_types"])
         summary["applications"] = dict(summary["applications"])
-
         return summary
 
     def get_context_insights(self, hours: int = 1) -> dict[str, Any]:
@@ -678,7 +692,18 @@ class ApplicationMonitor:
         start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
         events = self.db.get_events(start_time=start_time, limit=200)
 
-        insights: dict[str, Any] = {
+        insights = self._create_insights_template()
+        if not events:
+            return insights
+
+        app_time = self._analyze_events(events, insights)
+        self._determine_primary_focus(app_time, insights)
+        self._calculate_productivity_score(events, insights)
+        return self._finalize_insights(insights)
+
+    def _create_insights_template(self) -> dict[str, Any]:
+        """Create the insights template dictionary."""
+        return {
             "primary_focus": None,
             "technologies_used": set(),
             "active_projects": set(),
@@ -687,53 +712,73 @@ class ApplicationMonitor:
             "context_switches": 0,
         }
 
-        if not events:
-            return insights
-
-        # Analyze primary focus
+    def _analyze_events(
+        self, events: list[Any], insights: dict[str, Any]
+    ) -> dict[str, int]:
+        """Analyze events and extract insights data."""
         app_time: dict[str, int] = defaultdict(int)
         last_app = None
 
         for event in events:
             app_time[event.application] += 1
 
-            # Count context switches
             if last_app and last_app != event.application:
                 insights["context_switches"] += 1
             last_app = event.application
 
-            # Extract technologies
-            if event.event_type == "file_change":
-                ext = event.details.get("file_extension", "")
-                if ext == ".py":
-                    insights["technologies_used"].add("python")
-                elif ext in (".js", ".ts"):
-                    insights["technologies_used"].add("javascript")
-                elif ext == ".rs":
-                    insights["technologies_used"].add("rust")
+            self._extract_event_data(event, insights)
 
-            # Extract projects
-            if event.project_path:
-                insights["active_projects"].add(event.project_path)
+        return app_time
 
-            # Extract documentation topics
-            if event.event_type == "browser_nav":
-                topic = event.details.get("topic")
-                technology = event.details.get("technology")
-                if topic and technology:
-                    insights["documentation_topics"].append(f"{technology}: {topic}")
+    def _extract_event_data(self, event: Any, insights: dict[str, Any]) -> None:
+        """Extract relevant data from a single event."""
+        self._extract_technologies(event, insights)
+        self._extract_projects(event, insights)
+        self._extract_documentation_topics(event, insights)
 
-        # Determine primary focus
+    def _extract_technologies(self, event: Any, insights: dict[str, Any]) -> None:
+        """Extract technology information from file change events."""
+        if event.event_type == "file_change":
+            ext = event.details.get("file_extension", "")
+            if ext == ".py":
+                insights["technologies_used"].add("python")
+            elif ext in (".js", ".ts"):
+                insights["technologies_used"].add("javascript")
+            elif ext == ".rs":
+                insights["technologies_used"].add("rust")
+
+    def _extract_projects(self, event: Any, insights: dict[str, Any]) -> None:
+        """Extract project information from events."""
+        if event.project_path:
+            insights["active_projects"].add(event.project_path)
+
+    def _extract_documentation_topics(
+        self, event: Any, insights: dict[str, Any]
+    ) -> None:
+        """Extract documentation topics from browser navigation events."""
+        if event.event_type == "browser_nav":
+            topic = event.details.get("topic")
+            technology = event.details.get("technology")
+            if topic and technology:
+                insights["documentation_topics"].append(f"{technology}: {topic}")
+
+    def _determine_primary_focus(
+        self, app_time: dict[str, int], insights: dict[str, Any]
+    ) -> None:
+        """Determine the primary application focus."""
         if app_time:
             insights["primary_focus"] = max(app_time.items(), key=lambda x: x[1])[0]
 
-        # Calculate productivity score based on relevant activity
+    def _calculate_productivity_score(
+        self, events: list[Any], insights: dict[str, Any]
+    ) -> None:
+        """Calculate productivity score based on relevant activity."""
         relevant_events = [e for e in events if e.relevance_score > 0.5]
         if events:
             insights["productivity_score"] = len(relevant_events) / len(events)
 
-        # Convert sets to lists for JSON serialization
+    def _finalize_insights(self, insights: dict[str, Any]) -> dict[str, Any]:
+        """Convert sets to lists for JSON serialization."""
         insights["technologies_used"] = list(insights["technologies_used"])
         insights["active_projects"] = list(insights["active_projects"])
-
         return insights

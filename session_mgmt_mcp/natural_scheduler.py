@@ -160,22 +160,36 @@ class NaturalLanguageParser:
     ) -> datetime | None:
         """Try to parse the expression using relative time patterns."""
         for pattern, handler in time_patterns.items():
-            match = re.search(
-                pattern, expression, re.IGNORECASE
-            )  # REGEX OK: Time parsing
+            match = self._try_pattern_match(pattern, expression)
             if match:
-                try:
-                    if callable(handler):
-                        result = handler(match)  # type: ignore[no-untyped-call]
-                        if isinstance(result, timedelta):
-                            return base_time + result
-                        if isinstance(result, datetime):
-                            return result
-                        delta = result
-                        if hasattr(delta, "days") or hasattr(delta, "months"):
-                            return base_time + delta
-                except Exception:
-                    continue
+                result = self._process_pattern_handler(handler, match)
+                if result:
+                    return self._convert_result_to_datetime(result, base_time)
+        return None
+
+    def _try_pattern_match(self, pattern: str, expression: str) -> Match[str] | None:
+        """Try to match a pattern against the expression."""
+        return re.search(pattern, expression, re.IGNORECASE)  # REGEX OK: Time parsing
+
+    def _process_pattern_handler(self, handler: Any, match: Match[str]) -> Any:
+        """Process a pattern handler with exception handling."""
+        try:
+            if callable(handler):
+                return handler(match)  # type: ignore[no-untyped-call]
+        except Exception:
+            pass
+        return None
+
+    def _convert_result_to_datetime(
+        self, result: Any, base_time: datetime
+    ) -> datetime | None:
+        """Convert handler result to datetime with base time."""
+        if isinstance(result, timedelta):
+            return base_time + result
+        if isinstance(result, datetime):
+            return result
+        if hasattr(result, "days") or hasattr(result, "months"):
+            return base_time + result
         return None
 
     def _try_parse_absolute_date(
