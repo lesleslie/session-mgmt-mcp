@@ -121,7 +121,7 @@ print('Server debug check complete')
 
    - **FastMCP Integration**: Uses FastMCP framework for MCP protocol handling
    - **Tool Registration**: Centralized registration of all MCP tools and prompts
-   - **Session Lifecycle**: Complete session management (init, checkpoint, end, status)
+   - **Session Lifecycle**: Complete session management (start, checkpoint, end, status)
    - **Permissions System**: Trusted operations management to reduce user prompts
    - **Project Analysis**: Context-aware project health monitoring and scoring
    - **Git Integration**: Automatic checkpoint commits with metadata tracking
@@ -146,7 +146,7 @@ print('Server debug check complete')
 
 4. **tools/** directory: Organized MCP tool implementations
 
-   - **session_tools.py**: Core session management (init, checkpoint, end, status)
+   - **session_tools.py**: Core session management (start, checkpoint, end, status)
    - **memory_tools.py**: Reflection and search functionality
    - **search_tools.py**: Advanced search capabilities and pagination
    - **crackerjack_tools.py**: Quality integration and progress tracking
@@ -448,7 +448,7 @@ pytest -m "not slow"
 
 ### Session Management Tools
 
-- **`init`** (`mcp__session-mgmt__init`) - Complete session initialization with project analysis
+- **`start`** (`mcp__session-mgmt__start`) - Complete session initialization with project analysis
 - **`checkpoint`** (`mcp__session-mgmt__checkpoint`) - Mid-session quality assessment and optimization
 - **`end`** (`mcp__session-mgmt__end`) - Complete session cleanup with learning capture
 - **`status`** (`mcp__session-mgmt__status`) - Current session status with health checks

@@ -69,7 +69,7 @@ class LLMProvider(ABC):
         """Generate a response from the LLM."""
 
     @abstractmethod
-    async def stream_generate(
+    async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
         model: str | None = None,
@@ -168,7 +168,7 @@ class OpenAIProvider(LLMProvider):
             self.logger.exception(f"OpenAI generation failed: {e}")
             raise
 
-    async def stream_generate(
+    async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
         model: str | None = None,
@@ -339,7 +339,7 @@ class GeminiProvider(LLMProvider):
             self.logger.exception(f"Gemini generation failed: {e}")
             raise
 
-    async def stream_generate(
+    async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
         model: str | None = None,
@@ -420,12 +420,12 @@ class OllamaProvider(LLMProvider):
         self.default_model = config.get("default_model", "llama2")
         self._available_models: list[str] = []
 
-    async def _make_request(
+    async def _make_api_request(
         self,
         endpoint: str,
         data: dict[str, Any],
     ) -> dict[str, Any]:
-        """Make HTTP request to Ollama API."""
+        """Make API request to Ollama service."""
         try:
             import aiohttp
 
@@ -435,12 +435,12 @@ class OllamaProvider(LLMProvider):
                     json=data,
                     timeout=aiohttp.ClientTimeout(total=300),
                 ) as response:
-                    return await response.json()
+                    return await response.json()  # type: ignore[no-any-return]
         except ImportError:
             msg = "aiohttp package not installed. Install with: pip install aiohttp"
             raise ImportError(
                 msg,
-            )
+            )  # type: ignore[no-any-return]
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
         """Convert LLMMessage objects to Ollama format."""
@@ -471,7 +471,7 @@ class OllamaProvider(LLMProvider):
             if max_tokens:
                 data["options"]["num_predict"] = max_tokens
 
-            response = await self._make_request("api/chat", data)
+            response = await self._make_api_request("api/chat", data)
 
             return LLMResponse(
                 content=response.get("message", {}).get("content", ""),
@@ -499,7 +499,7 @@ class OllamaProvider(LLMProvider):
         max_tokens: int | None,
     ) -> dict[str, Any]:
         """Prepare data payload for streaming request."""
-        data = {
+        data: dict[str, Any] = {
             "model": model_name,
             "messages": self._convert_messages(messages),
             "stream": True,
@@ -516,8 +516,10 @@ class OllamaProvider(LLMProvider):
 
         try:
             chunk_data = json.loads(line.decode("utf-8"))
-            if "message" in chunk_data and "content" in chunk_data["message"]:
-                return chunk_data["message"]["content"]
+            if isinstance(chunk_data, dict) and "message" in chunk_data:
+                message = chunk_data["message"]
+                if isinstance(message, dict) and "content" in message:
+                    return str(message["content"])
         except json.JSONDecodeError:
             pass
         return None
@@ -529,7 +531,7 @@ class OllamaProvider(LLMProvider):
             if content:
                 yield content
 
-    async def stream_generate(
+    async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
         model: str | None = None,
@@ -607,7 +609,7 @@ class LLMManager:
 
     def _load_config(self, config_path: str | None) -> dict[str, Any]:
         """Load configuration from file or environment."""
-        config = {
+        config: dict[str, Any] = {
             "providers": {},
             "default_provider": "openai",
             "fallback_providers": ["gemini", "ollama"],
@@ -679,34 +681,64 @@ class LLMManager:
         target_provider = provider or self.config["default_provider"]
 
         # Try primary provider
-        if target_provider in self.providers:
-            try:
-                provider_instance = self.providers[target_provider]
-                if await provider_instance.is_available():
-                    return await provider_instance.generate(messages, model, **kwargs)
-            except Exception as e:
-                self.logger.warning(f"Provider {target_provider} failed: {e}")
+        result = await self._try_primary_provider_generate(
+            target_provider, messages, model, **kwargs
+        )
+        if result is not None:
+            return result
 
         # Try fallback providers if enabled
         if use_fallback:
-            for fallback_name in self.config.get("fallback_providers", []):
-                if fallback_name in self.providers and fallback_name != target_provider:
-                    try:
-                        provider_instance = self.providers[fallback_name]
-                        if await provider_instance.is_available():
-                            self.logger.info(f"Falling back to {fallback_name}")
-                            return await provider_instance.generate(
-                                messages,
-                                model,
-                                **kwargs,
-                            )
-                    except Exception as e:
-                        self.logger.warning(
-                            f"Fallback provider {fallback_name} failed: {e}",
-                        )
+            result = await self._try_fallback_providers_generate(
+                target_provider, messages, model, **kwargs
+            )
+            if result is not None:
+                return result
 
         msg = "No available LLM providers"
         raise RuntimeError(msg)
+
+    async def _try_primary_provider_generate(
+        self,
+        target_provider: str,
+        messages: list[LLMMessage],
+        model: str | None,
+        **kwargs: Any,
+    ) -> LLMResponse | None:
+        """Try generating with primary provider."""
+        if target_provider not in self.providers:
+            return None
+
+        try:
+            provider_instance = self.providers[target_provider]
+            if await provider_instance.is_available():
+                return await provider_instance.generate(messages, model, **kwargs)
+        except Exception as e:
+            self.logger.warning(f"Provider {target_provider} failed: {e}")
+        return None
+
+    async def _try_fallback_providers_generate(
+        self,
+        target_provider: str,
+        messages: list[LLMMessage],
+        model: str | None,
+        **kwargs: Any,
+    ) -> LLMResponse | None:
+        """Try generating with fallback providers."""
+        for fallback_name in self.config.get("fallback_providers", []):
+            if fallback_name in self.providers and fallback_name != target_provider:
+                try:
+                    provider_instance = self.providers[fallback_name]
+                    if await provider_instance.is_available():
+                        self.logger.info(f"Falling back to {fallback_name}")
+                        return await provider_instance.generate(
+                            messages, model, **kwargs
+                        )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Fallback provider {fallback_name} failed: {e}"
+                    )
+        return None
 
     def _get_fallback_providers(self, target_provider: str) -> list[str]:
         """Get list of fallback providers excluding the target provider."""
@@ -720,7 +752,39 @@ class LLMManager:
         """Check if a provider is valid and available."""
         return provider_name in self.providers
 
-    async def stream_generate(
+    async def _get_provider_stream(
+        self,
+        provider_name: str,
+        messages: list[LLMMessage],
+        model: str | None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[str]:
+        """Get stream from provider (assumes provider is available)."""
+        provider_instance = self.providers[provider_name]
+        async for chunk in provider_instance.stream_generate(  # type: ignore[attr-defined]
+            messages, model, **kwargs
+        ):
+            yield chunk
+
+    async def _try_provider_streaming(
+        self,
+        provider_name: str,
+        messages: list[LLMMessage],
+        model: str | None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[str]:
+        """Try streaming from a provider with error handling."""
+        try:
+            provider_instance = self.providers[provider_name]
+            if await provider_instance.is_available():
+                async for chunk in self._get_provider_stream(
+                    provider_name, messages, model, **kwargs
+                ):
+                    yield chunk
+        except Exception as e:
+            self.logger.warning(f"Provider {provider_name} failed: {e}")
+
+    async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
         provider: str | None = None,
@@ -736,43 +800,33 @@ class LLMManager:
 
         # Try primary provider
         if self._is_valid_provider(target_provider):
-            try:
-                provider_instance = self.providers[target_provider]
-                if await provider_instance.is_available():
-                    async for chunk in provider_instance.stream_generate(
-                        messages,
-                        model,
-                        **kwargs,
-                    ):
-                        yield chunk
-                    return
-            except Exception as e:
-                self.logger.warning(f"Provider {target_provider} failed: {e}")
+            stream_started = False
+            async for chunk in self._try_provider_streaming(
+                target_provider, messages, model, **kwargs
+            ):
+                stream_started = True
+                yield chunk
+            if stream_started:
+                return
 
         # Try fallback providers if enabled
         for fallback_name in fallback_providers:
-            try:
-                provider_instance = self.providers[fallback_name]
-                if await provider_instance.is_available():
-                    self.logger.info(f"Falling back to {fallback_name}")
-                    async for chunk in provider_instance.stream_generate(
-                        messages,
-                        model,
-                        **kwargs,
-                    ):
-                        yield chunk
-                    return
-            except Exception as e:
-                self.logger.warning(
-                    f"Fallback provider {fallback_name} failed: {e}",
-                )
+            self.logger.info(f"Falling back to {fallback_name}")
+            stream_started = False
+            async for chunk in self._try_provider_streaming(
+                fallback_name, messages, model, **kwargs
+            ):
+                stream_started = True
+                yield chunk
+            if stream_started:
+                return
 
         msg = "No available LLM providers"
         raise RuntimeError(msg)
 
     def get_provider_info(self) -> dict[str, Any]:
         """Get information about all providers."""
-        info = {
+        info: dict[str, Any] = {
             "providers": {},
             "config": {
                 "default_provider": self.config["default_provider"],

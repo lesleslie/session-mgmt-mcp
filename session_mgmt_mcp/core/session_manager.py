@@ -328,34 +328,46 @@ class SessionLifecycleManager:
 
         return output
 
+    def _setup_working_directory(self, working_directory: str | None) -> Path:
+        """Set up working directory and project name."""
+        if working_directory:
+            os.chdir(working_directory)
+
+        current_dir = Path.cwd()
+        self.current_project = current_dir.name
+        return current_dir
+
+    def _setup_claude_directories(self) -> Path:
+        """Create .claude directory structure."""
+        claude_dir = Path.home() / ".claude"
+        claude_dir.mkdir(exist_ok=True)
+        (claude_dir / "data").mkdir(exist_ok=True)
+        (claude_dir / "logs").mkdir(exist_ok=True)
+        return claude_dir
+
+    def _get_previous_session_info(self, current_dir: Path) -> dict[str, Any] | None:
+        """Get previous session information if available."""
+        latest_handoff = self._find_latest_handoff_file(current_dir)
+        if latest_handoff:
+            return self._read_previous_session_info(latest_handoff)
+        return None
+
     async def initialize_session(
         self,
         working_directory: str | None = None,
     ) -> dict[str, Any]:
         """Initialize a new session with comprehensive setup."""
         try:
-            # Set working directory
-            if working_directory:
-                os.chdir(working_directory)
+            # Setup directories and project
+            current_dir = self._setup_working_directory(working_directory)
+            claude_dir = self._setup_claude_directories()
 
-            current_dir = Path.cwd()
-            self.current_project = current_dir.name
-
-            # Create .claude directory structure
-            claude_dir = Path.home() / ".claude"
-            claude_dir.mkdir(exist_ok=True)
-            (claude_dir / "data").mkdir(exist_ok=True)
-            (claude_dir / "logs").mkdir(exist_ok=True)
-
-            # Analyze project context
+            # Analyze project and assess quality
             project_context = await self.analyze_project_context(current_dir)
             quality_score, quality_data = await self.perform_quality_assessment()
 
-            # Check for previous session information
-            previous_session_info = None
-            latest_handoff = self._find_latest_handoff_file(current_dir)
-            if latest_handoff:
-                previous_session_info = self._read_previous_session_info(latest_handoff)
+            # Get previous session info
+            previous_session_info = self._get_previous_session_info(current_dir)
 
             self.logger.info(
                 "Session initialized",
@@ -459,60 +471,73 @@ class SessionLifecycleManager:
             self.logger.exception("Session end failed", error=str(e))
             return {"success": False, "error": str(e)}
 
+    def _build_handoff_header(self, summary: dict[str, Any]) -> list[str]:
+        """Build handoff documentation header section."""
+        return [
+            f"# Session Handoff Report - {summary['project']}",
+            "",
+            f"**Session ended:** {summary['session_end_time']}",
+            f"**Final quality score:** {summary['final_quality_score']}/100",
+            f"**Working directory:** {summary['working_directory']}",
+            "",
+        ]
+
+    def _build_quality_section(self, quality_data: dict[str, Any]) -> list[str]:
+        """Build quality assessment section of handoff documentation."""
+        lines = ["## Quality Assessment", ""]
+        breakdown = quality_data.get("breakdown", {})
+        lines.extend(
+            [
+                f"- **Project health:** {breakdown.get('project_health', 0):.1f}/40",
+                f"- **Permissions:** {breakdown.get('permissions', 0):.1f}/20",
+                f"- **Session tools:** {breakdown.get('session_management', 0):.1f}/20",
+                f"- **Tool availability:** {breakdown.get('tools', 0):.1f}/20",
+                "",
+            ]
+        )
+        return lines
+
+    def _build_recommendations_section(self, recommendations: list[str]) -> list[str]:
+        """Build recommendations section of handoff documentation."""
+        if not recommendations:
+            return []
+
+        lines = ["## Recommendations for Next Session", ""]
+        lines.extend([f"{i}. {rec}" for i, rec in enumerate(recommendations, 1)])
+        lines.append("")
+        return lines
+
+    def _build_static_sections(self) -> list[str]:
+        """Build static sections of handoff documentation."""
+        return [
+            "## Key Achievements",
+            "",
+            "- Session successfully completed",
+            "- Quality metrics captured",
+            "- Temporary files cleaned up",
+            "",
+            "## Next Steps",
+            "",
+            "1. Review the recommendations above",
+            "2. Check the working directory for any uncommitted changes",
+            "3. Ensure all necessary files are committed to version control",
+            "4. Address any outstanding issues before starting next session",
+            "",
+        ]
+
     def _generate_handoff_documentation(
         self, summary: dict[str, Any], quality_data: dict[str, Any]
     ) -> str:
         """Generate comprehensive handoff documentation in markdown format."""
-        # Create markdown documentation
         lines = []
 
-        # Header
-        lines.append(f"# Session Handoff Report - {summary['project']}")
-        lines.append("")
-        lines.append(f"**Session ended:** {summary['session_end_time']}")
-        lines.append(f"**Final quality score:** {summary['final_quality_score']}/100")
-        lines.append(f"**Working directory:** {summary['working_directory']}")
-        lines.append("")
-
-        # Quality assessment
-        lines.append("## Quality Assessment")
-        lines.append("")
-        breakdown = quality_data.get("breakdown", {})
-        lines.append(
-            f"- **Project health:** {breakdown.get('project_health', 0):.1f}/40"
+        # Build each section
+        lines.extend(self._build_handoff_header(summary))
+        lines.extend(self._build_quality_section(quality_data))
+        lines.extend(
+            self._build_recommendations_section(summary.get("recommendations", []))
         )
-        lines.append(f"- **Permissions:** {breakdown.get('permissions', 0):.1f}/20")
-        lines.append(
-            f"- **Session tools:** {breakdown.get('session_management', 0):.1f}/20"
-        )
-        lines.append(f"- **Tool availability:** {breakdown.get('tools', 0):.1f}/20")
-        lines.append("")
-
-        # Recommendations
-        recommendations = summary.get("recommendations", [])
-        if recommendations:
-            lines.append("## Recommendations for Next Session")
-            lines.append("")
-            for i, rec in enumerate(recommendations, 1):
-                lines.append(f"{i}. {rec}")
-            lines.append("")
-
-        # Key achievements (placeholder for future enhancement)
-        lines.append("## Key Achievements")
-        lines.append("")
-        lines.append("- Session successfully completed")
-        lines.append("- Quality metrics captured")
-        lines.append("- Temporary files cleaned up")
-        lines.append("")
-
-        # Next steps
-        lines.append("## Next Steps")
-        lines.append("")
-        lines.append("1. Review the recommendations above")
-        lines.append("2. Check the working directory for any uncommitted changes")
-        lines.append("3. Ensure all necessary files are committed to version control")
-        lines.append("4. Address any outstanding issues before starting next session")
-        lines.append("")
+        lines.extend(self._build_static_sections())
 
         return "\n".join(lines)
 
@@ -571,40 +596,46 @@ class SessionLifecycleManager:
             with handoff_file.open(encoding="utf-8") as f:
                 content = f.read()
 
-            info = {}
             lines = content.split("\n")
-
-            for line in lines:
-                if line.startswith("**Session ended:**"):
-                    info["ended_at"] = line.split("**Session ended:**")[1].strip()
-                elif line.startswith("**Final quality score:**"):
-                    info["quality_score"] = line.split("**Final quality score:**")[
-                        1
-                    ].strip()
-                elif line.startswith("**Working directory:**"):
-                    info["working_directory"] = line.split("**Working directory:**")[
-                        1
-                    ].strip()
-
-            # Extract first recommendation if available
-            in_recommendations = False
-            for line in lines:
-                if "## Recommendations for Next Session" in line:
-                    in_recommendations = True
-                    continue
-                if in_recommendations and line.strip().startswith("1."):
-                    info["top_recommendation"] = line.strip()[
-                        3:
-                    ].strip()  # Remove "1. "
-                    break
-                if in_recommendations and line.startswith("##"):
-                    break  # End of recommendations section
+            info = self._extract_session_metadata(lines)
+            self._extract_session_recommendations(lines, info)
 
             return info or None
 
         except Exception as e:
             self.logger.debug(f"Error reading handoff file: {e}")
             return None
+
+    def _extract_session_metadata(self, lines: list[str]) -> dict[str, str]:
+        """Extract session metadata from handoff file lines."""
+        info = {}
+        for line in lines:
+            if line.startswith("**Session ended:**"):
+                info["ended_at"] = line.split("**Session ended:**")[1].strip()
+            elif line.startswith("**Final quality score:**"):
+                info["quality_score"] = line.split("**Final quality score:**")[
+                    1
+                ].strip()
+            elif line.startswith("**Working directory:**"):
+                info["working_directory"] = line.split("**Working directory:**")[
+                    1
+                ].strip()
+        return info
+
+    def _extract_session_recommendations(
+        self, lines: list[str], info: dict[str, str]
+    ) -> None:
+        """Extract first recommendation from recommendations section."""
+        in_recommendations = False
+        for line in lines:
+            if "## Recommendations for Next Session" in line:
+                in_recommendations = True
+                continue
+            if in_recommendations and line.strip().startswith("1."):
+                info["top_recommendation"] = line.strip()[3:].strip()  # Remove "1. "
+                break
+            if in_recommendations and line.startswith("##"):
+                break  # End of recommendations section
 
     async def get_session_status(
         self,

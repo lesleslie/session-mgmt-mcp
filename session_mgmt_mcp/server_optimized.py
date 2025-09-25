@@ -6,8 +6,8 @@ It's organized into focused modules for better maintainability and performance.
 """
 
 import sys
-from collections.abc import Callable
-from contextlib import suppress
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +37,7 @@ except ImportError:
                 self.prompts: dict[str, Any] = {}
 
             def tool(
-                self, *args, **kwargs
+                self, *args: Any, **kwargs: Any
             ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
                 def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
@@ -45,17 +45,17 @@ except ImportError:
                 return decorator
 
             def prompt(
-                self, *args, **kwargs
+                self, *args: Any, **kwargs: Any
             ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
                 def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
 
                 return decorator
 
-            def run(self, *args, **kwargs) -> None:
+            def run(self, *args: Any, **kwargs: Any) -> None:
                 pass
 
-        FastMCP = MockFastMCP
+        FastMCP = MockFastMCP  # type: ignore[no-redef]
         MCP_AVAILABLE = False
     else:
         print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
@@ -68,7 +68,6 @@ logger = get_session_logger()
 
 # Import required modules for automatic lifecycle
 import os
-from contextlib import asynccontextmanager
 
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.git_operations import get_git_root, is_git_repository
@@ -82,7 +81,7 @@ _connection_info = None
 
 # Lifespan handler for automatic session management
 @asynccontextmanager
-async def session_lifecycle(app):
+async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only."""
     current_dir = Path.cwd()
 

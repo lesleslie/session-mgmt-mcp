@@ -8,7 +8,10 @@ team coordination, and collaborative development workflows.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +198,7 @@ async def _vote_on_reflection_impl(
         return f"❌ Failed to vote on reflection: {e!s}"
 
 
-def register_team_tools(mcp: Any) -> None:
+def register_team_tools(mcp: FastMCP) -> None:
     """Register all team collaboration MCP tools.
 
     Args:

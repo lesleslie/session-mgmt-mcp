@@ -8,7 +8,10 @@ following crackerjack architecture patterns.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 
@@ -358,7 +361,7 @@ async def _configure_llm_provider_impl(
         return f"❌ Error configuring provider: {e}"
 
 
-def register_llm_tools(mcp) -> None:
+def register_llm_tools(mcp: FastMCP) -> None:
     """Register all LLM provider management MCP tools.
 
     Args:

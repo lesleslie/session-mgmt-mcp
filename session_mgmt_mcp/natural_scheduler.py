@@ -173,11 +173,9 @@ class NaturalLanguageParser:
 
     def _process_pattern_handler(self, handler: Any, match: Match[str]) -> Any:
         """Process a pattern handler with exception handling."""
-        try:
+        with contextlib.suppress(Exception):
             if callable(handler):
                 return handler(match)  # type: ignore[no-untyped-call]
-        except Exception:
-            pass
         return None
 
     def _convert_result_to_datetime(
@@ -189,7 +187,7 @@ class NaturalLanguageParser:
         if isinstance(result, datetime):
             return result
         if hasattr(result, "days") or hasattr(result, "months"):
-            return base_time + result
+            return base_time + result  # type: ignore[no-any-return]
         return None
 
     def _try_parse_absolute_date(

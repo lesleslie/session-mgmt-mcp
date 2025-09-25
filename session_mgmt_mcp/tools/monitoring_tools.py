@@ -8,7 +8,10 @@ and managing session context following crackerjack architecture patterns.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 
@@ -518,6 +521,57 @@ async def _restore_session_context_impl(session_id: str) -> str:
         return f"❌ Error restoring context: {e}"
 
 
+def _format_interruption_header(user_id: str, hours: int) -> list[str]:
+    """Format the header for interruption history output."""
+    return [
+        f"📊 Interruption History - Last {hours} Hours",
+        f"👤 User: {user_id}",
+        "",
+    ]
+
+
+def _format_empty_interruption_history() -> list[str]:
+    """Format output when no interruptions are found."""
+    return [
+        "🔍 No interruptions detected",
+        "💡 Either no interruptions occurred or monitoring wasn't active",
+    ]
+
+
+def _format_single_interruption(i: int, interruption: dict[str, Any]) -> list[str]:
+    """Format a single interruption entry."""
+    output = [
+        f"{i}. **{interruption['type']}** - {interruption['timestamp']}",
+        f"   Duration: {interruption['duration_minutes']:.1f} minutes",
+    ]
+
+    if interruption.get("context_saved"):
+        output.append("   💾 Context preserved")
+
+    if interruption.get("context_restored"):
+        output.append("   🔄 Context restored")
+
+    if interruption.get("trigger"):
+        output.append(f"   🎯 Trigger: {interruption['trigger']}")
+
+    output.append("")
+    return output
+
+
+def _format_interruption_summary(history: list[dict[str, Any]]) -> list[str]:
+    """Format the summary statistics for interruption history."""
+    total_interruptions = len(history)
+    avg_duration = sum(i["duration_minutes"] for i in history) / total_interruptions
+    context_saves = sum(1 for i in history if i.get("context_saved"))
+
+    return [
+        "📈 Summary:",
+        f"   • Total interruptions: {total_interruptions}",
+        f"   • Average duration: {avg_duration:.1f} minutes",
+        f"   • Context saves: {context_saves}/{total_interruptions}",
+    ]
+
+
 async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
     """Get recent interruption history for user."""
     if not _check_interruption_available():
@@ -529,49 +583,18 @@ async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
             return "❌ Failed to initialize interruption manager"
 
         history = await manager.get_interruption_history(user_id=user_id, hours=hours)
-
-        output = [
-            f"📊 Interruption History - Last {hours} Hours",
-            f"👤 User: {user_id}",
-            "",
-        ]
+        output = _format_interruption_header(user_id, hours)
 
         if not history:
-            output.append("🔍 No interruptions detected")
-            output.append(
-                "💡 Either no interruptions occurred or monitoring wasn't active"
-            )
+            output.extend(_format_empty_interruption_history())
             return "\n".join(output)
 
+        # Format each interruption
         for i, interruption in enumerate(history, 1):
-            output.append(
-                f"{i}. **{interruption['type']}** - {interruption['timestamp']}"
-            )
-            output.append(
-                f"   Duration: {interruption['duration_minutes']:.1f} minutes"
-            )
+            output.extend(_format_single_interruption(i, interruption))
 
-            if interruption.get("context_saved"):
-                output.append("   💾 Context preserved")
-
-            if interruption.get("context_restored"):
-                output.append("   🔄 Context restored")
-
-            if interruption.get("trigger"):
-                output.append(f"   🎯 Trigger: {interruption['trigger']}")
-
-            output.append("")
-
-        # Summary statistics
-        total_interruptions = len(history)
-        avg_duration = sum(i["duration_minutes"] for i in history) / total_interruptions
-        context_saves = sum(1 for i in history if i.get("context_saved"))
-
-        output.append("📈 Summary:")
-        output.append(f"   • Total interruptions: {total_interruptions}")
-        output.append(f"   • Average duration: {avg_duration:.1f} minutes")
-        output.append(f"   • Context saves: {context_saves}/{total_interruptions}")
-
+        # Add summary statistics
+        output.extend(_format_interruption_summary(history))
         return "\n".join(output)
 
     except Exception as e:
@@ -579,7 +602,7 @@ async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
         return f"❌ Error getting interruption history: {e}"
 
 
-def register_monitoring_tools(mcp: Any) -> None:
+def register_monitoring_tools(mcp: FastMCP) -> None:
     """Register all monitoring and activity tracking MCP tools.
 
     Args:

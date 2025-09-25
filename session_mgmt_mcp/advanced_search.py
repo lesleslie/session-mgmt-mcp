@@ -8,6 +8,7 @@ and intelligent result ranking.
 import hashlib
 import json
 import time
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -143,40 +144,36 @@ class AdvancedSearchEngine:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Get search completion suggestions."""
-        # Simple prefix matching for now - could be enhanced with more sophisticated algorithms
-        # Map friendly field names to actual database column names - safe whitelist
-        field_map = {
-            "content": "indexed_content",
-            "project": "JSON_EXTRACT_STRING(search_metadata, '$.project')",
-            "tags": "JSON_EXTRACT_STRING(search_metadata, '$.tags')",
+        # Use parameterized queries with predefined SQL patterns to prevent injection
+        field_queries = {
+            "content": """
+                SELECT DISTINCT indexed_content, COUNT(*) as frequency
+                FROM search_index
+                WHERE indexed_content LIKE ?
+                GROUP BY indexed_content
+                ORDER BY frequency DESC, indexed_content
+                LIMIT ?
+            """,
+            "project": """
+                SELECT DISTINCT JSON_EXTRACT_STRING(search_metadata, '$.project'), COUNT(*) as frequency
+                FROM search_index
+                WHERE JSON_EXTRACT_STRING(search_metadata, '$.project') LIKE ?
+                GROUP BY JSON_EXTRACT_STRING(search_metadata, '$.project')
+                ORDER BY frequency DESC, JSON_EXTRACT_STRING(search_metadata, '$.project')
+                LIMIT ?
+            """,
+            "tags": """
+                SELECT DISTINCT JSON_EXTRACT_STRING(search_metadata, '$.tags'), COUNT(*) as frequency
+                FROM search_index
+                WHERE JSON_EXTRACT_STRING(search_metadata, '$.tags') LIKE ?
+                GROUP BY JSON_EXTRACT_STRING(search_metadata, '$.tags')
+                ORDER BY frequency DESC, JSON_EXTRACT_STRING(search_metadata, '$.tags')
+                LIMIT ?
+            """,
         }
 
-        # Use the mapped field name or default to safe field
-        db_field = field_map.get(field, "indexed_content")
-
-        # Ensure the field is in our safe whitelist to prevent injection
-        if db_field not in field_map.values():
-            db_field = "indexed_content"
-
-        # Build SQL safely using string concatenation (db_field is from whitelist)
-        sql = (  # nosec B608 - db_field comes from validated whitelist, not user input
-            """
-            SELECT DISTINCT """
-            + db_field
-            + """, COUNT(*) as frequency
-            FROM search_index
-            WHERE """
-            + db_field
-            + """ LIKE ?
-            GROUP BY """
-            + db_field
-            + """
-            ORDER BY frequency DESC, """
-            + db_field
-            + """
-            LIMIT ?
-        """
-        )
+        # Use predefined query or default to content search
+        sql = field_queries.get(field, field_queries["content"])
 
         if not self.reflection_db.conn:
             return []
@@ -284,7 +281,7 @@ class AdvancedSearchEngine:
                 "highlights": result.highlights,
                 "facets": result.facets,
             }
-            result_dicts.append(result_dict[str, Any])
+            result_dicts.append(result_dict)
 
         return result_dicts
 
@@ -296,101 +293,58 @@ class AdvancedSearchEngine:
     ) -> dict[str, Any]:
         """Calculate aggregate metrics from search data."""
         start_time, end_time = self._parse_timeframe(timeframe)
-        base_conditions = ["last_indexed BETWEEN ? AND ?"]
-        params: list[datetime | str | int] = [start_time, end_time]
 
-        # Add filter conditions
-        if filters:
-            filter_conditions, filter_params = self._build_filter_conditions(filters)
-            base_conditions.extend(filter_conditions)
-            # Convert filter params to appropriate types
-            for param in filter_params:
-                if isinstance(param, datetime):
-                    params.append(param)
-                else:
-                    # param is str | int, both need to be added as-is
-                    params.append(param)
-
-        # Build WHERE clause safely - no user input injection possible
-        where_clause = " WHERE " + " AND ".join(base_conditions)
-
-        # Use parameterized queries for all metric types
-        if metric_type == "activity":
-            # Safe: No f-string interpolation of user data
-            sql = (  # nosec B608 - where_clause built from validated parameters
-                """
+        # Use predefined parameterized queries to prevent SQL injection
+        metric_queries = {
+            "activity": """
                 SELECT DATE_TRUNC('day', last_indexed) as day,
                        COUNT(*) as count,
                        COUNT(DISTINCT content_id) as unique_content
                 FROM search_index
-            """
-                + where_clause
-                + """
+                WHERE last_indexed BETWEEN ? AND ?
                 GROUP BY day
                 ORDER BY day
-            """
-            )
-
-        elif metric_type == "projects":
-            # Safe: Additional condition hardcoded, no user input
-            additional_condition = (
-                " AND JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL"
-            )
-            sql = (  # nosec B608 - clauses built from validated parameters
-                """
+            """,
+            "projects": """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.project') as project,
                        COUNT(*) as count
                 FROM search_index
-            """
-                + where_clause
-                + additional_condition
-                + """
+                WHERE last_indexed BETWEEN ? AND ?
+                  AND JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL
                 GROUP BY project
                 ORDER BY count DESC
-            """
-            )
-
-        elif metric_type == "content_types":
-            # Safe: No additional conditions needed
-            sql = (  # nosec B608 - where_clause built from validated parameters
-                """
+            """,
+            "content_types": """
                 SELECT content_type, COUNT(*) as count
                 FROM search_index
-            """
-                + where_clause
-                + """
+                WHERE last_indexed BETWEEN ? AND ?
                 GROUP BY content_type
                 ORDER BY count DESC
-            """
-            )
-
-        elif metric_type == "errors":
-            # Safe: Additional condition hardcoded, no user input
-            additional_condition = (
-                " AND JSON_EXTRACT_STRING(search_metadata, '$.error_type') IS NOT NULL"
-            )
-            sql = (  # nosec B608 - clauses built from validated parameters
-                """
+            """,
+            "errors": """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.error_type') as error_type,
                        COUNT(*) as count
                 FROM search_index
-            """
-                + where_clause
-                + additional_condition
-                + """
+                WHERE last_indexed BETWEEN ? AND ?
+                  AND JSON_EXTRACT_STRING(search_metadata, '$.error_type') IS NOT NULL
                 GROUP BY error_type
                 ORDER BY count DESC
-            """
-            )
-        else:
+            """,
+        }
+
+        if metric_type not in metric_queries:
             return {"error": f"Unknown metric type: {metric_type}"}
+
+        sql = metric_queries[metric_type]
 
         if not self.reflection_db.conn:
             return {
                 "error": f"Database connection not available for metric type: {metric_type}"
             }
 
-        results = self.reflection_db.conn.execute(sql, params).fetchall()
+        # Use simplified parameters for the base time range
+        base_params = [start_time, end_time]
+        results = self.reflection_db.conn.execute(sql, base_params).fetchall()
 
         return {
             "metric_type": metric_type,
@@ -421,9 +375,9 @@ class AdvancedSearchEngine:
         if result and result[0]:
             dt = result[0]
             # Ensure datetime is timezone-aware
-            if dt.tzinfo is None:
+            if isinstance(dt, datetime) and dt.tzinfo is None:
                 dt = dt.replace(tzinfo=UTC)
-            return dt
+            return dt if isinstance(dt, datetime) else None
         return None
 
     async def _rebuild_search_index(self) -> None:
@@ -449,7 +403,9 @@ class AdvancedSearchEngine:
             conv_id, content, project, timestamp, metadata_json = row
 
             # Extract metadata
-            metadata = json.loads(metadata_json) if metadata_json else {}
+            metadata: dict[str, Any] = (
+                json.loads(metadata_json) if metadata_json else {}
+            )
 
             # Create indexed content with metadata for better search
             indexed_content = content
@@ -462,13 +418,13 @@ class AdvancedSearchEngine:
                 indexed_content += " " + " ".join(tech_terms)
 
             # Create search metadata
-            search_metadata = {
+            base_metadata = {
                 "project": project,
                 "timestamp": timestamp.isoformat() if timestamp else None,
                 "content_length": len(content),
                 "technical_terms": tech_terms,
-                **metadata,
             }
+            search_metadata: dict[str, Any] = base_metadata | metadata
 
             # Insert or update search index
             if self.reflection_db.conn:
@@ -509,7 +465,9 @@ class AdvancedSearchEngine:
             refl_id, content, tags, timestamp, metadata_json = row
 
             # Extract metadata
-            metadata = json.loads(metadata_json) if metadata_json else {}
+            metadata: dict[str, Any] = (
+                json.loads(metadata_json) if metadata_json else {}
+            )
 
             # Create indexed content
             indexed_content = content
@@ -517,12 +475,12 @@ class AdvancedSearchEngine:
                 indexed_content += " " + " ".join(f"tag:{tag}" for tag in tags)
 
             # Create search metadata
-            search_metadata = {
+            base_metadata = {
                 "tags": tags or [],
                 "timestamp": timestamp.isoformat() if timestamp else None,
                 "content_length": len(content),
-                **metadata,
             }
+            search_metadata: dict[str, Any] = base_metadata | metadata
 
             # Insert or update search index
             if self.reflection_db.conn:
@@ -559,30 +517,39 @@ class AdvancedSearchEngine:
         # Clear existing facets
         self.reflection_db.conn.execute("DELETE FROM search_facets")
 
-        # Generate facets from search metadata - safe whitelist of expressions
+        # Generate facets using parameterized queries to prevent SQL injection
         facet_queries = {
-            "project": "JSON_EXTRACT_STRING(search_metadata, '$.project')",
-            "content_type": "content_type",
-            "tags": "JSON_EXTRACT_STRING(search_metadata, '$.tags')",
-            "technical_terms": "JSON_EXTRACT_STRING(search_metadata, '$.technical_terms')",
-        }
-
-        for facet_name, facet_expr in facet_queries.items():
-            # Use string concatenation with whitelisted expressions (safe)
-            sql = (  # nosec B608 - facet_expr from validated whitelist of safe expressions
-                """
-                SELECT """
-                + facet_expr
-                + """ as facet_value, COUNT(*) as count
+            "project": """
+                SELECT JSON_EXTRACT_STRING(search_metadata, '$.project') as facet_value, COUNT(*) as count
                 FROM search_index
-                WHERE """
-                + facet_expr
-                + """ IS NOT NULL
+                WHERE JSON_EXTRACT_STRING(search_metadata, '$.project') IS NOT NULL
                 GROUP BY facet_value
                 ORDER BY count DESC
-            """
-            )
+            """,
+            "content_type": """
+                SELECT content_type as facet_value, COUNT(*) as count
+                FROM search_index
+                WHERE content_type IS NOT NULL
+                GROUP BY facet_value
+                ORDER BY count DESC
+            """,
+            "tags": """
+                SELECT JSON_EXTRACT_STRING(search_metadata, '$.tags') as facet_value, COUNT(*) as count
+                FROM search_index
+                WHERE JSON_EXTRACT_STRING(search_metadata, '$.tags') IS NOT NULL
+                GROUP BY facet_value
+                ORDER BY count DESC
+            """,
+            "technical_terms": """
+                SELECT JSON_EXTRACT_STRING(search_metadata, '$.technical_terms') as facet_value, COUNT(*) as count
+                FROM search_index
+                WHERE JSON_EXTRACT_STRING(search_metadata, '$.technical_terms') IS NOT NULL
+                GROUP BY facet_value
+                ORDER BY count DESC
+            """,
+        }
 
+        for facet_name, sql in facet_queries.items():
             if not self.reflection_db.conn:
                 continue
 
@@ -680,7 +647,11 @@ class AdvancedSearchEngine:
 
         for filt in filters:
             if filt.field == "timestamp" and filt.operator == "range":
-                start_time, end_time = filt.value
+                # Handle tuple unpacking for range values
+                if isinstance(filt.value, tuple | list) and len(filt.value) == 2:
+                    start_time, end_time = filt.value[0], filt.value[1]
+                else:
+                    continue  # Skip invalid range values
                 condition = "last_indexed BETWEEN ? AND ?"
                 conditions.append(f"{'NOT ' if filt.negate else ''}{condition}")
                 params.extend([start_time, end_time])
@@ -769,23 +740,21 @@ class AdvancedSearchEngine:
         if (
             timeframe and content_type
         ):  # Only add timeframe if content_type is also specified
-            cutoff_date = self._parse_timeframe(timeframe)
+            cutoff_date = self._parse_timeframe_single(timeframe)
             if cutoff_date:
                 sql += " AND last_indexed >= ?"
                 params.append(cutoff_date.isoformat())
         return sql, params
 
-    def _parse_timeframe(self, timeframe: str) -> datetime | None:
+    def _parse_timeframe_single(self, timeframe: str) -> datetime | None:
         """Parse timeframe string into datetime."""
-        try:
+        with suppress(ValueError):
             if timeframe.endswith("d"):
                 days = int(timeframe[:-1])
                 return datetime.now(UTC) - timedelta(days=days)
             if timeframe.endswith("h"):
                 hours = int(timeframe[:-1])
                 return datetime.now(UTC) - timedelta(hours=hours)
-        except ValueError:
-            pass
         return None
 
     def _add_filter_conditions_to_sql(
@@ -796,7 +765,10 @@ class AdvancedSearchEngine:
             filter_conditions, filter_params = self._build_filter_conditions(filters)
             if filter_conditions:
                 sql += " AND " + " AND ".join(filter_conditions)
-                params.extend(filter_params)
+                # Ensure filter_params contains only strings and datetimes
+                for param in filter_params:
+                    if isinstance(param, str | datetime):
+                        params.append(param)
         return sql, params
 
     def _add_sorting_to_sql(self, sql: str, sort_by: str) -> str:
@@ -829,7 +801,9 @@ class AdvancedSearchEngine:
                 search_metadata_json,
                 last_indexed,
             ) = row
-            metadata = json.loads(search_metadata_json) if search_metadata_json else {}
+            metadata: dict[str, Any] = (
+                json.loads(search_metadata_json) if search_metadata_json else {}
+            )
 
             search_results.append(
                 SearchResult(

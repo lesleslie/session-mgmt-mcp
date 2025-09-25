@@ -6,6 +6,7 @@ Provides high-level worktree operations and coordination with session management
 
 import json
 import os
+import shutil
 import subprocess
 import time
 from datetime import datetime
@@ -30,6 +31,42 @@ class WorktreeManager:
         """Log messages if logger available."""
         if self.session_logger:
             getattr(self.session_logger, level)(message, **context)
+
+    def _get_git_executable(self) -> str:
+        """Security: Get the full path to git executable to prevent PATH injection."""
+        git_path = shutil.which("git")
+        if not git_path:
+            msg = "Git executable not found in PATH"
+            raise OSError(msg)
+        return git_path
+
+    def _validate_git_command(self, cmd: list[str]) -> bool:
+        """Security: Validate git command arguments to prevent injection."""
+        if not cmd or len(cmd) < 2:
+            return False
+
+        # First argument should be the git executable
+        if not cmd[0].endswith("git"):
+            return False
+
+        # Second argument should be a valid git subcommand
+        valid_subcommands = {
+            "worktree",
+            "status",
+            "add",
+            "commit",
+            "branch",
+            "checkout",
+        }
+        if len(cmd) > 1 and cmd[1] not in valid_subcommands:
+            return False
+
+        # Check for potentially dangerous characters in arguments
+        for arg in cmd:
+            if any(char in arg for char in (";", "&", "|", "`", "$", "\\", "\n", "\r")):
+                return False
+
+        return True
 
     def _is_safe_branch_name(self, branch: str) -> bool:
         """Security: Validate branch name is safe for shell execution."""
@@ -102,15 +139,13 @@ class WorktreeManager:
             self._log(f"Failed to list worktrees: {e}", level="error")
             return {"success": False, "error": str(e), "worktrees": []}
 
-    async def create_worktree(
-        self,
-        repository_path: Path,
-        new_path: Path,
-        branch: str,
-        create_branch: bool = False,
-        checkout_existing: bool = False,
-    ) -> dict[str, Any]:
-        """Create a new worktree."""
+    def _validate_worktree_preconditions(
+        self, repository_path: Path, new_path: Path, branch: str
+    ) -> dict[str, Any] | None:
+        """Validate preconditions for worktree creation.
+
+        Returns error dict if validation fails, None if successful.
+        """
         if not is_git_repository(repository_path):
             return {
                 "success": False,
@@ -123,41 +158,103 @@ class WorktreeManager:
                 "error": f"Target path already exists: {new_path}",
             }
 
+        # Security: Validate branch name to prevent injection
+        if not branch or not self._is_safe_branch_name(branch):
+            return {
+                "success": False,
+                "error": "Invalid branch name: must be alphanumeric with dashes/underscores only",
+            }
+
+        # Security: Validate path is within reasonable bounds
+        if not self._is_safe_path(new_path):
+            return {
+                "success": False,
+                "error": "Invalid path: path must be relative to current directory structure",
+            }
+
+        return None
+
+    def _build_worktree_command(
+        self, new_path: Path, branch: str, create_branch: bool, checkout_existing: bool
+    ) -> list[str]:
+        """Build git worktree add command with security hardening."""
+        git_executable = self._get_git_executable()
+        cmd = [git_executable, "worktree", "add"]
+
+        if create_branch:
+            cmd.extend(["-b", branch])
+        elif checkout_existing:
+            cmd.extend(["--track", "-B", branch])
+
+        cmd.extend([str(new_path), branch])
+        return cmd
+
+    def _execute_worktree_creation(
+        self, cmd: list[str], repository_path: Path
+    ) -> subprocess.CompletedProcess[str]:
+        """Execute git worktree add with security hardening."""
+        return subprocess.run(  # nosec B603 - Command validated via _validate_git_command()
+            cmd,
+            cwd=repository_path,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,  # Security: Prevent hanging processes
+            shell=False,  # Security: Explicit shell=False to prevent injection
+        )
+
+    def _build_success_response(
+        self,
+        new_path: Path,
+        branch: str,
+        worktree_info: Any,
+        result: subprocess.CompletedProcess[str],
+    ) -> dict[str, Any]:
+        """Build success response for worktree creation."""
+        return {
+            "success": True,
+            "worktree_path": str(new_path),
+            "branch": branch,
+            "worktree_info": {
+                "path": str(worktree_info.path),
+                "branch": worktree_info.branch,
+                "is_main": worktree_info.is_main_worktree,
+                "is_detached": worktree_info.is_detached,
+            },
+            "output": result.stdout.strip(),
+        }
+
+    async def create_worktree(
+        self,
+        repository_path: Path,
+        new_path: Path,
+        branch: str,
+        create_branch: bool = False,
+        checkout_existing: bool = False,
+    ) -> dict[str, Any]:
+        """Create a new worktree."""
+        # Validate preconditions
+        validation_error = self._validate_worktree_preconditions(
+            repository_path, new_path, branch
+        )
+        if validation_error:
+            return validation_error
+
         try:
-            # Security: Validate branch name to prevent injection
-            if not branch or not self._is_safe_branch_name(branch):
-                return {
-                    "success": False,
-                    "error": "Invalid branch name: must be alphanumeric with dashes/underscores only",
-                }
-
-            # Security: Validate path is within reasonable bounds
-            if not self._is_safe_path(new_path):
-                return {
-                    "success": False,
-                    "error": "Invalid path: path must be relative to current directory structure",
-                }
-
-            # Build git worktree add command
-            cmd = ["git", "worktree", "add"]
-
-            if create_branch:
-                cmd.extend(["-b", branch])
-            elif checkout_existing:
-                cmd.extend(["--track", "-B", branch])
-
-            cmd.extend([str(new_path), branch])
-
-            # Execute git worktree add with security hardening
-            result = subprocess.run(
-                cmd,
-                cwd=repository_path,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=30,  # Security: Prevent hanging processes
-                # Security: No shell execution to prevent injection
+            # Build and validate command
+            cmd = self._build_worktree_command(
+                new_path, branch, create_branch, checkout_existing
             )
+
+            # Security: Validate command before execution
+            if not self._validate_git_command(cmd):
+                return {
+                    "success": False,
+                    "error": "Invalid git command detected - potential security risk",
+                }
+
+            # Execute command
+            result = self._execute_worktree_creation(cmd, repository_path)
 
             # Verify worktree was created
             worktree_info = get_worktree_info(new_path)
@@ -168,19 +265,7 @@ class WorktreeManager:
                 }
 
             self._log("Created worktree", path=str(new_path), branch=branch)
-
-            return {
-                "success": True,
-                "worktree_path": str(new_path),
-                "branch": branch,
-                "worktree_info": {
-                    "path": str(worktree_info.path),
-                    "branch": worktree_info.branch,
-                    "is_main": worktree_info.is_main_worktree,
-                    "is_detached": worktree_info.is_detached,
-                },
-                "output": result.stdout.strip(),
-            }
+            return self._build_success_response(new_path, branch, worktree_info, result)
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr.strip() if e.stderr else str(e)
@@ -204,23 +289,31 @@ class WorktreeManager:
             }
 
         try:
-            # Build git worktree remove command
-            cmd = ["git", "worktree", "remove"]
+            # Build git worktree remove command with security hardening
+            git_executable = self._get_git_executable()
+            cmd = [git_executable, "worktree", "remove"]
 
             if force:
                 cmd.append("--force")
 
             cmd.append(str(worktree_path))
 
+            # Security: Validate command before execution
+            if not self._validate_git_command(cmd):
+                return {
+                    "success": False,
+                    "error": "Invalid git command detected - potential security risk",
+                }
+
             # Execute git worktree remove with security hardening
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 - Command validated via _validate_git_command()
                 cmd,
                 cwd=repository_path,
                 capture_output=True,
                 text=True,
                 check=True,
                 timeout=30,  # Security: Prevent hanging processes
-                # Security: No shell execution to prevent injection
+                shell=False,  # Security: Explicit shell=False to prevent injection
             )
 
             self._log("Removed worktree", path=str(worktree_path))
@@ -245,15 +338,26 @@ class WorktreeManager:
             return {"success": False, "error": "Directory is not a git repository"}
 
         try:
+            # Build git worktree prune command with security hardening
+            git_executable = self._get_git_executable()
+            cmd = [git_executable, "worktree", "prune", "--verbose"]
+
+            # Security: Validate command before execution
+            if not self._validate_git_command(cmd):
+                return {
+                    "success": False,
+                    "error": "Invalid git command detected - potential security risk",
+                }
+
             # Execute git worktree prune with security hardening
-            result = subprocess.run(
-                ["git", "worktree", "prune", "--verbose"],
+            result = subprocess.run(  # nosec B603 - Command validated via _validate_git_command()
+                cmd,
                 cwd=repository_path,
                 capture_output=True,
                 text=True,
                 check=True,
                 timeout=30,  # Security: Prevent hanging processes
-                # Security: No shell execution to prevent injection
+                shell=False,  # Security: Explicit shell=False to prevent injection
             )
 
             output_lines = (

@@ -42,7 +42,11 @@ def find_server_processes() -> list[psutil.Process]:
     processes = []
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            cmdline = proc.info["cmdline"] or []
+            # Handle cmdline which can be None or list[str]
+            cmdline_raw = proc.info["cmdline"]
+            cmdline: list[str] = (
+                cmdline_raw or [] if isinstance(cmdline_raw, list) else []
+            )
             cmdline_str = " ".join(cmdline)
 
             # Look for various patterns that indicate a session-mgmt-mcp server

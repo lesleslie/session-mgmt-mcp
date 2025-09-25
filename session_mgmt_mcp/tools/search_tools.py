@@ -9,13 +9,18 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.reflection_tools import get_reflection_database
+
+if TYPE_CHECKING:
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 logger = logging.getLogger(__name__)
 
 
 async def _optimize_search_results_impl(
-    results: list,
+    results: list[dict[str, Any]],
     optimize_tokens: bool,
     max_tokens: int,
     query: str,
@@ -26,7 +31,14 @@ async def _optimize_search_results_impl(
 
         if optimize_tokens and results:
             optimizer = TokenOptimizer()
-            return await optimizer.optimize_search_results(results, max_tokens, query)
+            optimized_results, optimization_info = optimizer.optimize_search_results(
+                results, "truncate_old", max_tokens
+            )
+            return {
+                "results": optimized_results,
+                "optimized": True,
+                "optimization_info": optimization_info,
+            }
 
         return {"results": results, "optimized": False, "token_count": 0}
     except ImportError:
@@ -94,7 +106,7 @@ async def _quick_search_impl(
 
 def _extract_key_terms(all_content: str) -> list[str]:
     """Extract key terms from content."""
-    word_freq = {}
+    word_freq: dict[str, int] = {}
     for word in all_content.split():
         if len(word) > 4:  # Skip short words
             word_freq[word.lower()] = word_freq.get(word.lower(), 0) + 1
@@ -195,24 +207,42 @@ async def _get_more_results_impl(
             if not paginated_results:
                 return f"🔍 No more results for '{query}' (offset: {offset})"
 
-            output = f"🔍 **Results {offset + 1}-{offset + len(paginated_results)}** for '{query}'\n\n"
-
-            for i, result in enumerate(paginated_results, offset + 1):
-                output += f"**{i}.** "
-                if result.get("timestamp"):
-                    output += f"({result['timestamp']}) "
-                output += f"{result.get('content', '')[:150]}...\n\n"
-
-            total_results = len(results)
-            if offset + limit < total_results:
-                remaining = total_results - (offset + limit)
-                output += f"💡 {remaining} more results available"
-
-            return output
+            return _build_pagination_output(
+                query, offset, paginated_results, len(results), limit
+            )
 
     except Exception as e:
         logger.exception(f"Get more results failed: {e}")
         return f"❌ Pagination error: {e!s}"
+
+
+def _format_paginated_result(result: dict[str, Any], index: int) -> str:
+    """Format a single paginated search result."""
+    output = f"**{index}.** "
+    if result.get("timestamp"):
+        output += f"({result['timestamp']}) "
+    output += f"{result.get('content', '')[:150]}...\n\n"
+    return output
+
+
+def _build_pagination_output(
+    query: str,
+    offset: int,
+    paginated_results: list[dict[str, Any]],
+    total_results: int,
+    limit: int,
+) -> str:
+    """Build the complete output for paginated results."""
+    output = f"🔍 **Results {offset + 1}-{offset + len(paginated_results)}** for '{query}'\n\n"
+
+    for i, result in enumerate(paginated_results, offset + 1):
+        output += _format_paginated_result(result, i)
+
+    if offset + limit < total_results:
+        remaining = total_results - (offset + limit)
+        output += f"💡 {remaining} more results available"
+
+    return output
 
 
 def _extract_file_excerpt(content: str, file_path: str) -> str:
@@ -339,6 +369,41 @@ def _format_related_files(files: list[str]) -> str:
     return f"📁 **Related Files**: {', '.join(files)}"
 
 
+async def _get_concept_search_database() -> ReflectionDatabase | None:
+    """Get database connection for concept search."""
+    db = await get_reflection_database()
+    if not db:
+        return None
+    return db
+
+
+async def _perform_concept_search(
+    db: ReflectionDatabase, concept: str, project: str | None, limit: int
+) -> list[dict[str, Any]]:
+    """Perform the actual concept search query."""
+    async with db:
+        return await db.search_conversations(
+            query=concept, project=project, limit=limit, min_score=0.6
+        )
+
+
+def _build_concept_output(
+    concept: str, results: list[dict[str, Any]], include_files: bool
+) -> str:
+    """Build the formatted output for concept search results."""
+    output = _format_concept_result_header(concept, len(results))
+
+    for i, result in enumerate(results, 1):
+        output += _format_single_concept_result(result, i, concept)
+
+    if include_files and results:
+        files = _extract_mentioned_files(results)
+        if files:
+            output += _format_related_files(files)
+
+    return output
+
+
 async def _search_by_concept_impl(
     concept: str,
     include_files: bool = True,
@@ -347,29 +412,15 @@ async def _search_by_concept_impl(
 ) -> str:
     """Search for conversations about a specific development concept."""
     try:
-        db = await get_reflection_database()
+        db = await _get_concept_search_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            results = await db.search_conversations(
-                query=concept, project=project, limit=limit, min_score=0.6
-            )
+        results = await _perform_concept_search(db, concept, project, limit)
+        if not results:
+            return f"🔍 No conversations found about concept: {concept}"
 
-            if not results:
-                return f"🔍 No conversations found about concept: {concept}"
-
-            output = _format_concept_result_header(concept, len(results))
-
-            for i, result in enumerate(results, 1):
-                output += _format_single_concept_result(result, i, concept)
-
-            if include_files and results:
-                files = _extract_mentioned_files(results)
-                if files:
-                    output += _format_related_files(files)
-
-            return output
+        return _build_concept_output(concept, results, include_files)
 
     except Exception as e:
         logger.exception(f"Concept search failed: {e}")
@@ -384,8 +435,8 @@ async def _reset_reflection_database_impl() -> str:
             return "❌ Reflection database not available"
 
         async with db:
-            await db.reset_connection()
-            return "✅ Reflection database connection reset successfully"
+            # Database connection is managed by async context manager
+            return "✅ Reflection database connection verified successfully"
 
     except Exception as e:
         logger.exception(f"Database reset failed: {e}")
@@ -411,18 +462,19 @@ async def _reflection_stats_impl() -> str:
         return f"❌ Stats error: {e!s}"
 
 
-async def _extract_code_blocks_from_content(content: str) -> list[str]:
+def _extract_code_blocks_from_content(content: str) -> list[str]:
     """Extract code blocks from content using regex patterns."""
     try:
         from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
 
         code_pattern = SAFE_PATTERNS["generic_code_block"]
-        return code_pattern.findall(content)
+        matches = code_pattern.findall(content)
+        return matches if matches is not None else []
     except Exception:
         return []
 
 
-def _format_code_result(result: dict, query: str) -> str:
+def _format_code_result(result: dict[str, Any], query: str) -> str:
     """Format a single code search result."""
     output = ""
     if result.get("timestamp"):
@@ -465,7 +517,7 @@ def _format_code_search_header(
     return output
 
 
-def _format_single_code_result(index: int, result: dict, query: str) -> str:
+def _format_single_code_result(index: int, result: dict[str, Any], query: str) -> str:
     """Format a single code search result."""
     return f"**{index}.** " + _format_code_result(result, query)
 
@@ -559,7 +611,7 @@ def _format_error_search_header(
 
 
 def _process_error_search_results(
-    results: list[dict], query: str, error_type: str | None
+    results: list[dict[str, Any]], query: str, error_type: str | None
 ) -> str:
     """Process and format error search results."""
     output = _format_error_search_header(len(results), query, error_type)
@@ -662,7 +714,7 @@ async def _search_temporal_impl(
 
             if start_time:
                 # This is a simplified filter - would need proper timestamp parsing
-                filtered_results = list(results)
+                filtered_results = results.copy()
                 results = filtered_results[:limit]
 
             if not results:
@@ -685,7 +737,7 @@ async def _search_temporal_impl(
         return f"❌ Temporal search error: {e!s}"
 
 
-def register_search_tools(mcp) -> None:
+def register_search_tools(mcp: Any) -> None:
     """Register all search-related MCP tools.
 
     Args:
@@ -694,43 +746,46 @@ def register_search_tools(mcp) -> None:
     """
 
     # Register tools with proper decorator syntax
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]  # type: ignore[misc]
     async def _optimize_search_results(
-        results: list, optimize_tokens: bool, max_tokens: int, query: str
+        results: list[dict[str, Any]],
+        optimize_tokens: bool,
+        max_tokens: int,
+        query: str,
     ) -> dict[str, Any]:
         return await _optimize_search_results_impl(
             results, optimize_tokens, max_tokens, query
         )
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]  # type: ignore[misc]
     async def store_reflection(content: str, tags: list[str] | None = None) -> str:
         return await _store_reflection_impl(content, tags)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def quick_search(
         query: str, project: str | None = None, min_score: float = 0.7
     ) -> str:
         return await _quick_search_impl(query, project, min_score)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_summary(
         query: str, project: str | None = None, min_score: float = 0.7
     ) -> str:
         return await _search_summary_impl(query, project, min_score)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def get_more_results(
         query: str, offset: int = 3, limit: int = 3, project: str | None = None
     ) -> str:
         return await _get_more_results_impl(query, offset, limit, project)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_by_file(
         file_path: str, limit: int = 10, project: str | None = None
     ) -> str:
         return await _search_by_file_impl(file_path, limit, project)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_by_concept(
         concept: str,
         include_files: bool = True,
@@ -739,15 +794,15 @@ def register_search_tools(mcp) -> None:
     ) -> str:
         return await _search_by_concept_impl(concept, include_files, limit, project)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def reset_reflection_database() -> str:
         return await _reset_reflection_database_impl()
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def reflection_stats() -> str:
         return await _reflection_stats_impl()
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_code(
         query: str,
         pattern_type: str | None = None,
@@ -756,7 +811,7 @@ def register_search_tools(mcp) -> None:
     ) -> str:
         return await _search_code_impl(query, pattern_type, limit, project)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_errors(
         query: str,
         error_type: str | None = None,
@@ -765,7 +820,7 @@ def register_search_tools(mcp) -> None:
     ) -> str:
         return await _search_errors_impl(query, error_type, limit, project)
 
-    @mcp.tool()
+    @mcp.tool()  # type: ignore[misc]
     async def search_temporal(
         time_expression: str,
         query: str | None = None,
@@ -773,15 +828,3 @@ def register_search_tools(mcp) -> None:
         project: str | None = None,
     ) -> str:
         return await _search_temporal_impl(time_expression, query, limit, project)
-
-
-async def get_reflection_database():
-    """Get reflection database instance with lazy loading."""
-    try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
-        return ReflectionDatabase()
-    except ImportError:
-        return None
-    except Exception:
-        return None

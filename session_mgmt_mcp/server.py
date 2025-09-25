@@ -9,6 +9,8 @@ automatic access to /session-init, /session-checkpoint,
 and /session-end slash commands.
 """
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
@@ -18,11 +20,13 @@ import shutil
 import subprocess
 import sys
 import warnings
-from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable
 
 # Suppress transformers warnings about PyTorch/TensorFlow for cleaner CLI output
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
@@ -287,7 +291,7 @@ except ImportError as e:
 class SessionPermissionsManager:
     """Manages session permissions to avoid repeated prompts for trusted operations."""
 
-    _instance: Self | None = None
+    _instance: SessionPermissionsManager | None = None
     _session_id: str | None = None
     _initialized: bool = False
 
@@ -296,7 +300,8 @@ class SessionPermissionsManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
-        return cls._instance
+        # Type checker knows this is Self from the annotation above
+        return cls._instance  # type: ignore[return-value]
 
     def __init__(self, claude_dir: Path) -> None:
         if self._initialized:
@@ -1434,7 +1439,9 @@ def _format_metrics_summary(session_stats: dict[str, Any]) -> str:
     return detail_summary
 
 
-async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> None:
+async def _capture_session_metrics(
+    db: Any, tags: list[str], results: list[str]
+) -> None:
     """Capture additional session metrics if available."""
     # Check if session management is available
     if not _check_session_management_availability():
@@ -1557,7 +1564,7 @@ def _extract_next_steps_from_content(content: str) -> list[str]:
     return next_steps
 
 
-async def _process_recent_reflections(db, summary: dict[str, Any]) -> None:
+async def _process_recent_reflections(db: Any, summary: dict[str, Any]) -> None:
     """Process recent reflections to extract conversation insights."""
     recent_reflections = await db.search_reflections("checkpoint", limit=5)
 
@@ -1738,78 +1745,9 @@ async def analyze_advanced_context_metrics() -> dict[str, Any]:
 async def analyze_token_usage_patterns() -> dict[str, Any]:
     """Phase 3A: Intelligent token usage analysis with smart triggers."""
     try:
-        from contextlib import suppress
-
-        with suppress(Exception):
-            # Get conversation statistics from memory system
-            conv_stats: dict[str, int] = {
-                "total_conversations": 0,
-                "recent_activity": 0,
-            }
-
-            if REFLECTION_TOOLS_AVAILABLE:
-                with suppress(Exception):
-                    db = await get_reflection_database()
-                    stats = await db.get_stats()
-                    conv_stats["total_conversations"] = stats.get(
-                        "conversations_count", 0
-                    )
-
-            # Heuristic-based context analysis (approximation)
-            # In a real implementation, this would hook into actual context metrics
-
-            # Check session activity patterns
-            datetime.now()
-
-            # Estimate context usage based on activity
-            estimated_length = "moderate"
-            needs_attention = False
-            recommend_compact = False
-            recommend_clear = False
-
-            # Smart triggers based on conversation patterns and critical context detection
-
-            # PRIORITY: Always recommend compaction if we have significant stored content
-            # This indicates a long conversation that needs compaction
-            if conv_stats["total_conversations"] > 3:
-                # Any significant conversation history indicates compaction needed
-                estimated_length = "extensive"
-                needs_attention = True
-                recommend_compact = True
-
-            if conv_stats["total_conversations"] > 10:
-                # Long conversation - definitely needs compaction
-                estimated_length = "very long"
-                needs_attention = True
-                recommend_compact = True
-
-            if conv_stats["total_conversations"] > 20:
-                # Extremely long - may need clear after compact
-                estimated_length = "extremely long"
-                needs_attention = True
-                recommend_compact = True
-                recommend_clear = True
-
-            # Override: ALWAYS recommend compaction during checkpoints
-            # Checkpoints typically happen during long sessions where context is an issue
-            # This ensures the "Context low" warning gets addressed
-            recommend_compact = True
-            needs_attention = True
-            estimated_length = (
-                "checkpoint-session"
-                if estimated_length == "moderate"
-                else estimated_length
-            )
-
-            status = "optimal" if not needs_attention else "needs optimization"
-
-            return {
-                "needs_attention": needs_attention,
-                "status": status,
-                "estimated_length": estimated_length,
-                "recommend_compact": recommend_compact,
-                "recommend_clear": recommend_clear,
-            }
+        conv_stats = await _get_conversation_statistics()
+        analysis = _analyze_context_usage_patterns(conv_stats)
+        return _finalize_token_analysis(analysis)
 
     except Exception as e:
         return {
@@ -1820,6 +1758,74 @@ async def analyze_token_usage_patterns() -> dict[str, Any]:
             "recommend_clear": False,
             "error": str(e),
         }
+
+
+async def _get_conversation_statistics() -> dict[str, int]:
+    """Get conversation statistics from memory system."""
+    from contextlib import suppress
+
+    conv_stats: dict[str, int] = {
+        "total_conversations": 0,
+        "recent_activity": 0,
+    }
+
+    if REFLECTION_TOOLS_AVAILABLE:
+        with suppress(Exception):
+            db = await get_reflection_database()
+            stats = await db.get_stats()
+            conv_stats["total_conversations"] = stats.get("conversations_count", 0)
+
+    return conv_stats
+
+
+def _analyze_context_usage_patterns(conv_stats: dict[str, int]) -> dict[str, Any]:
+    """Analyze context usage patterns and generate recommendations."""
+    estimated_length = "moderate"
+    needs_attention = False
+    recommend_compact = False
+    recommend_clear = False
+
+    total_conversations = conv_stats["total_conversations"]
+
+    # Progressive thresholds based on conversation count
+    if total_conversations > 3:
+        estimated_length = "extensive"
+        needs_attention = True
+        recommend_compact = True
+
+    if total_conversations > 10:
+        estimated_length = "very long"
+        needs_attention = True
+        recommend_compact = True
+
+    if total_conversations > 20:
+        estimated_length = "extremely long"
+        needs_attention = True
+        recommend_compact = True
+        recommend_clear = True
+
+    return {
+        "estimated_length": estimated_length,
+        "needs_attention": needs_attention,
+        "recommend_compact": recommend_compact,
+        "recommend_clear": recommend_clear,
+    }
+
+
+def _finalize_token_analysis(analysis: dict[str, Any]) -> dict[str, Any]:
+    """Finalize token analysis with checkpoint override."""
+    # Override: ALWAYS recommend compaction during checkpoints
+    analysis["recommend_compact"] = True
+    analysis["needs_attention"] = True
+
+    if analysis["estimated_length"] == "moderate":
+        analysis["estimated_length"] = "checkpoint-session"
+
+    analysis["status"] = (
+        "optimal" if not analysis["needs_attention"] else "needs optimization"
+    )
+
+    return analysis
 
 
 async def analyze_conversation_flow() -> dict[str, Any]:
@@ -1892,7 +1898,7 @@ async def analyze_conversation_flow() -> dict[str, Any]:
         }
 
 
-async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
+async def analyze_memory_patterns(db: Any, conv_count: int) -> dict[str, Any]:
     """Phase 3A: Advanced memory pattern analysis."""
     try:
         # Analyze conversation history for intelligent insights
@@ -1941,66 +1947,14 @@ async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
 async def analyze_project_workflow_patterns(current_dir: Path) -> dict[str, Any]:
     """Phase 3A: Project-specific workflow pattern analysis."""
     try:
-        workflow_recommendations = []
-
-        # Detect project characteristics
-        has_tests = (current_dir / "tests").exists() or (current_dir / "test").exists()
-        has_git = (current_dir / ".git").exists()
-        has_python = (current_dir / "pyproject.toml").exists() or (
-            current_dir / "requirements.txt"
-        ).exists()
-        has_node = (current_dir / "package.json").exists()
-        has_docker = (current_dir / "Dockerfile").exists() or (
-            current_dir / "docker-compose.yml"
-        ).exists()
-
-        # Generate intelligent workflow recommendations
-        if has_tests:
-            workflow_recommendations.append(
-                "Use targeted test commands for specific test scenarios",
-            )
-            workflow_recommendations.append(
-                "Consider test-driven development workflow with regular testing",
-            )
-
-        if has_git:
-            workflow_recommendations.append(
-                "Leverage git context for branch-specific development",
-            )
-            workflow_recommendations.append(
-                "Use commit messages to track progress patterns",
-            )
-
-        if has_python and has_tests:
-            workflow_recommendations.append(
-                "Python+Testing: Consider pytest workflows with coverage analysis",
-            )
-
-        if has_node:
-            workflow_recommendations.append(
-                "Node.js project: Leverage npm/yarn scripts in development workflow",
-            )
-
-        if has_docker:
-            workflow_recommendations.append(
-                "Containerized project: Consider container-based development workflows",
-            )
-
-        # Default recommendations if no specific patterns detected
-        if not workflow_recommendations:
-            workflow_recommendations.append(
-                "Establish project-specific workflow patterns through regular checkpoints",
-            )
+        project_characteristics = _detect_project_characteristics(current_dir)
+        workflow_recommendations = _generate_workflow_recommendations(
+            project_characteristics
+        )
 
         return {
             "workflow_recommendations": workflow_recommendations,
-            "project_characteristics": {
-                "has_tests": has_tests,
-                "has_git": has_git,
-                "has_python": has_python,
-                "has_node": has_node,
-                "has_docker": has_docker,
-            },
+            "project_characteristics": project_characteristics,
         }
 
     except Exception as e:
@@ -2008,6 +1962,64 @@ async def analyze_project_workflow_patterns(current_dir: Path) -> dict[str, Any]
             "workflow_recommendations": ["Use basic project workflow patterns"],
             "error": str(e),
         }
+
+
+def _detect_project_characteristics(current_dir: Path) -> dict[str, bool]:
+    """Detect project characteristics from directory structure."""
+    return {
+        "has_tests": (current_dir / "tests").exists()
+        or (current_dir / "test").exists(),
+        "has_git": (current_dir / ".git").exists(),
+        "has_python": (current_dir / "pyproject.toml").exists()
+        or (current_dir / "requirements.txt").exists(),
+        "has_node": (current_dir / "package.json").exists(),
+        "has_docker": (current_dir / "Dockerfile").exists()
+        or (current_dir / "docker-compose.yml").exists(),
+    }
+
+
+def _generate_workflow_recommendations(characteristics: dict[str, bool]) -> list[str]:
+    """Generate workflow recommendations based on project characteristics."""
+    recommendations = []
+
+    if characteristics["has_tests"]:
+        recommendations.extend(
+            [
+                "Use targeted test commands for specific test scenarios",
+                "Consider test-driven development workflow with regular testing",
+            ]
+        )
+
+    if characteristics["has_git"]:
+        recommendations.extend(
+            [
+                "Leverage git context for branch-specific development",
+                "Use commit messages to track progress patterns",
+            ]
+        )
+
+    if characteristics["has_python"] and characteristics["has_tests"]:
+        recommendations.append(
+            "Python+Testing: Consider pytest workflows with coverage analysis"
+        )
+
+    if characteristics["has_node"]:
+        recommendations.append(
+            "Node.js project: Leverage npm/yarn scripts in development workflow"
+        )
+
+    if characteristics["has_docker"]:
+        recommendations.append(
+            "Containerized project: Consider container-based development workflows"
+        )
+
+    # Default recommendations if no specific patterns detected
+    if not recommendations:
+        recommendations.append(
+            "Establish project-specific workflow patterns through regular checkpoints"
+        )
+
+    return recommendations
 
 
 async def _analyze_reflection_based_intelligence() -> list[str]:
@@ -2182,7 +2194,7 @@ async def analyze_context_usage() -> list[str]:
     return results
 
 
-async def _perform_quality_assessment() -> tuple[int, dict]:
+async def _perform_quality_assessment() -> tuple[int, dict[str, Any]]:
     """Perform quality assessment and return score and data."""
     quality_data = await calculate_quality_score()
     quality_score = quality_data["total_score"]
@@ -2191,8 +2203,8 @@ async def _perform_quality_assessment() -> tuple[int, dict]:
 
 async def _format_quality_results(
     quality_score: int,
-    quality_data: dict,
-    checkpoint_result: dict | None = None,
+    quality_data: dict[str, Any],
+    checkpoint_result: dict[str, Any] | None = None,
 ) -> list[str]:
     """Format quality assessment results for display."""
     output = []
@@ -2629,7 +2641,7 @@ async def _perform_main_search(
     limit: int,
     min_score: float,
     current_proj: str | None,
-) -> list:
+) -> list[dict[str, Any]]:
     """Perform the main conversation search."""
     db = await get_reflection_database()
     return await db.search_conversations(
@@ -2709,12 +2721,14 @@ async def reflect_on_past(
             return f"🔍 No relevant conversations found for query: '{query}'\n💡 Try adjusting the search terms or lowering min_score."
 
         # Apply token optimization if available
-        results, optimization_info = await _optimize_search_results_impl(
+        optimization_result = await _optimize_search_results_impl(
             results,
             optimize_tokens,
             max_tokens,
             query,
         )
+        results = optimization_result["results"]
+        optimization_info = optimization_result.get("optimization_info", {})
 
         # Build and format output
         output = _build_search_header(query, len(results), optimization_info)
@@ -2865,7 +2879,7 @@ def _format_no_reminders_message(user_id: str, project_id: str | None) -> list[s
 
 
 def _format_reminders_header(
-    reminders: list, user_id: str, project_id: str | None
+    reminders: list[dict[str, Any]], user_id: str, project_id: str | None
 ) -> list[str]:
     """Format header for reminders list."""
     output = []
@@ -2877,7 +2891,7 @@ def _format_reminders_header(
     return output
 
 
-def _format_single_reminder(reminder: dict, index: int) -> list[str]:
+def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
     """Format a single reminder for display."""
     output = []
     output.append(f"\n#{index}")
@@ -2903,7 +2917,7 @@ def _format_single_reminder(reminder: dict, index: int) -> list[str]:
 
 
 def _format_reminders_list(
-    reminders: list, user_id: str, project_id: str | None
+    reminders: list[dict[str, Any]], user_id: str, project_id: str | None
 ) -> list[str]:
     """Format the complete reminders list."""
     output = _format_reminders_header(reminders, user_id, project_id)
@@ -3001,44 +3015,6 @@ def _calculate_overdue_time(scheduled_for: str) -> str:
                 return f"⏱️ Overdue: {hours}h {minutes}m"
             return f"⏱️ Overdue: {minutes}m"
         return "⏱️ Not yet due"
-    except Exception:
-        return "⏱️ Overdue: calculation failed"
-
-
-def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
-    """Format a single reminder for output."""
-    lines = _format_reminder_basic_info(reminder, index)
-    overdue_time = _calculate_overdue_time(reminder["scheduled_for"])
-    lines.append(overdue_time)
-    return lines
-
-
-@mcp.tool()
-async def check_due_reminders() -> str:
-    """Check for reminders that are due now."""
-    try:
-        from .natural_scheduler import check_due_reminders as _check_due_reminders
-
-        due_reminders = await _check_due_reminders()
-
-        if not due_reminders:
-            return "✅ No reminders are currently due\n⏰ All scheduled reminders are in the future"
-
-        output = [
-            f"🚨 {len(due_reminders)} reminders are DUE NOW!",
-            "=" * 50,
-        ]
-
-        for i, reminder in enumerate(due_reminders, 1):
-            output.extend(_format_single_reminder(reminder, i))
-
-        output.append(
-            "\n💡 These reminders should be processed by the background scheduler"
-        )
-        return "\n".join(output)
-
-    except ImportError:
-        return "❌ Natural scheduling tools not available"
     except Exception as e:
         return f"❌ Error checking due reminders: {e}"
 
@@ -3286,35 +3262,51 @@ async def get_project_insights(projects: list[str], time_range_days: int = 30) -
             projects=projects,
             time_range_days=time_range_days,
         )
-
-        output = [f"📊 **Cross-Project Insights** (Last {time_range_days} days)\n"]
-
-        # Project activity
-        if insights["project_activity"]:
-            output.append("**📈 Project Activity:**")
-            for project, stats in insights["project_activity"].items():
-                output.append(
-                    f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}",
-                )
-            output.append("")
-
-        # Common patterns
-        if insights["common_patterns"]:
-            output.append("**🔍 Common Patterns:**")
-            for pattern in insights["common_patterns"][:5]:  # Top 5
-                projects_str = ", ".join(pattern["projects"])
-                output.append(
-                    f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})",
-                )
-            output.append("")
-
-        if not insights["project_activity"] and not insights["common_patterns"]:
-            output.append("No insights available for the specified time range.")
-
-        return "\n".join(output)
+        return _format_project_insights(insights, time_range_days)
 
     except Exception as e:
         return f"❌ Failed to get insights: {e}"
+
+
+def _format_project_insights(insights: dict[str, Any], time_range_days: int) -> str:
+    """Format project insights for display."""
+    output = [f"📊 **Cross-Project Insights** (Last {time_range_days} days)\n"]
+
+    # Project activity
+    if insights["project_activity"]:
+        output.extend(_format_project_activity_section(insights["project_activity"]))
+
+    # Common patterns
+    if insights["common_patterns"]:
+        output.extend(_format_common_patterns_section(insights["common_patterns"]))
+
+    if not insights["project_activity"] and not insights["common_patterns"]:
+        output.append("No insights available for the specified time range.")
+
+    return "\n".join(output)
+
+
+def _format_project_activity_section(project_activity: dict[str, Any]) -> list[str]:
+    """Format project activity section."""
+    output = ["**📈 Project Activity:**"]
+    for project, stats in project_activity.items():
+        output.append(
+            f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}"
+        )
+    output.append("")
+    return output
+
+
+def _format_common_patterns_section(common_patterns: list[dict[str, Any]]) -> list[str]:
+    """Format common patterns section."""
+    output = ["**🔍 Common Patterns:**"]
+    for pattern in common_patterns[:5]:  # Top 5
+        projects_str = ", ".join(pattern["projects"])
+        output.append(
+            f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})"
+        )
+    output.append("")
+    return output
 
 
 # Advanced Search Tools
@@ -3336,32 +3328,7 @@ async def advanced_search(
             return "❌ Advanced search not available"
 
     try:
-        filters = []
-
-        # Add content type filter
-        if content_type:
-            from session_mgmt_mcp.advanced_search import SearchFilter
-
-            filters.append(
-                SearchFilter(field="content_type", operator="eq", value=content_type),
-            )
-
-        # Add project filter
-        if project:
-            filters.append(SearchFilter(field="project", operator="eq", value=project))
-
-        # Add timeframe filter
-        if timeframe:
-            start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
-            filters.append(
-                SearchFilter(
-                    field="timestamp",
-                    operator="range",
-                    value=(start_time, end_time),
-                ),
-            )
-
-        # Perform search
+        filters = _build_advanced_search_filters(content_type, project, timeframe)
         search_results = await advanced_search_engine.search(
             query=query,
             filters=filters,
@@ -3374,23 +3341,59 @@ async def advanced_search(
         if not results:
             return f"🔍 No results found for '{query}'"
 
-        output = [f"🔍 **Advanced Search Results** ({len(results)} found)\n"]
+        return _format_advanced_search_results(results)
 
-        for i, result in enumerate(results, 1):
-            output.append(f"""**{i}.** {result.title}
+    except Exception as e:
+        return f"❌ Advanced search failed: {e}"
+
+
+def _build_advanced_search_filters(
+    content_type: str | None, project: str | None, timeframe: str | None
+) -> list[Any]:
+    """Build search filters from parameters."""
+    filters = []
+
+    if content_type:
+        from session_mgmt_mcp.advanced_search import SearchFilter
+
+        filters.append(
+            SearchFilter(field="content_type", operator="eq", value=content_type)
+        )
+
+    if project:
+        from session_mgmt_mcp.advanced_search import SearchFilter
+
+        filters.append(SearchFilter(field="project", operator="eq", value=project))
+
+    if timeframe:
+        from session_mgmt_mcp.advanced_search import SearchFilter
+
+        start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
+        filters.append(
+            SearchFilter(
+                field="timestamp", operator="range", value=(start_time, end_time)
+            )
+        )
+
+    return filters
+
+
+def _format_advanced_search_results(results: list[Any]) -> str:
+    """Format advanced search results for display."""
+    output = [f"🔍 **Advanced Search Results** ({len(results)} found)\n"]
+
+    for i, result in enumerate(results, 1):
+        output.append(f"""**{i}.** {result.title}
 **Score:** {result.score:.3f} | **Project:** {result.project or "Unknown"}
 **Content:** {result.content}
 **Timestamp:** {result.timestamp}""")
 
-            if result.highlights:
-                output.append(f"**Highlights:** {'; '.join(result.highlights)}")
+        if result.highlights:
+            output.append(f"**Highlights:** {'; '.join(result.highlights)}")
 
-            output.append("---")
+        output.append("---")
 
-        return "\n".join(output)
-
-    except Exception as e:
-        return f"❌ Advanced search failed: {e}"
+    return "\n".join(output)
 
 
 @mcp.tool()
@@ -3458,7 +3461,6 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
 # Git Worktree Management Tools
 
 
-@mcp.tool()
 def _format_worktree_status(wt: dict[str, Any]) -> str:
     """Format worktree status items."""
     status_items = []
@@ -3643,20 +3645,6 @@ async def git_worktree_remove(
         return f"❌ Failed to remove worktree: {e}"
 
 
-@mcp.tool()
-def _format_current_worktree_info(current: dict, working_dir_name: str) -> list[str]:
-    """Format current worktree information."""
-    return [
-        "🌿 **Git Worktree Status**\n",
-        f"📂 Repository: {working_dir_name}",
-        f"🎯 Current worktree: {current['branch']}"
-        + (" (main)" if current["is_main"] else " (worktree)"),
-        f"📁 Path: {current['path']}",
-        f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
-        f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
-    ]
-
-
 def _format_session_summary(result: dict[str, Any]) -> list[str]:
     """Format session summary across all worktrees."""
     session_summary = result["session_summary"]
@@ -3669,65 +3657,8 @@ def _format_session_summary(result: dict[str, Any]) -> list[str]:
     ]
 
 
-def _format_worktree_status(wt: dict[str, Any]) -> str:
-    """Format status items for a worktree."""
-    status_items = []
-    if wt["has_session"]:
-        status_items.append("🧠 session")
-    if wt["prunable"]:
-        status_items.append("🗑️ prunable")
-    if not wt["exists"]:
-        status_items.append("❌ missing")
-
-    if status_items:
-        return f"   Status: {', '.join(status_items)}"
-    return ""
-
-
-def _format_current_worktree_section(
-    current: dict[str, Any], working_dir_name: str
-) -> list[str]:
-    """Format the current worktree information section."""
-    return _format_current_worktree_info(current, working_dir_name)
-
-
-def _format_session_summary_section(result: dict[str, Any]) -> list[str]:
-    """Format the session summary section."""
-    return _format_session_summary(result)
-
-
-def _format_worktree_list_header_simple() -> str:
-    """Format the worktree list header."""
-    return "🌳 **All Worktrees:**"
-
-
-def _format_single_worktree(wt: dict[str, Any], index: int) -> list[str]:
-    """Format a single worktree entry."""
-    output = []
-    current_marker = " 👈 CURRENT" if wt["is_current"] else ""
-    main_marker = " (main)" if wt["is_main"] else ""
-
-    output.append(f"{index}. **{wt['branch']}{main_marker}**{current_marker}")
-    output.append(f"   📁 {wt['path']}")
-
-    status_line = _format_worktree_status(wt)
-    if status_line:
-        output.append(status_line)
-    output.append("")
-
-    return output
-
-
-def _format_worktree_list_footer() -> list[str]:
-    """Format the worktree list footer with helpful tips."""
-    return [
-        "💡 Use `git_worktree_list` for more details",
-        "💡 Use `git_worktree_add <branch> <path>` to create new worktrees",
-    ]
-
-
 async def git_worktree_status(working_directory: str | None = None) -> str:
-    """Get comprehensive status of current worktree and all related worktrees."""
+    """Get comprehensive status of the current git worktree."""
     from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or str(Path.cwd()))
@@ -3739,29 +3670,37 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
         if not result["success"]:
             return f"❌ {result['error']}"
 
-        current = result["current_worktree"]
-        all_worktrees = result["all_worktrees"]
+        # Format the status information
+        status_info = result["status"]
+        output = ["🌿 **Git Worktree Status**\n"]
 
-        # Format output sections
-        output = _format_current_worktree_section(current, working_dir.name)
-        output.extend(_format_session_summary_section(result))
+        output.append(f"📂 Repository: {working_dir.name}")
+        output.append(f"🎯 Current worktree: {status_info['branch']}")
+        output.append(f"📁 Path: {status_info['path']}")
+        output.append(
+            f"🧠 Has session: {'Yes' if status_info['has_session'] else 'No'}"
+        )
+        output.append(
+            f"🔸 Detached HEAD: {'Yes' if status_info['is_detached'] else 'No'}\n"
+        )
 
-        # List all worktrees with status
-        output.append(_format_worktree_list_header_simple())
-        for i, wt in enumerate(all_worktrees, 1):
-            output.extend(_format_single_worktree(wt, i))
-
-        output.extend(_format_worktree_list_footer())
+        # Add session information if available
+        if status_info.get("session_info"):
+            session_info = status_info["session_info"]
+            output.append("📊 **Session Information:**")
+            output.append(f"• Session ID: {session_info.get('session_id', 'N/A')}")
+            output.append(
+                f"• Last activity: {session_info.get('last_activity', 'Unknown')}"
+            )
+            output.append(
+                f"• Session duration: {session_info.get('duration', 'Unknown')}"
+            )
 
         return "\n".join(output)
 
     except Exception as e:
         session_logger.exception(f"git_worktree_status failed: {e}")
         return f"❌ Failed to get worktree status: {e}"
-
-
-@mcp.tool()
-async def git_worktree_prune(working_directory: str | None = None) -> str:
     """Prune stale worktree references."""
     from .worktree_manager import WorktreeManager
 
@@ -3792,27 +3731,15 @@ async def git_worktree_prune(working_directory: str | None = None) -> str:
 
     except Exception as e:
         session_logger.exception(f"git_worktree_prune failed: {e}")
-        return f"❌ Failed to prune worktrees: {e}"
+        return f"Failed to prune worktrees: {e}"
 
 
 @mcp.tool()
-async def git_worktree_switch(
-    from_path: str,
-    to_path: str,
-    working_directory: str | None = None,
-) -> str:
+async def git_worktree_switch(from_path: str, to_path: str) -> str:
     """Switch context between git worktrees with session preservation."""
+    from pathlib import Path
+
     from .worktree_manager import WorktreeManager
-
-    working_dir = Path(working_directory or str(Path.cwd()))
-    from_path = Path(from_path)
-    to_path = Path(to_path)
-
-    # Make paths absolute if they're relative
-    if not from_path.is_absolute():
-        from_path = working_dir / from_path
-    if not to_path.is_absolute():
-        to_path = working_dir / to_path
 
     manager = WorktreeManager(session_logger=session_logger)
 
@@ -3820,28 +3747,26 @@ async def git_worktree_switch(
         result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
 
         if not result["success"]:
-            return f"❌ {result['error']}"
+            return f" {result['error']}"
 
         output = [
-            "🔄 **Worktree Context Switch Complete**\n",
-            f"🌿 From: {result['from_worktree']['branch']} ({result['from_worktree']['path']})",
-            f"🌿 To: {result['to_worktree']['branch']} ({result['to_worktree']['path']})",
+            "**Worktree Context Switch Complete**\n",
+            f" From: {result['from_worktree']['branch']} ({result['from_worktree']['path']})",
+            f" To: {result['to_worktree']['branch']} ({result['to_worktree']['path']})",
         ]
 
         if result["context_preserved"]:
-            output.append("✅ Session context preserved during switch")
+            output.append(" Session context preserved during switch")
             if result.get("session_state_saved"):
-                output.append("💾 Current session state saved")
+                output.append(" Current session state saved")
             if result.get("session_state_restored"):
-                output.append("📂 Session state restored for target worktree")
+                output.append(" Session state restored for target worktree")
         else:
             output.append(
-                "⚠️ Session context preservation failed (basic switch performed)"
+                " Session context preservation failed (basic switch performed)"
             )
             if result.get("session_error"):
                 output.append(f"   Error: {result['session_error']}")
-
-        output.append(f"\n💡 Message: {result['message']}")
 
         return "\n".join(output)
 
@@ -3962,7 +3887,7 @@ def _format_interruption_statistics(interruptions: list[dict[str, Any]]) -> list
     output.append(f"   • Total interruptions: {total}")
 
     # Group by type if available
-    types = {}
+    types: dict[str, int] = {}
     for interruption in interruptions:
         int_type = interruption.get("type", "unknown")
         types[int_type] = types.get(int_type, 0) + 1

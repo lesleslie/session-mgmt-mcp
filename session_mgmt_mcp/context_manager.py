@@ -101,7 +101,7 @@ class ContextDetector:
         indicators: list[str],
     ) -> float:
         """Calculate score for a specific project type."""
-        type_score = 0
+        type_score = 0.0
 
         for indicator in indicators:
             if indicator.startswith("*"):
@@ -254,7 +254,7 @@ class ContextDetector:
 
         from contextlib import suppress
 
-        git_info = {}
+        git_info: dict[str, Any] = {}
         with suppress(OSError, PermissionError):
             self._extract_branch_info(git_dir, git_info, working_path)
             self._extract_platform_info(git_dir, git_info)
@@ -462,9 +462,8 @@ class AutoContextLoader:
         # Check cache
         if context_hash in self.cache:
             cached_time, cached_result = self.cache[context_hash]
-            cached_result: dict[str, Any]
             if datetime.now() - cached_time < timedelta(seconds=self.cache_timeout):
-                return cached_result
+                return cached_result  # type: ignore[no-any-return]
 
         # Get all conversations from database
         relevant_conversations = []

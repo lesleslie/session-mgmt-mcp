@@ -533,7 +533,7 @@ class MemoryOptimizer:
         # Cluster conversations for consolidation
         clusters = self.clusterer.cluster_conversations(consolidate_conversations)
 
-        results = {
+        results: dict[str, Any] = {
             "status": "success",
             "dry_run": dry_run,
             "total_conversations": len(conversations),
@@ -601,9 +601,9 @@ class MemoryOptimizer:
                 "conversations_processed": len(consolidate_conversations),
                 "conversations_consolidated": sum(
                     len(cluster) for cluster in clusters if len(cluster) > 1
-                ),
-                "space_saved_bytes": results["space_saved_estimate"],
-                "compression_ratio": results["compression_ratio"],
+                ),  # type: ignore[dict-item]
+                "space_saved_bytes": results["space_saved_estimate"],  # type: ignore[dict-item]
+                "compression_ratio": results["compression_ratio"],  # type: ignore[dict-item]
             },
         )
 
@@ -631,23 +631,24 @@ class MemoryOptimizer:
         }
 
         # Insert consolidated conversation
-        self.reflection_db.conn.execute(
-            """INSERT INTO conversations (id, content, project, timestamp, metadata)
+        if self.reflection_db.conn:
+            self.reflection_db.conn.execute(
+                """INSERT INTO conversations (id, content, project, timestamp, metadata)
                VALUES (?, ?, ?, ?, ?)""",
-            (
-                consolidated_id,
-                consolidated_conv["summary"],
-                ", ".join(consolidated_conv["projects"])
-                if consolidated_conv["projects"]
-                else "multiple",
-                datetime.now().isoformat(),
-                json.dumps(metadata),
-            ),
-        )
+                (
+                    consolidated_id,
+                    consolidated_conv["summary"],
+                    ", ".join(consolidated_conv["projects"])
+                    if consolidated_conv["projects"]
+                    else "multiple",
+                    datetime.now().isoformat(),
+                    json.dumps(metadata),
+                ),
+            )
 
         # Remove original conversations
         original_ids = [conv["id"] for conv in original_cluster]
-        if original_ids:
+        if original_ids and self.reflection_db.conn:
             placeholders = ",".join(["?" for _ in original_ids])
             self.reflection_db.conn.execute(
                 f"DELETE FROM conversations WHERE id IN ({placeholders})",  # nosec B608 - properly parameterized query
@@ -655,7 +656,8 @@ class MemoryOptimizer:
             )
 
         # Commit changes
-        self.reflection_db.conn.commit()
+        if self.reflection_db.conn:
+            self.reflection_db.conn.commit()
 
     async def get_compression_stats(self) -> dict[str, Any]:
         """Get compression statistics."""

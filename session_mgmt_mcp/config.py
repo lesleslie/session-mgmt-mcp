@@ -15,9 +15,9 @@ try:
     import tomllib  # Python 3.11+
 except ImportError:
     try:
-        import tomli as tomllib  # fallback for older Python versions
+        import tomli as tomllib  # type: ignore[no-redef]
     except ImportError:
-        tomllib = None
+        tomllib = None  # type: ignore[assignment]
 
 
 class DatabaseConfig(BaseModel):
@@ -534,7 +534,9 @@ class ConfigLoader:
 
     def _extract_tool_config(self, toml_data: dict[str, Any]) -> dict[str, Any]:
         """Extract tool configuration from TOML data."""
-        tool_config = toml_data.get("tool", {}).get("session-mgmt-mcp", {})
+        tool_config: dict[str, Any] = toml_data.get("tool", {}).get(
+            "session-mgmt-mcp", {}
+        )
         if not tool_config:
             # Also check tool.session_mgmt_mcp (underscore variant)
             tool_config = toml_data.get("tool", {}).get("session_mgmt_mcp", {})

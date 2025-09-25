@@ -7,16 +7,12 @@ This module provides tools for storing, searching, and managing reflections and 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 from session_mgmt_mcp.utils.logging import get_session_logger
-
-# Try to import ReflectionDatabase for type annotations
-try:
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-except ImportError:
-    # For type checking when imports fail
-    ReflectionDatabase = Any  # type: ignore[misc,assignment]
 
 logger = get_session_logger()
 
@@ -134,7 +130,7 @@ async def _quick_search_impl(
 
     try:
         db = await _get_reflection_database()
-        results = await db.search_reflections(
+        results = await db.search_conversations(
             query=query,
             project=project,
             limit=1,
@@ -267,11 +263,11 @@ def _check_reflection_tools() -> bool:
     return _check_reflection_tools_available()
 
 
-def _get_search_results(
+async def _get_search_results(
     db: ReflectionDatabase, query: str, project: str | None, min_score: float
 ) -> list[dict[str, Any]]:
     """Get search results from the database."""
-    return db.search_reflections(
+    return await db.search_conversations(
         query=query,
         project=project,
         limit=20,
@@ -314,7 +310,7 @@ async def _search_summary_impl(
 
     try:
         db = await _get_reflection_database()
-        results = _get_search_results(db, query, project, min_score)
+        results = await _get_search_results(db, query, project, min_score)
 
         output = _format_search_header(query)
 
@@ -359,7 +355,7 @@ async def _search_by_file_impl(
 
     try:
         db = await _get_reflection_database()
-        results = await db.search_reflections(
+        results = await db.search_conversations(
             query=file_path,
             project=project,
             limit=limit,
@@ -427,7 +423,7 @@ async def _search_by_concept_impl(
 
     try:
         db = await _get_reflection_database()
-        results = await db.search_reflections(
+        results = await db.search_conversations(
             query=concept,
             project=project,
             limit=limit,
@@ -465,7 +461,7 @@ async def _reflection_stats_impl() -> str:
 
     try:
         db = await _get_reflection_database()
-        stats = await db.get_reflection_stats()
+        stats = await db.get_stats()
 
         output = []
         output.append("📊 Reflection Database Statistics")

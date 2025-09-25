@@ -143,7 +143,7 @@ class ProjectActivityMonitor:
     def get_active_files(self, minutes: int = 60) -> list[dict[str, Any]]:
         """Get files actively being worked on."""
         recent_events = self.get_recent_activity(minutes)
-        file_activity = defaultdict(list[Any])
+        file_activity: dict[str, list[ActivityEvent]] = defaultdict(list)
 
         for event in recent_events:
             if event.event_type == "file_change" and "file_path" in event.details:

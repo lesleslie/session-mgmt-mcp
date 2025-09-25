@@ -6,16 +6,16 @@ This document provides the complete MCP tool schema for AI agents integrating wi
 
 ### 🚀 Session Management Tools
 
-#### `mcp__session-mgmt__init`
+#### `mcp__session-mgmt__start`
 
 **Purpose**: Complete session initialization with workspace verification
 
 ```typescript
-interface InitParameters {
+interface StartParameters {
   working_directory?: string  // Optional working directory override
 }
 
-interface InitResponse {
+interface StartResponse {
   success: boolean
   project_context: {
     name: string
@@ -322,8 +322,8 @@ interface ChunkedResponse {
 ### 1. Session Lifecycle Management
 
 ```typescript
-// Always start sessions with init
-await mcp_tool("mcp__session-mgmt__init", {
+// Always start sessions with start
+await mcp_tool("mcp__session-mgmt__start", {
   working_directory: "/path/to/project"
 })
 

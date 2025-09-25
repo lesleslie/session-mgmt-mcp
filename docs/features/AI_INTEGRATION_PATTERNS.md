@@ -10,7 +10,7 @@ Advanced patterns for integrating Claude Code with the Session Management MCP se
 
 ```typescript
 // 1. Initialize session with project analysis
-const initResult = await mcp_tool("mcp__session-mgmt__init", {
+const initResult = await mcp_tool("mcp__session-mgmt__start", {
   working_directory: "/path/to/project"
 })
 
@@ -107,7 +107,7 @@ class QualityDrivenWorkflow {
   private readonly checkpointInterval = 45 * 60 * 1000 // 45 minutes
 
   async startSession(workingDirectory: string) {
-    const result = await mcp_tool("mcp__session-mgmt__init", {
+    const result = await mcp_tool("mcp__session-mgmt__start", {
       working_directory: workingDirectory
     })
 
@@ -366,7 +366,7 @@ class SessionContinuityManager {
 
   async resumeFromHandoff(handoffInfo: any) {
     // 1. Initialize new session
-    const initResult = await mcp_tool("mcp__session-mgmt__init", {})
+    const initResult = await mcp_tool("mcp__session-mgmt__start", {})
 
     // 2. Load previous session context
     const previousContext = await mcp_tool("mcp__session-mgmt__reflect_on_past", {

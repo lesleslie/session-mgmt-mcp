@@ -1253,7 +1253,7 @@ class CrackerjackIntegration:
         self,
         parsed_data: dict[str, Any],
         exit_code: int,
-    ) -> dict[str, float | int]:
+    ) -> dict[str, float]:
         """Calculate quality metrics from parsed data."""
         metrics = {}
 
@@ -1262,7 +1262,9 @@ class CrackerjackIntegration:
         if test_results:
             passed = sum(1 for t in test_results if t["status"] == "passed")
             total = len(test_results)
-            metrics["test_pass_rate"] = (passed / total) * 100 if total > 0 else 0
+            metrics["test_pass_rate"] = float(
+                (passed / total) * 100 if total > 0 else 0
+            )
 
         # Coverage metrics
         coverage_summary = parsed_data.get("coverage_summary", {})
@@ -1274,7 +1276,7 @@ class CrackerjackIntegration:
         if "total_issues" in lint_summary:
             # Invert to make higher scores better
             total_issues = lint_summary["total_issues"]
-            metrics["lint_score"] = (
+            metrics["lint_score"] = float(
                 max(0, 100 - total_issues) if total_issues < 100 else 0
             )
 
@@ -1282,7 +1284,7 @@ class CrackerjackIntegration:
         security_summary = parsed_data.get("security_summary", {})
         if "total_issues" in security_summary:
             total_issues = security_summary["total_issues"]
-            metrics["security_score"] = (
+            metrics["security_score"] = float(
                 max(0, 100 - (total_issues * 10)) if total_issues < 10 else 0
             )
 
@@ -1293,10 +1295,10 @@ class CrackerjackIntegration:
             high_complexity = complexity_summary.get("high_complexity_files", 0)
             if total_files > 0:
                 complexity_rate = (high_complexity / total_files) * 100
-                metrics["complexity_score"] = max(0, 100 - complexity_rate)
+                metrics["complexity_score"] = float(max(0, 100 - complexity_rate))
 
         # Overall build status
-        metrics["build_status"] = 100 if exit_code == 0 else 0
+        metrics["build_status"] = float(100 if exit_code == 0 else 0)
 
         return metrics
 

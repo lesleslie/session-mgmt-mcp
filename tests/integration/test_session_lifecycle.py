@@ -35,7 +35,7 @@ register_memory_tools(mock_mcp)
 register_search_tools(mock_mcp)
 
 # Access the registered tools
-init = mock_mcp.tools.get("init")
+start = mock_mcp.tools.get("start")
 checkpoint = mock_mcp.tools.get("checkpoint")
 end = mock_mcp.tools.get("end")
 status = mock_mcp.tools.get("status")
@@ -55,14 +55,14 @@ class TestSessionLifecycleIntegration:
         temp_database,
         temp_working_dir,
     ):
-        """Test complete session workflow from init to end."""
+        """Test complete session workflow from start to end."""
         working_dir = str(temp_working_dir)
 
         # Phase 1: Session Initialization
         with patch.dict("os.environ", {"PWD": working_dir}):
-            init_result = await init(working_directory=working_dir)
+            init_result = await start(working_directory=working_dir)
 
-        assert "Session initialization completed successfully!" in init_result
+        assert "Session initialization completed successfully!" in start_result
         assert "MCP Server" in init_result
 
         # Verify initialization side effects
@@ -106,8 +106,8 @@ class TestSessionLifecycleIntegration:
         temp_database,
     ):
         """Test session error recovery patterns."""
-        # Test basic init functionality without workspace validation dependency
-        result = await init()
+        # Test basic start functionality without workspace validation dependency
+        result = await start()
         assert "Session initialization completed successfully!" in result
 
     @pytest.mark.asyncio
@@ -120,7 +120,7 @@ class TestSessionLifecycleIntegration:
         working_dir = str(temp_working_dir)
 
         # Initialize session
-        await init(working_directory=working_dir)
+        await start(working_directory=working_dir)
 
         # Test permission operations
         permissions_result = await permissions(action="status")
@@ -206,10 +206,10 @@ class TestSessionLifecycleIntegration:
 
         # Measure initialization time
         start_time = time.time()
-        await init(working_directory=working_dir)
+        await start(working_directory=working_dir)
         init_time = time.time() - start_time
 
-        performance_monitor["record_execution_time"]("init", init_time)
+        performance_monitor["record_execution_time"]("start", init_time)
         assert init_time < 5.0  # Should complete within 5 seconds
 
         # Measure checkpoint time
@@ -241,8 +241,8 @@ class TestSessionLifecycleIntegration:
         working_dir = str(temp_working_dir)
 
         # Initialize session and capture initial state
-        init_result = await init(working_directory=working_dir)
-        assert "Session initialization completed successfully!" in init_result
+        start_result = await start(working_directory=working_dir)
+        assert "Session initialization completed successfully!" in start_result
 
         # Perform multiple state-changing operations
         await store_reflection(content="Test reflection 1", tags=["test"])
@@ -264,7 +264,7 @@ class TestMCPToolRegistration:
     async def test_all_tools_registered(self, mock_mcp_server):
         """Test all expected MCP tools are properly registered."""
         expected_tools = [
-            "init",
+            "start",
             "checkpoint",
             "end",
             "status",
@@ -281,7 +281,7 @@ class TestMCPToolRegistration:
 
         # Check that the tools are available in our mock setup
         tool_vars = {
-            "init": init,
+            "start": start,
             "checkpoint": checkpoint,
             "end": end,
             "status": status,

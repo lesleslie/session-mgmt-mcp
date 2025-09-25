@@ -7,7 +7,7 @@ Provides multi-modal search including code snippets, error patterns, and time-ba
 import ast
 import contextlib
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 try:
     from dateutil.parser import parse as parse_date
@@ -26,7 +26,7 @@ class CodeSearcher:
     """AST-based code search for Python code snippets."""
 
     def __init__(self) -> None:
-        self.search_types = {
+        self.search_types: dict[str, type[ast.AST] | tuple[type[ast.AST], ...]] = {
             "function": ast.FunctionDef,
             "class": ast.ClassDef,
             "import": (ast.Import, ast.ImportFrom),
@@ -39,7 +39,7 @@ class CodeSearcher:
         }
 
     def _extract_pattern_info(
-        self, node, pattern_type: str, code: str, block_index: int
+        self, node: ast.AST, pattern_type: str, code: str, block_index: int
     ) -> dict[str, Any]:
         """Extract pattern information from AST node."""
         pattern_info = {
@@ -72,7 +72,11 @@ class CodeSearcher:
             tree = ast.parse(code)
             for node in ast.walk(tree):
                 for pattern_type, node_types in self.search_types.items():
-                    if isinstance(node, node_types):
+                    # Handle both single classes and tuples of classes
+                    type_check = (
+                        node_types if isinstance(node_types, tuple) else (node_types,)
+                    )
+                    if isinstance(node, type_check):
                         pattern_info = self._extract_pattern_info(
                             node, pattern_type, code, block_index
                         )
@@ -320,41 +324,62 @@ class EnhancedSearchEngine:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Search for code patterns in conversations."""
+        conversations = self._get_all_conversations()
+        if not conversations:
+            return []
+
+        results = []
+        for conv in conversations:
+            conv_results = self._process_conversation_for_code_patterns(
+                conv, query, pattern_type
+            )
+            results.extend(conv_results)
+
+        return self._sort_and_limit_results(results, limit)
+
+    def _get_all_conversations(self) -> list[tuple[str, str, str, str, str]]:
+        """Get all conversations from database."""
+        if not hasattr(self.reflection_db, "conn") or not self.reflection_db.conn:
+            return []
+
+        cursor = self.reflection_db.conn.execute(
+            "SELECT id, content, project, timestamp, metadata FROM conversations",
+        )
+        return cast("list[tuple[str, str, str, str, str]]", cursor.fetchall())
+
+    def _process_conversation_for_code_patterns(
+        self, conv: tuple[str, str, str, str, str], query: str, pattern_type: str | None
+    ) -> list[dict[str, Any]]:
+        """Process a single conversation for code patterns."""
+        conv_id, content, project, timestamp, _metadata = conv
+        patterns = self.code_searcher.extract_code_patterns(content)
         results = []
 
-        # Get all conversations from database
-        if hasattr(self.reflection_db, "conn") and self.reflection_db.conn:
-            cursor = self.reflection_db.conn.execute(
-                "SELECT id, content, project, timestamp, metadata FROM conversations",
-            )
-            conversations = cursor.fetchall()
+        for pattern in patterns:
+            if pattern_type and pattern["type"] != pattern_type:
+                continue
 
-            for conv in conversations:
-                conv_id, content, project, timestamp, _metadata = conv
-                patterns = self.code_searcher.extract_code_patterns(content)
+            relevance = self._calculate_code_relevance(pattern, query)
+            if relevance > 0.3:  # Threshold for relevance
+                results.append(
+                    {
+                        "conversation_id": conv_id,
+                        "project": project,
+                        "timestamp": timestamp,
+                        "pattern": pattern,
+                        "relevance": relevance,
+                        "snippet": content[:500] + "..."
+                        if len(content) > 500
+                        else content,
+                    }
+                )
 
-                for pattern in patterns:
-                    if pattern_type and pattern["type"] != pattern_type:
-                        continue
+        return results
 
-                    # Calculate relevance based on query similarity
-                    relevance = self._calculate_code_relevance(pattern, query)
-
-                    if relevance > 0.3:  # Threshold for relevance
-                        results.append(
-                            {
-                                "conversation_id": conv_id,
-                                "project": project,
-                                "timestamp": timestamp,
-                                "pattern": pattern,
-                                "relevance": relevance,
-                                "snippet": content[:500] + "..."
-                                if len(content) > 500
-                                else content,
-                            },
-                        )
-
-        # Sort by relevance and limit results
+    def _sort_and_limit_results(
+        self, results: list[dict[str, Any]], limit: int
+    ) -> list[dict[str, Any]]:
+        """Sort results by relevance and limit."""
         results.sort(key=lambda x: x["relevance"], reverse=True)
         return results[:limit]
 
@@ -365,42 +390,47 @@ class EnhancedSearchEngine:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Search for error patterns and debugging contexts."""
+        conversations = self._get_all_conversations()
+        if not conversations:
+            return []
+
+        results = []
+        for conv in conversations:
+            conv_results = self._process_conversation_for_error_patterns(
+                conv, query, error_type
+            )
+            results.extend(conv_results)
+
+        return self._sort_and_limit_results(results, limit)
+
+    def _process_conversation_for_error_patterns(
+        self, conv: tuple[str, str, str, str, str], query: str, error_type: str | None
+    ) -> list[dict[str, Any]]:
+        """Process a single conversation for error patterns."""
+        conv_id, content, project, timestamp, _metadata = conv
+        patterns = self.error_matcher.extract_error_patterns(content)
         results = []
 
-        if hasattr(self.reflection_db, "conn") and self.reflection_db.conn:
-            cursor = self.reflection_db.conn.execute(
-                "SELECT id, content, project, timestamp, metadata FROM conversations",
-            )
-            conversations = cursor.fetchall()
+        for pattern in patterns:
+            if error_type and pattern["subtype"] != error_type:
+                continue
 
-            for conv in conversations:
-                conv_id, content, project, timestamp, _metadata = conv
-                patterns = self.error_matcher.extract_error_patterns(content)
+            relevance = self._calculate_error_relevance(pattern, query)
+            if relevance > 0.2:  # Lower threshold for errors
+                results.append(
+                    {
+                        "conversation_id": conv_id,
+                        "project": project,
+                        "timestamp": timestamp,
+                        "pattern": pattern,
+                        "relevance": relevance,
+                        "snippet": content[:500] + "..."
+                        if len(content) > 500
+                        else content,
+                    }
+                )
 
-                for pattern in patterns:
-                    if error_type and pattern["subtype"] != error_type:
-                        continue
-
-                    # Calculate relevance based on query similarity
-                    relevance = self._calculate_error_relevance(pattern, query)
-
-                    if relevance > 0.2:  # Lower threshold for errors
-                        results.append(
-                            {
-                                "conversation_id": conv_id,
-                                "project": project,
-                                "timestamp": timestamp,
-                                "pattern": pattern,
-                                "relevance": relevance,
-                                "snippet": content[:500] + "..."
-                                if len(content) > 500
-                                else content,
-                            },
-                        )
-
-        # Sort by relevance and limit results
-        results.sort(key=lambda x: x["relevance"], reverse=True)
-        return results[:limit]
+        return results
 
     async def search_temporal(
         self,

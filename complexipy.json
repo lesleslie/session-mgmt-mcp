@@ -108,6 +108,12 @@
     "path": "session_mgmt_mcp/advanced_search.py"
   },
   {
+    "complexity": 2,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::suggest_completions",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
     "complexity": 3,
     "file_name": "advanced_search.py",
     "function_name": "AdvancedSearchEngine::_add_filter_conditions_to_sql",
@@ -126,12 +132,6 @@
     "path": "session_mgmt_mcp/advanced_search.py"
   },
   {
-    "complexity": 3,
-    "file_name": "advanced_search.py",
-    "function_name": "AdvancedSearchEngine::suggest_completions",
-    "path": "session_mgmt_mcp/advanced_search.py"
-  },
-  {
     "complexity": 4,
     "file_name": "advanced_search.py",
     "function_name": "AdvancedSearchEngine::_add_timeframe_filter",
@@ -146,13 +146,19 @@
   {
     "complexity": 4,
     "file_name": "advanced_search.py",
-    "function_name": "AdvancedSearchEngine::get_similar_content",
+    "function_name": "AdvancedSearchEngine::_parse_timeframe",
     "path": "session_mgmt_mcp/advanced_search.py"
   },
   {
-    "complexity": 5,
+    "complexity": 4,
     "file_name": "advanced_search.py",
-    "function_name": "AdvancedSearchEngine::_parse_timeframe",
+    "function_name": "AdvancedSearchEngine::aggregate_metrics",
+    "path": "session_mgmt_mcp/advanced_search.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "advanced_search.py",
+    "function_name": "AdvancedSearchEngine::get_similar_content",
     "path": "session_mgmt_mcp/advanced_search.py"
   },
   {
@@ -171,12 +177,6 @@
     "complexity": 7,
     "file_name": "advanced_search.py",
     "function_name": "AdvancedSearchEngine::_calculate_facets",
-    "path": "session_mgmt_mcp/advanced_search.py"
-  },
-  {
-    "complexity": 10,
-    "file_name": "advanced_search.py",
-    "function_name": "AdvancedSearchEngine::aggregate_metrics",
     "path": "session_mgmt_mcp/advanced_search.py"
   },
   {
@@ -2072,6 +2072,12 @@
   {
     "complexity": 2,
     "file_name": "natural_scheduler.py",
+    "function_name": "NaturalLanguageParser::_process_pattern_handler",
+    "path": "session_mgmt_mcp/natural_scheduler.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "natural_scheduler.py",
     "function_name": "NaturalLanguageParser::_try_parsing_strategies",
     "path": "session_mgmt_mcp/natural_scheduler.py"
   },
@@ -2091,12 +2097,6 @@
     "complexity": 3,
     "file_name": "natural_scheduler.py",
     "function_name": "NaturalLanguageParser::_calculate_days_ahead",
-    "path": "session_mgmt_mcp/natural_scheduler.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "natural_scheduler.py",
-    "function_name": "NaturalLanguageParser::_process_pattern_handler",
     "path": "session_mgmt_mcp/natural_scheduler.py"
   },
   {
@@ -6014,6 +6014,12 @@
   {
     "complexity": 2,
     "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::_get_git_executable",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "worktree_manager.py",
     "function_name": "WorktreeManager::_get_git_status",
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
@@ -6054,15 +6060,15 @@
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
   {
-    "complexity": 8,
+    "complexity": 9,
     "file_name": "worktree_manager.py",
-    "function_name": "WorktreeManager::prune_worktrees",
+    "function_name": "WorktreeManager::_validate_git_command",
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
   {
-    "complexity": 9,
+    "complexity": 11,
     "file_name": "worktree_manager.py",
-    "function_name": "WorktreeManager::remove_worktree",
+    "function_name": "WorktreeManager::prune_worktrees",
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
   {
@@ -6072,13 +6078,19 @@
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
   {
+    "complexity": 12,
+    "file_name": "worktree_manager.py",
+    "function_name": "WorktreeManager::remove_worktree",
+    "path": "session_mgmt_mcp/worktree_manager.py"
+  },
+  {
     "complexity": 13,
     "file_name": "worktree_manager.py",
     "function_name": "WorktreeManager::_get_recent_files",
     "path": "session_mgmt_mcp/worktree_manager.py"
   },
   {
-    "complexity": 18,
+    "complexity": 21,
     "file_name": "worktree_manager.py",
     "function_name": "WorktreeManager::create_worktree",
     "path": "session_mgmt_mcp/worktree_manager.py"

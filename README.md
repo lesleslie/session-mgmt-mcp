@@ -2,7 +2,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-27.1%25-red)
+![Coverage](https://img.shields.io/badge/coverage-29.5%25-red)
 
 A dedicated MCP server that provides comprehensive session management functionality for Claude Code sessions across any project.
 
@@ -35,7 +35,7 @@ The server automatically detects git repositories and provides seamless session 
 
 ### Session Management
 
-- **`init`** - Comprehensive session initialization including:
+- **`start`** - Comprehensive session initialization including:
 
   - Project context analysis and health monitoring
   - UV dependency synchronization
@@ -115,7 +115,7 @@ Session-mgmt includes deep integration with [Crackerjack](https://github.com/les
 
 **Example Integrated Workflow:**
 
-1. 🚀 **Session-mgmt `init`** - Sets up your session with accumulated context from previous work
+1. 🚀 **Session-mgmt `start`** - Sets up your session with accumulated context from previous work
 1. 🔧 **Crackerjack runs** quality checks and applies AI agent fixes to resolve issues
 1. 💾 **Session-mgmt captures** successful patterns, quality improvements, and error resolutions
 1. 🧠 **Next session starts** with all accumulated knowledge and learned patterns

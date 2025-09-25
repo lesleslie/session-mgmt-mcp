@@ -164,7 +164,7 @@ def _format_file_search_header(file_path: str) -> list[str]:
     return output
 
 
-def _format_file_search_result(result: dict, index: int) -> list[str]:
+def _format_file_search_result(result: dict[str, Any], index: int) -> list[str]:
     """Format a single file search result."""
     output = []
     output.append(
@@ -179,7 +179,9 @@ def _format_file_search_result(result: dict, index: int) -> list[str]:
     return output
 
 
-def _format_file_search_results(results: list, file_path: str) -> list[str]:
+def _format_file_search_results(
+    results: list[dict[str, Any]], file_path: str
+) -> list[str]:
     """Format the complete file search results."""
     output = _format_file_search_header(file_path)
 

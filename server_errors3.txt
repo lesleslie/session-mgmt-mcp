@@ -1,0 +1,171 @@
+session_mgmt_mcp/server.py:296:12: error: Access to generic instance variables via class is ambiguous  [misc]
+    |
+293 |     def __new__(cls, claude_dir: Path) -> Self:  # type: ignore[misc]
+294 |         """Singleton pattern to ensure consistent session ID across tool calls."""
+295 |         if cls._instance is None:
+296 |             cls._instance = super().__new__(cls)
+297 |             cls._instance._initialized = False
+
+session_mgmt_mcp/server.py:2721:38: error: Incompatible types in assignment (expression has type "str", variable has type "list[dict[str, Any]]")  [assignment]
+     |
+2718 | 
+2719 |         # Apply token optimization if available
+2720 |         results, optimization_info = await _optimize_search_results_impl(
+2721 |             results,
+2722 |             optimize_tokens,
+2723 |             max_tokens,
+2724 |             query,
+2725 |         )
+2726 | 
+2727 |         # Build and format output
+
+session_mgmt_mcp/server.py:2729:60: error: Argument 3 to "_build_search_header" has incompatible type "str"; expected "dict[str, Any] | None"  [arg-type]
+     |
+2726 | 
+2727 |         # Build and format output
+2728 |         output = _build_search_header(query, len(results), optimization_info)
+2729 |         output.extend(_format_search_results(results))
+2730 | 
+
+session_mgmt_mcp/server.py:3484:19: error: "FunctionTool" not callable  [operator]
+     |
+3481 |     output.append(f"   📁 {wt['path']}")
+3482 | 
+3483 |     status_line = _format_worktree_status(wt)
+3484 |     if status_line:
+3485 |         output.append(f"   Status: {status_line}")
+
+session_mgmt_mcp/server.py:3621:1: error: Name "_format_current_worktree_info" already defined on line 2411  [no-redef]
+     |
+3618 | 
+3619 | 
+3620 | @mcp.tool()
+3621 | def _format_current_worktree_info(current: dict[str, Any], working_dir_name: str) -> list[str]:
+3622 |     """Format current worktree information."""
+3623 |     return [
+3624 |         "🌿 **Git Worktree Status**\n",
+3625 |         f"📂 Repository: {working_dir_name}",
+3626 |         f"🎯 Current worktree: {current['branch']}"
+3627 |         + (" (main)" if current["is_main"] else " (worktree)"),
+3628 |         f"📁 Path: {current['path']}",
+3629 |         f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
+3630 |         f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
+3631 |     ]
+3632 | 
+3633 | 
+
+session_mgmt_mcp/server.py:3647:1: error: Name "_format_worktree_status" already defined on line 3436  [no-redef]
+     |
+3644 | 
+3645 | 
+3646 | def _format_worktree_status(wt: dict[str, Any]) -> str:
+3647 |     """Format status items for a worktree."""
+3648 |     status_items = []
+
+session_mgmt_mcp/server.py:3654:5: error: invalid syntax  [syntax]
+     |
+3651 |     if wt["prunable"]:
+3652 |         status_items.append("🗑️ prunable")
+3653 |     if not wt["exists"]:
+3654 |     output.append("")
+3655 | 
+
+session_mgmt_mcp/server.py:3655:5: error: Name "output" is not defined  [name-defined]
+     |
+3652 |         status_items.append("🗑️ prunable")
+3653 |     if not wt["exists"]:
+3654 |     output.append("")
+3655 | 
+3656 |     return output
+
+session_mgmt_mcp/server.py:3657:12: error: Name "output" is not defined  [name-defined]
+     |
+3654 |     output.append("")
+3655 | 
+3656 |     return output
+3657 | 
+3658 | 
+
+session_mgmt_mcp/server.py:3657:12: error: Returning Any from function declared to return "str"  [no-any-return]
+     |
+3654 |     output.append("")
+3655 | 
+3656 |     return output
+3657 | 
+3658 | 
+
+session_mgmt_mcp/server.py:3668:11: error: Missing return statement  [return]
+     |
+3665 | 
+3666 | 
+3667 | async def git_worktree_status(working_directory: str | None = None) -> str:
+3668 |     """Get comprehensive status of current worktree and all related worktrees."""
+3669 |     from .worktree_manager import WorktreeManager
+
+session_mgmt_mcp/server.py:3675:5: error: invalid syntax  [syntax]
+     |
+3672 |     manager = WorktreeManager(session_logger=session_logger)
+3673 | 
+3674 |     try:
+3675 |         result = await manager.get_worktree_status(working_dir)
+3676 | 
+3677 |         if not result["success"]:
+3678 |             return f"❌ {result['error']}"
+3679 | 
+3680 | 
+
+session_mgmt_mcp/server.py:3690:5: error: invalid syntax  [syntax]
+     |
+3687 |     manager = WorktreeManager(session_logger=session_logger)
+3688 | 
+3689 |     try:
+3690 |         result = await manager.prune_worktrees(working_dir)
+3691 | 
+3692 |         if not result["success"]:
+3693 |             return f"❌ {result['error']}"
+3694 | 
+3695 |         output = ["🧹 **Worktree Pruning Complete**\n"]
+3696 | 
+3697 |         if result["pruned_count"] > 0:
+3698 |             output.append(
+3699 |                 f"🗑️ Pruned {result['pruned_count']} stale worktree references",
+3700 |             )
+3701 |             if result.get("output"):
+3702 |                 output.append(f"📝 Details: {result['output']}")
+3703 |         else:
+3704 |             output.append("✅ No stale worktree references found")
+3705 |             output.append("🎉 All worktrees are clean and up to date")
+3706 | 
+3707 |         output.append("\n💡 Use `git_worktree_list` to see current worktrees")
+3708 | 
+3709 |         return "\n".join(output)
+3710 | 
+3711 |     except Exception as e:
+3712 |     manager = WorktreeManager(session_logger=session_logger)
+3713 | 
+
+session_mgmt_mcp/server.py:3716:61: error: Name "from_path" is not defined  [name-defined]
+     |
+3713 | 
+3714 |     try:
+3715 |         result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
+3716 | 
+3717 |         if not result["success"]:
+
+session_mgmt_mcp/server.py:3716:78: error: Name "to_path" is not defined  [name-defined]
+     |
+3713 | 
+3714 |     try:
+3715 |         result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
+3716 | 
+3717 |         if not result["success"]:
+
+session_mgmt_mcp/server.py:3861:5: error: Need type annotation for "types" (hint: "types: Dict[<type>, <type>] = ...")  [var-annotated]
+     |
+3858 | 
+3859 |     # Group by type if available
+3860 |     types = {}
+3861 |     for interruption in interruptions:
+3862 |         int_type = interruption.get("type", "unknown")
+
+Found 16 errors in 1 file (checked 1 source file)
