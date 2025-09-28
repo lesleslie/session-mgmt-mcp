@@ -7,88 +7,114 @@ architecture patterns with single responsibility principle.
 
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.session_commands import SESSION_COMMANDS
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
 
-def register_prompt_tools(mcp: Any) -> None:
-    """Register all MCP prompt definitions.
 
-    Args:
-        mcp: FastMCP server instance
+@dataclass(frozen=True)
+class PromptDefinition:
+    """Immutable prompt definition with metadata."""
 
-    """
+    name: str
+    description: str
+    content_key: str | None = None
+    content: str | None = None
 
-    @mcp.prompt("init")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_init_prompt() -> str:
-        """Initialize Claude session with comprehensive setup including UV dependencies, global workspace verification, and automation tools."""
-        return SESSION_COMMANDS["init"]
+    def get_content(self) -> str:
+        """Get prompt content from key or direct content."""
+        if self.content_key:
+            return SESSION_COMMANDS[self.content_key]
+        return self.content or ""
 
-    @mcp.prompt("checkpoint")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_checkpoint_prompt() -> str:
-        """Perform mid-session quality checkpoint with workflow analysis and optimization recommendations."""
-        return SESSION_COMMANDS["checkpoint"]
 
-    @mcp.prompt("end")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_end_prompt() -> str:
-        """End Claude session with cleanup, learning capture, and handoff file creation."""
-        return SESSION_COMMANDS["end"]
+# Core session management prompts
+CORE_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "init",
+        "Initialize Claude session with comprehensive setup including UV dependencies, global workspace verification, and automation tools.",
+        content_key="init",
+    ),
+    PromptDefinition(
+        "checkpoint",
+        "Perform mid-session quality checkpoint with workflow analysis and optimization recommendations.",
+        content_key="checkpoint",
+    ),
+    PromptDefinition(
+        "end",
+        "End Claude session with cleanup, learning capture, and handoff file creation.",
+        content_key="end",
+    ),
+    PromptDefinition(
+        "status",
+        "Get current session status and project context information with health checks.",
+        content_key="status",
+    ),
+)
 
-    @mcp.prompt("status")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_status_prompt() -> str:
-        """Get current session status and project context information with health checks."""
-        return SESSION_COMMANDS["status"]
+# Permission and reflection prompts
+REFLECTION_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "permissions",
+        "Manage session permissions for trusted operations to avoid repeated prompts.",
+        content_key="permissions",
+    ),
+    PromptDefinition(
+        "reflect",
+        "Search past conversations and store reflections with semantic similarity.",
+        content_key="reflect",
+    ),
+    PromptDefinition(
+        "quick-search",
+        "Quick search that returns only the count and top result for fast overview.",
+        content_key="quick-search",
+    ),
+    PromptDefinition(
+        "search-summary",
+        "Get aggregated insights from search results without individual result details.",
+        content_key="search-summary",
+    ),
+    PromptDefinition(
+        "reflection-stats",
+        "Get statistics about the reflection database and conversation memory.",
+        content_key="reflection-stats",
+    ),
+)
 
-    @mcp.prompt("permissions")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_permissions_prompt() -> str:
-        """Manage session permissions for trusted operations to avoid repeated prompts."""
-        return SESSION_COMMANDS["permissions"]
+# Crackerjack integration prompts
+CRACKERJACK_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "crackerjack-run",
+        "Execute a Crackerjack command and parse the output for insights.",
+        content_key="crackerjack-run",
+    ),
+    PromptDefinition(
+        "crackerjack-history",
+        "Get recent Crackerjack command execution history with parsed results.",
+        content_key="crackerjack-history",
+    ),
+    PromptDefinition(
+        "crackerjack-metrics",
+        "Get quality metrics trends from Crackerjack execution history.",
+        content_key="crackerjack-metrics",
+    ),
+    PromptDefinition(
+        "crackerjack-patterns",
+        "Analyze test failure patterns and trends for debugging insights.",
+        content_key="crackerjack-patterns",
+    ),
+)
 
-    @mcp.prompt("reflect")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_reflect_prompt() -> str:
-        """Search past conversations and store reflections with semantic similarity."""
-        return SESSION_COMMANDS["reflect"]
-
-    @mcp.prompt("quick-search")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_quick_search_prompt() -> str:
-        """Quick search that returns only the count and top result for fast overview."""
-        return SESSION_COMMANDS["quick-search"]
-
-    @mcp.prompt("search-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_search_summary_prompt() -> str:
-        """Get aggregated insights from search results without individual result details."""
-        return SESSION_COMMANDS["search-summary"]
-
-    @mcp.prompt("reflection-stats")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_session_reflection_stats_prompt() -> str:
-        """Get statistics about the reflection database and conversation memory."""
-        return SESSION_COMMANDS["reflection-stats"]
-
-    @mcp.prompt("crackerjack-run")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_crackerjack_run_prompt() -> str:
-        """Execute a Crackerjack command and parse the output for insights."""
-        return SESSION_COMMANDS["crackerjack-run"]
-
-    @mcp.prompt("crackerjack-history")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_crackerjack_history_prompt() -> str:
-        """Get recent Crackerjack command execution history with parsed results."""
-        return SESSION_COMMANDS["crackerjack-history"]
-
-    @mcp.prompt("crackerjack-metrics")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_crackerjack_metrics_prompt() -> str:
-        """Get quality metrics trends from Crackerjack execution history."""
-        return SESSION_COMMANDS["crackerjack-metrics"]
-
-    @mcp.prompt("crackerjack-patterns")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_crackerjack_patterns_prompt() -> str:
-        """Analyze test failure patterns and trends for debugging insights."""
-        return SESSION_COMMANDS["crackerjack-patterns"]
-
-    @mcp.prompt("compress-memory")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_compress_memory_prompt() -> str:
-        """Compress conversation memory by consolidating old conversations into summaries."""
-        return """# Memory Compression
+# Memory management prompts
+MEMORY_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "compress-memory",
+        "Compress conversation memory by consolidating old conversations into summaries.",
+        content="""# Memory Compression
 
 Compress conversation memory by consolidating old conversations into summaries.
 
@@ -104,12 +130,12 @@ Examples:
 - Preview changes: dry_run=True
 - Aggressive compression: max_age_days=14, importance_threshold=0.5
 
-Use this periodically to keep your conversation memory manageable and efficient."""
-
-    @mcp.prompt("compression-stats")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_compression_stats_prompt() -> str:
-        """Get detailed statistics about memory compression history and current database status."""
-        return """# Compression Statistics
+Use this periodically to keep your conversation memory manageable and efficient.""",
+    ),
+    PromptDefinition(
+        "compression-stats",
+        "Get detailed statistics about memory compression history and current database status.",
+        content="""# Compression Statistics
 
 Get detailed statistics about memory compression history and current database status.
 
@@ -120,12 +146,12 @@ This command will:
 - Show number of consolidated conversations
 - Provide compression efficiency metrics
 
-Use this to monitor memory usage and compression effectiveness."""
-
-    @mcp.prompt("retention-policy")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_retention_policy_prompt() -> str:
-        """Configure memory retention policy parameters for automatic compression."""
-        return """# Retention Policy
+Use this to monitor memory usage and compression effectiveness.""",
+    ),
+    PromptDefinition(
+        "retention-policy",
+        "Configure memory retention policy parameters for automatic compression.",
+        content="""# Retention Policy
 
 Configure memory retention policy parameters for automatic compression.
 
@@ -140,12 +166,16 @@ Examples:
 - Aggressive: max_age_days=90, importance_threshold=0.5
 - Custom: consolidation_age_days=14
 
-Use this to customize how your conversation memory is managed over time."""
+Use this to customize how your conversation memory is managed over time.""",
+    ),
+)
 
-    @mcp.prompt("auto-load-context")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_auto_load_context_prompt() -> str:
-        """Automatically detect current development context and load relevant conversations."""
-        return """# Auto-Context Loading
+# Context and search prompts
+CONTEXT_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "auto-load-context",
+        "Automatically detect current development context and load relevant conversations.",
+        content="""# Auto-Context Loading
 
 Automatically detect current development context and load relevant conversations.
 
@@ -162,12 +192,12 @@ Examples:
 - Increase results: max_conversations=20
 - Lower threshold: min_relevance=0.2
 
-Use this at the start of coding sessions to get relevant context automatically."""
-
-    @mcp.prompt("context-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_context_summary_prompt() -> str:
-        """Get a quick summary of your current development context without loading conversations."""
-        return """# Context Summary
+Use this at the start of coding sessions to get relevant context automatically.""",
+    ),
+    PromptDefinition(
+        "context-summary",
+        "Get a quick summary of your current development context without loading conversations.",
+        content="""# Context Summary
 
 Get a quick summary of your current development context without loading conversations.
 
@@ -178,12 +208,12 @@ This command will:
 - Display recently modified files
 - Calculate detection confidence score
 
-Use this to understand what context the system has detected about your current work."""
-
-    @mcp.prompt("search-code")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_search_code_prompt() -> str:
-        """Search for code patterns in conversations using AST parsing."""
-        return """# Code Pattern Search
+Use this to understand what context the system has detected about your current work.""",
+    ),
+    PromptDefinition(
+        "search-code",
+        "Search for code patterns in conversations using AST parsing.",
+        content="""# Code Pattern Search
 
 Search for code patterns in your conversation history using AST (Abstract Syntax Tree) parsing.
 
@@ -198,12 +228,12 @@ Examples:
 - Search for class definitions: pattern_type='class'
 - Search for error handling: query='try except'
 
-Use this to find code examples and patterns from your development sessions."""
-
-    @mcp.prompt("search-errors")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_search_errors_prompt() -> str:
-        """Search for error patterns and debugging contexts in conversations."""
-        return """# Error Pattern Search
+Use this to find code examples and patterns from your development sessions.""",
+    ),
+    PromptDefinition(
+        "search-errors",
+        "Search for error patterns and debugging contexts in conversations.",
+        content="""# Error Pattern Search
 
 Search for error messages, exceptions, and debugging contexts in your conversation history.
 
@@ -218,12 +248,12 @@ Examples:
 - Find import issues: query='ImportError'
 - Find debugging sessions: query='debug'
 
-Use this to quickly find solutions to similar errors you've encountered before."""
-
-    @mcp.prompt("search-temporal")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_search_temporal_prompt() -> str:
-        """Search conversations within a specific time range using natural language."""
-        return """# Temporal Search
+Use this to quickly find solutions to similar errors you've encountered before.""",
+    ),
+    PromptDefinition(
+        "search-temporal",
+        "Search conversations within a specific time range using natural language.",
+        content="""# Temporal Search
 
 Search your conversation history using natural language time expressions.
 
@@ -239,12 +269,16 @@ Examples:
 - "2 days ago" - conversations from 2 days ago
 - "this month" + query - filter by content within the month
 
-Use this to find recent discussions or work from specific time periods."""
+Use this to find recent discussions or work from specific time periods.""",
+    ),
+)
 
-    @mcp.prompt("start-app-monitoring")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_start_app_monitoring_prompt() -> str:
-        """Start monitoring IDE activity and browser documentation usage."""
-        return """# Start Application Monitoring
+# Monitoring prompts
+MONITORING_PROMPTS: tuple[PromptDefinition, ...] = (
+    PromptDefinition(
+        "start-app-monitoring",
+        "Start monitoring IDE activity and browser documentation usage.",
+        content="""# Start Application Monitoring
 
 Monitor your development activity to provide better context and insights.
 
@@ -260,12 +294,12 @@ Monitoring includes:
 - Browser navigation to documentation sites
 - Application focus and context switching
 
-Use this to automatically capture your development context for better session insights."""
-
-    @mcp.prompt("stop-app-monitoring")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_stop_app_monitoring_prompt() -> str:
-        """Stop all application monitoring."""
-        return """# Stop Application Monitoring
+Use this to automatically capture your development context for better session insights.""",
+    ),
+    PromptDefinition(
+        "stop-app-monitoring",
+        "Stop all application monitoring.",
+        content="""# Stop Application Monitoring
 
 Stop monitoring your development activity.
 
@@ -275,12 +309,12 @@ This command will:
 - Preserve collected activity data
 - Clean up monitoring resources
 
-Use this when you want to pause monitoring or when you're done with a development session."""
-
-    @mcp.prompt("activity-summary")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_activity_summary_prompt() -> str:
-        """Get activity summary for recent development work."""
-        return """# Activity Summary
+Use this when you want to pause monitoring or when you're done with a development session.""",
+    ),
+    PromptDefinition(
+        "activity-summary",
+        "Get activity summary for recent development work.",
+        content="""# Activity Summary
 
 Get a comprehensive summary of your recent development activity.
 
@@ -296,12 +330,12 @@ Summary includes:
 - Documentation resources consulted
 - Average relevance scores
 
-Use this to understand your development patterns and identify productive sessions."""
-
-    @mcp.prompt("context-insights")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_context_insights_prompt() -> str:
-        """Get contextual insights from recent activity."""
-        return """# Context Insights
+Use this to understand your development patterns and identify productive sessions.""",
+    ),
+    PromptDefinition(
+        "context-insights",
+        "Get contextual insights from recent activity.",
+        content="""# Context Insights
 
 Analyze recent development activity for contextual insights.
 
@@ -318,12 +352,12 @@ Insights include:
 - Project switching patterns
 - Overall productivity assessment
 
-Use this to understand your current development context and optimize your workflow."""
-
-    @mcp.prompt("active-files")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_active_files_prompt() -> str:
-        """Get files currently being worked on."""
-        return """# Active Files
+Use this to understand your current development context and optimize your workflow.""",
+    ),
+    PromptDefinition(
+        "active-files",
+        "Get files currently being worked on.",
+        content="""# Active Files
 
 Show files that are currently being actively worked on.
 
@@ -339,12 +373,12 @@ File activity is scored based on:
 - File type and relevance
 - Project context
 
-Use this to quickly see what you're currently working on and resume interrupted tasks."""
-
-    @mcp.prompt("quality-monitor")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_quality_monitor_prompt() -> str:
-        """Proactive session quality monitoring with trend analysis and early warnings."""
-        return """# Quality Monitor
+Use this to quickly see what you're currently working on and resume interrupted tasks.""",
+    ),
+    PromptDefinition(
+        "quality-monitor",
+        "Proactive session quality monitoring with trend analysis and early warnings.",
+        content="""# Quality Monitor
 
 Phase 3: Proactive quality monitoring with early warning system.
 
@@ -355,12 +389,12 @@ This command will:
 - Generate improvement recommendations
 - Track quality metrics over time
 
-Use this for continuous quality assurance during development."""
-
-    @mcp.prompt("auto-compact")  # type: ignore[misc]  # type: ignore[no-untyped-decorator]
-    async def get_auto_compact_prompt() -> str:
-        """Automatically trigger conversation compaction with context preservation."""
-        return """# Auto Compact
+Use this for continuous quality assurance during development.""",
+    ),
+    PromptDefinition(
+        "auto-compact",
+        "Automatically trigger conversation compaction with context preservation.",
+        content="""# Auto Compact
 
 Automatically trigger conversation compaction with intelligent summary.
 
@@ -371,4 +405,48 @@ This command will:
 - Compress redundant information
 - Maintain searchable history
 
-Use this to manage conversation memory efficiently."""
+Use this to manage conversation memory efficiently.""",
+    ),
+)
+
+# All prompts grouped for efficient processing
+ALL_PROMPT_GROUPS: tuple[Any, ...] = (  # type: ignore[assignment]
+    CORE_PROMPTS,
+    REFLECTION_PROMPTS,
+    CRACKERJACK_PROMPTS,
+    MEMORY_PROMPTS,
+    CONTEXT_PROMPTS,
+    MONITORING_PROMPTS,
+)
+
+
+def _create_prompt_handler(
+    definition: PromptDefinition,
+) -> Callable[[], Coroutine[Any, Any, str]]:
+    """Create async prompt handler function for a definition."""
+
+    async def handler() -> str:
+        return definition.get_content()
+
+    handler.__name__ = f"get_{definition.name.replace('-', '_')}_prompt"
+    handler.__doc__ = definition.description
+    return handler
+
+
+def register_prompt_tools(mcp: Any) -> None:
+    """Register all MCP prompt definitions using data-driven approach.
+
+    Args:
+        mcp: FastMCP server instance
+
+    """
+    # Register prompts in groups for better organization
+    for prompt_group in ALL_PROMPT_GROUPS:
+        _register_prompt_group(mcp, prompt_group)
+
+
+def _register_prompt_group(mcp: Any, prompts: tuple[PromptDefinition, ...]) -> None:
+    """Register a group of prompts with MCP server."""
+    for definition in prompts:
+        handler = _create_prompt_handler(definition)
+        mcp.prompt(definition.name)(handler)

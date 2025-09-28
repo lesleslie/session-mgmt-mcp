@@ -8,7 +8,7 @@ session_mgmt_mcp/server.py:296:12: error: Access to generic instance variables v
 
 session_mgmt_mcp/server.py:2721:38: error: Incompatible types in assignment (expression has type "str", variable has type "list[dict[str, Any]]")  [assignment]
      |
-2718 | 
+2718 |
 2719 |         # Apply token optimization if available
 2720 |         results, optimization_info = await _optimize_search_results_impl(
 2721 |             results,
@@ -16,21 +16,21 @@ session_mgmt_mcp/server.py:2721:38: error: Incompatible types in assignment (exp
 2723 |             max_tokens,
 2724 |             query,
 2725 |         )
-2726 | 
+2726 |
 2727 |         # Build and format output
 
 session_mgmt_mcp/server.py:2729:60: error: Argument 3 to "_build_search_header" has incompatible type "str"; expected "dict[str, Any] | None"  [arg-type]
      |
-2726 | 
+2726 |
 2727 |         # Build and format output
 2728 |         output = _build_search_header(query, len(results), optimization_info)
 2729 |         output.extend(_format_search_results(results))
-2730 | 
+2730 |
 
 session_mgmt_mcp/server.py:3017:1: error: Name "_format_single_reminder" already defined on line 2889  [no-redef]
      |
-3014 | 
-3015 | 
+3014 |
+3015 |
 3016 | def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
 3017 |     """Format a single reminder for output."""
 3018 |     lines = _format_reminder_basic_info(reminder, index)
@@ -38,15 +38,15 @@ session_mgmt_mcp/server.py:3017:1: error: Name "_format_single_reminder" already
 session_mgmt_mcp/server.py:3518:19: error: "FunctionTool" not callable  [operator]
      |
 3515 |     output.append(f"   📁 {wt['path']}")
-3516 | 
+3516 |
 3517 |     status_line = _format_worktree_status(wt)
 3518 |     if status_line:
 3519 |         output.append(f"   Status: {status_line}")
 
 session_mgmt_mcp/server.py:3655:1: error: Name "_format_current_worktree_info" already defined on line 2411  [no-redef]
      |
-3652 | 
-3653 | 
+3652 |
+3653 |
 3654 | @mcp.tool()
 3655 | def _format_current_worktree_info(current: dict[str, Any], working_dir_name: str) -> list[str]:
 3656 |     """Format current worktree information."""
@@ -59,13 +59,13 @@ session_mgmt_mcp/server.py:3655:1: error: Name "_format_current_worktree_info" a
 3663 |         f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
 3664 |         f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
 3665 |     ]
-3666 | 
-3667 | 
+3666 |
+3667 |
 
 session_mgmt_mcp/server.py:3681:1: error: Name "_format_worktree_status" already defined on line 3470  [no-redef]
      |
-3678 | 
-3679 | 
+3678 |
+3679 |
 3680 | def _format_worktree_status(wt: dict[str, Any]) -> str:
 3681 |     """Format status items for a worktree."""
 3682 |     status_items = []
@@ -75,13 +75,13 @@ session_mgmt_mcp/server.py:3700:12: error: Too many arguments for "_format_curre
 3697 | ) -> list[str]:
 3698 |     """Format the current worktree information section."""
 3699 |     return _format_current_worktree_info(current, working_dir_name)
-3700 | 
-3701 | 
+3700 |
+3701 |
 
 session_mgmt_mcp/server.py:3713:1: error: Name "_format_single_worktree" already defined on line 3504  [no-redef]
      |
-3710 | 
-3711 | 
+3710 |
+3711 |
 3712 | def _format_single_worktree(wt: dict[str, Any], index: int) -> list[str]:
 3713 |     """Format a single worktree entry."""
 3714 |     output = []
@@ -89,7 +89,7 @@ session_mgmt_mcp/server.py:3713:1: error: Name "_format_single_worktree" already
 session_mgmt_mcp/server.py:3722:19: error: "FunctionTool" not callable  [operator]
      |
 3719 |     output.append(f"   📁 {wt['path']}")
-3720 | 
+3720 |
 3721 |     status_line = _format_worktree_status(wt)
 3722 |     if status_line:
 3723 |         output.append(status_line)
@@ -99,28 +99,28 @@ session_mgmt_mcp/server.py:3761:27: error: Too many arguments for "_format_singl
 3758 |         output.append(_format_worktree_list_header_simple())
 3759 |         for i, wt in enumerate(all_worktrees, 1):
 3760 |             output.extend(_format_single_worktree(wt, i))
-3761 | 
+3761 |
 3762 |         output.extend(_format_worktree_list_footer())
 
 session_mgmt_mcp/server.py:3817:17: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
-3814 | 
+3814 |
 3815 |     working_dir = Path(working_directory or str(Path.cwd()))
 3816 |     from_path = Path(from_path)
 3817 |     to_path = Path(to_path)
-3818 | 
+3818 |
 
 session_mgmt_mcp/server.py:3818:15: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
 3815 |     working_dir = Path(working_directory or str(Path.cwd()))
 3816 |     from_path = Path(from_path)
 3817 |     to_path = Path(to_path)
-3818 | 
+3818 |
 3819 |     # Make paths absolute if they're relative
 
 session_mgmt_mcp/server.py:3821:12: error: "str" has no attribute "is_absolute"  [attr-defined]
      |
-3818 | 
+3818 |
 3819 |     # Make paths absolute if they're relative
 3820 |     if not from_path.is_absolute():
 3821 |         from_path = working_dir / from_path
@@ -140,19 +140,19 @@ session_mgmt_mcp/server.py:3823:12: error: "str" has no attribute "is_absolute" 
 3821 |         from_path = working_dir / from_path
 3822 |     if not to_path.is_absolute():
 3823 |         to_path = working_dir / to_path
-3824 | 
+3824 |
 
 session_mgmt_mcp/server.py:3824:19: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
 3821 |         from_path = working_dir / from_path
 3822 |     if not to_path.is_absolute():
 3823 |         to_path = working_dir / to_path
-3824 | 
+3824 |
 3825 |     manager = WorktreeManager(session_logger=session_logger)
 
 session_mgmt_mcp/server.py:3974:5: error: Need type annotation for "types" (hint: "types: Dict[<type>, <type>] = ...")  [var-annotated]
      |
-3971 | 
+3971 |
 3972 |     # Group by type if available
 3973 |     types = {}
 3974 |     for interruption in interruptions:

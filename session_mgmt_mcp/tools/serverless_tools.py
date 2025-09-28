@@ -201,35 +201,67 @@ async def _list_serverless_sessions_impl(
         if not manager:
             return "❌ Failed to initialize serverless manager"
 
-        sessions = await manager.list_sessions(
-            user_id=user_id,
-            project_id=project_id,
-        )
+        sessions = await manager.list_sessions(user_id=user_id, project_id=project_id)
 
-        output = ["📋 Serverless Sessions", ""]
-
-        if not sessions:
-            output.append("🔍 No sessions found")
-            if user_id:
-                output.append(f"   📌 User filter: {user_id}")
-            if project_id:
-                output.append(f"   📌 Project filter: {project_id}")
-            return "\n".join(output)
-
-        output.append(f"📊 Found {len(sessions)} sessions:")
-
-        for i, session in enumerate(sessions, 1):
-            output.append(f"\n{i}. **{session['session_id']}**")
-            output.append(f"   👤 User: {session.get('user_id', 'N/A')}")
-            output.append(f"   🏗️ Project: {session.get('project_id', 'N/A')}")
-            output.append(f"   📅 Created: {session.get('created_at', 'N/A')}")
-            output.append(f"   ⏰ Expires: {session.get('expires_at', 'N/A')}")
-
-        return "\n".join(output)
+        return _format_sessions_list(sessions, user_id, project_id)
 
     except Exception as e:
         logger.exception(f"Error listing serverless sessions: {e}")
         return f"❌ Error listing sessions: {e}"
+
+
+def _format_sessions_list(
+    sessions: list[dict[str, Any]], user_id: str | None, project_id: str | None
+) -> str:
+    """Format sessions list for display."""
+    header = ["📋 Serverless Sessions", ""]
+
+    if not sessions:
+        return _format_empty_sessions_result(header, user_id, project_id)
+
+    sessions_content = [
+        f"📊 Found {len(sessions)} sessions:",
+        *_generate_session_entries(sessions),
+    ]
+
+    return "\n".join([*header, *sessions_content])
+
+
+def _format_empty_sessions_result(
+    header: list[str], user_id: str | None, project_id: str | None
+) -> str:
+    """Format empty sessions result with applied filters."""
+    content = [
+        "🔍 No sessions found",
+        *(f"   📌 User filter: {user_id}" for user_id in (user_id,) if user_id),
+        *(
+            f"   📌 Project filter: {project_id}"
+            for project_id in (project_id,)
+            if project_id
+        ),
+    ]
+
+    return "\n".join([*header, *content])
+
+
+def _generate_session_entries(sessions: list[dict[str, Any]]) -> list[str]:
+    """Generate formatted session entries using generator expressions."""
+    return [
+        entry
+        for i, session in enumerate(sessions, 1)
+        for entry in _format_single_session(i, session)
+    ]
+
+
+def _format_single_session(index: int, session: dict[str, Any]) -> list[str]:
+    """Format a single session entry."""
+    return [
+        f"\n{index}. **{session['session_id']}**",
+        f"   👤 User: {session.get('user_id', 'N/A')}",
+        f"   🏗️ Project: {session.get('project_id', 'N/A')}",
+        f"   📅 Created: {session.get('created_at', 'N/A')}",
+        f"   ⏰ Expires: {session.get('expires_at', 'N/A')}",
+    ]
 
 
 async def _test_serverless_storage_impl() -> str:
@@ -243,32 +275,45 @@ async def _test_serverless_storage_impl() -> str:
             return "❌ Failed to initialize serverless manager"
 
         test_results = await manager.test_storage_backends()
-
-        output = ["🧪 Serverless Storage Test Results", ""]
-
-        for backend, result in test_results.items():
-            status = "✅" if result["available"] else "❌"
-            output.append(f"{status} {backend.title()}")
-
-            if result["available"]:
-                output.append(
-                    f"   ⚡ Response time: {result.get('response_time_ms', 0):.0f}ms"
-                )
-                if result.get("config"):
-                    output.append(f"   ⚙️ Config: {result['config']}")
-            else:
-                output.append(f"   ❌ Error: {result.get('error', 'Unknown')}")
-            output.append("")
-
-        working_count = sum(1 for r in test_results.values() if r["available"])
-        total_count = len(test_results)
-        output.append(f"📊 Summary: {working_count}/{total_count} backends available")
-
-        return "\n".join(output)
+        return _format_storage_test_results(test_results)
 
     except Exception as e:
         logger.exception(f"Error testing serverless storage: {e}")
         return f"❌ Error testing storage: {e}"
+
+
+def _format_storage_test_results(test_results: dict[str, Any]) -> str:
+    """Format storage test results for display."""
+    output = ["🧪 Serverless Storage Test Results", ""]
+
+    for backend, result in test_results.items():
+        _add_backend_status(output, backend, result)
+
+    _add_test_summary(output, test_results)
+    return "\n".join(output)
+
+
+def _add_backend_status(
+    output: list[str], backend: str, result: dict[str, Any]
+) -> None:
+    """Add backend status information to output."""
+    status = "✅" if result["available"] else "❌"
+    output.append(f"{status} {backend.title()}")
+
+    if result["available"]:
+        output.append(f"   ⚡ Response time: {result.get('response_time_ms', 0):.0f}ms")
+        if result.get("config"):
+            output.append(f"   ⚙️ Config: {result['config']}")
+    else:
+        output.append(f"   ❌ Error: {result.get('error', 'Unknown')}")
+    output.append("")
+
+
+def _add_test_summary(output: list[str], test_results: dict[str, Any]) -> None:
+    """Add test summary to output."""
+    working_count = sum(1 for r in test_results.values() if r["available"])
+    total_count = len(test_results)
+    output.append(f"📊 Summary: {working_count}/{total_count} backends available")
 
 
 async def _cleanup_serverless_sessions_impl() -> str:
@@ -317,34 +362,48 @@ async def _configure_serverless_storage_impl(
 
         success = await manager.configure_storage(backend, config_updates)
 
-        if success:
-            output = ["⚙️ Storage Configuration Updated", ""]
-            output.append(f"🗄️ Backend: {backend}")
-            output.append("📝 Configuration changes:")
-
-            for key, value in config_updates.items():
-                # Mask sensitive values
-                if (
-                    "password" in key.lower()
-                    or "secret" in key.lower()
-                    or "key" in key.lower()
-                ):
-                    masked_value = f"{str(value)[:4]}***"
-                else:
-                    masked_value = str(value)
-                output.append(f"   • {key}: {masked_value}")
-
-            output.append("\n✅ Configuration saved successfully!")
-            output.append(
-                "💡 Use `test_serverless_storage` to verify the configuration"
-            )
-
-            return "\n".join(output)
-        return f"❌ Failed to configure {backend} storage backend"
+        return (
+            _format_configuration_success(backend, config_updates)
+            if success
+            else f"❌ Failed to configure {backend} storage backend"
+        )
 
     except Exception as e:
         logger.exception(f"Error configuring serverless storage: {e}")
         return f"❌ Error configuring storage: {e}"
+
+
+def _format_configuration_success(backend: str, config_updates: dict[str, Any]) -> str:
+    """Format successful configuration update message."""
+    header = [
+        "⚙️ Storage Configuration Updated",
+        "",
+        f"🗄️ Backend: {backend}",
+        "📝 Configuration changes:",
+    ]
+
+    config_lines = [
+        f"   • {key}: {_mask_sensitive_value(key, value)}"
+        for key, value in config_updates.items()
+    ]
+
+    footer = [
+        "\n✅ Configuration saved successfully!",
+        "💡 Use `test_serverless_storage` to verify the configuration",
+    ]
+
+    return "\n".join([*header, *config_lines, *footer])
+
+
+def _mask_sensitive_value(key: str, value: Any) -> str:
+    """Mask sensitive configuration values for display."""
+    sensitive_keywords = {"password", "secret", "key"}
+
+    return (
+        f"{str(value)[:4]}***"
+        if any(keyword in key.lower() for keyword in sensitive_keywords)
+        else str(value)
+    )
 
 
 def _register_session_tools(mcp: FastMCP) -> None:

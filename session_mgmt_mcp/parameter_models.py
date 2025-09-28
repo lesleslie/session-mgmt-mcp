@@ -156,32 +156,51 @@ class TagParams(BaseModel):
         if v is None:
             return None
 
-        if not isinstance(v, list):
+        cls._validate_tags_type(v)
+        validated_tags = [
+            normalized_tag
+            for tag in v
+            if (normalized_tag := cls._process_single_tag(tag)) is not None
+        ]
+
+        return validated_tags or None
+
+    @classmethod
+    def _validate_tags_type(cls, tags: Any) -> None:
+        """Validate that tags input is correct type."""
+        if not isinstance(tags, list):
             msg = "Tags must be a list of strings"
             raise TypeError(msg)
 
-        validated_tags = []
-        for tag in v:
-            if not isinstance(tag, str):
-                msg = "Each tag must be a string"
-                raise TypeError(msg)
+    @classmethod
+    def _process_single_tag(cls, tag: Any) -> str | None:
+        """Process and validate a single tag."""
+        if not isinstance(tag, str):
+            msg = "Each tag must be a string"
+            raise TypeError(msg)
 
-            tag = tag.strip().lower()
-            if not tag:
-                continue  # Skip empty tags
+        normalized_tag = tag.strip().lower()
+        if not normalized_tag:
+            return None  # Skip empty tags
 
-            if len(tag) > 50:
-                msg = f"Tag too long (max 50 chars): {tag}"
-                raise ValueError(msg)
+        cls._validate_tag_length(normalized_tag)
+        cls._validate_tag_format(normalized_tag)
 
-            # Basic tag format validation
-            if not tag.replace("-", "").replace("_", "").isalnum():
-                msg = f"Tags must contain only letters, numbers, hyphens, and underscores: {tag}"
-                raise ValueError(msg)
+        return normalized_tag
 
-            validated_tags.append(tag)
+    @classmethod
+    def _validate_tag_length(cls, tag: str) -> None:
+        """Validate tag length constraints."""
+        if len(tag) > 50:
+            msg = f"Tag too long (max 50 chars): {tag}"
+            raise ValueError(msg)
 
-        return validated_tags or None
+    @classmethod
+    def _validate_tag_format(cls, tag: str) -> None:
+        """Validate tag format (alphanumeric with hyphens and underscores)."""
+        if not tag.replace("-", "").replace("_", "").isalnum():
+            msg = f"Tags must contain only letters, numbers, hyphens, and underscores: {tag}"
+            raise ValueError(msg)
 
 
 class IDParams(BaseModel):

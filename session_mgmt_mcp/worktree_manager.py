@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import time
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,52 @@ from .utils.git_operations import (
     is_git_repository,
     list_worktrees,
 )
+
+
+@dataclass(frozen=True)
+class WorktreeCreationOptions:
+    """Immutable worktree creation options."""
+
+    create_branch: bool = False
+    checkout_existing: bool = False
+    force: bool = False
+
+
+@dataclass
+class WorktreeValidationResult:
+    """Result of worktree validation."""
+
+    is_valid: bool
+    errors: list[str] = field(default_factory=list)
+
+    @classmethod
+    def success(cls) -> "WorktreeValidationResult":
+        """Create successful validation result."""
+        return cls(is_valid=True)  # type: ignore[call-arg]
+
+    @classmethod
+    def error(cls, error: str) -> "WorktreeValidationResult":
+        """Create error validation result."""
+        return cls(is_valid=False, errors=[error])  # type: ignore[call-arg]
+
+
+@dataclass
+class GitOperationResult:
+    """Result of git operation execution."""
+
+    success: bool
+    output: str = field(default="")
+    error: str = field(default="")
+
+    @classmethod
+    def success_result(cls, output: str = "") -> "GitOperationResult":
+        """Create successful operation result."""
+        return cls(success=True, output=output)  # type: ignore[call-arg]
+
+    @classmethod
+    def error_result(cls, error: str) -> "GitOperationResult":
+        """Create error operation result."""
+        return cls(success=False, error=error)  # type: ignore[call-arg]
 
 
 class WorktreeManager:
@@ -70,13 +117,12 @@ class WorktreeManager:
 
     def _is_safe_branch_name(self, branch: str) -> bool:
         """Security: Validate branch name is safe for shell execution."""
-        from .utils.regex_patterns import SAFE_PATTERNS
+        import re
 
         # Allow alphanumeric, dashes, underscores, slashes (for remote branches)
-        pattern = SAFE_PATTERNS[
-            "safe_branch_name"
-        ]  # REGEX OK: using validated pattern from crackerjack.services.regex_patterns
-        return bool(pattern.pattern.match(branch)) and len(branch) < 100
+        # Using pattern directly to avoid ValidatedPattern complexity
+        pattern = re.compile(r"^[a-zA-Z0-9_/-]+$")  # REGEX OK: validated safe pattern
+        return bool(pattern.match(branch)) and len(branch) < 100
 
     def _is_safe_path(self, path: Path) -> bool:
         """Security: Validate path is safe and reasonable."""
@@ -139,51 +185,44 @@ class WorktreeManager:
             self._log(f"Failed to list worktrees: {e}", level="error")
             return {"success": False, "error": str(e), "worktrees": []}
 
-    def _validate_worktree_preconditions(
+    def _validate_worktree_creation_request(
         self, repository_path: Path, new_path: Path, branch: str
-    ) -> dict[str, Any] | None:
-        """Validate preconditions for worktree creation.
-
-        Returns error dict if validation fails, None if successful.
-        """
+    ) -> WorktreeValidationResult:
+        """Validate worktree creation request. Target complexity: ≤5."""
         if not is_git_repository(repository_path):
-            return {
-                "success": False,
-                "error": "Source directory is not a git repository",
-            }
+            return WorktreeValidationResult.error(
+                "Source directory is not a git repository"
+            )
 
         if new_path.exists():
-            return {
-                "success": False,
-                "error": f"Target path already exists: {new_path}",
-            }
+            return WorktreeValidationResult.error(
+                f"Target path already exists: {new_path}"
+            )
 
         # Security: Validate branch name to prevent injection
         if not branch or not self._is_safe_branch_name(branch):
-            return {
-                "success": False,
-                "error": "Invalid branch name: must be alphanumeric with dashes/underscores only",
-            }
+            return WorktreeValidationResult.error(
+                "Invalid branch name: must be alphanumeric with dashes/underscores only"
+            )
 
         # Security: Validate path is within reasonable bounds
         if not self._is_safe_path(new_path):
-            return {
-                "success": False,
-                "error": "Invalid path: path must be relative to current directory structure",
-            }
+            return WorktreeValidationResult.error(
+                "Invalid path: path must be relative to current directory structure"
+            )
 
-        return None
+        return WorktreeValidationResult.success()
 
     def _build_worktree_command(
-        self, new_path: Path, branch: str, create_branch: bool, checkout_existing: bool
+        self, new_path: Path, branch: str, options: WorktreeCreationOptions
     ) -> list[str]:
         """Build git worktree add command with security hardening."""
         git_executable = self._get_git_executable()
         cmd = [git_executable, "worktree", "add"]
 
-        if create_branch:
+        if options.create_branch:
             cmd.extend(["-b", branch])
-        elif checkout_existing:
+        elif options.checkout_existing:
             cmd.extend(["--track", "-B", branch])
 
         cmd.extend([str(new_path), branch])
@@ -203,14 +242,14 @@ class WorktreeManager:
             shell=False,  # Security: Explicit shell=False to prevent injection
         )
 
-    def _build_success_response(
+    def _build_success_response_from_info(
         self,
         new_path: Path,
         branch: str,
         worktree_info: Any,
-        result: subprocess.CompletedProcess[str],
+        output: str,
     ) -> dict[str, Any]:
-        """Build success response for worktree creation."""
+        """Build success response for worktree creation. Target complexity: ≤3."""
         return {
             "success": True,
             "worktree_path": str(new_path),
@@ -221,8 +260,47 @@ class WorktreeManager:
                 "is_main": worktree_info.is_main_worktree,
                 "is_detached": worktree_info.is_detached,
             },
-            "output": result.stdout.strip(),
+            "output": output,
         }
+
+    async def _execute_git_worktree_creation(
+        self,
+        new_path: Path,
+        branch: str,
+        options: WorktreeCreationOptions,
+        repository_path: Path,
+    ) -> GitOperationResult:
+        """Execute git worktree creation. Target complexity: ≤8."""
+        try:
+            # Build and validate command
+            cmd = self._build_worktree_command(new_path, branch, options)
+
+            # Security: Validate command before execution
+            if not self._validate_git_command(cmd):
+                return GitOperationResult.error_result(
+                    "Invalid git command detected - potential security risk"
+                )
+
+            # Execute command
+            result = self._execute_worktree_creation(cmd, repository_path)
+            return GitOperationResult.success_result(result.stdout.strip())
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.strip() if e.stderr else str(e)
+            self._log(f"Failed to create worktree: {error_msg}", level="error")
+            return GitOperationResult.error_result(error_msg)
+        except Exception as e:
+            self._log(f"Unexpected error creating worktree: {e}", level="error")
+            return GitOperationResult.error_result(str(e))
+
+    def _verify_worktree_creation(self, new_path: Path) -> GitOperationResult:
+        """Verify worktree was created successfully. Target complexity: ≤3."""
+        worktree_info = get_worktree_info(new_path)
+        if not worktree_info:
+            return GitOperationResult.error_result(
+                "Worktree was created but cannot be accessed"
+            )
+        return GitOperationResult.success_result()
 
     async def create_worktree(
         self,
@@ -232,48 +310,36 @@ class WorktreeManager:
         create_branch: bool = False,
         checkout_existing: bool = False,
     ) -> dict[str, Any]:
-        """Create a new worktree."""
-        # Validate preconditions
-        validation_error = self._validate_worktree_preconditions(
+        """Create a new worktree. Target complexity: ≤8."""
+        options = WorktreeCreationOptions(
+            create_branch=create_branch, checkout_existing=checkout_existing
+        )
+
+        # 1. Validate request
+        validation = self._validate_worktree_creation_request(
             repository_path, new_path, branch
         )
-        if validation_error:
-            return validation_error
+        if not validation.is_valid:
+            return {"success": False, "error": validation.errors[0]}
 
-        try:
-            # Build and validate command
-            cmd = self._build_worktree_command(
-                new_path, branch, create_branch, checkout_existing
-            )
+        # 2. Execute git operations
+        git_result = await self._execute_git_worktree_creation(
+            new_path, branch, options, repository_path
+        )
+        if not git_result.success:
+            return {"success": False, "error": git_result.error}
 
-            # Security: Validate command before execution
-            if not self._validate_git_command(cmd):
-                return {
-                    "success": False,
-                    "error": "Invalid git command detected - potential security risk",
-                }
+        # 3. Verify creation
+        verify_result = self._verify_worktree_creation(new_path)
+        if not verify_result.success:
+            return {"success": False, "error": verify_result.error}
 
-            # Execute command
-            result = self._execute_worktree_creation(cmd, repository_path)
-
-            # Verify worktree was created
-            worktree_info = get_worktree_info(new_path)
-            if not worktree_info:
-                return {
-                    "success": False,
-                    "error": "Worktree was created but cannot be accessed",
-                }
-
-            self._log("Created worktree", path=str(new_path), branch=branch)
-            return self._build_success_response(new_path, branch, worktree_info, result)
-
-        except subprocess.CalledProcessError as e:
-            error_msg = e.stderr.strip() if e.stderr else str(e)
-            self._log(f"Failed to create worktree: {error_msg}", level="error")
-            return {"success": False, "error": error_msg}
-        except Exception as e:
-            self._log(f"Unexpected error creating worktree: {e}", level="error")
-            return {"success": False, "error": str(e)}
+        # 4. Build success response
+        worktree_info = get_worktree_info(new_path)
+        self._log("Created worktree", path=str(new_path), branch=branch)
+        return self._build_success_response_from_info(
+            new_path, branch, worktree_info, git_result.output
+        )
 
     async def remove_worktree(
         self,

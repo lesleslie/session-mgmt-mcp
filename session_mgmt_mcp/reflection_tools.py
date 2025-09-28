@@ -54,7 +54,7 @@ class ReflectionDatabase:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:  # noqa: vulture
+    ) -> None:
         """Context manager exit with cleanup."""
         self.close()
 
@@ -68,7 +68,7 @@ class ReflectionDatabase:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:  # noqa: vulture
+    ) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 

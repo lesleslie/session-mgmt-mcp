@@ -152,7 +152,7 @@ class TestSessionLifecycleManagerQualityScore:
 
                 # Mock permissions manager
                 with patch(
-                    "session_mgmt_mcp.core.session_manager.permissions_manager"
+                    "session_mgmt_mcp.server.permissions_manager"
                 ) as mock_perms:
                     mock_perms.trusted_operations = {"op1", "op2", "op3", "op4", "op5"}
 
@@ -189,7 +189,7 @@ class TestSessionLifecycleManagerQualityScore:
 
                 # Mock permissions manager with no trusted operations
                 with patch(
-                    "session_mgmt_mcp.core.session_manager.permissions_manager"
+                    "session_mgmt_mcp.server.permissions_manager"
                 ) as mock_perms:
                     mock_perms.trusted_operations = set()
 

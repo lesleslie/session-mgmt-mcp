@@ -8,7 +8,7 @@ session_mgmt_mcp/server.py:296:12: error: Access to generic instance variables v
 
 session_mgmt_mcp/server.py:2721:38: error: Incompatible types in assignment (expression has type "str", variable has type "list[dict[str, Any]]")  [assignment]
      |
-2718 | 
+2718 |
 2719 |         # Apply token optimization if available
 2720 |         results, optimization_info = await _optimize_search_results_impl(
 2721 |             results,
@@ -16,21 +16,21 @@ session_mgmt_mcp/server.py:2721:38: error: Incompatible types in assignment (exp
 2723 |             max_tokens,
 2724 |             query,
 2725 |         )
-2726 | 
+2726 |
 2727 |         # Build and format output
 
 session_mgmt_mcp/server.py:2729:60: error: Argument 3 to "_build_search_header" has incompatible type "str"; expected "dict[str, Any] | None"  [arg-type]
      |
-2726 | 
+2726 |
 2727 |         # Build and format output
 2728 |         output = _build_search_header(query, len(results), optimization_info)
 2729 |         output.extend(_format_search_results(results))
-2730 | 
+2730 |
 
 session_mgmt_mcp/server.py:3484:19: error: "FunctionTool" not callable  [operator]
      |
 3481 |     output.append(f"   📁 {wt['path']}")
-3482 | 
+3482 |
 3483 |     status_line = _format_worktree_status(wt)
 3484 |     if status_line:
 3485 |         output.append(f"   Status: {status_line}")
@@ -38,27 +38,27 @@ session_mgmt_mcp/server.py:3484:19: error: "FunctionTool" not callable  [operato
 session_mgmt_mcp/server.py:3639:5: error: invalid syntax  [syntax]
      |
 3636 |     manager = WorktreeManager(session_logger=session_logger)
-3637 | 
+3637 |
 3638 |     try:
 3639 |         result = await manager.get_worktree_status(working_dir)
-3640 | 
+3640 |
 3641 |         if not result["success"]:
 3642 |             return f"❌ {result['error']}"
-3643 | 
-3644 | 
+3643 |
+3644 |
 
 session_mgmt_mcp/server.py:3654:5: error: invalid syntax  [syntax]
      |
 3651 |     manager = WorktreeManager(session_logger=session_logger)
-3652 | 
+3652 |
 3653 |     try:
 3654 |         result = await manager.prune_worktrees(working_dir)
-3655 | 
+3655 |
 3656 |         if not result["success"]:
 3657 |             return f"❌ {result['error']}"
-3658 | 
+3658 |
 3659 |         output = ["🧹 **Worktree Pruning Complete**\n"]
-3660 | 
+3660 |
 3661 |         if result["pruned_count"] > 0:
 3662 |             output.append(
 3663 |                 f"🗑️ Pruned {result['pruned_count']} stale worktree references",
@@ -68,34 +68,34 @@ session_mgmt_mcp/server.py:3654:5: error: invalid syntax  [syntax]
 3667 |         else:
 3668 |             output.append("✅ No stale worktree references found")
 3669 |             output.append("🎉 All worktrees are clean and up to date")
-3670 | 
+3670 |
 3671 |         output.append("\n💡 Use `git_worktree_list` to see current worktrees")
-3672 | 
+3672 |
 3673 |         return "\n".join(output)
-3674 | 
+3674 |
 3675 |     except Exception as e:
 3676 |     manager = WorktreeManager(session_logger=session_logger)
-3677 | 
+3677 |
 
 session_mgmt_mcp/server.py:3680:61: error: Name "from_path" is not defined  [name-defined]
      |
-3677 | 
+3677 |
 3678 |     try:
 3679 |         result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
-3680 | 
+3680 |
 3681 |         if not result["success"]:
 
 session_mgmt_mcp/server.py:3680:78: error: Name "to_path" is not defined  [name-defined]
      |
-3677 | 
+3677 |
 3678 |     try:
 3679 |         result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
-3680 | 
+3680 |
 3681 |         if not result["success"]:
 
 session_mgmt_mcp/server.py:3825:5: error: Need type annotation for "types" (hint: "types: Dict[<type>, <type>] = ...")  [var-annotated]
      |
-3822 | 
+3822 |
 3823 |     # Group by type if available
 3824 |     types = {}
 3825 |     for interruption in interruptions:

@@ -10,10 +10,41 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+@dataclass(frozen=True)
+class StreamGenerationOptions:
+    """Immutable streaming generation options."""
+
+    provider: str | None = None
+    model: str | None = None
+    use_fallback: bool = True
+    temperature: float = 0.7
+    max_tokens: int | None = None
+
+
+@dataclass
+class StreamChunk:
+    """Immutable streaming response chunk."""
+
+    content: str = field(default="")
+    is_error: bool = field(default=False)
+    provider: str = field(default="")
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def content_chunk(cls, content: str, provider: str = "") -> "StreamChunk":
+        """Create content chunk."""
+        return cls(content=content, provider=provider)  # type: ignore[call-arg]
+
+    @classmethod
+    def error_chunk(cls, error: str) -> "StreamChunk":
+        """Create error chunk."""
+        return cls(content="", is_error=True, metadata={"error": error})  # type: ignore[call-arg]
 
 
 @dataclass
@@ -255,24 +286,30 @@ class GeminiProvider(LLMProvider):
                 )
         return self._client
 
-    def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
-        """Convert LLMMessage objects to Gemini format."""
+    def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, Any]]:
+        """Convert LLMMessage objects to Gemini format using modern pattern matching."""
         converted: list[dict[str, Any]] = []
+
         for msg in messages:
-            if msg.role == "system":
-                # Gemini doesn't have system role, prepend to first user message
-                if converted and converted[-1]["role"] == "user":
-                    converted[-1]["parts"] = [
-                        f"System: {msg.content}\n\nUser: {converted[-1]['parts'][0]}",
-                    ]
-                else:
-                    converted.append(
-                        {"role": "user", "parts": [f"System: {msg.content}"]},
-                    )
-            elif msg.role == "user":
-                converted.append({"role": "user", "parts": [msg.content]})
-            elif msg.role == "assistant":
-                converted.append({"role": "model", "parts": [msg.content]})
+            match msg.role:
+                case "system":
+                    # Gemini doesn't have system role, prepend to first user message
+                    if converted and converted[-1]["role"] == "user":
+                        converted[-1]["parts"] = [
+                            f"System: {msg.content}\n\nUser: {converted[-1]['parts'][0]}",
+                        ]
+                    else:
+                        converted.append(
+                            {"role": "user", "parts": [f"System: {msg.content}"]},
+                        )
+                case "user":
+                    converted.append({"role": "user", "parts": [msg.content]})
+                case "assistant":
+                    converted.append({"role": "model", "parts": [msg.content]})
+                case _:
+                    # Unknown role - default to user for safety
+                    converted.append({"role": "user", "parts": [msg.content]})
+
         return converted
 
     async def generate(
@@ -784,6 +821,90 @@ class LLMManager:
         except Exception as e:
             self.logger.warning(f"Provider {provider_name} failed: {e}")
 
+    async def _select_primary_provider(self, options: StreamGenerationOptions) -> str:
+        """Select primary provider. Target complexity: ≤3."""
+        target_provider = options.provider or self.config["default_provider"]
+        if not self._is_valid_provider(target_provider):
+            msg = f"Invalid provider: {target_provider}"
+            raise RuntimeError(msg)
+        return target_provider
+
+    async def _try_streaming_from_provider(
+        self,
+        provider_name: str,
+        messages: list[LLMMessage],
+        options: StreamGenerationOptions,
+    ) -> AsyncGenerator[StreamChunk]:
+        """Try streaming from a specific provider. Target complexity: ≤6."""
+        try:
+            stream_started = False
+            async for chunk_content in self._try_provider_streaming(
+                provider_name,
+                messages,
+                options.model,
+                temperature=options.temperature,
+                max_tokens=options.max_tokens,
+            ):
+                stream_started = True
+                yield StreamChunk.content_chunk(chunk_content, provider_name)
+
+            if not stream_started:
+                yield StreamChunk.error_chunk(f"No response from {provider_name}")
+
+        except Exception as e:
+            self.logger.warning(f"Provider {provider_name} failed: {e}")
+            yield StreamChunk.error_chunk(str(e))
+
+    async def _stream_from_primary_provider(
+        self,
+        primary_provider: str,
+        messages: list[LLMMessage],
+        options: StreamGenerationOptions,
+    ) -> AsyncGenerator[str]:
+        """Stream from primary provider. Target complexity: ≤4."""
+        has_content = False
+        async for chunk in self._try_streaming_from_provider(
+            primary_provider, messages, options
+        ):
+            if chunk.is_error:
+                if not has_content:  # Log errors only if no content received
+                    self.logger.warning(
+                        f"Primary provider error: {chunk.metadata.get('error', 'Unknown')}"
+                    )
+                continue
+
+            has_content = True
+            yield chunk.content
+
+        if not has_content:
+            self.logger.debug(
+                f"Primary provider {primary_provider} produced no content"
+            )
+
+    async def _stream_from_fallback_providers(
+        self,
+        primary_provider: str,
+        messages: list[LLMMessage],
+        options: StreamGenerationOptions,
+    ) -> AsyncGenerator[str]:
+        """Stream from fallback providers. Target complexity: ≤5."""
+        if not options.use_fallback:
+            return
+
+        fallback_providers = self._get_fallback_providers(primary_provider)
+        for fallback_name in fallback_providers:
+            self.logger.info(f"Falling back to {fallback_name}")
+            has_content = False
+            async for chunk in self._try_streaming_from_provider(
+                fallback_name, messages, options
+            ):
+                if chunk.is_error:
+                    continue
+                has_content = True
+                yield chunk.content
+            if has_content:
+                return
+
     async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
@@ -792,37 +913,38 @@ class LLMManager:
         use_fallback: bool = True,
         **kwargs: Any,
     ) -> AsyncGenerator[str]:
-        """Stream generate response with optional fallback."""
-        target_provider = provider or self.config["default_provider"]
-        fallback_providers = (
-            self._get_fallback_providers(target_provider) if use_fallback else []
+        """Stream generate response with optional fallback. Target complexity: ≤8."""
+        options = StreamGenerationOptions(
+            provider=provider,
+            model=model,
+            use_fallback=use_fallback,
+            temperature=kwargs.get("temperature", 0.7),
+            max_tokens=kwargs.get("max_tokens"),
         )
 
-        # Try primary provider
-        if self._is_valid_provider(target_provider):
-            stream_started = False
-            async for chunk in self._try_provider_streaming(
-                target_provider, messages, model, **kwargs
+        try:
+            # Try primary provider first
+            primary_provider = await self._select_primary_provider(options)
+            async for chunk_content in self._stream_from_primary_provider(
+                primary_provider, messages, options
             ):
-                stream_started = True
-                yield chunk
-            if stream_started:
-                return
+                yield chunk_content
+                return  # Success - exit early
 
-        # Try fallback providers if enabled
-        for fallback_name in fallback_providers:
-            self.logger.info(f"Falling back to {fallback_name}")
-            stream_started = False
-            async for chunk in self._try_provider_streaming(
-                fallback_name, messages, model, **kwargs
+            # Try fallback providers if primary failed
+            async for chunk_content in self._stream_from_fallback_providers(
+                primary_provider, messages, options
             ):
-                stream_started = True
-                yield chunk
-            if stream_started:
-                return
+                yield chunk_content
+                return  # Success - exit early
 
-        msg = "No available LLM providers"
-        raise RuntimeError(msg)
+            # All providers failed
+            msg = "No available LLM providers"
+            raise RuntimeError(msg)
+
+        except Exception as e:
+            self.logger.exception(f"Stream generation failed: {e}")
+            raise
 
     def get_provider_info(self) -> dict[str, Any]:
         """Get information about all providers."""

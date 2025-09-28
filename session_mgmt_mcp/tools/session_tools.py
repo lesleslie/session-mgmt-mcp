@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +18,50 @@ if TYPE_CHECKING:
 
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.logging import get_session_logger
+
+
+@dataclass
+class SessionOutputBuilder:
+    """Centralized output formatting with consistent styling."""
+
+    sections: list[str] = field(default_factory=list)
+
+    def add_header(self, title: str, separator_char: str = "=") -> None:
+        """Add formatted header."""
+        separator = separator_char * len(title)
+        self.sections.extend([title, separator])
+
+    def add_section(self, title: str, items: list[str]) -> None:
+        """Add formatted section with items."""
+        if title:
+            self.sections.append(f"\n{title}:")
+        self.sections.extend(items)
+
+    def add_status_item(self, name: str, status: bool, value: str = "") -> None:
+        """Add status indicator item."""
+        icon = "✅" if status else "❌"
+        display = f"   • {name}: {icon}"
+        if value:
+            display += f" {value}"
+        self.sections.append(display)
+
+    def add_simple_item(self, item: str) -> None:
+        """Add simple item."""
+        self.sections.append(item)
+
+    def build(self) -> str:
+        """Build final output string."""
+        return "\n".join(self.sections)
+
+
+@dataclass
+class SessionSetupResults:
+    """Results from session setup operations."""
+
+    uv_setup: list[str] = field(default_factory=list)
+    shortcuts_result: dict[str, Any] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
+
 
 # Global session manager
 session_manager = SessionLifecycleManager()
@@ -114,58 +159,94 @@ This will:
 
 
 # Tool implementations
+async def _perform_environment_setup(result: dict[str, Any]) -> SessionSetupResults:
+    """Perform all environment setup tasks. Target complexity: ≤5."""
+    working_dir = Path(result["working_directory"])
+
+    uv_setup = _setup_uv_dependencies(working_dir)
+    shortcuts_result = _create_session_shortcuts()
+    recommendations = result["quality_data"].get("recommendations", [])
+
+    return SessionSetupResults(
+        uv_setup=uv_setup,
+        shortcuts_result=shortcuts_result,
+        recommendations=recommendations,
+    )
+
+
+def _add_session_info_to_output(
+    output_builder: SessionOutputBuilder, result: dict[str, Any]
+) -> None:
+    """Add session information to output. Target complexity: ≤5."""
+    output_builder.add_simple_item(f"📁 Current project: {result['project']}")
+    output_builder.add_simple_item(
+        f"📂 Working directory: {result['working_directory']}"
+    )
+    output_builder.add_simple_item(f"🏠 Claude directory: {result['claude_directory']}")
+    output_builder.add_simple_item(
+        f"📊 Initial quality score: {result['quality_score']}/100"
+    )
+
+    # Add project context info
+    context = result["project_context"]
+    context_items = sum(1 for detected in context.values() if detected)
+    output_builder.add_simple_item(
+        f"🎯 Project context: {context_items}/{len(context)} indicators detected"
+    )
+
+
+def _add_environment_info_to_output(
+    output_builder: SessionOutputBuilder, setup_results: SessionSetupResults
+) -> None:
+    """Add environment setup info to output. Target complexity: ≤5."""
+    # Add UV setup
+    output_builder.sections.extend(setup_results.uv_setup)
+
+    # Add recommendations
+    if setup_results.recommendations:
+        output_builder.add_section(
+            "💡 Setup recommendations",
+            [f"   • {rec}" for rec in setup_results.recommendations[:3]],
+        )
+
+    # Add shortcuts
+    shortcuts = setup_results.shortcuts_result
+    if shortcuts.get("created"):
+        output_builder.add_section(
+            "🔧 Created session management shortcuts",
+            [f"   • /{shortcut}" for shortcut in shortcuts["shortcuts"]],
+        )
+    elif shortcuts.get("existed"):
+        output_builder.add_simple_item("\n✅ Session shortcuts already exist")
+
+
 async def _start_impl(working_directory: str | None = None) -> str:
-    """Implementation for start tool."""
-    output = []
-    output.append("🚀 Claude Session Initialization via MCP Server")
-    output.append("=" * 60)
+    """Initialize session with comprehensive setup. Target complexity: ≤8."""
+    output_builder = SessionOutputBuilder()
+    output_builder.add_header("🚀 Claude Session Initialization via MCP Server")
 
     try:
-        # Use the session manager for initialization
         result = await session_manager.initialize_session(working_directory)
 
         if result["success"]:
-            output.append(f"📁 Current project: {result['project']}")
-            output.append(f"📂 Working directory: {result['working_directory']}")
-            output.append(f"🏠 Claude directory: {result['claude_directory']}")
-            output.append(f"📊 Initial quality score: {result['quality_score']}/100")
-
-            # Add project context info
-            context = result["project_context"]
-            context_items = sum(1 for detected in context.values() if detected)
-            output.append(
-                f"🎯 Project context: {context_items}/{len(context)} indicators detected",
+            _add_session_info_to_output(output_builder, result)
+            setup_results = await _perform_environment_setup(result)
+            _add_environment_info_to_output(output_builder, setup_results)
+            output_builder.add_simple_item(
+                "\n✅ Session initialization completed successfully!"
             )
-
-            # Add UV setup
-            output.extend(_setup_uv_dependencies(Path(result["working_directory"])))
-
-            # Add recommendations
-            recommendations = result["quality_data"].get("recommendations", [])
-            if recommendations:
-                output.append("\n💡 Setup recommendations:")
-                for rec in recommendations[:3]:
-                    output.append(f"   • {rec}")
-
-            # Auto-create slash command shortcuts
-            shortcuts_result = _create_session_shortcuts()
-            if shortcuts_result["created"]:
-                output.append("\n🔧 Created session management shortcuts:")
-                for shortcut in shortcuts_result["shortcuts"]:
-                    output.append(f"   • /{shortcut}")
-            elif shortcuts_result["existed"]:
-                output.append("\n✅ Session shortcuts already exist")
-
-            output.append("\n✅ Session initialization completed successfully!")
-
         else:
-            output.append(f"❌ Session initialization failed: {result['error']}")
+            output_builder.add_simple_item(
+                f"❌ Session initialization failed: {result['error']}"
+            )
 
     except Exception as e:
         logger.exception("Session initialization error", error=str(e))
-        output.append(f"❌ Unexpected error during initialization: {e}")
+        output_builder.add_simple_item(
+            f"❌ Unexpected error during initialization: {e}"
+        )
 
-    return "\n".join(output)
+    return output_builder.build()
 
 
 def _check_environment_variables() -> str | None:
@@ -401,46 +482,11 @@ async def _end_impl(working_directory: str | None = None) -> str:
     if not working_directory:
         working_directory = _get_client_working_directory()
 
-    output = []
-    output.append("🏁 Claude Session End - Cleanup and Handoff")
-    output.append("=" * 50)
+    output = _initialize_end_output()
 
     try:
         result = await session_manager.end_session(working_directory)
-
-        if result["success"]:
-            summary = result["summary"]
-            output.append(f"📁 Project: {summary['project']}")
-            output.append(
-                f"📊 Final quality score: {summary['final_quality_score']}/100",
-            )
-            output.append(f"⏰ Session ended: {summary['session_end_time']}")
-
-            # Add final recommendations
-            recommendations = summary.get("recommendations", [])
-            if recommendations:
-                output.append("\n🎯 Final recommendations for future sessions:")
-                for rec in recommendations[:5]:
-                    output.append(f"   • {rec}")
-
-            output.append("\n📝 Session Summary:")
-            output.append(f"   • Working directory: {summary['working_directory']}")
-            output.append("   • Session data has been logged for future reference")
-            output.append("   • All temporary resources have been cleaned up")
-
-            # Add handoff documentation info
-            handoff_doc = summary.get("handoff_documentation")
-            if handoff_doc:
-                output.append(f"   • Handoff documentation: {handoff_doc}")
-
-            output.append("\n✅ Session ended successfully!")
-            output.append(
-                "💡 Use the session data to improve future development workflows.",
-            )
-
-        else:
-            output.append(f"❌ Session end failed: {result['error']}")
-
+        output.extend(_process_end_result(result))
     except Exception as e:
         logger.exception("Session end error", error=str(e))
         output.append(f"❌ Unexpected error during session end: {e}")
@@ -448,79 +494,156 @@ async def _end_impl(working_directory: str | None = None) -> str:
     return "\n".join(output)
 
 
+def _initialize_end_output() -> list[str]:
+    """Initialize the end session output."""
+    return [
+        "🏁 Claude Session End - Cleanup and Handoff",
+        "=" * 50,
+    ]
+
+
+def _process_end_result(result: dict[str, Any]) -> list[str]:
+    """Process the end session result and format output."""
+    if result["success"]:
+        return _format_successful_end(result["summary"])
+    return [f"❌ Session end failed: {result['error']}"]
+
+
+def _format_successful_end(summary: dict[str, Any]) -> list[str]:
+    """Format successful session end output."""
+    output = [
+        f"📁 Project: {summary['project']}",
+        f"📊 Final quality score: {summary['final_quality_score']}/100",
+        f"⏰ Session ended: {summary['session_end_time']}",
+    ]
+
+    output.extend(_format_recommendations(summary.get("recommendations", [])))
+    output.extend(_format_session_summary(summary))
+
+    output.extend(
+        [
+            "\n✅ Session ended successfully!",
+            "💡 Use the session data to improve future development workflows.",
+        ]
+    )
+
+    return output
+
+
+def _format_recommendations(recommendations: list[str]) -> list[str]:
+    """Format recommendations section."""
+    if not recommendations:
+        return []
+
+    output = ["\n🎯 Final recommendations for future sessions:"]
+    output.extend(f"   • {rec}" for rec in recommendations[:5])
+    return output
+
+
+def _format_session_summary(summary: dict[str, Any]) -> list[str]:
+    """Format session summary section."""
+    output = [
+        "\n📝 Session Summary:",
+        f"   • Working directory: {summary['working_directory']}",
+        "   • Session data has been logged for future reference",
+        "   • All temporary resources have been cleaned up",
+    ]
+
+    # Add handoff documentation info
+    handoff_doc = summary.get("handoff_documentation")
+    if handoff_doc:
+        output.append(f"   • Handoff documentation: {handoff_doc}")
+
+    return output
+
+
+def _add_project_section_to_output(
+    output_builder: SessionOutputBuilder, result: dict[str, Any]
+) -> None:
+    """Add project information to output. Target complexity: ≤3."""
+    output_builder.add_simple_item(f"📁 Project: {result['project']}")
+    output_builder.add_simple_item(
+        f"📂 Working directory: {result['working_directory']}"
+    )
+    output_builder.add_simple_item(f"📊 Quality score: {result['quality_score']}/100")
+
+
+def _add_quality_section_to_output(
+    output_builder: SessionOutputBuilder, breakdown: dict[str, Any]
+) -> None:
+    """Add quality breakdown to output. Target complexity: ≤5."""
+    quality_items = [
+        f"   • Project health: {breakdown['project_health']:.1f}/40",
+        f"   • Permissions: {breakdown['permissions']:.1f}/20",
+        f"   • Session tools: {breakdown['session_management']:.1f}/20",
+        f"   • Tool availability: {breakdown['tools']:.1f}/20",
+    ]
+    output_builder.add_section("📈 Quality breakdown", quality_items)
+
+
+def _add_health_section_to_output(
+    output_builder: SessionOutputBuilder, health: dict[str, Any]
+) -> None:
+    """Add system health to output. Target complexity: ≤5."""
+    output_builder.add_section("🏥 System health", [])
+    output_builder.add_status_item("UV package manager", health["uv_available"])
+    output_builder.add_status_item("Git repository", health["git_repository"])
+    output_builder.add_status_item("Claude directory", health["claude_directory"])
+
+
+def _add_project_context_to_output(
+    output_builder: SessionOutputBuilder, context: dict[str, Any]
+) -> None:
+    """Add project context to output. Target complexity: ≤5."""
+    context_items = sum(1 for detected in context.values() if detected)
+    output_builder.add_simple_item(
+        f"\n🎯 Project context: {context_items}/{len(context)} indicators"
+    )
+
+    key_indicators = [
+        ("pyproject.toml", context.get("has_pyproject_toml", False)),
+        ("Git repository", context.get("has_git_repo", False)),
+        ("Test suite", context.get("has_tests", False)),
+        ("Documentation", context.get("has_docs", False)),
+    ]
+
+    for name, detected in key_indicators:
+        output_builder.add_status_item(name, detected)
+
+
 async def _status_impl(working_directory: str | None = None) -> str:
-    """Implementation for status tool."""
-    output = []
-    output.append("📊 Claude Session Status Report")
-    output.append("=" * 40)
+    """Get comprehensive session status. Target complexity: ≤8."""
+    output_builder = SessionOutputBuilder()
+    output_builder.add_header("📊 Claude Session Status Report")
 
     try:
         result = await session_manager.get_session_status(working_directory)
 
         if result["success"]:
-            output.append(f"📁 Project: {result['project']}")
-            output.append(f"📂 Working directory: {result['working_directory']}")
-            output.append(f"📊 Quality score: {result['quality_score']}/100")
-
-            # Quality breakdown
-            breakdown = result["quality_breakdown"]
-            output.append("\n📈 Quality breakdown:")
-            output.append(f"   • Project health: {breakdown['project_health']:.1f}/40")
-            output.append(f"   • Permissions: {breakdown['permissions']:.1f}/20")
-            output.append(
-                f"   • Session tools: {breakdown['session_management']:.1f}/20",
-            )
-            output.append(f"   • Tool availability: {breakdown['tools']:.1f}/20")
-
-            # System health
-            health = result["system_health"]
-            output.append("\n🏥 System health:")
-            output.append(
-                f"   • UV package manager: {'✅' if health['uv_available'] else '❌'}",
-            )
-            output.append(
-                f"   • Git repository: {'✅' if health['git_repository'] else '❌'}",
-            )
-            output.append(
-                f"   • Claude directory: {'✅' if health['claude_directory'] else '❌'}",
-            )
-
-            # Project context
-            context = result["project_context"]
-            context_items = sum(1 for detected in context.values() if detected)
-            output.append(
-                f"\n🎯 Project context: {context_items}/{len(context)} indicators",
-            )
-
-            # Key indicators
-            key_indicators = [
-                ("pyproject.toml", context.get("has_pyproject_toml", False)),
-                ("Git repository", context.get("has_git_repo", False)),
-                ("Test suite", context.get("has_tests", False)),
-                ("Documentation", context.get("has_docs", False)),
-            ]
-
-            for name, detected in key_indicators:
-                status_icon = "✅" if detected else "❌"
-                output.append(f"   • {name}: {status_icon}")
+            _add_project_section_to_output(output_builder, result)
+            _add_quality_section_to_output(output_builder, result["quality_breakdown"])
+            _add_health_section_to_output(output_builder, result["system_health"])
+            _add_project_context_to_output(output_builder, result["project_context"])
 
             # Recommendations
             recommendations = result["recommendations"]
             if recommendations:
-                output.append("\n💡 Recommendations:")
-                for rec in recommendations[:3]:
-                    output.append(f"   • {rec}")
+                output_builder.add_section(
+                    "💡 Recommendations", [f"   • {rec}" for rec in recommendations[:3]]
+                )
 
-            output.append(f"\n⏰ Status generated: {result['timestamp']}")
+            output_builder.add_simple_item(
+                f"\n⏰ Status generated: {result['timestamp']}"
+            )
 
         else:
-            output.append(f"❌ Status check failed: {result['error']}")
+            output_builder.add_simple_item(f"❌ Status check failed: {result['error']}")
 
     except Exception as e:
         logger.exception("Status check error", error=str(e))
-        output.append(f"❌ Unexpected error during status check: {e}")
+        output_builder.add_simple_item(f"❌ Unexpected error during status check: {e}")
 
-    return "\n".join(output)
+    return output_builder.build()
 
 
 def _setup_uv_dependencies(current_dir: Path) -> list[str]:

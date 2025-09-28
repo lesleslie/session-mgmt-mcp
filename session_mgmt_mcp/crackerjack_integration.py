@@ -123,38 +123,104 @@ class ProgressSnapshot:
     memory_context: list[str]
 
 
+class PatternMappingsBuilder:
+    """Builder for creating pattern mappings configuration."""
+
+    def __init__(self) -> None:
+        """Initialize pattern mappings builder."""
+        self._patterns: dict[str, str] = {}
+
+    def add_test_patterns(self) -> "PatternMappingsBuilder":
+        """Add test-related patterns."""
+        test_patterns = {
+            "pytest_result": "pytest_result",
+            "pytest_summary": "pytest_result",
+            "pytest_coverage": "coverage_summary",
+        }
+        self._patterns.update(test_patterns)
+        return self
+
+    def add_lint_patterns(self) -> "PatternMappingsBuilder":
+        """Add linting-related patterns."""
+        lint_patterns = {
+            "ruff_error": "ruff_error",
+            "pyright_error": "mypy_error",
+        }
+        self._patterns.update(lint_patterns)
+        return self
+
+    def add_security_patterns(self) -> "PatternMappingsBuilder":
+        """Add security-related patterns."""
+        security_patterns = {
+            "bandit_issue": "bandit_finding",
+            "bandit_severity": "bandit_finding",
+        }
+        self._patterns.update(security_patterns)
+        return self
+
+    def add_quality_patterns(self) -> "PatternMappingsBuilder":
+        """Add quality-related patterns."""
+        quality_patterns = {
+            "quality_score": "quality_score",
+            "complexity_score": "quality_score",
+        }
+        self._patterns.update(quality_patterns)
+        return self
+
+    def add_progress_patterns(self) -> "PatternMappingsBuilder":
+        """Add progress-related patterns."""
+        progress_patterns = {
+            "progress_indicator": "progress_indicator",
+            "percentage": "progress_indicator",
+            "task_completion": "progress_indicator",
+            "task_failure": "progress_indicator",
+        }
+        self._patterns.update(progress_patterns)
+        return self
+
+    def add_coverage_patterns(self) -> "PatternMappingsBuilder":
+        """Add coverage-related patterns."""
+        coverage_patterns = {
+            "coverage_line": "coverage_summary",
+        }
+        self._patterns.update(coverage_patterns)
+        return self
+
+    def add_misc_patterns(self) -> "PatternMappingsBuilder":
+        """Add miscellaneous patterns."""
+        misc_patterns = {
+            "git_commit": "git_commit_hash",
+            "file_path_line": "file_path_with_line",
+            "execution_time": "execution_time",
+        }
+        self._patterns.update(misc_patterns)
+        return self
+
+    def build(self) -> dict[str, str]:
+        """Build the final pattern mappings dictionary."""
+        return self._patterns.copy()
+
+
 class CrackerjackOutputParser:
     """Parses Crackerjack output for structured data extraction."""
 
     def __init__(self) -> None:
-        """Initialize output parser."""
-        # Map pattern names to validated patterns from our registry
-        self.patterns = {
-            # Test results patterns - use validated patterns
-            "pytest_result": "pytest_result",
-            "pytest_summary": "pytest_result",  # Use same pattern for now, will need update
-            "pytest_coverage": "coverage_summary",
-            # Lint results patterns - use validated patterns
-            "ruff_error": "ruff_error",
-            "pyright_error": "mypy_error",  # Use mypy_error as fallback for pyright
-            # Security patterns - use validated patterns
-            "bandit_issue": "bandit_finding",
-            "bandit_severity": "bandit_finding",  # Use same pattern as fallback
-            # Quality patterns - use validated patterns
-            "quality_score": "quality_score",
-            # Progress patterns - use validated patterns
-            "progress_indicator": "progress_indicator",
-            "percentage": "progress_indicator",  # Use same pattern as fallback
-            "task_completion": "progress_indicator",  # Use same pattern as fallback
-            "task_failure": "progress_indicator",  # Use same pattern as fallback
-            "git_commit": "git_commit_hash",
-            "file_path_line": "file_path_with_line",
-            "execution_time": "execution_time",
-            # Coverage patterns
-            "coverage_line": "coverage_summary",
-            # Complexity patterns
-            "complexity_score": "quality_score",  # Use quality_score as fallback
-        }
+        """Initialize output parser with builder pattern."""
+        self.patterns = self._create_patterns()
+
+    def _create_patterns(self) -> dict[str, str]:
+        """Create pattern mappings using builder pattern."""
+        return (
+            PatternMappingsBuilder()
+            .add_test_patterns()
+            .add_lint_patterns()
+            .add_security_patterns()
+            .add_quality_patterns()
+            .add_progress_patterns()
+            .add_coverage_patterns()
+            .add_misc_patterns()
+            .build()
+        )
 
     def parse_output(
         self,
@@ -392,58 +458,82 @@ class CrackerjackOutputParser:
     def _parse_progress_output(self, output: str) -> dict[str, Any]:
         """Parse progress indicators from output."""
         data: dict[str, Any] = {"progress_info": {}}
-
         lines = output.split("\n")
-        completed_tasks = []
-        failed_tasks = []
-        current_percentage: float = 0.0
+
+        progress_state = self._initialize_progress_state()
 
         for line in lines:
-            # Progress indicators
-            progress_pattern = SAFE_PATTERNS[self.patterns["progress_indicator"]]
-            progress_match = progress_pattern.search(line)
-            if progress_match:
-                data["progress_info"]["current_task"] = progress_match.group(1)
+            self._process_progress_line(line, data, progress_state)
 
-            # Percentage completion
-            percentage_pattern = SAFE_PATTERNS[self.patterns["percentage"]]
-            percentage_match = percentage_pattern.search(line)
-            if percentage_match:
-                current_percentage = float(percentage_match.group(1))
+        self._finalize_progress_data(data, progress_state)
+        return data
 
-            # Task completions
-            completion_pattern = SAFE_PATTERNS[self.patterns["task_completion"]]
-            completion_match = completion_pattern.search(line)
-            if completion_match:
-                task = (
-                    completion_match.group(1)
-                    or completion_match.group(2)
-                    or completion_match.group(3)
-                )
-                if task:
-                    completed_tasks.append(task.strip())
+    def _initialize_progress_state(self) -> dict[str, Any]:
+        """Initialize progress parsing state."""
+        return {
+            "completed_tasks": [],
+            "failed_tasks": [],
+            "current_percentage": 0.0,
+        }
 
-            # Task failures
-            failure_pattern = SAFE_PATTERNS[self.patterns["task_failure"]]
-            failure_match = failure_pattern.search(line)
-            if failure_match:
-                task = (
-                    failure_match.group(1)
-                    or failure_match.group(2)
-                    or failure_match.group(3)
-                )
-                if task:
-                    failed_tasks.append(task.strip())
+    def _process_progress_line(
+        self, line: str, data: dict[str, Any], progress_state: dict[str, Any]
+    ) -> None:
+        """Process a single line for progress indicators."""
+        self._extract_current_task(line, data)
+        self._extract_percentage(line, progress_state)
+        self._extract_completed_tasks(line, progress_state)
+        self._extract_failed_tasks(line, progress_state)
 
+    def _extract_current_task(self, line: str, data: dict[str, Any]) -> None:
+        """Extract current task from line."""
+        progress_pattern = SAFE_PATTERNS[self.patterns["progress_indicator"]]
+        progress_match = progress_pattern.search(line)
+        if progress_match:
+            data["progress_info"]["current_task"] = progress_match.group(1)
+
+    def _extract_percentage(self, line: str, progress_state: dict[str, Any]) -> None:
+        """Extract percentage completion from line."""
+        percentage_pattern = SAFE_PATTERNS[self.patterns["percentage"]]
+        percentage_match = percentage_pattern.search(line)
+        if percentage_match:
+            progress_state["current_percentage"] = float(percentage_match.group(1))
+
+    def _extract_completed_tasks(
+        self, line: str, progress_state: dict[str, Any]
+    ) -> None:
+        """Extract completed tasks from line."""
+        completion_pattern = SAFE_PATTERNS[self.patterns["task_completion"]]
+        completion_match = completion_pattern.search(line)
+        if completion_match:
+            task = self._get_task_from_match(completion_match)
+            if task:
+                progress_state["completed_tasks"].append(task.strip())
+
+    def _extract_failed_tasks(self, line: str, progress_state: dict[str, Any]) -> None:
+        """Extract failed tasks from line."""
+        failure_pattern = SAFE_PATTERNS[self.patterns["task_failure"]]
+        failure_match = failure_pattern.search(line)
+        if failure_match:
+            task = self._get_task_from_match(failure_match)
+            if task:
+                progress_state["failed_tasks"].append(task.strip())
+
+    def _get_task_from_match(self, match: Any) -> str | None:
+        """Extract task name from pattern match groups."""
+        return match.group(1) or match.group(2) or match.group(3)  # type: ignore[no-any-return]
+
+    def _finalize_progress_data(
+        self, data: dict[str, Any], progress_state: dict[str, Any]
+    ) -> None:
+        """Update final progress data with collected state."""
         data["progress_info"].update(
             {
-                "percentage": current_percentage,
-                "completed_tasks": completed_tasks,
-                "failed_tasks": failed_tasks,
-            },
+                "percentage": progress_state["current_percentage"],
+                "completed_tasks": progress_state["completed_tasks"],
+                "failed_tasks": progress_state["failed_tasks"],
+            }
         )
-
-        return data
 
     def _extract_test_insights(self, parsed_data: dict[str, Any]) -> list[str]:
         """Extract memory insights from test results."""

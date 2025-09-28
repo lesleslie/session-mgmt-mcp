@@ -1,15 +1,15 @@
 session_mgmt_mcp/server.py:3486:19: error: "FunctionTool" not callable  [operator]
      |
 3483 |     output.append(f"   📁 {wt['path']}")
-3484 | 
+3484 |
 3485 |     status_line = _format_worktree_status(wt)
 3486 |     if status_line:
 3487 |         output.append(f"   Status: {status_line}")
 
 session_mgmt_mcp/server.py:3638:5: error: invalid syntax  [syntax]
      |
-3635 | 
-3636 | 
+3635 |
+3636 |
 3637 |     @mcp.tool()
 3638 | async def git_worktree_status(working_directory: str | None = None) -> str:
 3639 |     """Get comprehensive status of the current git worktree."""

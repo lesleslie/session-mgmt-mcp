@@ -7,9 +7,42 @@ and cleanup operations.
 
 import os
 import shutil
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+@dataclass(frozen=True)
+class SessionInfo:
+    """Immutable session information."""
+
+    session_id: str = field(default="")
+    ended_at: str = field(default="")
+    quality_score: str = field(default="")
+    working_directory: str = field(default="")
+    top_recommendation: str = field(default="")
+
+    def is_complete(self) -> bool:
+        """Check if session info has required fields."""
+        return bool(self.ended_at and self.quality_score and self.working_directory)
+
+    @classmethod
+    def empty(cls) -> "SessionInfo":
+        """Create empty session info."""
+        return cls()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str]) -> "SessionInfo":
+        """Create from dictionary with validation."""
+        return cls(  # type: ignore[call-arg]
+            session_id=data.get("session_id", ""),
+            ended_at=data.get("ended_at", ""),
+            quality_score=data.get("quality_score", ""),
+            working_directory=data.get("working_directory", ""),
+            top_recommendation=data.get("top_recommendation", ""),
+        )
+
 
 from session_mgmt_mcp.utils.git_operations import (
     create_checkpoint_commit,
@@ -209,7 +242,7 @@ class SessionLifecycleManager:
         """Detect Python frameworks from file content."""
         for py_file in python_files[:10]:  # Sample first 10 files
             try:
-                with py_file.open("utf-8") as f:
+                with py_file.open("r", encoding="utf-8") as f:
                     content = f.read(1000)  # Read first 1000 chars
                     self._check_framework_imports(content, indicators)
             except (UnicodeDecodeError, PermissionError):
@@ -346,10 +379,19 @@ class SessionLifecycleManager:
         return claude_dir
 
     def _get_previous_session_info(self, current_dir: Path) -> dict[str, Any] | None:
-        """Get previous session information if available."""
+        """Get previous session information if available. Target complexity: ≤5."""
+        session_files = self._discover_session_files(current_dir)
+
+        for file_path in session_files:
+            session_info = self._read_previous_session_info(file_path)
+            if session_info:
+                return session_info
+
+        # Fallback to old method
         latest_handoff = self._find_latest_handoff_file(current_dir)
         if latest_handoff:
             return self._read_previous_session_info(latest_handoff)
+
         return None
 
     async def initialize_session(
@@ -590,20 +632,61 @@ class SessionLifecycleManager:
             self.logger.debug(f"Error finding handoff files: {e}")
             return None
 
-    def _read_previous_session_info(self, handoff_file: Path) -> dict[str, str] | None:
-        """Extract key information from previous session handoff file."""
+    def _discover_session_files(self, working_dir: Path) -> list[Path]:
+        """Find potential session files in priority order. Target complexity: ≤3."""
+        candidates = [
+            working_dir / "session_handoff.md",
+            working_dir / ".claude" / "session_handoff.md",
+            working_dir / "session_summary.md",
+        ]
+        return [path for path in candidates if path.exists()]
+
+    async def _read_file_safely(self, file_path: Path) -> str:
+        """Read file content safely. Target complexity: ≤3."""
         try:
-            with handoff_file.open(encoding="utf-8") as f:
-                content = f.read()
+            with file_path.open(encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            self.logger.debug(f"Failed to read file {file_path}: {e}")
+            return ""
+
+    async def _parse_session_file(self, file_path: Path) -> SessionInfo:
+        """Parse single session file with error handling. Target complexity: ≤8."""
+        try:
+            content = await self._read_file_safely(file_path)
+            if not content:
+                return SessionInfo.empty()
 
             lines = content.split("\n")
-            info = self._extract_session_metadata(lines)
-            self._extract_session_recommendations(lines, info)
+            info_dict = self._extract_session_metadata(lines)
+            self._extract_session_recommendations(lines, info_dict)
 
-            return info or None
+            return SessionInfo.from_dict(info_dict)
 
         except Exception as e:
-            self.logger.debug(f"Error reading handoff file: {e}")
+            self.logger.debug(f"Failed to parse session file {file_path}: {e}")
+            return SessionInfo.empty()
+
+    def _read_previous_session_info(self, handoff_file: Path) -> dict[str, str] | None:
+        """Read previous session information. Target complexity: ≤8."""
+        import asyncio
+
+        try:
+            # Use the new async parsing method
+            session_info = asyncio.run(self._parse_session_file(handoff_file))
+
+            if session_info.is_complete():
+                return {
+                    "ended_at": session_info.ended_at,
+                    "quality_score": session_info.quality_score,
+                    "working_directory": session_info.working_directory,
+                    "top_recommendation": session_info.top_recommendation,
+                }
+
+            return None
+
+        except Exception as e:
+            self.logger.debug(f"Error reading previous session info: {e}")
             return None
 
     def _extract_session_metadata(self, lines: list[str]) -> dict[str, str]:

@@ -149,7 +149,12 @@ class MultiProjectCoordinator:
     """Coordinates sessions and knowledge across multiple projects."""
 
     def __init__(self, reflection_db: ReflectionDatabase) -> None:
+        """Initialize multi-project coordinator with database connection."""
         self.reflection_db = reflection_db
+        self._initialize_caches()
+
+    def _initialize_caches(self) -> None:
+        """Initialize internal cache dictionaries."""
         self.active_project_groups: dict[str, ProjectGroup] = {}
         self.dependency_cache: dict[str, list[ProjectDependency]] = {}
         self.session_links_cache: dict[str, list[SessionLink]] = {}
@@ -491,45 +496,63 @@ class MultiProjectCoordinator:
     ) -> dict[str, Any]:
         """Get insights across multiple projects."""
         since_date = datetime.now(UTC) - timedelta(days=time_range_days)
-        insights: dict[str, Any] = {
+
+        insights = self._initialize_insights_structure()
+        insights["project_activity"] = await self._analyze_project_activity(
+            projects, since_date
+        )
+        insights["common_patterns"] = await self._find_common_patterns(
+            projects, since_date
+        )
+
+        return insights
+
+    def _initialize_insights_structure(self) -> dict[str, Any]:
+        """Initialize the insights data structure."""
+        return {
             "project_activity": {},
             "common_patterns": [],
             "knowledge_gaps": [],
             "collaboration_opportunities": [],
         }
 
-        # Analyze activity per project
+    async def _analyze_project_activity(
+        self, projects: list[str], since_date: datetime
+    ) -> dict[str, Any]:
+        """Analyze activity across projects."""
+        activity_data = {}
+
         for project in projects:
-            sql = """
-                SELECT COUNT(*) as conversation_count,
-                       MAX(timestamp) as last_activity,
-                       AVG(LENGTH(content)) as avg_content_length
-                FROM conversations
-                WHERE project = ? AND timestamp >= ?
-            """
+            project_stats = await self._get_project_stats(project, since_date)
+            if project_stats:
+                activity_data[project] = project_stats
 
-            result = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self._get_conn()
-                .execute(
-                    sql,
-                    [project, since_date],
-                )
-                .fetchone(),
-            )
+        return activity_data
 
-            if result:
-                insights["project_activity"][project] = {
-                    "conversation_count": result[0],
-                    "last_activity": result[1],
-                    "avg_content_length": result[2],
-                }
+    async def _get_project_stats(
+        self, project: str, since_date: datetime
+    ) -> dict[str, Any] | None:
+        """Get statistics for a single project."""
+        sql = """
+            SELECT COUNT(*) as conversation_count,
+                   MAX(timestamp) as last_activity,
+                   AVG(LENGTH(content)) as avg_content_length
+            FROM conversations
+            WHERE project = ? AND timestamp >= ?
+        """
 
-        # Find common patterns across projects
-        common_patterns = await self._find_common_patterns(projects, since_date)
-        insights["common_patterns"] = common_patterns
+        result = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: self._get_conn().execute(sql, [project, since_date]).fetchone(),
+        )
 
-        return insights
+        if result:
+            return {
+                "conversation_count": result[0],
+                "last_activity": result[1],
+                "avg_content_length": result[2],
+            }
+        return None
 
     async def _find_common_patterns(
         self,
@@ -537,33 +560,35 @@ class MultiProjectCoordinator:
         since_date: datetime,
     ) -> list[dict[str, Any]]:
         """Find common patterns across projects."""
-        # Simple pattern detection based on common keywords
-        patterns = []
+        conversation_data = await self._get_conversation_data(projects, since_date)
+        project_keywords = self._extract_project_keywords(conversation_data)
+        return self._identify_common_patterns(project_keywords)
 
-        # Get frequent terms across all projects
+    async def _get_conversation_data(
+        self, projects: list[str], since_date: datetime
+    ) -> list[tuple[str, str]]:
+        """Get conversation data for pattern analysis."""
         sql = """
             SELECT project, content
             FROM conversations
             WHERE project = ANY(?) AND timestamp >= ?
         """
 
-        results = await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: self._get_conn()
-            .execute(
-                sql,
-                [projects, since_date],
-            )
-            .fetchall(),
+            lambda: self._get_conn().execute(sql, [projects, since_date]).fetchall(),
         )
 
-        # Simple keyword frequency analysis
+    def _extract_project_keywords(
+        self, conversation_data: list[tuple[str, str]]
+    ) -> dict[str, dict[str, int]]:
+        """Extract keywords from project conversations."""
         project_keywords: dict[str, dict[str, int]] = {}
-        for project, content in results:
+
+        for project, content in conversation_data:
             if project not in project_keywords:
                 project_keywords[project] = {}
 
-            # Extract simple keywords (could be enhanced with NLP)
             words = content.lower().split()
             for word in words:
                 if len(word) > 4:  # Skip short words
@@ -571,8 +596,16 @@ class MultiProjectCoordinator:
                         project_keywords[project].get(word, 0) + 1
                     )
 
-        # Find keywords common across multiple projects
+        return project_keywords
+
+    def _identify_common_patterns(
+        self, project_keywords: dict[str, dict[str, int]]
+    ) -> list[dict[str, Any]]:
+        """Identify patterns common across multiple projects."""
         common_keywords: dict[str, list[tuple[str, int]]] = {}
+        patterns = []
+
+        # Group keywords by occurrence across projects
         for project, keywords in project_keywords.items():
             for word, count in keywords.items():
                 if word not in common_keywords:
@@ -587,11 +620,11 @@ class MultiProjectCoordinator:
                         "pattern": word,
                         "projects": [p[0] for p in project_counts],
                         "frequency": sum(p[1] for p in project_counts),
-                    },
+                    }
                 )
 
         # Sort by frequency
-        patterns.sort(key=lambda x: x["frequency"], reverse=True)
+        patterns.sort(key=lambda x: int(x["frequency"]), reverse=True)  # type: ignore[arg-type,call-overload]
         return patterns[:10]  # Return top 10 patterns
 
     def _clear_dependency_cache(self, project: str) -> None:

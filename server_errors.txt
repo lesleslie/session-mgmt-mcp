@@ -8,40 +8,40 @@ session_mgmt_mcp/server.py:296:12: error: Access to generic instance variables v
 
 session_mgmt_mcp/server.py:1437:7: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
      |
-1434 | 
-1435 | 
+1434 |
+1435 |
 1436 | async def _capture_session_metrics(db, tags: list[str], results: list[str]) -> None:
 1437 |     """Capture additional session metrics if available."""
 1438 |     # Check if session management is available
 
 session_mgmt_mcp/server.py:1560:7: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
      |
-1557 | 
-1558 | 
+1557 |
+1558 |
 1559 | async def _process_recent_reflections(db, summary: dict[str, Any]) -> None:
 1560 |     """Process recent reflections to extract conversation insights."""
 1561 |     recent_reflections = await db.search_reflections("checkpoint", limit=5)
 
 session_mgmt_mcp/server.py:1738:11: error: Missing return statement  [return]
      |
-1735 | 
-1736 | 
+1735 |
+1736 |
 1737 | async def analyze_token_usage_patterns() -> dict[str, Any]:
 1738 |     """Phase 3A: Intelligent token usage analysis with smart triggers."""
 1739 |     try:
 
 session_mgmt_mcp/server.py:1895:7: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
      |
-1892 | 
-1893 | 
+1892 |
+1893 |
 1894 | async def analyze_memory_patterns(db, conv_count: int) -> dict[str, Any]:
 1895 |     """Phase 3A: Advanced memory pattern analysis."""
 1896 |     try:
 
 session_mgmt_mcp/server.py:2185:55: error: Missing type parameters for generic type "dict"  [type-arg]
      |
-2182 | 
-2183 | 
+2182 |
+2183 |
 2184 | async def _perform_quality_assessment() -> tuple[int, dict]:
 2185 |     """Perform quality assessment and return score and data."""
 2186 |     quality_data = await calculate_quality_score()
@@ -72,7 +72,7 @@ session_mgmt_mcp/server.py:2632:6: error: Missing type parameters for generic ty
 
 session_mgmt_mcp/server.py:2712:38: error: Incompatible types in assignment (expression has type "str", variable has type "list[Any]")  [assignment]
      |
-2709 | 
+2709 |
 2710 |         # Apply token optimization if available
 2711 |         results, optimization_info = await _optimize_search_results_impl(
 2712 |             results,
@@ -80,20 +80,20 @@ session_mgmt_mcp/server.py:2712:38: error: Incompatible types in assignment (exp
 2714 |             max_tokens,
 2715 |             query,
 2716 |         )
-2717 | 
+2717 |
 2718 |         # Build and format output
 
 session_mgmt_mcp/server.py:2720:60: error: Argument 3 to "_build_search_header" has incompatible type "str"; expected "dict[str, Any] | None"  [arg-type]
      |
-2717 | 
+2717 |
 2718 |         # Build and format output
 2719 |         output = _build_search_header(query, len(results), optimization_info)
 2720 |         output.extend(_format_search_results(results))
-2721 | 
+2721 |
 
 session_mgmt_mcp/server.py:2868:16: error: Missing type parameters for generic type "list"  [type-arg]
      |
-2865 | 
+2865 |
 2866 | def _format_reminders_header(
 2867 |     reminders: list, user_id: str, project_id: str | None
 2868 | ) -> list[str]:
@@ -101,15 +101,15 @@ session_mgmt_mcp/server.py:2868:16: error: Missing type parameters for generic t
 
 session_mgmt_mcp/server.py:2880:39: error: Missing type parameters for generic type "dict"  [type-arg]
      |
-2877 | 
-2878 | 
+2877 |
+2878 |
 2879 | def _format_single_reminder(reminder: dict, index: int) -> list[str]:
 2880 |     """Format a single reminder for display."""
 2881 |     output = []
 
 session_mgmt_mcp/server.py:2906:16: error: Missing type parameters for generic type "list"  [type-arg]
      |
-2903 | 
+2903 |
 2904 | def _format_reminders_list(
 2905 |     reminders: list, user_id: str, project_id: str | None
 2906 | ) -> list[str]:
@@ -117,8 +117,8 @@ session_mgmt_mcp/server.py:2906:16: error: Missing type parameters for generic t
 
 session_mgmt_mcp/server.py:3008:1: error: Name "_format_single_reminder" already defined on line 2880  [no-redef]
      |
-3005 | 
-3006 | 
+3005 |
+3006 |
 3007 | def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
 3008 |     """Format a single reminder for output."""
 3009 |     lines = _format_reminder_basic_info(reminder, index)
@@ -126,15 +126,15 @@ session_mgmt_mcp/server.py:3008:1: error: Name "_format_single_reminder" already
 session_mgmt_mcp/server.py:3509:19: error: "FunctionTool" not callable  [operator]
      |
 3506 |     output.append(f"   📁 {wt['path']}")
-3507 | 
+3507 |
 3508 |     status_line = _format_worktree_status(wt)
 3509 |     if status_line:
 3510 |         output.append(f"   Status: {status_line}")
 
 session_mgmt_mcp/server.py:3646:1: error: Name "_format_current_worktree_info" already defined on line 2402  [no-redef]
      |
-3643 | 
-3644 | 
+3643 |
+3644 |
 3645 | @mcp.tool()
 3646 | def _format_current_worktree_info(current: dict, working_dir_name: str) -> list[str]:
 3647 |     """Format current worktree information."""
@@ -147,12 +147,12 @@ session_mgmt_mcp/server.py:3646:1: error: Name "_format_current_worktree_info" a
 3654 |         f"🧠 Has session: {'Yes' if current['has_session'] else 'No'}",
 3655 |         f"🔸 Detached HEAD: {'Yes' if current['is_detached'] else 'No'}\n",
 3656 |     ]
-3657 | 
-3658 | 
+3657 |
+3658 |
 
 session_mgmt_mcp/server.py:3647:44: error: Missing type parameters for generic type "dict"  [type-arg]
      |
-3644 | 
+3644 |
 3645 | @mcp.tool()
 3646 | def _format_current_worktree_info(current: dict, working_dir_name: str) -> list[str]:
 3647 |     """Format current worktree information."""
@@ -160,8 +160,8 @@ session_mgmt_mcp/server.py:3647:44: error: Missing type parameters for generic t
 
 session_mgmt_mcp/server.py:3672:1: error: Name "_format_worktree_status" already defined on line 3461  [no-redef]
      |
-3669 | 
-3670 | 
+3669 |
+3670 |
 3671 | def _format_worktree_status(wt: dict[str, Any]) -> str:
 3672 |     """Format status items for a worktree."""
 3673 |     status_items = []
@@ -171,13 +171,13 @@ session_mgmt_mcp/server.py:3691:12: error: Too many arguments for "_format_curre
 3688 | ) -> list[str]:
 3689 |     """Format the current worktree information section."""
 3690 |     return _format_current_worktree_info(current, working_dir_name)
-3691 | 
-3692 | 
+3691 |
+3692 |
 
 session_mgmt_mcp/server.py:3704:1: error: Name "_format_single_worktree" already defined on line 3495  [no-redef]
      |
-3701 | 
-3702 | 
+3701 |
+3702 |
 3703 | def _format_single_worktree(wt: dict[str, Any], index: int) -> list[str]:
 3704 |     """Format a single worktree entry."""
 3705 |     output = []
@@ -185,7 +185,7 @@ session_mgmt_mcp/server.py:3704:1: error: Name "_format_single_worktree" already
 session_mgmt_mcp/server.py:3713:19: error: "FunctionTool" not callable  [operator]
      |
 3710 |     output.append(f"   📁 {wt['path']}")
-3711 | 
+3711 |
 3712 |     status_line = _format_worktree_status(wt)
 3713 |     if status_line:
 3714 |         output.append(status_line)
@@ -195,28 +195,28 @@ session_mgmt_mcp/server.py:3752:27: error: Too many arguments for "_format_singl
 3749 |         output.append(_format_worktree_list_header_simple())
 3750 |         for i, wt in enumerate(all_worktrees, 1):
 3751 |             output.extend(_format_single_worktree(wt, i))
-3752 | 
+3752 |
 3753 |         output.extend(_format_worktree_list_footer())
 
 session_mgmt_mcp/server.py:3808:17: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
-3805 | 
+3805 |
 3806 |     working_dir = Path(working_directory or str(Path.cwd()))
 3807 |     from_path = Path(from_path)
 3808 |     to_path = Path(to_path)
-3809 | 
+3809 |
 
 session_mgmt_mcp/server.py:3809:15: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
 3806 |     working_dir = Path(working_directory or str(Path.cwd()))
 3807 |     from_path = Path(from_path)
 3808 |     to_path = Path(to_path)
-3809 | 
+3809 |
 3810 |     # Make paths absolute if they're relative
 
 session_mgmt_mcp/server.py:3812:12: error: "str" has no attribute "is_absolute"  [attr-defined]
      |
-3809 | 
+3809 |
 3810 |     # Make paths absolute if they're relative
 3811 |     if not from_path.is_absolute():
 3812 |         from_path = working_dir / from_path
@@ -236,19 +236,19 @@ session_mgmt_mcp/server.py:3814:12: error: "str" has no attribute "is_absolute" 
 3812 |         from_path = working_dir / from_path
 3813 |     if not to_path.is_absolute():
 3814 |         to_path = working_dir / to_path
-3815 | 
+3815 |
 
 session_mgmt_mcp/server.py:3815:19: error: Incompatible types in assignment (expression has type "Path", variable has type "str")  [assignment]
      |
 3812 |         from_path = working_dir / from_path
 3813 |     if not to_path.is_absolute():
 3814 |         to_path = working_dir / to_path
-3815 | 
+3815 |
 3816 |     manager = WorktreeManager(session_logger=session_logger)
 
 session_mgmt_mcp/server.py:3965:5: error: Need type annotation for "types" (hint: "types: Dict[<type>, <type>] = ...")  [var-annotated]
      |
-3962 | 
+3962 |
 3963 |     # Group by type if available
 3964 |     types = {}
 3965 |     for interruption in interruptions:

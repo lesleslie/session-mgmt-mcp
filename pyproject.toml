@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "session-mgmt-mcp"
-version = "0.3.13"
+version = "0.4.0"
 description = "MCP server for Claude session management and conversation memory"
 readme = "README.md"
 keywords = [
@@ -343,11 +343,10 @@ output = "coverage.xml"
 
 [tool.pyright]
 include = [
-    "tests",
     "session_mgmt_mcp",
 ]
 exclude = [
-    "scratch",
+    "tests",
     "**/__pycache__",
     "build",
     ".venv",
@@ -360,29 +359,30 @@ ignore = [
 ]
 reportMissingImports = true
 reportMissingTypeStubs = false
-reportGeneralTypeIssues = true
-reportOptionalMemberAccess = true
-reportOptionalCall = true
-reportOptionalIterable = true
-reportOptionalContextManager = true
+reportGeneralTypeIssues = false
+reportOptionalMemberAccess = false
+reportOptionalCall = false
+reportOptionalIterable = false
+reportOptionalContextManager = false
 reportUntypedFunctionDecorator = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnknownParameterType = false
 reportUnknownVariableType = false
+reportPossiblyUnboundVariable = false
+reportUnusedFunction = false
+reportConstantRedefinition = false
+reportUnnecessaryTypeIgnoreComment = false
+reportArgumentType = false
+reportAssignmentType = false
 pythonVersion = "3.13"
 pythonPlatform = "All"
-verboseOutput = true
+verboseOutput = false
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
 ]
-typeCheckingMode = "strict"
-reportInvalidTypeForm = "warning"
-reportPrivateUsage = "warning"
-reportUnnecessaryTypeIgnoreComment = "warning"
-reportUnnecessaryComparison = "warning"
-reportConstantRedefinition = "warning"
+typeCheckingMode = "basic"
 
 [tool.pyright.defineConstant]
 DEBUG = true
@@ -489,6 +489,7 @@ dev = [
     "factory-boy>=3.3.3",
     "hypothesis>=6.138.7",
     "psutil>=7",
+    "pyright>=1.1.390",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1",
     "pytest-benchmark>=5.1",

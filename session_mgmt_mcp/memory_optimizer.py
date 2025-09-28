@@ -6,11 +6,52 @@ Provides conversation consolidation, summarization, and memory compression capab
 
 import hashlib
 import json
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
 from .reflection_tools import ReflectionDatabase
 from .utils.regex_patterns import SAFE_PATTERNS
+
+
+@dataclass(frozen=True)
+class ConversationData:
+    """Immutable conversation data structure."""
+
+    id: str
+    content: str
+    project: str | None
+    timestamp: str
+    metadata: dict[str, Any]
+    original_size: int
+
+
+@dataclass(frozen=True)
+class CompressionResults:
+    """Results from memory compression operation."""
+
+    status: str
+    dry_run: bool
+    total_conversations: int
+    conversations_to_keep: int
+    conversations_to_consolidate: int
+    clusters_created: int
+    consolidated_summaries: list[dict[str, Any]]
+    space_saved_estimate: int
+    compression_ratio: float
+
+
+@dataclass(frozen=True)
+class ConsolidatedConversation:
+    """Consolidated conversation metadata."""
+
+    summary: str
+    original_count: int
+    projects: list[str]
+    time_range: str
+    original_conversations: list[str]
+    compressed_size: int
+    original_size: int
 
 
 class ConversationSummarizer:
@@ -495,123 +536,192 @@ class MemoryOptimizer:
         dry_run: bool = False,
     ) -> dict[str, Any]:
         """Main method to compress conversation memory."""
-        if not hasattr(self.reflection_db, "conn") or not self.reflection_db.conn:
+        if not self._is_database_available():
             return {"error": "Database not available"}
 
-        # Get all conversations
-        cursor = self.reflection_db.conn.execute(
-            "SELECT id, content, project, timestamp, metadata FROM conversations ORDER BY timestamp DESC",
-        )
-        conversations = []
-        for row in cursor.fetchall():
-            conv_id, content, project, timestamp, metadata = row
-            conversations.append(
-                {
-                    "id": conv_id,
-                    "content": content,
-                    "project": project,
-                    "timestamp": timestamp,
-                    "metadata": json.loads(metadata) if metadata else {},
-                    "original_size": len(content),
-                },
-            )
-
+        conversations = await self._load_conversations()
         if not conversations:
-            return {
-                "status": "no_conversations",
-                "message": "No conversations found to compress",
-            }
+            return self._create_no_conversations_response()
 
-        # Apply retention policy
-        keep_conversations, consolidate_conversations = (
-            self.retention_manager.get_conversations_for_retention(
-                conversations,
-                policy,
-            )
+        return await self._perform_compression(conversations, policy, dry_run)
+
+    def _is_database_available(self) -> bool:
+        """Check if database connection is available."""
+        return (
+            hasattr(self.reflection_db, "conn") and self.reflection_db.conn is not None
         )
 
-        # Cluster conversations for consolidation
-        clusters = self.clusterer.cluster_conversations(consolidate_conversations)
-
-        results: dict[str, Any] = {
-            "status": "success",
-            "dry_run": dry_run,
-            "total_conversations": len(conversations),
-            "conversations_to_keep": len(keep_conversations),
-            "conversations_to_consolidate": len(consolidate_conversations),
-            "clusters_created": len(clusters),
-            "consolidated_summaries": [],
-            "space_saved_estimate": 0,
-            "compression_ratio": 0.0,
+    def _create_no_conversations_response(self) -> dict[str, Any]:
+        """Create response for when no conversations are found."""
+        return {
+            "status": "no_conversations",
+            "message": "No conversations found to compress",
         }
 
-        # Process clusters
+    async def _load_conversations(self) -> list[ConversationData]:
+        """Load all conversations from database into structured format."""
+        if not self.reflection_db.conn:
+            return []
+
+        cursor = self.reflection_db.conn.execute(
+            "SELECT id, content, project, timestamp, metadata FROM conversations "
+            "ORDER BY timestamp DESC"
+        )
+
+        return [
+            ConversationData(
+                id=conv_id,
+                content=content,
+                project=project,
+                timestamp=timestamp,
+                metadata=json.loads(metadata) if metadata else {},
+                original_size=len(content),
+            )
+            for conv_id, content, project, timestamp, metadata in cursor.fetchall()
+        ]
+
+    async def _perform_compression(
+        self,
+        conversations: list[ConversationData],
+        policy: dict[str, Any] | None,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        """Perform the actual compression workflow."""
+        # Convert to dicts for existing retention manager compatibility
+        conv_dicts = [self._to_dict(conv) for conv in conversations]
+
+        keep_conversations, consolidate_conversations = (
+            self.retention_manager.get_conversations_for_retention(conv_dicts, policy)
+        )
+
+        clusters = self.clusterer.cluster_conversations(consolidate_conversations)
+        consolidated_summaries: list[dict[str, Any]] = []
+
+        total_original_size, total_compressed_size = await self._process_clusters(
+            clusters, consolidated_summaries, dry_run
+        )
+
+        results = self._create_compression_results(
+            conversations,
+            keep_conversations,
+            consolidate_conversations,
+            clusters,
+            consolidated_summaries,
+            total_original_size,
+            total_compressed_size,
+            dry_run,
+        )
+
+        self._update_compression_stats(results, consolidate_conversations, clusters)
+
+        return asdict(results)
+
+    def _to_dict(self, conv: ConversationData) -> dict[str, Any]:
+        """Convert ConversationData to dict for backward compatibility."""
+        return {
+            "id": conv.id,
+            "content": conv.content,
+            "project": conv.project,
+            "timestamp": conv.timestamp,
+            "metadata": conv.metadata,
+            "original_size": conv.original_size,
+        }
+
+    async def _process_clusters(
+        self,
+        clusters: list[list[dict[str, Any]]],
+        consolidated_summaries: list[dict[str, Any]],
+        dry_run: bool,
+    ) -> tuple[int, int]:
+        """Process conversation clusters and return size statistics."""
         total_original_size = sum(
-            conv["original_size"] for conv in consolidate_conversations
+            conv["original_size"] for cluster in clusters for conv in cluster
         )
         total_compressed_size = 0
 
-        for cluster in clusters:
-            if len(cluster) <= 1:
-                continue  # Skip single-conversation clusters
+        for cluster in (c for c in clusters if len(c) > 1):
+            consolidated = self._create_consolidated_conversation(cluster)
+            total_compressed_size += consolidated.compressed_size
+            consolidated_summaries.append(asdict(consolidated))
 
-            # Create consolidated summary
-            combined_content = "\n\n---\n\n".join([conv["content"] for conv in cluster])
-            summary = self.summarizer.summarize_conversation(
-                combined_content,
-                "template_based",
-            )
-
-            # Create consolidated metadata
-            projects = list(
-                {conv["project"] for conv in cluster if conv["project"]},
-            )
-            timestamps = [conv["timestamp"] for conv in cluster]
-            min_time = min(timestamps) if timestamps else ""
-            max_time = max(timestamps) if timestamps else ""
-
-            consolidated_conv = {
-                "summary": summary,
-                "original_count": len(cluster),
-                "projects": projects,
-                "time_range": f"{min_time} to {max_time}",
-                "original_conversations": [conv["id"] for conv in cluster],
-                "compressed_size": len(summary),
-                "original_size": sum(conv["original_size"] for conv in cluster),
-            }
-
-            total_compressed_size += len(summary)
-            results["consolidated_summaries"].append(consolidated_conv)
-
-            # Actually perform consolidation if not dry run
             if not dry_run:
-                await self._create_consolidated_conversation(consolidated_conv, cluster)
+                await self._persist_consolidated_conversation(consolidated, cluster)
 
-        # Calculate compression statistics
-        if total_original_size > 0:
-            space_saved = total_original_size - total_compressed_size
-            compression_ratio = space_saved / total_original_size
-            results["space_saved_estimate"] = space_saved
-            results["compression_ratio"] = compression_ratio
+        return total_original_size, total_compressed_size
 
-        # Update compression stats
+    def _create_consolidated_conversation(
+        self, cluster: list[dict[str, Any]]
+    ) -> ConsolidatedConversation:
+        """Create a consolidated conversation from a cluster."""
+        combined_content = "\n\n---\n\n".join(conv["content"] for conv in cluster)
+        summary = self.summarizer.summarize_conversation(
+            combined_content, "template_based"
+        )
+
+        projects = [conv["project"] for conv in cluster if conv.get("project")]
+        timestamps = [conv["timestamp"] for conv in cluster]
+
+        return ConsolidatedConversation(
+            summary=summary,
+            original_count=len(cluster),
+            projects=list(set(projects)),  # Remove duplicates
+            time_range=f"{min(timestamps) if timestamps else ''} to {max(timestamps) if timestamps else ''}",
+            original_conversations=[conv["id"] for conv in cluster],
+            compressed_size=len(summary),
+            original_size=sum(conv["original_size"] for conv in cluster),
+        )
+
+    def _create_compression_results(
+        self,
+        conversations: list[ConversationData],
+        keep_conversations: list[dict[str, Any]],
+        consolidate_conversations: list[dict[str, Any]],
+        clusters: list[list[dict[str, Any]]],
+        consolidated_summaries: list[dict[str, Any]],
+        total_original_size: int,
+        total_compressed_size: int,
+        dry_run: bool,
+    ) -> CompressionResults:
+        """Create compression results structure."""
+        space_saved = max(0, total_original_size - total_compressed_size)
+        compression_ratio = (
+            space_saved / total_original_size if total_original_size > 0 else 0.0
+        )
+
+        return CompressionResults(
+            status="success",
+            dry_run=dry_run,
+            total_conversations=len(conversations),
+            conversations_to_keep=len(keep_conversations),
+            conversations_to_consolidate=len(consolidate_conversations),
+            clusters_created=len(clusters),
+            consolidated_summaries=consolidated_summaries,
+            space_saved_estimate=space_saved,
+            compression_ratio=compression_ratio,
+        )
+
+    def _update_compression_stats(
+        self,
+        results: CompressionResults,
+        consolidate_conversations: list[dict[str, Any]],
+        clusters: list[list[dict[str, Any]]],
+    ) -> None:
+        """Update internal compression statistics."""
         self.compression_stats.update(
             {
                 "last_run": datetime.now().isoformat(),
                 "conversations_processed": len(consolidate_conversations),
                 "conversations_consolidated": sum(
                     len(cluster) for cluster in clusters if len(cluster) > 1
-                ),  # type: ignore[dict-item]
-                "space_saved_bytes": results["space_saved_estimate"],  # type: ignore[dict-item]
-                "compression_ratio": results["compression_ratio"],  # type: ignore[dict-item]
-            },
+                ),
+                "space_saved_bytes": results.space_saved_estimate,
+                "compression_ratio": results.compression_ratio,
+            }
         )
 
-        return results
-
-    async def _create_consolidated_conversation(
+    async def _persist_consolidated_conversation(
         self,
-        consolidated_conv: dict[str, Any],
+        consolidated_conv: ConsolidatedConversation,
         original_cluster: list[dict[str, Any]],
     ) -> None:
         """Create a new consolidated conversation and remove originals."""
@@ -623,11 +733,14 @@ class MemoryOptimizer:
 
         metadata = {
             "type": "consolidated",
-            "original_count": consolidated_conv["original_count"],
-            "original_conversations": consolidated_conv["original_conversations"],
-            "projects": consolidated_conv["projects"],
-            "compression_ratio": consolidated_conv["compressed_size"]
-            / consolidated_conv["original_size"],
+            "original_count": consolidated_conv.original_count,
+            "original_conversations": consolidated_conv.original_conversations,
+            "projects": consolidated_conv.projects,
+            "compression_ratio": (
+                consolidated_conv.compressed_size / consolidated_conv.original_size
+                if consolidated_conv.original_size > 0
+                else 0.0
+            ),
         }
 
         # Insert consolidated conversation
@@ -637,9 +750,9 @@ class MemoryOptimizer:
                VALUES (?, ?, ?, ?, ?)""",
                 (
                     consolidated_id,
-                    consolidated_conv["summary"],
-                    ", ".join(consolidated_conv["projects"])
-                    if consolidated_conv["projects"]
+                    consolidated_conv.summary,
+                    ", ".join(consolidated_conv.projects)
+                    if consolidated_conv.projects
                     else "multiple",
                     datetime.now().isoformat(),
                     json.dumps(metadata),

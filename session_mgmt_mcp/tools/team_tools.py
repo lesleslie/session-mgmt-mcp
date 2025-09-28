@@ -129,41 +129,74 @@ async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
         manager = TeamKnowledgeManager()
         stats = await manager.get_team_stats(team_id=team_id, user_id=user_id)
 
-        output = f"📊 **Team Statistics: {team_id}**\n\n"
-
         if not stats:
             return "❌ Failed to retrieve team statistics"
 
-        # Basic stats
-        output += f"**Members**: {stats.get('member_count', 0)}\n"
-        output += f"**Reflections**: {stats.get('reflection_count', 0)}\n"
-        output += f"**Projects**: {stats.get('project_count', 0)}\n"
-        output += f"**Total Votes**: {stats.get('total_votes', 0)}\n\n"
-
-        # Activity stats
-        if stats.get("recent_activity"):
-            output += "**Recent Activity**:\n"
-            for activity in stats["recent_activity"][:5]:
-                output += f"- {activity.get('timestamp', '')}: {activity.get('description', '')}\n"
-
-        # Top contributors
-        if stats.get("top_contributors"):
-            output += "\n**Top Contributors**:\n"
-            for contributor in stats["top_contributors"][:5]:
-                output += f"- {contributor.get('username', '')}: {contributor.get('contributions', 0)} contributions\n"
-
-        # Popular tags
-        if stats.get("popular_tags"):
-            output += f"\n**Popular Tags**: {', '.join(stats['popular_tags'][:10])}\n"
-
-        return output
+        return _format_team_statistics(team_id, stats)
 
     except ImportError:
         logger.warning("Team knowledge system not available")
         return "❌ Team collaboration features not available. Install optional dependencies."
     except Exception as e:
-        logger.exception(f"Team statistics failed: {e}")
-        return f"❌ Failed to get team statistics: {e!s}"
+        logger.exception(f"Error getting team statistics: {e}")
+        return f"❌ Error retrieving team statistics: {e}"
+
+
+def _format_team_statistics(team_id: str, stats: dict[str, Any]) -> str:
+    """Format team statistics for display."""
+    output = f"📊 **Team Statistics: {team_id}**\n\n"
+
+    output += _format_basic_stats(stats)
+    output += _format_activity_stats(stats)
+    output += _format_contributor_stats(stats)
+    output += _format_popular_tags(stats)
+
+    return output
+
+
+def _format_basic_stats(stats: dict[str, Any]) -> str:
+    """Format basic team statistics."""
+    return (
+        f"**Members**: {stats.get('member_count', 0)}\n"
+        f"**Reflections**: {stats.get('reflection_count', 0)}\n"
+        f"**Projects**: {stats.get('project_count', 0)}\n"
+        f"**Total Votes**: {stats.get('total_votes', 0)}\n\n"
+    )
+
+
+def _format_activity_stats(stats: dict[str, Any]) -> str:
+    """Format recent activity statistics."""
+    if not stats.get("recent_activity"):
+        return ""
+
+    output = "**Recent Activity**:\n"
+    for activity in stats["recent_activity"][:5]:
+        output += (
+            f"- {activity.get('timestamp', '')}: {activity.get('description', '')}\n"
+        )
+    return output
+
+
+def _format_contributor_stats(stats: dict[str, Any]) -> str:
+    """Format top contributors statistics."""
+    if not stats.get("top_contributors"):
+        return ""
+
+    output = "\n**Top Contributors**:\n"
+    for contributor in stats["top_contributors"][:5]:
+        username = contributor.get("username", "")
+        contributions = contributor.get("contributions", 0)
+        output += f"- {username}: {contributions} contributions\n"
+    return output
+
+
+def _format_popular_tags(stats: dict[str, Any]) -> str:
+    """Format popular tags statistics."""
+    if not stats.get("popular_tags"):
+        return ""
+
+    tags = ", ".join(stats["popular_tags"][:10])
+    return f"\n**Popular Tags**: {tags}\n"
 
 
 async def _vote_on_reflection_impl(

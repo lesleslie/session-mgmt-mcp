@@ -287,33 +287,46 @@ class RedisStorage(SessionStorage):
         # This method could scan for orphaned index entries
         try:
             redis_client = await self._get_redis()
+            index_keys = await self._get_index_keys(redis_client)
 
-            # Scan for index entries that point to non-existent sessions
             cleaned = 0
-            index_pattern = self._get_index_key("*")
-            index_keys = await redis_client.keys(index_pattern)
-
             for index_key in index_keys:
-                if isinstance(index_key, bytes):
-                    index_key = index_key.decode("utf-8")
-
-                session_ids = await redis_client.smembers(index_key)
-                for session_id in session_ids:
-                    if isinstance(session_id, bytes):
-                        session_id = session_id.decode("utf-8")
-
-                    session_key = self._get_key(session_id)
-                    exists = await redis_client.exists(session_key)
-
-                    if not exists:
-                        await redis_client.srem(index_key, session_id)
-                        cleaned += 1
+                cleaned += await self._cleanup_index_key(redis_client, index_key)
 
             return cleaned
 
         except Exception as e:
             self.logger.exception(f"Failed to cleanup expired sessions: {e}")
             return 0
+
+    async def _get_index_keys(self, redis_client: Any) -> list[str]:
+        """Get all index keys for cleanup."""
+        index_pattern = self._get_index_key("*")
+        raw_keys = await redis_client.keys(index_pattern)
+
+        return [
+            key.decode("utf-8") if isinstance(key, bytes) else key for key in raw_keys
+        ]
+
+    async def _cleanup_index_key(self, redis_client: Any, index_key: str) -> int:
+        """Clean up orphaned sessions from a single index key."""
+        session_ids = await redis_client.smembers(index_key)
+        cleaned = 0
+
+        for session_id in session_ids:
+            if await self._is_orphaned_session(redis_client, session_id):
+                await redis_client.srem(index_key, session_id)
+                cleaned += 1
+
+        return cleaned
+
+    async def _is_orphaned_session(self, redis_client: Any, session_id: Any) -> bool:
+        """Check if a session ID refers to an orphaned session."""
+        if isinstance(session_id, bytes):
+            session_id = session_id.decode("utf-8")
+
+        session_key = self._get_key(session_id)
+        return not await redis_client.exists(session_key)
 
     async def is_available(self) -> bool:
         """Check if Redis is available."""
@@ -469,44 +482,67 @@ class S3Storage(SessionStorage):
         """List sessions in S3."""
         try:
             s3_client = await self._get_s3_client()
-
-            # List objects with prefix
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: s3_client.list_objects_v2(
-                    Bucket=self.bucket_name,
-                    Prefix=self.key_prefix,
-                ),
-            )
+            s3_objects = await self._get_s3_objects(s3_client)
 
             session_ids = []
-            for obj in response.get("Contents", []):
+            for obj in s3_objects:
                 key = obj["Key"]
-                session_id = key.replace(self.key_prefix, "").replace(".json.gz", "")
+                session_id = self._extract_session_id_from_key(key)
 
-                # Filter by user_id or project_id if specified
-                if user_id or project_id:
-                    # Get object metadata to filter
-                    head_response = await loop.run_in_executor(
-                        None,
-                        lambda: s3_client.head_object(Bucket=self.bucket_name, Key=key),
-                    )
-
-                    metadata = head_response.get("Metadata", {})
-
-                    if user_id and metadata.get("user_id") != user_id:
-                        continue
-                    if project_id and metadata.get("project_id") != project_id:
-                        continue
-
-                session_ids.append(session_id)
+                if await self._should_include_s3_session(
+                    s3_client, key, user_id, project_id
+                ):
+                    session_ids.append(session_id)
 
             return session_ids
 
         except Exception as e:
             self.logger.exception(f"Failed to list sessions: {e}")
             return []
+
+    async def _get_s3_objects(self, s3_client: Any) -> list[dict[str, Any]]:
+        """Get S3 objects with the configured prefix."""
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: s3_client.list_objects_v2(
+                Bucket=self.bucket_name,
+                Prefix=self.key_prefix,
+            ),
+        )
+        contents = response.get("Contents", [])
+        return list(contents) if contents else []
+
+    def _extract_session_id_from_key(self, key: str) -> str:
+        """Extract session ID from S3 object key."""
+        return key.replace(self.key_prefix, "").replace(".json.gz", "")
+
+    async def _should_include_s3_session(
+        self,
+        s3_client: Any,
+        key: str,
+        user_id: str | None,
+        project_id: str | None,
+    ) -> bool:
+        """Check if S3 session should be included based on filters."""
+        if not user_id and not project_id:
+            return True
+
+        metadata = await self._get_s3_object_metadata(s3_client, key)
+
+        if user_id and metadata.get("user_id") != user_id:
+            return False
+        return not (project_id and metadata.get("project_id") != project_id)
+
+    async def _get_s3_object_metadata(self, s3_client: Any, key: str) -> dict[str, Any]:
+        """Get metadata for an S3 object."""
+        loop = asyncio.get_event_loop()
+        head_response = await loop.run_in_executor(
+            None,
+            lambda: s3_client.head_object(Bucket=self.bucket_name, Key=key),
+        )
+        metadata = head_response.get("Metadata", {})
+        return dict(metadata) if metadata else {}
 
     async def cleanup_expired_sessions(self) -> int:
         """Clean up expired sessions from S3."""
@@ -890,15 +926,16 @@ class ServerlessConfigManager:
         for backend_name, backend_config in config.get("backends", {}).items():
             try:
                 storage: SessionStorage
-                if backend_name == "redis":
-                    storage = RedisStorage(backend_config)
-                elif backend_name == "s3":
-                    storage = S3Storage(backend_config)
-                elif backend_name == "local":
-                    storage = LocalFileStorage(backend_config)
-                else:
-                    results[backend_name] = False
-                    continue
+                match backend_name:
+                    case "redis":
+                        storage = RedisStorage(backend_config)
+                    case "s3":
+                        storage = S3Storage(backend_config)
+                    case "local":
+                        storage = LocalFileStorage(backend_config)
+                    case _:
+                        results[backend_name] = False
+                        continue
 
                 results[backend_name] = await storage.is_available()
 

@@ -558,15 +558,25 @@ class ApplicationMonitor:
 
     def __init__(self, data_dir: str, project_paths: list[str] | None = None) -> None:
         self.data_dir = Path(data_dir)
+        self.project_paths = project_paths or []
+
+        self._setup_directory()
+        self._initialize_components()
+        self._setup_monitoring_state()
+
+    def _setup_directory(self) -> None:
+        """Set up the data directory."""
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        self.project_paths = project_paths or []
+    def _initialize_components(self) -> None:
+        """Initialize monitoring components."""
         self.db = ActivityDatabase(str(self.data_dir / "activity.db"))
-
         self.ide_monitor = ProjectActivityMonitor(self.project_paths)
         self.browser_monitor = BrowserDocumentationMonitor()
         self.focus_monitor = ApplicationFocusMonitor()
 
+    def _setup_monitoring_state(self) -> None:
+        """Set up monitoring state variables."""
         self.monitoring_active = False
         self._monitoring_task: asyncio.Task[Any] | None = None
 
@@ -605,35 +615,58 @@ class ApplicationMonitor:
         """Background monitoring loop."""
         while self.monitoring_active:
             try:
-                # Check application focus
-                focused_app = self.focus_monitor.get_focused_application()
-                if (
-                    focused_app
-                    and focused_app.get("name") != self.focus_monitor.current_app
-                ):
-                    self.focus_monitor.add_focus_event(focused_app)
-                    self.focus_monitor.current_app = focused_app.get("name")
-
-                # Persist buffered IDE events
-                for event in self.ide_monitor.activity_buffer[-10:]:  # Last 10 events
-                    self.db.store_event(event)
-
-                # Persist buffered browser events
-                for event in self.browser_monitor.activity_buffer[-10:]:
-                    self.db.store_event(event)
-
-                # Persist focus events
-                for event in self.focus_monitor.focus_history[-5:]:
-                    self.db.store_event(event)
-
+                await self._process_monitoring_cycle()
                 await asyncio.sleep(30)  # Check every 30 seconds
-
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                # Log error but continue monitoring
-                print(f"Monitoring error: {e}")
-                await asyncio.sleep(60)
+                await self._handle_monitoring_error(e)
+
+    async def _process_monitoring_cycle(self) -> None:
+        """Process a single monitoring cycle."""
+        await self._check_application_focus()
+        await self._persist_buffered_events()
+
+    async def _check_application_focus(self) -> None:
+        """Check and update application focus if changed."""
+        focused_app = self.focus_monitor.get_focused_application()
+        if self._is_focus_changed(focused_app) and focused_app is not None:
+            self.focus_monitor.add_focus_event(focused_app)
+            self.focus_monitor.current_app = focused_app.get("name")
+
+    def _is_focus_changed(self, focused_app: dict[str, Any] | None) -> bool:
+        """Check if application focus has changed."""
+        return (
+            focused_app is not None
+            and focused_app.get("name") != self.focus_monitor.current_app
+        )
+
+    async def _persist_buffered_events(self) -> None:
+        """Persist all buffered events to database."""
+        # Use generator expressions for memory efficiency
+        await self._persist_event_batch(
+            event for event in self.ide_monitor.activity_buffer[-10:]
+        )
+        await self._persist_event_batch(
+            event for event in self.browser_monitor.activity_buffer[-10:]
+        )
+        await self._persist_event_batch(
+            event for event in self.focus_monitor.focus_history[-5:]
+        )
+
+    async def _persist_event_batch(
+        self,
+        events: Any,  # Generator of ActivityEvent
+    ) -> None:
+        """Persist a batch of events to the database."""
+        for event in events:
+            self.db.store_event(event)
+
+    async def _handle_monitoring_error(self, error: Exception) -> None:
+        """Handle monitoring errors with appropriate logging and delay."""
+        # Log error but continue monitoring
+        print(f"Monitoring error: {error}")
+        await asyncio.sleep(60)
 
     def get_activity_summary(self, hours: int = 2) -> dict[str, Any]:
         """Get activity summary for specified hours."""

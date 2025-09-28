@@ -3670,68 +3670,48 @@ async def git_worktree_status(working_directory: str | None = None) -> str:
         if not result["success"]:
             return f"❌ {result['error']}"
 
-        # Format the status information
-        status_info = result["status"]
-        output = ["🌿 **Git Worktree Status**\n"]
-
-        output.append(f"📂 Repository: {working_dir.name}")
-        output.append(f"🎯 Current worktree: {status_info['branch']}")
-        output.append(f"📁 Path: {status_info['path']}")
-        output.append(
-            f"🧠 Has session: {'Yes' if status_info['has_session'] else 'No'}"
-        )
-        output.append(
-            f"🔸 Detached HEAD: {'Yes' if status_info['is_detached'] else 'No'}\n"
-        )
-
-        # Add session information if available
-        if status_info.get("session_info"):
-            session_info = status_info["session_info"]
-            output.append("📊 **Session Information:**")
-            output.append(f"• Session ID: {session_info.get('session_id', 'N/A')}")
-            output.append(
-                f"• Last activity: {session_info.get('last_activity', 'Unknown')}"
-            )
-            output.append(
-                f"• Session duration: {session_info.get('duration', 'Unknown')}"
-            )
-
-        return "\n".join(output)
+        return _format_worktree_status_display(result["status"], working_dir)
 
     except Exception as e:
         session_logger.exception(f"git_worktree_status failed: {e}")
         return f"❌ Failed to get worktree status: {e}"
-    """Prune stale worktree references."""
-    from .worktree_manager import WorktreeManager
 
-    working_dir = Path(working_directory or str(Path.cwd()))
-    manager = WorktreeManager(session_logger=session_logger)
 
-    try:
-        result = await manager.prune_worktrees(working_dir)
+def _format_worktree_status_display(
+    status_info: dict[str, Any], working_dir: Path
+) -> str:
+    """Format worktree status information for display."""
+    header = ["🌿 **Git Worktree Status**\n"]
+    basic_info = _format_basic_worktree_info(status_info, working_dir)
+    session_info = _format_session_info(status_info.get("session_info"))
 
-        if not result["success"]:
-            return f"❌ {result['error']}"
+    return "\n".join([*header, *basic_info, *session_info])
 
-        output = ["🧹 **Worktree Pruning Complete**\n"]
 
-        if result["pruned_count"] > 0:
-            output.append(
-                f"🗑️ Pruned {result['pruned_count']} stale worktree references",
-            )
-            if result.get("output"):
-                output.append(f"📝 Details: {result['output']}")
-        else:
-            output.append("✅ No stale worktree references found")
-            output.append("🎉 All worktrees are clean and up to date")
+def _format_basic_worktree_info(
+    status_info: dict[str, Any], working_dir: Path
+) -> list[str]:
+    """Format basic worktree information."""
+    return [
+        f"📂 Repository: {working_dir.name}",
+        f"🎯 Current worktree: {status_info['branch']}",
+        f"📁 Path: {status_info['path']}",
+        f"🧠 Has session: {'Yes' if status_info['has_session'] else 'No'}",
+        f"🔸 Detached HEAD: {'Yes' if status_info['is_detached'] else 'No'}\n",
+    ]
 
-        output.append("\n💡 Use `git_worktree_list` to see current worktrees")
 
-        return "\n".join(output)
+def _format_session_info(session_info: dict[str, Any] | None) -> list[str]:
+    """Format session information if available."""
+    if not session_info:
+        return []
 
-    except Exception as e:
-        session_logger.exception(f"git_worktree_prune failed: {e}")
-        return f"Failed to prune worktrees: {e}"
+    return [
+        "📊 **Session Information:**",
+        f"• Session ID: {session_info.get('session_id', 'N/A')}",
+        f"• Last activity: {session_info.get('last_activity', 'Unknown')}",
+        f"• Session duration: {session_info.get('duration', 'Unknown')}",
+    ]
 
 
 @mcp.tool()

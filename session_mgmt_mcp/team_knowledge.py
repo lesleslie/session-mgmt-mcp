@@ -106,83 +106,95 @@ class TeamKnowledgeManager:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    user_id TEXT PRIMARY KEY,
-                    username TEXT UNIQUE NOT NULL,
-                    email TEXT,
-                    role TEXT NOT NULL,
-                    teams TEXT,  -- JSON array
-                    created_at TIMESTAMP,
-                    last_active TIMESTAMP,
-                    permissions TEXT  -- JSON object
-                )
-            """)
+            self._create_tables(conn)
+            self._create_indices(conn)
 
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS teams (
-                    team_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    description TEXT,
-                    owner_id TEXT NOT NULL,
-                    members TEXT,  -- JSON array
-                    projects TEXT,  -- JSON array
-                    created_at TIMESTAMP,
-                    settings TEXT,  -- JSON object
-                    FOREIGN KEY (owner_id) REFERENCES users(user_id)
-                )
-            """)
+    def _create_tables(self, conn: sqlite3.Connection) -> None:
+        """Create database tables."""
+        self._create_users_table(conn)
+        self._create_teams_table(conn)
+        self._create_reflections_table(conn)
+        self._create_access_logs_table(conn)
 
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS team_reflections (
-                    id TEXT PRIMARY KEY,
-                    content TEXT NOT NULL,
-                    tags TEXT,  -- JSON array
-                    access_level TEXT NOT NULL,
-                    team_id TEXT,
-                    project_id TEXT,
-                    author_id TEXT NOT NULL,
-                    created_at TIMESTAMP,
-                    updated_at TIMESTAMP,
-                    votes INTEGER DEFAULT 0,
-                    viewers TEXT,  -- JSON array
-                    editors TEXT,  -- JSON array
-                    FOREIGN KEY (author_id) REFERENCES users(user_id),
-                    FOREIGN KEY (team_id) REFERENCES teams(team_id)
-                )
-            """)
+    def _create_users_table(self, conn: sqlite3.Connection) -> None:
+        """Create users table."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT,
+                role TEXT NOT NULL,
+                teams TEXT,  -- JSON array
+                created_at TIMESTAMP,
+                last_active TIMESTAMP,
+                permissions TEXT  -- JSON object
+            )
+        """)
 
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS access_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    action TEXT NOT NULL,
-                    resource_id TEXT,
-                    resource_type TEXT,
-                    timestamp TIMESTAMP,
-                    details TEXT  -- JSON object
-                )
-            """)
+    def _create_teams_table(self, conn: sqlite3.Connection) -> None:
+        """Create teams table."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS teams (
+                team_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                owner_id TEXT NOT NULL,
+                members TEXT,  -- JSON array
+                projects TEXT,  -- JSON array
+                created_at TIMESTAMP,
+                settings TEXT,  -- JSON object
+                FOREIGN KEY (owner_id) REFERENCES users(user_id)
+            )
+        """)
 
-            # Create indices
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_team ON team_reflections(team_id)",
+    def _create_reflections_table(self, conn: sqlite3.Connection) -> None:
+        """Create team_reflections table."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS team_reflections (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                tags TEXT,  -- JSON array
+                access_level TEXT NOT NULL,
+                team_id TEXT,
+                project_id TEXT,
+                author_id TEXT NOT NULL,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP,
+                votes INTEGER DEFAULT 0,
+                viewers TEXT,  -- JSON array
+                editors TEXT,  -- JSON array
+                FOREIGN KEY (author_id) REFERENCES users(user_id),
+                FOREIGN KEY (team_id) REFERENCES teams(team_id)
             )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_project ON team_reflections(project_id)",
+        """)
+
+    def _create_access_logs_table(self, conn: sqlite3.Connection) -> None:
+        """Create access_logs table."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS access_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                resource_id TEXT,
+                resource_type TEXT,
+                timestamp TIMESTAMP,
+                details TEXT  -- JSON object
             )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_author ON team_reflections(author_id)",
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reflections_access ON team_reflections(access_level)",
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)",
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_access_logs_timestamp ON access_logs(timestamp)",
-            )
+        """)
+
+    def _create_indices(self, conn: sqlite3.Connection) -> None:
+        """Create database indices."""
+        indices = [
+            "CREATE INDEX IF NOT EXISTS idx_reflections_team ON team_reflections(team_id)",
+            "CREATE INDEX IF NOT EXISTS idx_reflections_project ON team_reflections(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_reflections_author ON team_reflections(author_id)",
+            "CREATE INDEX IF NOT EXISTS idx_reflections_access ON team_reflections(access_level)",
+            "CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_access_logs_timestamp ON access_logs(timestamp)",
+        ]
+
+        for index_sql in indices:
+            conn.execute(index_sql)
 
     async def create_user(
         self,
@@ -354,60 +366,11 @@ class TeamKnowledgeManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
 
-            # Build query with access control
-            where_conditions = ["1=1"]
-            params: list[str | int] = []
-
-            # Access control: user can see public, team reflections they have access to, or their own
-            access_condition = """(
-                access_level = 'public' OR
-                (access_level = 'team' AND team_id IN ({}) AND team_id IS NOT NULL) OR
-                author_id = ?
-            )""".format(",".join("?" * len(user_teams)))
-            where_conditions.append(access_condition)
-            params.extend(user_teams)
-            params.append(user_id)
-
-            # Content search
-            if query:
-                where_conditions.append("(content LIKE ? OR tags LIKE ?)")
-                params.extend([f"%{query}%", f"%{query}%"])
-
-            # Team filter
-            if team_id:
-                where_conditions.append("team_id = ?")
-                params.append(team_id)
-
-            # Project filter
-            if project_id:
-                where_conditions.append("project_id = ?")
-                params.append(project_id)
-
-            # Tag filter
-            if tags:
-                tag_conditions = []
-                for tag in tags:
-                    tag_conditions.append("tags LIKE ?")
-                    params.append(f"%{tag}%")
-                where_conditions.append(f"({' OR '.join(tag_conditions)})")
-
-            query_sql = f"""
-                SELECT * FROM team_reflections
-                WHERE {" AND ".join(where_conditions)}
-                ORDER BY votes DESC, created_at DESC
-                LIMIT ?
-            """  # nosec B608 - properly parameterized query with dynamic WHERE clauses
-            params.append(limit)
-
-            cursor = conn.execute(query_sql, params)
-            results = []
-
-            for row in cursor.fetchall():
-                result = dict(row)
-                result["tags"] = json.loads(result["tags"] or "[]")
-                result["viewers"] = json.loads(result["viewers"] or "[]")
-                result["editors"] = json.loads(result["editors"] or "[]")
-                results.append(result)
+            query_builder = self._build_search_query(
+                user_teams, user_id, query, team_id, project_id, tags, limit
+            )
+            cursor = conn.execute(query_builder.sql, query_builder.params)
+            results = self._process_search_results(cursor.fetchall())
 
         await self._log_access(
             user_id,
@@ -417,6 +380,101 @@ class TeamKnowledgeManager:
             {"query": query, "results_count": len(results)},
         )
         return results
+
+    @dataclass(frozen=True)
+    class _SearchQueryBuilder:
+        """Immutable search query builder result."""
+
+        sql: str
+        params: list[str | int]
+
+    def _build_search_query(
+        self,
+        user_teams: list[str],
+        user_id: str,
+        query: str,
+        team_id: str | None,
+        project_id: str | None,
+        tags: list[str] | None,
+        limit: int,
+    ) -> _SearchQueryBuilder:
+        """Build parameterized search query with conditions."""
+        where_conditions = ["1=1"]
+        params: list[str | int] = []
+
+        # Add access control conditions
+        access_condition, access_params = self._build_access_condition(
+            user_teams, user_id
+        )
+        where_conditions.append(access_condition)
+        params.extend(access_params)
+
+        # Add content search conditions
+        if query:
+            where_conditions.append("(content LIKE ? OR tags LIKE ?)")
+            params.extend([f"%{query}%", f"%{query}%"])
+
+        # Add filter conditions
+        self._add_filter_conditions(where_conditions, params, team_id, project_id, tags)
+
+        query_sql = f"""
+            SELECT * FROM team_reflections
+            WHERE {" AND ".join(where_conditions)}
+            ORDER BY votes DESC, created_at DESC
+            LIMIT ?
+        """  # nosec B608 - properly parameterized query with dynamic WHERE clauses
+        params.append(limit)
+
+        return self._SearchQueryBuilder(sql=query_sql, params=params)
+
+    def _build_access_condition(
+        self, user_teams: list[str], user_id: str
+    ) -> tuple[str, list[str]]:
+        """Build access control condition for query."""
+        placeholders = ",".join("?" * len(user_teams))
+        access_condition = f"""(
+            access_level = 'public' OR
+            (access_level = 'team' AND team_id IN ({placeholders}) AND team_id IS NOT NULL) OR
+            author_id = ?
+        )"""
+        access_params = [*user_teams, user_id]
+        return access_condition, access_params
+
+    def _add_filter_conditions(
+        self,
+        where_conditions: list[str],
+        params: list[str | int],
+        team_id: str | None,
+        project_id: str | None,
+        tags: list[str] | None,
+    ) -> None:
+        """Add filter conditions to query builder."""
+        if team_id:
+            where_conditions.append("team_id = ?")
+            params.append(team_id)
+
+        if project_id:
+            where_conditions.append("project_id = ?")
+            params.append(project_id)
+
+        if tags:
+            tag_conditions = []
+            for tag in tags:
+                params.append(f"%{tag}%")  # type: ignore[func-returns-value]
+                tag_conditions.append("tags LIKE ?")
+            where_conditions.append(f"({' OR '.join(tag_conditions)})")
+
+    def _process_search_results(self, rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
+        """Process and transform search results."""
+        return [
+            dict(row)
+            | {
+                "tags": json.loads(row["tags"] or "[]"),
+                "viewers": json.loads(row["viewers"] or "[]"),
+                "editors": json.loads(row["editors"] or "[]"),
+            }
+            for row in rows
+        ]
 
     async def vote_reflection(
         self,

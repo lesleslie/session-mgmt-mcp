@@ -396,60 +396,98 @@ class AdvancedSearchEngine:
         if not self.reflection_db.conn:
             return
 
+        conversations = self._fetch_conversations_for_indexing()
+        for row in conversations:
+            await self._process_conversation_for_index(row)
+
+        self._commit_conversation_index()
+
+    def _fetch_conversations_for_indexing(self) -> list[tuple[Any, ...]]:
+        """Fetch conversations from database for indexing."""
+        if not self.reflection_db.conn:
+            return []
+
         sql = "SELECT id, content, project, timestamp, metadata FROM conversations"
-        results = self.reflection_db.conn.execute(sql).fetchall()
+        return self.reflection_db.conn.execute(sql).fetchall()
 
-        for row in results:
-            conv_id, content, project, timestamp, metadata_json = row
+    async def _process_conversation_for_index(self, row: tuple[Any, ...]) -> None:
+        """Process a single conversation row for search indexing."""
+        conv_id, content, project, timestamp, metadata_json = row
 
-            # Extract metadata
-            metadata: dict[str, Any] = (
-                json.loads(metadata_json) if metadata_json else {}
-            )
+        self._parse_conversation_metadata(metadata_json)
+        indexed_content = self._build_indexed_content(content, project)
+        search_metadata = self._build_conversation_search_metadata(
+            project, timestamp, content, indexed_content
+        )
 
-            # Create indexed content with metadata for better search
-            indexed_content = content
-            if project:
-                indexed_content += f" project:{project}"
+        self._insert_conversation_into_search_index(
+            conv_id, indexed_content, search_metadata
+        )
 
-            # Extract technical terms and patterns
-            tech_terms = self._extract_technical_terms(content)
-            if tech_terms:
-                indexed_content += " " + " ".join(tech_terms)
+    def _parse_conversation_metadata(self, metadata_json: str | None) -> dict[str, Any]:
+        """Parse conversation metadata JSON safely."""
+        return json.loads(metadata_json) if metadata_json else {}
 
-            # Create search metadata
-            base_metadata = {
-                "project": project,
-                "timestamp": timestamp.isoformat() if timestamp else None,
-                "content_length": len(content),
-                "technical_terms": tech_terms,
-            }
-            search_metadata: dict[str, Any] = base_metadata | metadata
+    def _build_indexed_content(self, content: str, project: str | None) -> str:
+        """Build indexed content with project and technical terms."""
+        indexed_content = content
 
-            # Insert or update search index
-            if self.reflection_db.conn:
-                self.reflection_db.conn.execute(
-                    """
-                    INSERT INTO search_index
-                    (id, content_type, content_id, indexed_content, search_metadata, last_indexed)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (id) DO UPDATE SET
-                    content_type = EXCLUDED.content_type,
-                    content_id = EXCLUDED.content_id,
-                    indexed_content = EXCLUDED.indexed_content,
-                    search_metadata = EXCLUDED.search_metadata,
-                    last_indexed = EXCLUDED.last_indexed
-                    """,
-                    [
-                        f"conv_{conv_id}",
-                        "conversation",
-                        conv_id,
-                        indexed_content,
-                        json.dumps(search_metadata),
-                        datetime.now(UTC),
-                    ],
-                )
+        if project:
+            indexed_content += f" project:{project}"
 
+        tech_terms = self._extract_technical_terms(content)
+        if tech_terms:
+            indexed_content += " " + " ".join(tech_terms)
+
+        return indexed_content
+
+    def _build_conversation_search_metadata(
+        self,
+        project: str | None,
+        timestamp: datetime | None,
+        content: str,
+        indexed_content: str,
+    ) -> dict[str, Any]:
+        """Build search metadata for conversation."""
+        tech_terms = self._extract_technical_terms(content)
+        return {
+            "project": project,
+            "timestamp": timestamp.isoformat() if timestamp else None,
+            "content_length": len(content),
+            "technical_terms": tech_terms,
+        }
+
+    def _insert_conversation_into_search_index(
+        self, conv_id: str, indexed_content: str, search_metadata: dict[str, Any]
+    ) -> None:
+        """Insert conversation into search index."""
+        if not self.reflection_db.conn:
+            return
+
+        self.reflection_db.conn.execute(
+            """
+            INSERT INTO search_index
+            (id, content_type, content_id, indexed_content, search_metadata, last_indexed)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE SET
+            content_type = EXCLUDED.content_type,
+            content_id = EXCLUDED.content_id,
+            indexed_content = EXCLUDED.indexed_content,
+            search_metadata = EXCLUDED.search_metadata,
+            last_indexed = EXCLUDED.last_indexed
+            """,
+            [
+                f"conv_{conv_id}",
+                "conversation",
+                conv_id,
+                indexed_content,
+                json.dumps(search_metadata),
+                datetime.now(UTC),
+            ],
+        )
+
+    def _commit_conversation_index(self) -> None:
+        """Commit the conversation indexing transaction."""
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
@@ -475,7 +513,7 @@ class AdvancedSearchEngine:
                 indexed_content += " " + " ".join(f"tag:{tag}" for tag in tags)
 
             # Create search metadata
-            base_metadata = {
+            base_metadata: dict[str, Any] = {
                 "tags": tags or [],
                 "timestamp": timestamp.isoformat() if timestamp else None,
                 "content_length": len(content),
@@ -646,29 +684,60 @@ class AdvancedSearchEngine:
         params = []
 
         for filt in filters:
-            if filt.field == "timestamp" and filt.operator == "range":
-                # Handle tuple unpacking for range values
-                if isinstance(filt.value, tuple | list) and len(filt.value) == 2:
-                    start_time, end_time = filt.value[0], filt.value[1]
-                else:
-                    continue  # Skip invalid range values
-                condition = "last_indexed BETWEEN ? AND ?"
-                conditions.append(f"{'NOT ' if filt.negate else ''}{condition}")
-                params.extend([start_time, end_time])
-
-            elif filt.operator == "eq":
-                condition = (
-                    f"JSON_EXTRACT_STRING(search_metadata, '$.{filt.field}') = ?"
-                )
-                conditions.append(f"{'NOT ' if filt.negate else ''}{condition}")
-                params.append(filt.value)
-
-            elif filt.operator == "contains":
-                condition = "indexed_content LIKE ?"
-                conditions.append(f"{'NOT ' if filt.negate else ''}{condition}")
-                params.append(f"%{filt.value}%")
+            condition_result = self._build_single_filter_condition(filt)
+            if condition_result:
+                conditions.append(condition_result["condition"])
+                params.extend(condition_result["params"])
 
         return conditions, params
+
+    def _build_single_filter_condition(
+        self, filt: SearchFilter
+    ) -> dict[str, Any] | None:
+        """Build a single filter condition."""
+        if filt.field == "timestamp" and filt.operator == "range":
+            return self._build_timestamp_range_condition(filt)
+        if filt.operator == "eq":
+            return self._build_equality_condition(filt)
+        if filt.operator == "contains":
+            return self._build_contains_condition(filt)
+        return None
+
+    def _build_timestamp_range_condition(
+        self, filt: SearchFilter
+    ) -> dict[str, Any] | None:
+        """Build timestamp range condition."""
+        if not isinstance(filt.value, tuple | list) or len(filt.value) != 2:
+            return None  # Skip invalid range values
+
+        start_time, end_time = filt.value[0], filt.value[1]
+        condition = "last_indexed BETWEEN ? AND ?"
+        negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
+
+        return {
+            "condition": negated_condition,
+            "params": [start_time, end_time],
+        }
+
+    def _build_equality_condition(self, filt: SearchFilter) -> dict[str, Any]:
+        """Build equality condition."""
+        condition = f"JSON_EXTRACT_STRING(search_metadata, '$.{filt.field}') = ?"
+        negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
+
+        return {
+            "condition": negated_condition,
+            "params": [filt.value],
+        }
+
+    def _build_contains_condition(self, filt: SearchFilter) -> dict[str, Any]:
+        """Build contains condition."""
+        condition = "indexed_content LIKE ?"
+        negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
+
+        return {
+            "condition": negated_condition,
+            "params": [f"%{filt.value}%"],
+        }
 
     async def _execute_search(
         self,

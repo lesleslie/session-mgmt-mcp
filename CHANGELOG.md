@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-09-28
+
+### Changed
+
+- Session-mgmt-mcp (quality: 73/100) - 2025-09-22 02:47:23
+- Session-mgmt-mcp (quality: 73/100) - 2025-09-22 12:47:38
+- Session-mgmt-mcp (quality: 73/100) - 2025-09-22 13:02:12
+- Session-mgmt-mcp (quality: 73/100) - 2025-09-22 16:41:30
+- Session-mgmt-mcp (quality: 73/100) - 2025-09-22 21:29:16
+- Session-mgmt-mcp (quality: 76/100) - 2025-09-19 10:25:31
+- Session-mgmt-mcp (quality: 76/100) - 2025-09-20 21:25:38
+- Session-mgmt-mcp (quality: 76/100) - 2025-09-20 22:48:31
+- Unknown (quality: 73/100) - 2025-09-25 05:20:04
+
+### Fixed
+
+- Resolve critical type annotation and missing function issues
+
+### Removed
+
+- Remove redundant Claude memory integration documentation
+
+### Documentation
+
+- config: Update CHANGELOG, pyproject, uv
+
 ## [0.3.13] - 2025-09-18
 
 ### Testing
