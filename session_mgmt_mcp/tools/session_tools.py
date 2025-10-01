@@ -91,13 +91,14 @@ def _create_session_shortcuts() -> dict[str, Any]:
 description: Start session management for current project
 ---
 
-Please execute session-mgmt:start to initialize session management for the current project.
+Please use the `mcp__session-mgmt__start` tool to initialize session management for the current project.
 
 This will:
 1. Set up session tracking for the git repository
 2. Initialize conversation memory and context
 3. Prepare the project for enhanced Claude Code workflows
 4. Install UV dependencies and automation tools
+5. Create session management slash command shortcuts
 """,
         },
         "checkpoint": {
@@ -107,15 +108,16 @@ argument-hint: [checkpoint-name]
 description: Create a session checkpoint with progress summary
 ---
 
-Please execute session-mgmt:checkpoint with name: $ARGUMENTS
+Please use the `mcp__session-mgmt__checkpoint` tool to create a session checkpoint.
 
 This command will:
 1. Create a checkpoint of the current development session
-2. Summarize progress made so far
-3. Document any pending tasks or context
-4. Prepare for seamless session resumption
+2. Analyze code quality and calculate quality scores
+3. Summarize progress made so far
+4. Document any pending tasks or context
+5. Prepare for seamless session resumption
 
-If no checkpoint name is provided, use a default timestamp-based name.
+The tool will analyze the working directory and provide comprehensive quality metrics.
 """,
         },
         "end": {
@@ -124,13 +126,14 @@ If no checkpoint name is provided, use a default timestamp-based name.
 description: End current session with cleanup and summary
 ---
 
-Please execute session-mgmt:end to gracefully end the current session.
+Please use the `mcp__session-mgmt__end` tool to gracefully end the current session.
 
 This will:
 1. Create a final checkpoint of all work completed
 2. Generate session summary and insights
 3. Clean up temporary resources
 4. Prepare handoff documentation for next session
+5. Store final quality metrics and learning data
 """,
         },
     }
