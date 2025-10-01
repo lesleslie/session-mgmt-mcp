@@ -57,6 +57,7 @@ class SessionLifecycleManager:
     def __init__(self) -> None:
         self.logger = get_session_logger()
         self.current_project: str | None = None
+        self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 
     async def calculate_quality_score(self) -> dict[str, Any]:
         """Calculate session quality score based on multiple factors."""
@@ -434,16 +435,60 @@ class SessionLifecycleManager:
             self.logger.exception("Session initialization failed", error=str(e))
             return {"success": False, "error": str(e)}
 
+    def get_previous_quality_score(self, project: str) -> int | None:
+        """Get the most recent quality score for a project."""
+        scores = self._quality_history.get(project, [])
+        return scores[-1] if scores else None
+
+    def record_quality_score(self, project: str, score: int) -> None:
+        """Record a quality score for quality trend tracking."""
+        if project not in self._quality_history:
+            self._quality_history[project] = []
+        self._quality_history[project].append(score)
+        # Keep only last 10 scores to prevent unbounded growth
+        if len(self._quality_history[project]) > 10:
+            self._quality_history[project] = self._quality_history[project][-10:]
+
     async def checkpoint_session(
-        self, working_directory: str | None = None
+        self,
+        working_directory: str | None = None,
+        is_manual: bool = False,
     ) -> dict[str, Any]:
-        """Perform a comprehensive session checkpoint."""
+        """Perform a comprehensive session checkpoint.
+
+        Args:
+            working_directory: Optional working directory override
+            is_manual: Whether this is a manually-triggered checkpoint
+
+        Returns:
+            Dictionary containing checkpoint results and auto-store decision
+
+        """
         try:
             current_dir = Path(working_directory) if working_directory else Path.cwd()
             self.current_project = current_dir.name
 
             # Quality assessment
             quality_score, quality_data = await self.perform_quality_assessment()
+
+            # Get previous score for trend analysis
+            previous_score = self.get_previous_quality_score(self.current_project)
+
+            # Record this score for future comparisons
+            self.record_quality_score(self.current_project, quality_score)
+
+            # Determine if reflection should be auto-stored
+            from session_mgmt_mcp.utils.reflection_utils import (
+                format_auto_store_summary,
+                should_auto_store_checkpoint,
+            )
+
+            auto_store_decision = should_auto_store_checkpoint(
+                quality_score=quality_score,
+                previous_score=previous_score,
+                is_manual=is_manual,
+                session_phase="checkpoint",
+            )
 
             # Git checkpoint
             git_output = await self.perform_git_checkpoint(current_dir, quality_score)
@@ -455,6 +500,8 @@ class SessionLifecycleManager:
                 "Session checkpoint completed",
                 project=self.current_project,
                 quality_score=quality_score,
+                auto_store_decision=auto_store_decision.should_store,
+                auto_store_reason=auto_store_decision.reason.value,
             )
 
             return {
@@ -463,6 +510,8 @@ class SessionLifecycleManager:
                 "quality_output": quality_output,
                 "git_output": git_output,
                 "timestamp": datetime.now().isoformat(),
+                "auto_store_decision": auto_store_decision,
+                "auto_store_summary": format_auto_store_summary(auto_store_decision),
             }
 
         except Exception as e:

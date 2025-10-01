@@ -247,7 +247,41 @@ async def example_tool(param: str) -> dict[str, Any]:
 - **Zero Network Dependencies**: Functions without internet for core features
 - **User Data Control**: Complete data sovereignty with local processing
 
-#### 4. **Type-Safe Data Modeling**
+#### 4. **Selective Auto-Store for High Signal-to-Noise Ratio**
+
+The system intelligently decides when to auto-store checkpoint reflections to maintain high-quality memory:
+
+**Auto-Store Triggers:**
+
+- **Manual Checkpoints**: Always stored (user explicitly requested)
+- **Session End**: Always stored (final state capture)
+- **Significant Quality Changes**: Delta ≥10 points (configurable)
+- **Exceptional Quality**: Score ≥90/100 (configurable)
+
+**Skipped Checkpoints:**
+
+- Routine automatic checkpoints with minimal changes
+- Quality changes below threshold (default: \<10 points)
+
+**Configuration Options** (config.py):
+
+```python
+enable_auto_store_reflections: bool = True  # Global toggle
+auto_store_quality_delta_threshold: int = 10  # Minimum delta to trigger
+auto_store_exceptional_quality_threshold: int = 90  # Exceptional quality
+auto_store_manual_checkpoints: bool = True  # Store manual checkpoints
+auto_store_session_end: bool = True  # Store session end
+```
+
+**Semantic Tagging**: Auto-stored reflections get meaningful tags:
+
+- `manual_checkpoint`, `session_end`, `quality_improvement`, `quality_degradation`
+- `high-quality`, `good-quality`, `needs-improvement`
+- `user-initiated`, `quality-change`, `session-summary`
+
+This approach ensures the reflection database contains only meaningful insights, making searches more effective and preventing storage bloat.
+
+#### 5. **Type-Safe Data Modeling**
 
 ```python
 @dataclass
@@ -262,7 +296,7 @@ class ProjectDependency:
 - **Modern Type Hints**: Uses Python 3.13+ syntax with pipe unions
 - **Runtime Validation**: Pydantic integration with automatic serialization
 
-#### 5. **Performance-Optimized Vector Search**
+#### 6. **Performance-Optimized Vector Search**
 
 ```sql
 -- DuckDB vector similarity with index support

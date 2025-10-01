@@ -46,9 +46,18 @@ from .quality_utils import (
     _get_intelligence_error_result,
     _get_time_based_recommendations,
 )
+from .reflection_utils import (
+    AutoStoreDecision,
+    CheckpointReason,
+    format_auto_store_summary,
+    generate_auto_store_tags,
+    should_auto_store_checkpoint,
+)
 
 __all__ = [
     # Existing utilities
+    "AutoStoreDecision",
+    "CheckpointReason",
     "DatabaseConnectionPool",
     "LazyImport",
     "LazyLoader",
@@ -74,6 +83,8 @@ __all__ = [
     "_stage_and_commit_files",
     "create_checkpoint_commit",
     "create_commit",
+    "format_auto_store_summary",
+    "generate_auto_store_tags",
     "get_database_pool",
     "get_dependency_status",
     "get_git_status",
@@ -84,6 +95,7 @@ __all__ = [
     "log_dependency_status",
     "optional_dependency",
     "require_dependency",
+    "should_auto_store_checkpoint",
     "stage_files",
     "validate_claude_directory",
 ]

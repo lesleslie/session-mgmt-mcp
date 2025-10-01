@@ -239,6 +239,32 @@ class SessionConfig(BaseModel):
         description="Number of days to retain session data",
     )
 
+    # Selective auto-store for reflections
+    enable_auto_store_reflections: bool = Field(
+        default=True,
+        description="Enable automatic reflection storage at meaningful checkpoints",
+    )
+    auto_store_quality_delta_threshold: int = Field(
+        default=10,
+        ge=5,
+        le=50,
+        description="Minimum quality score change to trigger auto-store (default: 10 points)",
+    )
+    auto_store_exceptional_quality_threshold: int = Field(
+        default=90,
+        ge=70,
+        le=100,
+        description="Quality score threshold for exceptional sessions (default: 90)",
+    )
+    auto_store_manual_checkpoints: bool = Field(
+        default=True,
+        description="Always store reflections for manually-triggered checkpoints",
+    )
+    auto_store_session_end: bool = Field(
+        default=True,
+        description="Always store reflections at session end",
+    )
+
     @field_validator("commit_message_template")
     @classmethod
     def validate_commit_template(cls, v: str) -> str:

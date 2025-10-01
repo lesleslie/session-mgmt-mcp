@@ -419,15 +419,83 @@ def _get_client_working_directory() -> str | None:
     return None
 
 
+async def _handle_auto_store_reflection(
+    result: dict[str, Any], output: list[str]
+) -> None:
+    """Handle selective auto-store reflection logic."""
+    auto_store_decision = result.get("auto_store_decision")
+    if not auto_store_decision:
+        return
+
+    if auto_store_decision.should_store:
+        from session_mgmt_mcp.reflection_tools import get_reflection_database
+        from session_mgmt_mcp.utils.reflection_utils import generate_auto_store_tags
+
+        try:
+            db = await get_reflection_database()
+
+            # Create meaningful checkpoint summary
+            checkpoint_content = f"Quality score: {result['quality_score']}/100. "
+            if auto_store_decision.metadata.get("delta"):
+                delta = auto_store_decision.metadata["delta"]
+                direction = (
+                    "improved"
+                    if auto_store_decision.reason.value == "quality_improvement"
+                    else "changed"
+                )
+                checkpoint_content += f"Quality {direction} by {delta} points. "
+
+            checkpoint_content += (
+                f"Project: {session_manager.current_project or 'unknown'}. "
+            )
+            checkpoint_content += f"Timestamp: {result['timestamp']}"
+
+            # Generate semantic tags
+            tags = generate_auto_store_tags(
+                reason=auto_store_decision.reason,
+                project=session_manager.current_project,
+                quality_score=result["quality_score"],
+            )
+
+            # Store the reflection
+            await db.store_reflection(checkpoint_content, tags)
+            output.append(f"\n{result['auto_store_summary']}")
+        except Exception as e:
+            logger.exception(f"Failed to store checkpoint reflection: {e}")
+            output.append(f"⚠️ Reflection storage failed: {e}")
+    else:
+        # Show why we skipped auto-store
+        output.append(f"\n{result.get('auto_store_summary', '')}")
+
+
+async def _handle_auto_compaction(output: list[str]) -> None:
+    """Handle automatic compaction analysis and execution."""
+    from session_mgmt_mcp.server_optimized import (
+        _execute_auto_compact,
+        should_suggest_compact,
+    )
+
+    should_compact, reason = should_suggest_compact()
+    output.append("\n🔄 Automatic Compaction Analysis")
+    output.append(f"📊 {reason}")
+
+    if should_compact:
+        output.append("\n🔄 Executing automatic compaction...")
+        try:
+            await _execute_auto_compact()
+            output.append("✅ Context automatically optimized")
+        except Exception as e:
+            output.append(f"⚠️ Auto-compact skipped: {e!s}")
+            output.append("💡 Consider running /compact manually")
+    else:
+        output.append("✅ Context appears well-optimized for current session")
+
+
 async def _checkpoint_impl(working_directory: str | None = None) -> str:
     """Implementation for checkpoint tool."""
     # Auto-detect client working directory if not provided
     if not working_directory:
         working_directory = _get_client_working_directory()
-    from session_mgmt_mcp.server_optimized import (
-        _execute_auto_compact,
-        should_suggest_compact,
-    )
 
     output = []
     output.append(
@@ -436,7 +504,10 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
     output.append("=" * 50)
 
     try:
-        result = await session_manager.checkpoint_session(working_directory)
+        # Determine if this is a manual checkpoint (always true for explicit tool calls)
+        result = await session_manager.checkpoint_session(
+            working_directory, is_manual=True
+        )
 
         if result["success"]:
             # Add quality assessment output
@@ -445,27 +516,16 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
             # Add git checkpoint output
             output.extend(result["git_output"])
 
-            # Auto-compact when needed (new functionality)
-            should_compact, reason = should_suggest_compact()
-            output.append("\n🔄 Automatic Compaction Analysis")
-            output.append(f"📊 {reason}")
+            # Handle selective auto-store reflection
+            await _handle_auto_store_reflection(result, output)
 
-            if should_compact:
-                output.append("\n🔄 Executing automatic compaction...")
-                try:
-                    await _execute_auto_compact()
-                    output.append("✅ Context automatically optimized")
-                except Exception as e:
-                    output.append(f"⚠️ Auto-compact skipped: {e!s}")
-                    output.append("💡 Consider running /compact manually")
-            else:
-                output.append("✅ Context appears well-optimized for current session")
+            # Auto-compact when needed
+            await _handle_auto_compaction(output)
 
             output.append(f"\n⏰ Checkpoint completed at: {result['timestamp']}")
             output.append(
                 "\n💡 This checkpoint includes intelligent conversation management and optimization.",
             )
-
         else:
             output.append(f"❌ Checkpoint failed: {result['error']}")
 
