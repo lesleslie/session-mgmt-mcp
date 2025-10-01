@@ -71,6 +71,7 @@ def should_auto_store_checkpoint(
         False
         >>> decision.reason
         <CheckpointReason.ROUTINE_SKIP: 'routine_skip'>
+
     """
     config = get_config()
 
@@ -163,6 +164,7 @@ def generate_auto_store_tags(
 
     Returns:
         List of semantic tags for the reflection
+
     """
     tags = ["checkpoint", "auto-stored", reason.value]
 
@@ -200,6 +202,7 @@ def format_auto_store_summary(decision: AutoStoreDecision) -> str:
 
     Returns:
         Formatted summary string
+
     """
     if not decision.should_store:
         return "⏭️  Routine checkpoint - reflection storage skipped (maintains high signal-to-noise ratio)"
@@ -222,7 +225,9 @@ def format_auto_store_summary(decision: AutoStoreDecision) -> str:
         message += f" (quality: {decision.metadata['quality_score']}/100"
         if "delta" in decision.metadata:
             delta = decision.metadata["delta"]
-            direction = "+" if decision.reason == CheckpointReason.QUALITY_IMPROVEMENT else "-"
+            direction = (
+                "+" if decision.reason == CheckpointReason.QUALITY_IMPROVEMENT else "-"
+            )
             message += f", {direction}{delta} points"
         message += ")"
 
