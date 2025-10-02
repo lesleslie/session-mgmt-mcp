@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-10-02
+
+### Added
+
+- Implement V2 quality scoring algorithm
+
+### Changed
+
+- quality_utils_v2: Fix refurb and complexipy violations
+- Session-mgmt-mcp (quality: 73/100) - 2025-10-01 23:18:55
+
+### Fixed
+
+- quality: Add explicit float cast for type coverage
+- quality: Resolve V2 linting issues
+
+### Testing
+
+- session_mgmt_mcp: Update 7 files
+
+### Internal
+
+- Update coverage metrics to 32.6%
+- Update coverage metrics to 32.7%
+
 ## [0.5.2] - 2025-10-01
 
 ### Documentation
