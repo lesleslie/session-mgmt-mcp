@@ -5,19 +5,19 @@
 The current quality scoring system (V1) has critical flaws:
 
 1. **Measures Wrong Things**: 50% of score based on permissions and session tools (not code quality)
-2. **Penalizes Modern Tooling**: Missing requirements.txt reduces score even when using UV
-3. **Gameable**: Trust 4 operations = instant +20 points regardless of code quality
-4. **Binary Indicators**: One missing file = -5.7 points, no gradation
-5. **Ignores Actual Quality**: Doesn't check test coverage, lint scores, or code health
+1. **Penalizes Modern Tooling**: Missing requirements.txt reduces score even when using UV
+1. **Gameable**: Trust 4 operations = instant +20 points regardless of code quality
+1. **Binary Indicators**: One missing file = -5.7 points, no gradation
+1. **Ignores Actual Quality**: Doesn't check test coverage, lint scores, or code health
 
 ### Current Algorithm (Flawed)
 
 ```python
 # V1 Scoring (Total: 100 points)
-project_health = (indicators / 7) * 40      # 40% - Binary file checks
-permissions    = min(trusted_ops * 5, 20)    # 20% - Gameable, not quality
-session_mgmt   = 20 if available else 5      # 20% - Infrastructure, not quality
-tools          = 20 if uv_available else 10  # 20% - Tool presence, not usage
+project_health = (indicators / 7) * 40  # 40% - Binary file checks
+permissions = min(trusted_ops * 5, 20)  # 20% - Gameable, not quality
+session_mgmt = 20 if available else 5  # 20% - Infrastructure, not quality
+tools = 20 if uv_available else 10  # 20% - Tool presence, not usage
 
 # Result: 73/100 for excellent projects missing requirements.txt
 ```
@@ -25,6 +25,7 @@ tools          = 20 if uv_available else 10  # 20% - Tool presence, not usage
 ## New Algorithm Design (V2)
 
 ### Core Principle
+
 **Measure what matters: actual code quality, not file existence or tool availability.**
 
 ### New Formula (Total: 100 points)
@@ -42,6 +43,7 @@ security         = 10%  # Dependency audits, secret scanning, vulnerabilities
 ### Detailed Breakdown
 
 #### 1. Code Quality (40 points) - PRIMARY METRIC
+
 Integrates with Crackerjack quality metrics:
 
 ```python
@@ -61,6 +63,7 @@ code_quality_score = (
 ```
 
 #### 2. Project Health (30 points) - STRUCTURAL QUALITY
+
 Modernized indicators with smart detection:
 
 ```python
@@ -82,6 +85,7 @@ project_health_score = (
 ```
 
 #### 3. Development Velocity (20 points) - PRODUCTIVITY METRICS
+
 Measures development health:
 
 ```python
@@ -101,6 +105,7 @@ velocity_score = (
 ```
 
 #### 4. Security (10 points) - SAFETY METRICS
+
 Critical security indicators:
 
 ```python
@@ -136,28 +141,33 @@ tool_ecosystem       = 30 pts  # Available MCP tools and integrations
 ## Implementation Strategy
 
 ### Phase 1: Crackerjack Integration
+
 1. Use existing `CrackerjackIntegration.get_quality_metrics_history()`
-2. Extract: test_pass_rate, code_coverage, lint_score, security_score, complexity_score
-3. Cache results for 5 minutes to avoid re-running Crackerjack on every checkpoint
+1. Extract: test_pass_rate, code_coverage, lint_score, security_score, complexity_score
+1. Cache results for 5 minutes to avoid re-running Crackerjack on every checkpoint
 
 ### Phase 2: Git Analysis
+
 1. Parse git log for commit patterns
-2. Analyze commit messages for conventional commits format
-3. Check for branch strategy (feature branches vs main-only)
+1. Analyze commit messages for conventional commits format
+1. Check for branch strategy (feature branches vs main-only)
 
 ### Phase 3: Project Structure Analysis
+
 1. Smart detection: UV OR requirements.txt (not penalizing modern tools)
-2. Documentation quality: count docstrings, not just README existence
-3. CI/CD: check workflow status via GitHub API or file timestamps
+1. Documentation quality: count docstrings, not just README existence
+1. CI/CD: check workflow status via GitHub API or file timestamps
 
 ### Phase 4: Security Integration
+
 1. Run bandit/safety via Crackerjack if not cached
-2. Check for .env in .gitignore
-3. Scan for hardcoded secrets patterns
+1. Check for .env in .gitignore
+1. Scan for hardcoded secrets patterns
 
 ## Scoring Examples
 
 ### Example 1: Modern Python Project (This Repository)
+
 ```python
 # Code Quality (40 points)
 test_coverage:    31.6% → 4.7 points   # Low coverage hurts
@@ -182,6 +192,7 @@ hygiene:         4 points   # Clean patterns
 ```
 
 ### Example 2: Excellent Project
+
 ```python
 # Code Quality: 38/40 (95% coverage, perfect lint, 100% types, low complexity)
 # Project Health: 28/30 (full tooling, CI/CD, excellent docs)
@@ -191,6 +202,7 @@ hygiene:         4 points   # Clean patterns
 ```
 
 ### Example 3: Quick Script (Low Quality Expected)
+
 ```python
 # Code Quality: 8/40 (no tests, some lint issues)
 # Project Health: 8/30 (just .py files, no structure)
@@ -202,10 +214,10 @@ hygiene:         4 points   # Clean patterns
 ## Migration Plan
 
 1. **Implement new algorithm** as `calculate_quality_score_v2()`
-2. **Run both algorithms** in parallel for comparison
-3. **Log differences** to analyze scoring changes
-4. **Switch default** after validation period
-5. **Deprecate V1** after 1 month
+1. **Run both algorithms** in parallel for comparison
+1. **Log differences** to analyze scoring changes
+1. **Switch default** after validation period
+1. **Deprecate V1** after 1 month
 
 ## Benefits
 
@@ -233,24 +245,24 @@ quality_data = await calculate_quality_score_v2()
         "code_quality": {"score": 27.4, "max": 40, "details": {...}},
         "project_health": {"score": 28, "max": 30, "details": {...}},
         "dev_velocity": {"score": 16, "max": 20, "details": {...}},
-        "security": {"score": 9, "max": 10, "details": {...}}
+        "security": {"score": 9, "max": 10, "details": {...}},
     },
     "trust_score": {
         "score": 85,
         "breakdown": {
             "trusted_operations": 32,
             "session_availability": 28,
-            "tool_ecosystem": 25
-        }
+            "tool_ecosystem": 25,
+        },
     },
-    "recommendations": [...]
+    "recommendations": [...],
 }
 ```
 
 ## Next Steps
 
 1. Implement `calculate_quality_score_v2()` in `session_mgmt_mcp/utils/quality_utils_v2.py`
-2. Add Crackerjack integration with caching
-3. Implement git analysis utilities
-4. Create comprehensive test suite
-5. Update MCP tools to use V2
+1. Add Crackerjack integration with caching
+1. Implement git analysis utilities
+1. Create comprehensive test suite
+1. Update MCP tools to use V2

@@ -13,14 +13,14 @@ Key improvements over V1:
 
 from __future__ import annotations
 
-import json
 import re
 import subprocess
-from contextlib import suppress
-from datetime import datetime, timedelta
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # Crackerjack integration for quality metrics
 try:
@@ -123,6 +123,7 @@ async def calculate_quality_score_v2(
 
     Returns:
         Complete quality score breakdown
+
     """
     # Calculate each component
     code_quality = await _calculate_code_quality(project_dir)
@@ -135,10 +136,7 @@ async def calculate_quality_score_v2(
 
     # Calculate total
     total = (
-        code_quality.total
-        + project_health.total
-        + dev_velocity.total
-        + security.total
+        code_quality.total + project_health.total + dev_velocity.total + security.total
     )
 
     # Generate recommendations
@@ -259,6 +257,7 @@ def _calculate_tooling_score(project_dir: Path) -> dict[str, Any]:
         try:
             result = subprocess.run(
                 ["git", "log", "--oneline", "-n", "10"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -416,6 +415,7 @@ def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
                 "--pretty=format:%s",
                 "--no-merges",
             ],
+            check=False,
             cwd=project_dir,
             capture_output=True,
             text=True,
@@ -444,22 +444,26 @@ def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
             conventional_commits = sum(
                 1
                 for msg in commits
-                if re.match(r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg)
+                if re.match(
+                    r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg
+                )
             )
 
             if conventional_commits >= commit_count * 0.8:
                 score += 5
-                details["quality"] = f"excellent ({conventional_commits}/{commit_count} conventional)"
+                details["quality"] = (
+                    f"excellent ({conventional_commits}/{commit_count} conventional)"
+                )
             elif conventional_commits >= commit_count * 0.5:
                 score += 3
-                details[
-                    "quality"
-                ] = f"good ({conventional_commits}/{commit_count} conventional)"
+                details["quality"] = (
+                    f"good ({conventional_commits}/{commit_count} conventional)"
+                )
             else:
                 score += 1
-                details[
-                    "quality"
-                ] = f"basic ({conventional_commits}/{commit_count} conventional)"
+                details["quality"] = (
+                    f"basic ({conventional_commits}/{commit_count} conventional)"
+                )
 
     except Exception as e:
         details["error"] = f"git analysis failed: {e}"
@@ -480,6 +484,7 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
         # Issue tracking (0-5)
         result = subprocess.run(
             ["git", "log", "--oneline", "-n", "50", "--no-merges"],
+            check=False,
             cwd=project_dir,
             capture_output=True,
             text=True,
@@ -492,7 +497,9 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
 
             if issue_refs >= len(commits) * 0.5:
                 score += 5
-                details["issue_tracking"] = f"excellent ({issue_refs}/{len(commits)} refs)"
+                details["issue_tracking"] = (
+                    f"excellent ({issue_refs}/{len(commits)} refs)"
+                )
             elif issue_refs >= len(commits) * 0.25:
                 score += 3
                 details["issue_tracking"] = f"good ({issue_refs}/{len(commits)} refs)"
@@ -505,6 +512,7 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
         # Branch strategy (0-5)
         result = subprocess.run(
             ["git", "branch", "-a"],
+            check=False,
             cwd=project_dir,
             capture_output=True,
             text=True,
@@ -517,14 +525,14 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
 
             if len(feature_branches) >= 3:
                 score += 5
-                details[
-                    "branch_strategy"
-                ] = f"feature branches ({len(feature_branches)} active)"
+                details["branch_strategy"] = (
+                    f"feature branches ({len(feature_branches)} active)"
+                )
             elif feature_branches:
                 score += 3
-                details[
-                    "branch_strategy"
-                ] = f"some feature branches ({len(feature_branches)})"
+                details["branch_strategy"] = (
+                    f"some feature branches ({len(feature_branches)})"
+                )
             else:
                 score += 1
                 details["branch_strategy"] = "main-only development"
@@ -760,7 +768,9 @@ def _generate_recommendations_v2(
 
     # Project health recommendations
     if project_health.tooling_score < 10:
-        recommendations.append("🔨 Improve tooling setup (add lockfile, update dependencies)")
+        recommendations.append(
+            "🔨 Improve tooling setup (add lockfile, update dependencies)"
+        )
 
     if project_health.maturity_score < 10:
         recommendations.append("📚 Enhance project maturity (add docs, tests, CI/CD)")
@@ -780,19 +790,19 @@ def _generate_recommendations_v2(
 
 
 # Backward compatibility: Export V1 calculator as well
-from session_mgmt_mcp.utils.quality_utils import (  # noqa: E402
+from session_mgmt_mcp.utils.quality_utils import (
     _extract_quality_scores,
     _generate_quality_trend_recommendations,
 )
 
 __all__ = [
-    "calculate_quality_score_v2",
-    "QualityScoreV2",
     "CodeQualityScore",
-    "ProjectHealthScore",
     "DevVelocityScore",
+    "ProjectHealthScore",
+    "QualityScoreV2",
     "SecurityScore",
     "TrustScore",
     "_extract_quality_scores",
     "_generate_quality_trend_recommendations",
+    "calculate_quality_score_v2",
 ]
