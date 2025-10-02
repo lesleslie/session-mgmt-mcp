@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -222,6 +223,67 @@ async def _calculate_project_health(project_dir: Path) -> ProjectHealthScore:
     )
 
 
+def _score_package_management(project_dir: Path) -> tuple[float, dict[str, str]]:
+    """Score package management setup (0-5 points)."""
+    has_pyproject = (project_dir / "pyproject.toml").exists()
+    has_lockfile = (project_dir / "uv.lock").exists() or (
+        project_dir / "requirements.txt"
+    ).exists()
+
+    if has_pyproject and has_lockfile:
+        return 5, {"package_mgmt": "modern (pyproject.toml + lockfile)"}
+    if has_pyproject:
+        return 3, {"package_mgmt": "partial (pyproject.toml, no lockfile)"}
+    if has_lockfile:
+        return 2, {"package_mgmt": "basic (lockfile only)"}
+    return 0, {}
+
+
+def _score_version_control(project_dir: Path) -> tuple[float, dict[str, str]]:
+    """Score version control setup (0-5 points)."""
+    git_dir = project_dir / ".git"
+    if not git_dir.exists():
+        return 0, {"version_control": "none"}
+
+    with suppress(Exception):
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-n", "10"],
+            check=False,
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if result.returncode == 0 and len(result.stdout.strip().split("\n")) >= 5:
+            return 5, {"version_control": "active git repository"}
+        return 3, {"version_control": "git repo (limited history)"}
+
+    return 2, {"version_control": "git repo (couldn't verify history)"}
+
+
+def _score_dependency_management(project_dir: Path) -> tuple[float, dict[str, str]]:
+    """Score dependency management (0-5 points)."""
+    lockfile = project_dir / "uv.lock"
+    if not lockfile.exists():
+        lockfile = project_dir / "requirements.txt"
+
+    if not lockfile.exists():
+        return 0, {"dependency_mgmt": "none"}
+
+    with suppress(Exception):
+        lockfile_age_days = (
+            datetime.now() - datetime.fromtimestamp(lockfile.stat().st_mtime)
+        ).days
+
+        if lockfile_age_days < 30:
+            return 5, {"dependency_mgmt": "recently updated"}
+        if lockfile_age_days < 90:
+            return 3, {"dependency_mgmt": "moderately current"}
+        return 1, {"dependency_mgmt": f"outdated ({lockfile_age_days} days)"}
+
+    return 2, {"dependency_mgmt": "present (age unknown)"}
+
+
 def _calculate_tooling_score(project_dir: Path) -> dict[str, Any]:
     """Calculate modern tooling score (0-15 points).
 
@@ -230,77 +292,14 @@ def _calculate_tooling_score(project_dir: Path) -> dict[str, Any]:
     - version_control: 5 pts (.git + active history)
     - dependency_mgmt: 5 pts (lockfile + recent updates)
     """
-    score = 0
-    details = {}
+    pkg_score, pkg_details = _score_package_management(project_dir)
+    vc_score, vc_details = _score_version_control(project_dir)
+    dep_score, dep_details = _score_dependency_management(project_dir)
 
-    # Package management (5 pts)
-    has_pyproject = (project_dir / "pyproject.toml").exists()
-    has_lockfile = (project_dir / "uv.lock").exists() or (
-        project_dir / "requirements.txt"
-    ).exists()
+    total_score = pkg_score + vc_score + dep_score
+    details = pkg_details | vc_details | dep_details
 
-    if has_pyproject and has_lockfile:
-        score += 5
-        details["package_mgmt"] = "modern (pyproject.toml + lockfile)"
-    elif has_pyproject:
-        score += 3
-        details["package_mgmt"] = "partial (pyproject.toml, no lockfile)"
-    elif has_lockfile:
-        score += 2
-        details["package_mgmt"] = "basic (lockfile only)"
-
-    # Version control (5 pts)
-    git_dir = project_dir / ".git"
-    if git_dir.exists():
-        # Check for active git history
-        try:
-            result = subprocess.run(
-                ["git", "log", "--oneline", "-n", "10"],
-                check=False,
-                cwd=project_dir,
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode == 0 and len(result.stdout.strip().split("\n")) >= 5:
-                score += 5
-                details["version_control"] = "active git repository"
-            else:
-                score += 3
-                details["version_control"] = "git repo (limited history)"
-        except Exception:
-            score += 2
-            details["version_control"] = "git repo (couldn't verify history)"
-    else:
-        details["version_control"] = "none"
-
-    # Dependency management (5 pts)
-    if has_lockfile:
-        lockfile = project_dir / "uv.lock"
-        if not lockfile.exists():
-            lockfile = project_dir / "requirements.txt"
-
-        try:
-            lockfile_age_days = (
-                datetime.now() - datetime.fromtimestamp(lockfile.stat().st_mtime)
-            ).days
-
-            if lockfile_age_days < 30:
-                score += 5
-                details["dependency_mgmt"] = "recently updated"
-            elif lockfile_age_days < 90:
-                score += 3
-                details["dependency_mgmt"] = "moderately current"
-            else:
-                score += 1
-                details["dependency_mgmt"] = f"outdated ({lockfile_age_days} days)"
-        except Exception:
-            score += 2
-            details["dependency_mgmt"] = "present (age unknown)"
-    else:
-        details["dependency_mgmt"] = "none"
-
-    return {"score": score, "details": details}
+    return {"score": total_score, "details": details}
 
 
 def _calculate_maturity_score(project_dir: Path) -> dict[str, Any]:
@@ -599,7 +598,7 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
         details["gitignore"] = "missing"
 
     # Check for hardcoded secrets (basic patterns)
-    try:
+    with suppress(Exception):
         py_files = list(project_dir.rglob("*.py"))[:50]  # Limit to 50 files
         secret_patterns = [
             r"password\s*=\s*['\"][^'\"]+['\"]",
@@ -616,9 +615,6 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
                     score -= 2
                     details["hardcoded_secrets"] = f"found in {py_file.name}"
                     break
-
-    except Exception:
-        pass
 
     return {"score": max(0, score), "details": details}
 
@@ -655,52 +651,64 @@ def _calculate_trust_score(
     )
 
 
+def _get_cached_metrics(cache_key: str) -> dict[str, Any] | None:
+    """Get cached metrics if still valid."""
+    if cache_key not in _metrics_cache:
+        return None
+
+    cached_metrics, cached_time = _metrics_cache[cache_key]
+    if datetime.now() - cached_time < timedelta(minutes=_CACHE_TTL_MINUTES):
+        return cached_metrics
+    return None
+
+
+def _parse_metrics_history(metrics_history: list[dict[str, Any]]) -> dict[str, Any]:
+    """Parse Crackerjack metrics history into structured format."""
+    latest = metrics_history[0]
+    metrics = {
+        "code_coverage": latest.get("metric_value", 0)
+        if latest.get("metric_type") == "code_coverage"
+        else 0,
+        "lint_score": 100,  # Default if not found
+        "security_score": 100,
+        "complexity_score": 100,
+    }
+
+    # Parse all recent metrics
+    for metric in metrics_history[:10]:  # Last 10 metrics
+        metric_type = metric.get("metric_type")
+        metric_value = metric.get("metric_value", 0)
+
+        if metric_type in metrics:
+            metrics[metric_type] = metric_value
+
+    return metrics
+
+
 async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
     """Get Crackerjack quality metrics with caching."""
     cache_key = str(project_dir.resolve())
 
     # Check cache
-    if cache_key in _metrics_cache:
-        cached_metrics, cached_time = _metrics_cache[cache_key]
-        if datetime.now() - cached_time < timedelta(minutes=_CACHE_TTL_MINUTES):
-            return cached_metrics
+    cached = _get_cached_metrics(cache_key)
+    if cached is not None:
+        return cached
 
     # Fetch fresh metrics
     if not CRACKERJACK_AVAILABLE:
         return {}
 
-    try:
+    with suppress(Exception):
         # Get recent metrics from Crackerjack history
         metrics_history = await get_quality_metrics_history(
             str(project_dir), None, days=1
         )
 
         if metrics_history:
-            # Use most recent metrics
-            latest = metrics_history[0]
-            metrics = {
-                "code_coverage": latest.get("metric_value", 0)
-                if latest.get("metric_type") == "code_coverage"
-                else 0,
-                "lint_score": 100,  # Default if not found
-                "security_score": 100,
-                "complexity_score": 100,
-            }
-
-            # Parse all recent metrics
-            for metric in metrics_history[:10]:  # Last 10 metrics
-                metric_type = metric.get("metric_type")
-                metric_value = metric.get("metric_value", 0)
-
-                if metric_type in metrics:
-                    metrics[metric_type] = metric_value
-
+            metrics = _parse_metrics_history(metrics_history)
             # Cache the result
             _metrics_cache[cache_key] = (metrics, datetime.now())
             return metrics
-
-    except Exception:
-        pass
 
     return {}
 
