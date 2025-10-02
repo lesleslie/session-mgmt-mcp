@@ -722,7 +722,7 @@ async def _get_type_coverage(
     """
     # First, try to get from Crackerjack metrics
     if "type_coverage" in crackerjack_metrics:
-        return crackerjack_metrics["type_coverage"]
+        return float(crackerjack_metrics["type_coverage"])
 
     # Fallback: Check for pyright/mypy configuration
     has_pyright = (project_dir / "pyrightconfig.json").exists()
