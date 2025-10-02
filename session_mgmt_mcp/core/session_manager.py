@@ -60,29 +60,15 @@ class SessionLifecycleManager:
         self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 
     async def calculate_quality_score(self) -> dict[str, Any]:
-        """Calculate session quality score based on multiple factors."""
-        current_dir = Path(os.environ.get("PWD", Path.cwd()))
+        """Calculate session quality score using V2 algorithm.
 
-        # Calculate component scores
-        project_context = await self.analyze_project_context(current_dir)
-        project_score = self._calculate_project_score(project_context)
-        permissions_score = self._calculate_permissions_score()
-        session_score = self._calculate_session_score()
-        tool_score = self._calculate_tool_score()
+        Delegates to the centralized quality scoring in server.py to avoid
+        code duplication and ensure consistent scoring across the system.
+        """
+        # Import to avoid circular dependencies
+        from session_mgmt_mcp import server
 
-        total_score = int(
-            project_score + permissions_score + session_score + tool_score
-        )
-
-        return self._format_quality_score_result(
-            total_score,
-            project_score,
-            permissions_score,
-            session_score,
-            tool_score,
-            project_context,
-            tool_score >= 20,
-        )
+        return await server.calculate_quality_score()
 
     def _calculate_project_score(self, project_context: dict[str, bool]) -> float:
         """Calculate project health score (40% of total)."""
@@ -285,13 +271,29 @@ class SessionLifecycleManager:
                 f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)",
             )
 
-        # Quality breakdown
-        output.append("\n📈 Quality breakdown:")
+        # Quality breakdown - V2 format (actual code quality metrics)
+        output.append("\n📈 Quality breakdown (code health metrics):")
         breakdown = quality_data["breakdown"]
-        output.append(f"   • Project health: {breakdown['project_health']:.1f}/40")
-        output.append(f"   • Permissions: {breakdown['permissions']:.1f}/20")
-        output.append(f"   • Session tools: {breakdown['session_management']:.1f}/20")
-        output.append(f"   • Tool availability: {breakdown['tools']:.1f}/20")
+        output.append(f"   • Code quality: {breakdown['code_quality']:.1f}/40")
+        output.append(f"   • Project health: {breakdown['project_health']:.1f}/30")
+        output.append(f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20")
+        output.append(f"   • Security: {breakdown['security']:.1f}/10")
+
+        # Trust score (separate from quality)
+        if "trust_score" in quality_data:
+            trust = quality_data["trust_score"]
+            output.append(
+                f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)"
+            )
+            output.append(
+                f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40"
+            )
+            output.append(
+                f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30"
+            )
+            output.append(
+                f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30"
+            )
 
         # Recommendations
         recommendations = quality_data["recommendations"]

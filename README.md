@@ -45,10 +45,15 @@ The server automatically detects git repositories and provides seamless session 
 
 - **`checkpoint`** - Mid-session quality assessment with:
 
-  - Real-time quality scoring (project health, permissions, tools)
+  - **V2 Quality Scoring (NEW!)** - Measures actual code quality:
+    - Code Quality (40%): Test coverage, lint scores, type coverage, complexity
+    - Project Health (30%): Smart tooling detection, documentation, CI/CD
+    - Dev Velocity (20%): Git patterns, commit quality, branch strategy
+    - Security (10%): Vulnerability scanning, secure coding patterns
+  - **Trust Score** (separate metric): Permissions, session features, tool ecosystem
   - Workflow drift detection and optimization recommendations
   - Progress tracking and goal alignment
-  - **Automatic context compaction when needed (NEW!)**
+  - **Automatic context compaction when needed**
   - Automatic git checkpoint commits (if in git repo)
 
 - **`end`** - Complete session cleanup featuring:

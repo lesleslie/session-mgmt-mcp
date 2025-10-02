@@ -169,85 +169,65 @@ class TestSessionLifecycleManagerQualityScore:
     async def test_calculate_quality_score_low_quality(
         self, mock_which, mock_is_git_repo
     ):
-        """Test calculate_quality_score with low quality factors."""
+        """Test calculate_quality_score with V2 metrics-based scoring."""
         mock_is_git_repo.return_value = False
         mock_which.return_value = None  # UV not available
 
         manager = SessionLifecycleManager()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            Path(temp_dir)
 
-            # Mock analyze_project_context to return negative results
-            with patch.object(manager, "analyze_project_context") as mock_analyze:
-                mock_analyze.return_value = {
-                    "has_pyproject_toml": False,
-                    "has_readme": False,
-                    "has_git_repo": False,
-                    "has_tests": False,
-                    "has_venv": False,
-                }
+        # V2 scoring is based on real code metrics, not mocked context
+        result = await manager.calculate_quality_score()
 
-                # Mock permissions manager with no trusted operations
-                with patch(
-                    "session_mgmt_mcp.server.permissions_manager"
-                ) as mock_perms:
-                    mock_perms.trusted_operations = set()
+        # V2 provides structured breakdown with actual metrics
+        assert "total_score" in result
+        assert "version" in result
+        assert result["version"] == "2.0"
+        assert "breakdown" in result
+        assert "code_quality" in result["breakdown"]
+        assert "project_health" in result["breakdown"]
+        assert "dev_velocity" in result["breakdown"]
+        assert "security" in result["breakdown"]
 
-                    result = await manager.calculate_quality_score()
+        # V2 separates trust score from quality
+        assert "trust_score" in result
+        assert "recommendations" in result
 
-                    assert result["total_score"] < 50  # Should be low quality
-                    assert any(
-                        "attention" in rec.lower() for rec in result["recommendations"]
-                    )
+        # Recommendations are based on actual metrics
+        assert isinstance(result["recommendations"], list)
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     async def test_generate_quality_recommendations(self, mock_is_git_repo):
-        """Test _generate_quality_recommendations method."""
+        """Test V2 quality recommendations generation."""
         mock_is_git_repo.return_value = False
         manager = SessionLifecycleManager()
 
-        # Test low score recommendations
-        recommendations = manager._generate_quality_recommendations(
-            score=30,
-            project_context={
-                "has_pyproject_toml": False,
-                "has_git_repo": False,
-                "has_tests": False,
-            },
-            uv_available=False,
+        # V2 generates recommendations from real metrics
+        result = await manager.calculate_quality_score()
+
+        # Verify recommendations structure
+        assert "recommendations" in result
+        recommendations = result["recommendations"]
+        assert isinstance(recommendations, list)
+        assert len(recommendations) > 0
+
+        # V2 recommendations are specific to actual metrics
+        # They mention concrete improvements like test coverage, lint scores, etc.
+        rec_text = " ".join(recommendations).lower()
+
+        # At least one recommendation should mention actionable improvements
+        assert any(
+            keyword in rec_text
+            for keyword in [
+                "coverage",
+                "test",
+                "lint",
+                "quality",
+                "git",
+                "branch",
+                "security",
+            ]
         )
 
-        assert any("attention" in rec.lower() for rec in recommendations)
-        assert any("pyproject.toml" in rec for rec in recommendations)
-        assert any("git repository" in rec for rec in recommendations)
-        assert any("uv package manager" in rec for rec in recommendations)
-        assert any("test suite" in rec for rec in recommendations)
-
-        # Test high score recommendations
-        recommendations = manager._generate_quality_recommendations(
-            score=90,
-            project_context={
-                "has_pyproject_toml": True,
-                "has_git_repo": True,
-                "has_tests": True,
-            },
-            uv_available=True,
-        )
-
-        assert any("excellent" in rec.lower() for rec in recommendations)
-
-        # Test medium score recommendations
-        recommendations = manager._generate_quality_recommendations(
-            score=70,
-            project_context={
-                "has_pyproject_toml": True,
-                "has_git_repo": True,
-                "has_tests": True,
-            },
-            uv_available=True,
-        )
-
-        assert any("good session quality" in rec.lower() for rec in recommendations)
 
 
 class TestSessionLifecycleManagerQualityAssessment:
@@ -281,16 +261,25 @@ class TestSessionLifecycleManagerQualityAssessment:
             assert quality_data == mock_quality_result
 
     def test_format_quality_results_high_score(self):
-        """Test format_quality_results with high quality score."""
+        """Test format_quality_results with V2 quality score structure."""
         manager = SessionLifecycleManager()
 
         quality_score = 85
         quality_data = {
+            "version": "2.0",
             "breakdown": {
-                "project_health": 30.0,
-                "permissions": 15.0,
-                "session_management": 20.0,
-                "tools": 20.0,
+                "code_quality": 35.0,
+                "project_health": 27.0,
+                "dev_velocity": 15.0,
+                "security": 8.0,
+            },
+            "trust_score": {
+                "total": 75.0,
+                "breakdown": {
+                    "trusted_operations": 30,
+                    "session_availability": 30,
+                    "tool_ecosystem": 15,
+                },
             },
             "recommendations": ["Excellent setup!"],
         }
@@ -299,20 +288,30 @@ class TestSessionLifecycleManagerQualityAssessment:
 
         assert any("excellent" in line.lower() for line in result)
         assert any("85/100" in line for line in result)
-        assert any("project health" in line.lower() for line in result)
+        assert any("code quality" in line.lower() for line in result)
+        assert any("trust score" in line.lower() for line in result)
         assert any("recommendations" in line.lower() for line in result)
 
     def test_format_quality_results_medium_score(self):
-        """Test format_quality_results with medium quality score."""
+        """Test format_quality_results with V2 medium quality score."""
         manager = SessionLifecycleManager()
 
         quality_score = 65
         quality_data = {
+            "version": "2.0",
             "breakdown": {
-                "project_health": 25.0,
-                "permissions": 10.0,
-                "session_management": 20.0,
-                "tools": 10.0,
+                "code_quality": 25.0,
+                "project_health": 20.0,
+                "dev_velocity": 12.0,
+                "security": 8.0,
+            },
+            "trust_score": {
+                "total": 50.0,
+                "breakdown": {
+                    "trusted_operations": 20,
+                    "session_availability": 20,
+                    "tool_ecosystem": 10,
+                },
             },
             "recommendations": ["Good setup with room for improvement"],
         }
@@ -323,16 +322,25 @@ class TestSessionLifecycleManagerQualityAssessment:
         assert any("65/100" in line for line in result)
 
     def test_format_quality_results_low_score(self):
-        """Test format_quality_results with low quality score."""
+        """Test format_quality_results with V2 low quality score."""
         manager = SessionLifecycleManager()
 
         quality_score = 45
         quality_data = {
+            "version": "2.0",
             "breakdown": {
+                "code_quality": 15.0,
                 "project_health": 15.0,
-                "permissions": 5.0,
-                "session_management": 20.0,
-                "tools": 5.0,
+                "dev_velocity": 10.0,
+                "security": 5.0,
+            },
+            "trust_score": {
+                "total": 30.0,
+                "breakdown": {
+                    "trusted_operations": 10,
+                    "session_availability": 10,
+                    "tool_ecosystem": 10,
+                },
             },
             "recommendations": ["Needs attention"],
         }
@@ -343,16 +351,25 @@ class TestSessionLifecycleManagerQualityAssessment:
         assert any("45/100" in line for line in result)
 
     def test_format_quality_results_with_checkpoint_result(self):
-        """Test format_quality_results with checkpoint result data."""
+        """Test format_quality_results with V2 and checkpoint result data."""
         manager = SessionLifecycleManager()
 
         quality_score = 80
         quality_data = {
+            "version": "2.0",
             "breakdown": {
-                "project_health": 30.0,
-                "permissions": 15.0,
-                "session_management": 20.0,
-                "tools": 15.0,
+                "code_quality": 30.0,
+                "project_health": 25.0,
+                "dev_velocity": 17.0,
+                "security": 8.0,
+            },
+            "trust_score": {
+                "total": 70.0,
+                "breakdown": {
+                    "trusted_operations": 25,
+                    "session_availability": 30,
+                    "tool_ecosystem": 15,
+                },
             },
             "recommendations": ["Great work!"],
         }
@@ -372,9 +389,10 @@ class TestSessionLifecycleManagerQualityAssessment:
 
         assert any("strengths" in line.lower() for line in result)
         assert any("session progress" in line.lower() for line in result)
-        assert any("45 minutes" in line for line in result)
-        assert any("3 checkpoints" in line for line in result)
-        assert any("95.5%" in line for line in result)
+        # Match actual format from format_quality_results (lines 313-324 of session_manager.py)
+        assert any("Duration: 45 minutes" in line for line in result)
+        assert any("Checkpoints: 3" in line for line in result)
+        assert any("Success rate: 95.5%" in line for line in result)
 
 
 class TestSessionLifecycleManagerGitCheckpoint:

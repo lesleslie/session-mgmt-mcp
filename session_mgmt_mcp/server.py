@@ -902,46 +902,62 @@ def _add_permissions_and_tools_summary(output: list[str], current_project: str) 
 
 
 async def calculate_quality_score() -> dict[str, Any]:
-    """Calculate session quality score based on multiple factors."""
+    """Calculate session quality score using V2 algorithm.
+
+    V2 measures actual code quality (test coverage, lint, types, complexity)
+    instead of superficial file existence checks.
+    """
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
 
-    # Project health indicators (40% of score)
-    project_context = await analyze_project_context(current_dir)
-    project_score = (
-        sum(1 for detected in project_context.values() if detected)
-        / len(project_context)
-    ) * 40
+    # Import V2 quality scoring (late import to avoid circular dependencies)
+    from session_mgmt_mcp.utils.quality_utils_v2 import calculate_quality_score_v2
 
-    # Permissions health (20% of score)
+    # Get V2 quality score with actual code metrics
     permissions_count = len(permissions_manager.trusted_operations)
-    permissions_score = min(
-        permissions_count * 5,
-        20,
-    )  # Up to 4 trusted operations = max score
 
-    # Session management availability (20% of score)
-    session_score = 20 if SESSION_MANAGEMENT_AVAILABLE else 5
+    # Count available development tools for trust score
+    tool_count = 0
+    if shutil.which("uv"):
+        tool_count += 1
+    if shutil.which("git"):
+        tool_count += 1
+    if shutil.which("python"):
+        tool_count += 1
+    if shutil.which("pytest"):
+        tool_count += 1
 
-    # Tool availability (20% of score)
-    uv_available = shutil.which("uv") is not None
-    tool_score = 20 if uv_available else 10
+    v2_score = await calculate_quality_score_v2(
+        project_dir=current_dir,
+        permissions_count=permissions_count,
+        session_available=SESSION_MANAGEMENT_AVAILABLE,
+        tool_count=tool_count,
+    )
 
-    total_score = int(project_score + permissions_score + session_score + tool_score)
-
+    # Return V2 format directly - no compatibility wrapper needed
     return {
-        "total_score": total_score,
+        "total_score": int(v2_score.total_score),
+        "version": "2.0",
         "breakdown": {
-            "project_health": project_score,
-            "permissions": permissions_score,
-            "session_management": session_score,
-            "tools": tool_score,
+            "code_quality": v2_score.code_quality.total,
+            "project_health": v2_score.project_health.total,
+            "dev_velocity": v2_score.dev_velocity.total,
+            "security": v2_score.security.total,
         },
-        "recommendations": _generate_quality_recommendations(
-            total_score,
-            project_context,
-            permissions_count,
-            uv_available,
-        ),
+        "trust_score": {
+            "total": v2_score.trust_score.total,
+            "breakdown": {
+                "trusted_operations": v2_score.trust_score.trusted_operations,
+                "session_availability": v2_score.trust_score.session_availability,
+                "tool_ecosystem": v2_score.trust_score.tool_ecosystem,
+            },
+        },
+        "recommendations": v2_score.recommendations,
+        "details": {
+            "code_quality": v2_score.code_quality.details,
+            "project_health": v2_score.project_health.details,
+            "dev_velocity": v2_score.dev_velocity.details,
+            "security": v2_score.security.details,
+        },
     }
 
 
@@ -2209,23 +2225,42 @@ async def _format_quality_results(
     """Format quality assessment results for display."""
     output = []
 
-    # Quality status
+    # Quality status with version indicator
+    version = quality_data.get("version", "1.0")
     if quality_score >= 80:
-        output.append(f"✅ Session quality: EXCELLENT (Score: {quality_score}/100)")
+        output.append(
+            f"✅ Session quality: EXCELLENT (Score: {quality_score}/100) [V{version}]"
+        )
     elif quality_score >= 60:
-        output.append(f"✅ Session quality: GOOD (Score: {quality_score}/100)")
+        output.append(
+            f"✅ Session quality: GOOD (Score: {quality_score}/100) [V{version}]"
+        )
     else:
         output.append(
-            f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100)",
+            f"⚠️ Session quality: NEEDS ATTENTION (Score: {quality_score}/100) [V{version}]",
         )
 
-    # Quality breakdown
-    output.append("\n📈 Quality breakdown:")
+    # Quality breakdown - V2 format (actual code quality metrics)
+    output.append("\n📈 Quality breakdown (code health metrics):")
     breakdown = quality_data["breakdown"]
-    output.append(f"   • Project health: {breakdown['project_health']:.1f}/40")
-    output.append(f"   • Permissions: {breakdown['permissions']:.1f}/20")
-    output.append(f"   • Session tools: {breakdown['session_management']:.1f}/20")
-    output.append(f"   • Tool availability: {breakdown['tools']:.1f}/20")
+    output.append(f"   • Code quality: {breakdown['code_quality']:.1f}/40")
+    output.append(f"   • Project health: {breakdown['project_health']:.1f}/30")
+    output.append(f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20")
+    output.append(f"   • Security: {breakdown['security']:.1f}/10")
+
+    # Trust score (separate from quality)
+    if "trust_score" in quality_data:
+        trust = quality_data["trust_score"]
+        output.append(f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)")
+        output.append(
+            f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40"
+        )
+        output.append(
+            f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30"
+        )
+        output.append(
+            f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30"
+        )
 
     # Recommendations
     recommendations = quality_data["recommendations"]

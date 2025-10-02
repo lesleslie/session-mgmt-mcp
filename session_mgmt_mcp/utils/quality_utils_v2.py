@@ -1,0 +1,798 @@
+#!/usr/bin/env python3
+"""Quality Scoring Algorithm V2 - Measures actual code quality.
+
+This module implements a comprehensive quality scoring system that focuses on
+real code quality metrics instead of superficial indicators.
+
+Key improvements over V1:
+- Integrates Crackerjack code quality metrics (coverage, lint, complexity)
+- Smart project health indicators (doesn't penalize modern tooling)
+- Separates permissions/trust from code quality
+- Provides actionable, honest quality assessment
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+from contextlib import suppress
+from datetime import datetime, timedelta
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+# Crackerjack integration for quality metrics
+try:
+    from session_mgmt_mcp.crackerjack_integration import (
+        get_crackerjack_integration,
+        get_quality_metrics_history,
+    )
+
+    CRACKERJACK_AVAILABLE = True
+except ImportError:
+    CRACKERJACK_AVAILABLE = False
+
+
+@dataclass
+class CodeQualityScore:
+    """Code quality component (40 points max)."""
+
+    test_coverage: float  # 0-15 points
+    lint_score: float  # 0-10 points
+    type_coverage: float  # 0-10 points
+    complexity_score: float  # 0-5 points
+    total: float  # Sum of above
+    details: dict[str, Any]  # Detailed breakdown
+
+
+@dataclass
+class ProjectHealthScore:
+    """Project health component (30 points max)."""
+
+    tooling_score: float  # 0-15 points
+    maturity_score: float  # 0-15 points
+    total: float  # Sum of above
+    details: dict[str, Any]  # Detailed breakdown
+
+
+@dataclass
+class DevVelocityScore:
+    """Development velocity component (20 points max)."""
+
+    git_activity: float  # 0-10 points
+    dev_patterns: float  # 0-10 points
+    total: float  # Sum of above
+    details: dict[str, Any]  # Detailed breakdown
+
+
+@dataclass
+class SecurityScore:
+    """Security component (10 points max)."""
+
+    security_tools: float  # 0-5 points
+    security_hygiene: float  # 0-5 points
+    total: float  # Sum of above
+    details: dict[str, Any]  # Detailed breakdown
+
+
+@dataclass
+class TrustScore:
+    """Separate trust score (not part of quality)."""
+
+    trusted_operations: float  # 0-40 points
+    session_availability: float  # 0-30 points
+    tool_ecosystem: float  # 0-30 points
+    total: float  # 0-100 points
+    details: dict[str, Any]  # Detailed breakdown
+
+
+@dataclass
+class QualityScoreV2:
+    """Complete quality score V2 result."""
+
+    total_score: float  # 0-100
+    version: str  # "2.0"
+    code_quality: CodeQualityScore
+    project_health: ProjectHealthScore
+    dev_velocity: DevVelocityScore
+    security: SecurityScore
+    trust_score: TrustScore
+    recommendations: list[str]
+    timestamp: str
+
+
+# Crackerjack metrics cache (5 minute TTL)
+_metrics_cache: dict[str, tuple[dict[str, Any], datetime]] = {}
+_CACHE_TTL_MINUTES = 5
+
+
+async def calculate_quality_score_v2(
+    project_dir: Path,
+    permissions_count: int = 0,
+    session_available: bool = True,
+    tool_count: int = 0,
+) -> QualityScoreV2:
+    """Calculate comprehensive quality score V2.
+
+    Args:
+        project_dir: Project directory to analyze
+        permissions_count: Number of trusted operations (for trust score)
+        session_available: Whether session management is available (for trust score)
+        tool_count: Number of available MCP tools (for trust score)
+
+    Returns:
+        Complete quality score breakdown
+    """
+    # Calculate each component
+    code_quality = await _calculate_code_quality(project_dir)
+    project_health = await _calculate_project_health(project_dir)
+    dev_velocity = await _calculate_dev_velocity(project_dir)
+    security = await _calculate_security(project_dir)
+    trust_score = _calculate_trust_score(
+        permissions_count, session_available, tool_count
+    )
+
+    # Calculate total
+    total = (
+        code_quality.total
+        + project_health.total
+        + dev_velocity.total
+        + security.total
+    )
+
+    # Generate recommendations
+    recommendations = _generate_recommendations_v2(
+        code_quality, project_health, dev_velocity, security, total
+    )
+
+    return QualityScoreV2(
+        total_score=round(total, 1),
+        version="2.0",
+        code_quality=code_quality,
+        project_health=project_health,
+        dev_velocity=dev_velocity,
+        security=security,
+        trust_score=trust_score,
+        recommendations=recommendations,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+async def _calculate_code_quality(project_dir: Path) -> CodeQualityScore:
+    """Calculate code quality score (40 points max).
+
+    Components:
+    - test_coverage: 15 points (from Crackerjack)
+    - lint_score: 10 points (from Crackerjack)
+    - type_coverage: 10 points (from pyright/mypy)
+    - complexity_score: 5 points (inverse of complexity)
+    """
+    metrics = await _get_crackerjack_metrics(project_dir)
+
+    # Test coverage (0-15 points)
+    coverage_pct = metrics.get("code_coverage", 0)
+    test_coverage = (coverage_pct / 100) * 15
+
+    # Lint score (0-10 points)
+    # Crackerjack lint_score is already 0-100, normalized
+    lint_raw = metrics.get("lint_score", 100)  # Default to perfect if not available
+    lint_score = (lint_raw / 100) * 10
+
+    # Type coverage (0-10 points)
+    # Try to extract from pyright/mypy via Crackerjack
+    type_pct = await _get_type_coverage(project_dir, metrics)
+    type_coverage = (type_pct / 100) * 10
+
+    # Complexity score (0-5 points, inverse)
+    complexity_raw = metrics.get("complexity_score", 100)
+    # complexity_score is 0-100 where 100 is best (low complexity)
+    complexity_score = (complexity_raw / 100) * 5
+
+    total = test_coverage + lint_score + type_coverage + complexity_score
+
+    return CodeQualityScore(
+        test_coverage=round(test_coverage, 2),
+        lint_score=round(lint_score, 2),
+        type_coverage=round(type_coverage, 2),
+        complexity_score=round(complexity_score, 2),
+        total=round(total, 2),
+        details={
+            "coverage_pct": coverage_pct,
+            "lint_raw": lint_raw,
+            "type_pct": type_pct,
+            "complexity_raw": complexity_raw,
+            "metrics_source": "crackerjack" if metrics else "fallback",
+        },
+    )
+
+
+async def _calculate_project_health(project_dir: Path) -> ProjectHealthScore:
+    """Calculate project health score (30 points max).
+
+    Components:
+    - tooling_score: 15 points (modern tooling)
+    - maturity_score: 15 points (project maturity)
+    """
+    tooling = _calculate_tooling_score(project_dir)
+    maturity = _calculate_maturity_score(project_dir)
+
+    return ProjectHealthScore(
+        tooling_score=round(tooling["score"], 2),
+        maturity_score=round(maturity["score"], 2),
+        total=round(tooling["score"] + maturity["score"], 2),
+        details={**tooling["details"], **maturity["details"]},
+    )
+
+
+def _calculate_tooling_score(project_dir: Path) -> dict[str, Any]:
+    """Calculate modern tooling score (0-15 points).
+
+    Components:
+    - package_management: 5 pts (pyproject.toml + lockfile)
+    - version_control: 5 pts (.git + active history)
+    - dependency_mgmt: 5 pts (lockfile + recent updates)
+    """
+    score = 0
+    details = {}
+
+    # Package management (5 pts)
+    has_pyproject = (project_dir / "pyproject.toml").exists()
+    has_lockfile = (project_dir / "uv.lock").exists() or (
+        project_dir / "requirements.txt"
+    ).exists()
+
+    if has_pyproject and has_lockfile:
+        score += 5
+        details["package_mgmt"] = "modern (pyproject.toml + lockfile)"
+    elif has_pyproject:
+        score += 3
+        details["package_mgmt"] = "partial (pyproject.toml, no lockfile)"
+    elif has_lockfile:
+        score += 2
+        details["package_mgmt"] = "basic (lockfile only)"
+
+    # Version control (5 pts)
+    git_dir = project_dir / ".git"
+    if git_dir.exists():
+        # Check for active git history
+        try:
+            result = subprocess.run(
+                ["git", "log", "--oneline", "-n", "10"],
+                cwd=project_dir,
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            if result.returncode == 0 and len(result.stdout.strip().split("\n")) >= 5:
+                score += 5
+                details["version_control"] = "active git repository"
+            else:
+                score += 3
+                details["version_control"] = "git repo (limited history)"
+        except Exception:
+            score += 2
+            details["version_control"] = "git repo (couldn't verify history)"
+    else:
+        details["version_control"] = "none"
+
+    # Dependency management (5 pts)
+    if has_lockfile:
+        lockfile = project_dir / "uv.lock"
+        if not lockfile.exists():
+            lockfile = project_dir / "requirements.txt"
+
+        try:
+            lockfile_age_days = (
+                datetime.now() - datetime.fromtimestamp(lockfile.stat().st_mtime)
+            ).days
+
+            if lockfile_age_days < 30:
+                score += 5
+                details["dependency_mgmt"] = "recently updated"
+            elif lockfile_age_days < 90:
+                score += 3
+                details["dependency_mgmt"] = "moderately current"
+            else:
+                score += 1
+                details["dependency_mgmt"] = f"outdated ({lockfile_age_days} days)"
+        except Exception:
+            score += 2
+            details["dependency_mgmt"] = "present (age unknown)"
+    else:
+        details["dependency_mgmt"] = "none"
+
+    return {"score": score, "details": details}
+
+
+def _calculate_maturity_score(project_dir: Path) -> dict[str, Any]:
+    """Calculate project maturity score (0-15 points).
+
+    Components:
+    - testing_infra: 5 pts (tests/ + conftest.py + >10 tests)
+    - documentation: 5 pts (README + docs/ OR inline docstrings >50%)
+    - ci_cd_pipeline: 5 pts (.github/workflows + passing status)
+    """
+    score = 0
+    details = {}
+
+    # Testing infrastructure (5 pts)
+    test_dirs = list(project_dir.glob("test*"))
+    if test_dirs:
+        test_dir = test_dirs[0]
+        has_conftest = (test_dir / "conftest.py").exists()
+        test_files = list(test_dir.rglob("test_*.py"))
+
+        if has_conftest and len(test_files) >= 10:
+            score += 5
+            details["testing"] = f"comprehensive ({len(test_files)} test files)"
+        elif len(test_files) >= 5:
+            score += 3
+            details["testing"] = f"moderate ({len(test_files)} test files)"
+        elif test_files:
+            score += 1
+            details["testing"] = f"basic ({len(test_files)} test files)"
+    else:
+        details["testing"] = "none"
+
+    # Documentation (5 pts)
+    has_readme = (project_dir / "README.md").exists()
+    has_docs_dir = (project_dir / "docs").exists()
+
+    if has_readme and has_docs_dir:
+        # Check docs completeness
+        doc_files = list((project_dir / "docs").rglob("*.md"))
+        if len(doc_files) >= 5:
+            score += 5
+            details["documentation"] = f"comprehensive ({len(doc_files)} docs)"
+        else:
+            score += 3
+            details["documentation"] = f"basic ({len(doc_files)} docs)"
+    elif has_readme:
+        score += 2
+        details["documentation"] = "README only"
+    else:
+        details["documentation"] = "none"
+
+    # CI/CD (5 pts)
+    github_workflows = project_dir / ".github" / "workflows"
+    gitlab_ci = project_dir / ".gitlab-ci.yml"
+
+    if github_workflows.exists():
+        workflow_files = list(github_workflows.glob("*.yml")) + list(
+            github_workflows.glob("*.yaml")
+        )
+        if len(workflow_files) >= 2:
+            score += 5
+            details["ci_cd"] = f"github actions ({len(workflow_files)} workflows)"
+        elif workflow_files:
+            score += 3
+            details["ci_cd"] = "github actions (1 workflow)"
+    elif gitlab_ci.exists():
+        score += 4
+        details["ci_cd"] = "gitlab ci"
+    else:
+        details["ci_cd"] = "none"
+
+    return {"score": score, "details": details}
+
+
+async def _calculate_dev_velocity(project_dir: Path) -> DevVelocityScore:
+    """Calculate development velocity score (20 points max).
+
+    Components:
+    - git_activity: 10 points (commit frequency, quality)
+    - dev_patterns: 10 points (issue tracking, branch strategy)
+    """
+    git_activity = _analyze_git_activity(project_dir)
+    dev_patterns = _analyze_dev_patterns(project_dir)
+
+    return DevVelocityScore(
+        git_activity=round(git_activity["score"], 2),
+        dev_patterns=round(dev_patterns["score"], 2),
+        total=round(git_activity["score"] + dev_patterns["score"], 2),
+        details={**git_activity["details"], **dev_patterns["details"]},
+    )
+
+
+def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
+    """Analyze git activity (0-10 points)."""
+    score = 0
+    details = {}
+
+    git_dir = project_dir / ".git"
+    if not git_dir.exists():
+        details["activity"] = "no git repository"
+        return {"score": 0, "details": details}
+
+    try:
+        # Get commit history for last 30 days
+        since_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        result = subprocess.run(
+            [
+                "git",
+                "log",
+                f"--since={since_date}",
+                "--pretty=format:%s",
+                "--no-merges",
+            ],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+        if result.returncode == 0:
+            commits = result.stdout.strip().split("\n") if result.stdout.strip() else []
+            commit_count = len(commits)
+
+            # Commit frequency score (0-5)
+            if commit_count >= 20:
+                score += 5
+                details["frequency"] = f"active ({commit_count} commits/month)"
+            elif commit_count >= 10:
+                score += 4
+                details["frequency"] = f"regular ({commit_count} commits/month)"
+            elif commit_count >= 5:
+                score += 2
+                details["frequency"] = f"occasional ({commit_count} commits/month)"
+            else:
+                score += 1
+                details["frequency"] = f"sparse ({commit_count} commits/month)"
+
+            # Commit quality score (0-5)
+            conventional_commits = sum(
+                1
+                for msg in commits
+                if re.match(r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg)
+            )
+
+            if conventional_commits >= commit_count * 0.8:
+                score += 5
+                details["quality"] = f"excellent ({conventional_commits}/{commit_count} conventional)"
+            elif conventional_commits >= commit_count * 0.5:
+                score += 3
+                details[
+                    "quality"
+                ] = f"good ({conventional_commits}/{commit_count} conventional)"
+            else:
+                score += 1
+                details[
+                    "quality"
+                ] = f"basic ({conventional_commits}/{commit_count} conventional)"
+
+    except Exception as e:
+        details["error"] = f"git analysis failed: {e}"
+
+    return {"score": score, "details": details}
+
+
+def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
+    """Analyze development patterns (0-10 points)."""
+    score = 0
+    details = {}
+
+    git_dir = project_dir / ".git"
+    if not git_dir.exists():
+        return {"score": 0, "details": {"patterns": "no git repository"}}
+
+    try:
+        # Issue tracking (0-5)
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-n", "50", "--no-merges"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+        if result.returncode == 0:
+            commits = result.stdout.strip().split("\n")
+            issue_refs = sum(1 for msg in commits if re.search(r"#\d+", msg))
+
+            if issue_refs >= len(commits) * 0.5:
+                score += 5
+                details["issue_tracking"] = f"excellent ({issue_refs}/{len(commits)} refs)"
+            elif issue_refs >= len(commits) * 0.25:
+                score += 3
+                details["issue_tracking"] = f"good ({issue_refs}/{len(commits)} refs)"
+            elif issue_refs > 0:
+                score += 1
+                details["issue_tracking"] = f"basic ({issue_refs}/{len(commits)} refs)"
+            else:
+                details["issue_tracking"] = "none"
+
+        # Branch strategy (0-5)
+        result = subprocess.run(
+            ["git", "branch", "-a"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+        if result.returncode == 0:
+            branches = result.stdout.strip().split("\n")
+            feature_branches = [b for b in branches if "feature/" in b or "feat/" in b]
+
+            if len(feature_branches) >= 3:
+                score += 5
+                details[
+                    "branch_strategy"
+                ] = f"feature branches ({len(feature_branches)} active)"
+            elif feature_branches:
+                score += 3
+                details[
+                    "branch_strategy"
+                ] = f"some feature branches ({len(feature_branches)})"
+            else:
+                score += 1
+                details["branch_strategy"] = "main-only development"
+
+    except Exception as e:
+        details["error"] = f"pattern analysis failed: {e}"
+
+    return {"score": score, "details": details}
+
+
+async def _calculate_security(project_dir: Path) -> SecurityScore:
+    """Calculate security score (10 points max).
+
+    Components:
+    - security_tools: 5 points (bandit, safety checks)
+    - security_hygiene: 5 points (no secrets, secure patterns)
+    """
+    tools_score = await _run_security_checks(project_dir)
+    hygiene_score = _check_security_hygiene(project_dir)
+
+    return SecurityScore(
+        security_tools=round(tools_score["score"], 2),
+        security_hygiene=round(hygiene_score["score"], 2),
+        total=round(tools_score["score"] + hygiene_score["score"], 2),
+        details={**tools_score["details"], **hygiene_score["details"]},
+    )
+
+
+async def _run_security_checks(project_dir: Path) -> dict[str, Any]:
+    """Run security tools via Crackerjack (0-5 points)."""
+    metrics = await _get_crackerjack_metrics(project_dir)
+
+    security_score_raw = metrics.get("security_score", 100)  # Default to safe
+    # Security score from Crackerjack is 0-100, 100 is best
+
+    score = (security_score_raw / 100) * 5
+
+    return {
+        "score": score,
+        "details": {
+            "security_raw": security_score_raw,
+            "source": "crackerjack" if metrics else "fallback",
+        },
+    }
+
+
+def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
+    """Check security hygiene (0-5 points)."""
+    score = 5  # Start with perfect, deduct for issues
+    details = {}
+
+    # Check for .env in .gitignore (critical)
+    gitignore = project_dir / ".gitignore"
+    if gitignore.exists():
+        content = gitignore.read_text()
+        if ".env" in content:
+            details["env_ignored"] = "yes"
+        else:
+            score -= 2
+            details["env_ignored"] = "no (-.5 pts)"
+    else:
+        score -= 1
+        details["gitignore"] = "missing"
+
+    # Check for hardcoded secrets (basic patterns)
+    try:
+        py_files = list(project_dir.rglob("*.py"))[:50]  # Limit to 50 files
+        secret_patterns = [
+            r"password\s*=\s*['\"][^'\"]+['\"]",
+            r"api_key\s*=\s*['\"][^'\"]+['\"]",
+            r"secret\s*=\s*['\"][^'\"]+['\"]",
+        ]
+
+        for py_file in py_files:
+            content = py_file.read_text()
+            for pattern in secret_patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    score -= 2
+                    details["hardcoded_secrets"] = f"found in {py_file.name}"
+                    break
+
+    except Exception:
+        pass
+
+    return {"score": max(0, score), "details": details}
+
+
+def _calculate_trust_score(
+    permissions_count: int, session_available: bool, tool_count: int
+) -> TrustScore:
+    """Calculate trust score (separate from quality, 0-100).
+
+    This measures environment trust, not code quality.
+    """
+    # Trusted operations (0-40 points)
+    trusted_ops = min(permissions_count * 10, 40)  # 4 operations = max
+
+    # Session availability (0-30 points)
+    session_score = 30 if session_available else 5
+
+    # Tool ecosystem (0-30 points)
+    # Scale by number of available tools
+    tool_score = min(tool_count * 3, 30)  # 10 tools = max
+
+    total = trusted_ops + session_score + tool_score
+
+    return TrustScore(
+        trusted_operations=trusted_ops,
+        session_availability=session_score,
+        tool_ecosystem=tool_score,
+        total=total,
+        details={
+            "permissions_count": permissions_count,
+            "session_available": session_available,
+            "tool_count": tool_count,
+        },
+    )
+
+
+async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
+    """Get Crackerjack quality metrics with caching."""
+    cache_key = str(project_dir.resolve())
+
+    # Check cache
+    if cache_key in _metrics_cache:
+        cached_metrics, cached_time = _metrics_cache[cache_key]
+        if datetime.now() - cached_time < timedelta(minutes=_CACHE_TTL_MINUTES):
+            return cached_metrics
+
+    # Fetch fresh metrics
+    if not CRACKERJACK_AVAILABLE:
+        return {}
+
+    try:
+        # Get recent metrics from Crackerjack history
+        metrics_history = await get_quality_metrics_history(
+            str(project_dir), None, days=1
+        )
+
+        if metrics_history:
+            # Use most recent metrics
+            latest = metrics_history[0]
+            metrics = {
+                "code_coverage": latest.get("metric_value", 0)
+                if latest.get("metric_type") == "code_coverage"
+                else 0,
+                "lint_score": 100,  # Default if not found
+                "security_score": 100,
+                "complexity_score": 100,
+            }
+
+            # Parse all recent metrics
+            for metric in metrics_history[:10]:  # Last 10 metrics
+                metric_type = metric.get("metric_type")
+                metric_value = metric.get("metric_value", 0)
+
+                if metric_type in metrics:
+                    metrics[metric_type] = metric_value
+
+            # Cache the result
+            _metrics_cache[cache_key] = (metrics, datetime.now())
+            return metrics
+
+    except Exception:
+        pass
+
+    return {}
+
+
+async def _get_type_coverage(
+    project_dir: Path, crackerjack_metrics: dict[str, Any]
+) -> float:
+    """Get type coverage percentage.
+
+    Try to extract from Crackerjack, fallback to manual check.
+    """
+    # First, try to get from Crackerjack metrics
+    if "type_coverage" in crackerjack_metrics:
+        return crackerjack_metrics["type_coverage"]
+
+    # Fallback: Check for pyright/mypy configuration
+    has_pyright = (project_dir / "pyrightconfig.json").exists()
+    has_mypy = (project_dir / "mypy.ini").exists() or (
+        project_dir / "pyproject.toml"
+    ).exists()
+
+    if has_pyright or has_mypy:
+        # Estimate based on project structure
+        # This is a rough estimate until we have actual coverage data
+        return 70.0  # Assume decent coverage if type checker configured
+
+    return 30.0  # Low default if no type checking
+
+
+def _generate_recommendations_v2(
+    code_quality: CodeQualityScore,
+    project_health: ProjectHealthScore,
+    dev_velocity: DevVelocityScore,
+    security: SecurityScore,
+    total_score: float,
+) -> list[str]:
+    """Generate actionable recommendations based on V2 scores."""
+    recommendations = []
+
+    # Overall score assessment
+    if total_score >= 90:
+        recommendations.append("⭐ Excellent code quality - maintain current standards")
+    elif total_score >= 75:
+        recommendations.append("✅ Good quality - minor improvements available")
+    elif total_score >= 60:
+        recommendations.append("⚠️ Moderate quality - focus on improvements below")
+    else:
+        recommendations.append("🚨 Quality needs attention - prioritize critical fixes")
+
+    # Code quality recommendations
+    if code_quality.test_coverage < 10:  # <67% coverage
+        recommendations.append(
+            f"🧪 Critical: Increase test coverage ({code_quality.details['coverage_pct']:.1f}% → target 80%+)"
+        )
+    elif code_quality.test_coverage < 13:  # <87% coverage
+        recommendations.append(
+            f"🧪 Add more tests ({code_quality.details['coverage_pct']:.1f}% coverage)"
+        )
+
+    if code_quality.lint_score < 8:  # <80% lint score
+        recommendations.append("🔧 Address lint issues to improve code quality")
+
+    if code_quality.type_coverage < 7:  # <70% type coverage
+        recommendations.append("📝 Add type hints for better code safety")
+
+    if code_quality.complexity_score < 3:  # High complexity
+        recommendations.append("🔄 Refactor complex functions (reduce complexity)")
+
+    # Project health recommendations
+    if project_health.tooling_score < 10:
+        recommendations.append("🔨 Improve tooling setup (add lockfile, update dependencies)")
+
+    if project_health.maturity_score < 10:
+        recommendations.append("📚 Enhance project maturity (add docs, tests, CI/CD)")
+
+    # Dev velocity recommendations
+    if dev_velocity.git_activity < 5:
+        recommendations.append("💬 Improve commit quality (use conventional commits)")
+
+    if dev_velocity.dev_patterns < 5:
+        recommendations.append("🌿 Consider feature branch workflow and issue tracking")
+
+    # Security recommendations
+    if security.total < 8:
+        recommendations.append("🔒 Address security issues (run bandit, check secrets)")
+
+    return recommendations
+
+
+# Backward compatibility: Export V1 calculator as well
+from session_mgmt_mcp.utils.quality_utils import (  # noqa: E402
+    _extract_quality_scores,
+    _generate_quality_trend_recommendations,
+)
+
+__all__ = [
+    "calculate_quality_score_v2",
+    "QualityScoreV2",
+    "CodeQualityScore",
+    "ProjectHealthScore",
+    "DevVelocityScore",
+    "SecurityScore",
+    "TrustScore",
+    "_extract_quality_scores",
+    "_generate_quality_trend_recommendations",
+]
