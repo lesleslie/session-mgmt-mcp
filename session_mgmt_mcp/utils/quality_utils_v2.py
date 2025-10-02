@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 # Crackerjack integration for quality metrics
 try:
     from session_mgmt_mcp.crackerjack_integration import (
-        get_crackerjack_integration,
         get_quality_metrics_history,
     )
 
@@ -444,7 +443,7 @@ def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
             conventional_commits = sum(
                 1
                 for msg in commits
-                if re.match(
+                if re.match(  # REGEX OK: conventional commits pattern validation
                     r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg
                 )
             )
@@ -493,7 +492,9 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
 
         if result.returncode == 0:
             commits = result.stdout.strip().split("\n")
-            issue_refs = sum(1 for msg in commits if re.search(r"#\d+", msg))
+            issue_refs = sum(
+                1 for msg in commits if re.search(r"#\d+", msg)
+            )  # REGEX OK: issue reference pattern
 
             if issue_refs >= len(commits) * 0.5:
                 score += 5
@@ -609,7 +610,9 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
         for py_file in py_files:
             content = py_file.read_text()
             for pattern in secret_patterns:
-                if re.search(pattern, content, re.IGNORECASE):
+                if re.search(
+                    pattern, content, re.IGNORECASE
+                ):  # REGEX OK: security pattern detection
                     score -= 2
                     details["hardcoded_secrets"] = f"found in {py_file.name}"
                     break
