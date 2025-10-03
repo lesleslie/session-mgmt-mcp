@@ -636,10 +636,10 @@ def _add_quality_section_to_output(
 ) -> None:
     """Add quality breakdown to output. Target complexity: ≤5."""
     quality_items = [
-        f"   • Project health: {breakdown['project_health']:.1f}/40",
-        f"   • Permissions: {breakdown['permissions']:.1f}/20",
-        f"   • Session tools: {breakdown['session_management']:.1f}/20",
-        f"   • Tool availability: {breakdown['tools']:.1f}/20",
+        f"   • Code quality: {breakdown['code_quality']:.1f}/40",
+        f"   • Project health: {breakdown['project_health']:.1f}/30",
+        f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20",
+        f"   • Security: {breakdown['security']:.1f}/10",
     ]
     output_builder.add_section("📈 Quality breakdown", quality_items)
 

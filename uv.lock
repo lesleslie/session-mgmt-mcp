@@ -459,6 +459,7 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a4/f8/3f1dd83e3d9b903cb310939e6df73956d71af43e81fd2a5d43a157611414/crackerjack-0.39.6.tar.gz", hash = "sha256:5996a38b3479e4cade1c8bc41a3ca6ed42ffe831a9289d6b5d088c8ac9b6ea85", size = 1375900, upload-time = "2025-10-03T08:58:50.582Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9c/43/ea3a7638eefb1107c64c3bd29c1b9b30268719392e70ee5e1b68231ff2d6/crackerjack-0.39.6-py3-none-any.whl", hash = "sha256:279f974f5bb2b22a1b48badff80959817bd3b5f0a6e26604224dd7dfa624a77a", size = 826033, upload-time = "2025-10-03T08:58:47.403Z" },
 ]
@@ -2700,7 +2701,7 @@ wheels = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "crackerjack" },

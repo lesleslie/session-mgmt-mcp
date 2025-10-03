@@ -581,10 +581,10 @@ class SessionLifecycleManager:
         breakdown = quality_data.get("breakdown", {})
         lines.extend(
             [
-                f"- **Project health:** {breakdown.get('project_health', 0):.1f}/40",
-                f"- **Permissions:** {breakdown.get('permissions', 0):.1f}/20",
-                f"- **Session tools:** {breakdown.get('session_management', 0):.1f}/20",
-                f"- **Tool availability:** {breakdown.get('tools', 0):.1f}/20",
+                f"- **Code quality:** {breakdown.get('code_quality', 0):.1f}/40",
+                f"- **Project health:** {breakdown.get('project_health', 0):.1f}/30",
+                f"- **Dev velocity:** {breakdown.get('dev_velocity', 0):.1f}/20",
+                f"- **Security:** {breakdown.get('security', 0):.1f}/10",
                 "",
             ]
         )
