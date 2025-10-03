@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-10-03
+
+### Changed
+
+- Session-mgmt-mcp (quality: 69/100) - 2025-10-03 01:42:50
+
+### Fixed
+
+- Resolve hook failures and add coverage.json fallback
+
+### Testing
+
+- config: Update CHANGELOG, coverage, pyproject
+
 ## [0.5.3] - 2025-10-02
 
 ### Added
