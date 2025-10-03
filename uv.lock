@@ -405,7 +405,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.39.6"
+version = "0.39.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -459,9 +459,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a4/f8/3f1dd83e3d9b903cb310939e6df73956d71af43e81fd2a5d43a157611414/crackerjack-0.39.6.tar.gz", hash = "sha256:5996a38b3479e4cade1c8bc41a3ca6ed42ffe831a9289d6b5d088c8ac9b6ea85", size = 1375900, upload-time = "2025-10-03T08:58:50.582Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/87/582b7df049ddcba1586d4fc7ef508db2bbed3618d1cfa0c6b2f1bb13ae96/crackerjack-0.39.7.tar.gz", hash = "sha256:78b4d1add949b034696602880922ce847bcf67b1d138263e7042bc1459fa815e", size = 1380378, upload-time = "2025-10-03T19:16:34.17Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/43/ea3a7638eefb1107c64c3bd29c1b9b30268719392e70ee5e1b68231ff2d6/crackerjack-0.39.6-py3-none-any.whl", hash = "sha256:279f974f5bb2b22a1b48badff80959817bd3b5f0a6e26604224dd7dfa624a77a", size = 826033, upload-time = "2025-10-03T08:58:47.403Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/fb/93facde5a3503a99935e9de4cb7e60819e261d6059776cb8679b395962cf/crackerjack-0.39.7-py3-none-any.whl", hash = "sha256:1e29d2192a90d4c806858d2d7ee9ba5ca3631b04cecb7a8b5c34dd78e4d3aa39", size = 827081, upload-time = "2025-10-03T19:16:31Z" },
 ]
 
 [[package]]
@@ -3063,7 +3063,7 @@ wheels = [
 
 [[package]]
 name = "transformers"
-version = "4.56.2"
+version = "4.57.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
@@ -3077,9 +3077,9 @@ dependencies = [
     { name = "tokenizers" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/82/0bcfddd134cdf53440becb5e738257cc3cf34cf229d63b57bfd288e6579f/transformers-4.56.2.tar.gz", hash = "sha256:5e7c623e2d7494105c726dd10f6f90c2c99a55ebe86eef7233765abd0cb1c529", size = 9844296, upload-time = "2025-09-19T15:16:26.778Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/5c/a22c39dac2687f3fe2a6b97e2c1ae516e91cd4d3976a7a2b7c24ff2fae48/transformers-4.57.0.tar.gz", hash = "sha256:d045753f3d93f9216e693cdb168698dfd2e9d3aad1bb72579a5d60ebf1545a8b", size = 10142956, upload-time = "2025-10-03T17:03:47.177Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/26/2591b48412bde75e33bfd292034103ffe41743cacd03120e3242516cd143/transformers-4.56.2-py3-none-any.whl", hash = "sha256:79c03d0e85b26cb573c109ff9eafa96f3c8d4febfd8a0774e8bba32702dd6dde", size = 11608055, upload-time = "2025-09-19T15:16:23.736Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/2b/4d2708ac1ff5cd708b6548f4c5812d0ae40d1c28591c4c1c762b6dbdef2d/transformers-4.57.0-py3-none-any.whl", hash = "sha256:9d7c6d098c026e40d897e017ed1f481ab803cbac041021dbc6ae6100e4949b55", size = 11990588, upload-time = "2025-10-03T17:03:43.629Z" },
 ]
 
 [[package]]

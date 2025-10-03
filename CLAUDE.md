@@ -11,10 +11,10 @@ This is a Claude Session Management MCP (Model Context Protocol) server that pro
 ### Installation & Setup
 
 ```bash
-# Install all dependencies (development + optional)
-uv sync --group dev --extra embeddings
+# Install all dependencies (development + production)
+uv sync --group dev
 
-# Install minimal dependencies only
+# Install minimal dependencies only (production)
 uv sync
 
 # Run server directly as a module
@@ -32,8 +32,8 @@ python -c "from session_mgmt_mcp.reflection_tools import ReflectionDatabase; pri
 
 ```bash
 # Complete development setup in one command
-uv sync --group dev --extra embeddings && \
-  pytest --quick && \
+uv sync --group dev && \
+  pytest -m "not slow" && \
   crackerjack lint
 ```
 
@@ -94,7 +94,7 @@ pytest --timeout=300
 
 ```bash
 # Pre-commit workflow (run before any commit)
-uv sync --group dev --extra embeddings && \
+uv sync --group dev && \
   crackerjack lint && \
   pytest -m "not slow" && \
   crackerjack typecheck
@@ -424,9 +424,10 @@ The server uses the ~/.claude directory for data storage:
 ### Dependencies & Isolation
 
 - Uses isolated virtual environment to prevent conflicts
-- Required: `fastmcp>=2.0.0`, `duckdb>=0.9.0`, `crackerjack`
-- Optional: `onnxruntime`, `transformers` (for semantic search)
-- Falls back gracefully when optional dependencies unavailable
+- **Core Dependencies**: `fastmcp>=2`, `duckdb>=0.9`, `pydantic>=2.0`, `tiktoken>=0.5`, `crackerjack`
+- **Embedding System**: `onnxruntime>=1.15`, `transformers>=4.21` (included in core)
+- **Development Tools**: `pytest>=7`, `pytest-asyncio>=0.21`, `hypothesis>=6.70`, `coverage>=7`
+- Falls back gracefully when embedding system unavailable (text search mode)
 
 ### Testing Architecture
 
@@ -480,32 +481,61 @@ pytest -m "not slow"
 
 ## Available MCP Tools
 
-### Session Management Tools
+**Total: 70+ specialized tools** across 10 functional categories. See [README.md](README.md#available-mcp-tools) for complete list.
 
-- **`start`** (`mcp__session-mgmt__start`) - Complete session initialization with project analysis
-- **`checkpoint`** (`mcp__session-mgmt__checkpoint`) - Mid-session quality assessment and optimization
-- **`end`** (`mcp__session-mgmt__end`) - Complete session cleanup with learning capture
-- **`status`** (`mcp__session-mgmt__status`) - Current session status with health checks
+### Core Session Management (8 tools)
 
-### Memory & Reflection Tools
+- **`start`** - Comprehensive session initialization with project analysis, UV sync, and memory setup
+- **`checkpoint`** - Mid-session quality assessment with V2 scoring and automatic context compaction
+- **`end`** - Complete session cleanup with learning capture and handoff documentation
+- **`status`** - Current session overview with health checks and diagnostics
+- **`permissions`** - Manage trusted operations to reduce permission prompts
+- **`auto_compact`** - Automatic context window compaction when needed
+- **`quality_monitor`** - Real-time quality monitoring and tracking
+- **`session_welcome`** - Session connection information and continuity
 
-- **`reflect_on_past`** (`mcp__session-mgmt__reflect_on_past`) - Search past conversations with semantic similarity
-- **`store_reflection`** (`mcp__session-mgmt__store_reflection`) - Store important insights with tagging
-- **`search_nodes`** (`mcp__session-mgmt__search_nodes`) - Advanced search through stored knowledge
-- **`quick_search`** (`mcp__session-mgmt__quick_search`) - Fast overview search with count and top result
-- **`search_summary`** (`mcp__session-mgmt__search_summary`) - Get aggregated insights without individual results
-- **`get_more_results`** (`mcp__session-mgmt__get_more_results`) - Pagination support for large result sets
-- **`search_by_file`** (`mcp__session-mgmt__search_by_file`) - Find conversations about specific files
-- **`search_by_concept`** (`mcp__session-mgmt__search_by_concept`) - Search for development concepts
-- **`reflection_stats`** (`mcp__session-mgmt__reflection_stats`) - Get statistics about stored knowledge
+### Memory & Conversation Search (14 tools)
 
-### Advanced Tools
+**Search & Retrieval**:
 
-- **Crackerjack Integration**: Quality tracking, test analysis, and command optimization
-- **LLM Provider Management**: Configure and test multiple LLM providers
-- **Git Worktree Management**: Create, switch, and manage Git worktrees
-- **Team Knowledge Sharing**: Collaborative insights with access control
-- **Natural Language Scheduling**: Create reminders and scheduled tasks
+- **`search_reflections`** / **`reflect_on_past`** - Semantic search using local AI embeddings
+- **`quick_search`** - Fast overview with count and top results
+- **`search_summary`** - Aggregated insights without individual results
+- **`get_more_results`** - Pagination for large result sets
+- **`search_by_file`**, **`search_by_concept`**, **`search_code`**, **`search_errors`**, **`search_temporal`** - Targeted searches
+
+**Storage**:
+
+- **`store_reflection`** - Store insights with tagging
+- **`reflection_stats`** - Memory system statistics
+- **`reset_reflection_database`** - Reset/rebuild memory
+
+### Advanced Tool Categories
+
+**Crackerjack Integration (11 tools)**:
+
+- Command execution (`crackerjack_run`, `execute_crackerjack_command`)
+- Quality metrics (`crackerjack_metrics`, `crackerjack_quality_trends`)
+- Pattern detection (`crackerjack_patterns`, `analyze_crackerjack_test_patterns`)
+- Health monitoring (`crackerjack_health_check`, `crackerjack_help`)
+
+**LLM Provider Management (5 tools)**:
+
+- `list_llm_providers`, `test_llm_providers`, `generate_with_llm`, `chat_with_llm`, `configure_llm_provider`
+
+**Serverless Sessions (8 tools)**:
+
+- External storage integration (Redis, S3, local) for stateless operation
+
+**Team Collaboration (4 tools)**:
+
+- `create_team`, `search_team_knowledge`, `get_team_statistics`, `vote_on_reflection`
+
+**Multi-Project Coordination (4 tools)**:
+
+- `create_project_group`, `add_project_dependency`, `search_across_projects`, `get_project_insights`
+
+**Plus**: App Monitoring (5), Interruption Management (7), Natural Scheduling (5), Git Worktree (3), Advanced Search (3)
 
 ## Token Optimization and Response Chunking
 
@@ -724,8 +754,8 @@ async def test():
 asyncio.run(test())
 "
 
-# Install embedding dependencies if missing
-uv sync --extra embeddings
+# Reinstall all dependencies if needed
+uv sync
 ```
 
 #### 3. **Database Connection Problems**

@@ -2,7 +2,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-34.4%25-red)
+![Coverage](https://img.shields.io/badge/coverage-34.6%25-red)
 
 A dedicated MCP server that provides comprehensive session management functionality for Claude Code sessions across any project.
 
@@ -33,72 +33,142 @@ The server automatically detects git repositories and provides seamless session 
 
 ## Available MCP Tools
 
-### Session Management
+**Total: 70+ specialized tools** organized into 10 functional categories:
 
-- **`start`** - Comprehensive session initialization including:
+### 🎯 Core Session Management (8 tools)
 
-  - Project context analysis and health monitoring
-  - UV dependency synchronization
-  - Session management setup with auto-checkpoints
-  - Project maturity scoring and recommendations
-  - Permissions management to reduce prompts
+- **`start`** - Comprehensive session initialization with project analysis, UV sync, and memory setup
+- **`checkpoint`** - Mid-session quality assessment with V2 scoring system and workflow analysis
+- **`end`** - Complete session cleanup with learning capture and handoff documentation
+- **`status`** - Current session overview with health checks and diagnostics
+- **`permissions`** - Manage trusted operations to reduce permission prompts
+- **`auto_compact`** - Automatic context window compaction when needed
+- **`quality_monitor`** - Real-time quality monitoring and tracking
+- **`session_welcome`** - Session connection information and continuity
 
-- **`checkpoint`** - Mid-session quality assessment with:
+### 🧠 Memory & Conversation Search (14 tools)
 
-  - **V2 Quality Scoring (NEW!)** - Measures actual code quality:
-    - Code Quality (40%): Test coverage, lint scores, type coverage, complexity
-    - Project Health (30%): Smart tooling detection, documentation, CI/CD
-    - Dev Velocity (20%): Git patterns, commit quality, branch strategy
-    - Security (10%): Vulnerability scanning, secure coding patterns
-  - **Trust Score** (separate metric): Permissions, session features, tool ecosystem
-  - Workflow drift detection and optimization recommendations
-  - Progress tracking and goal alignment
-  - **Automatic context compaction when needed**
-  - Automatic git checkpoint commits (if in git repo)
+**Semantic Search & Retrieval**:
 
-- **`end`** - Complete session cleanup featuring:
-
-  - Final quality checkpoint and assessment
-  - Learning capture across key categories
-  - Session handoff file creation for continuity
-  - Workspace cleanup and optimization
-
-- **`status`** - Current session status including:
-
-  - Project context analysis with health checks
-  - Tool availability verification
-  - Session management status
-  - Available MCP tools listing with diagnostics
-
-### Memory & Reflection System
-
-- **`reflect_on_past`** - Search past conversations and insights with:
-
-  - Semantic similarity search using local embeddings (all-MiniLM-L6-v2)
-  - DuckDB-based conversation storage with FLOAT[384] vectors
-  - Time-decay prioritization for recent conversations
-  - Cross-project conversation history
-  - Configurable similarity thresholds and result limits
-
-- **`store_reflection`** - Store important insights for future reference with:
-
-  - Content indexing with semantic embeddings
-  - Tagging system for organization
-  - Project-specific context tracking
-  - Automatic embedding generation (local, no external services)
-
-- **`search_nodes`** - Advanced search capabilities for stored knowledge
-
+- **`reflect_on_past`** / **`search_reflections`** - Semantic search through past conversations using local AI embeddings (all-MiniLM-L6-v2)
 - **`quick_search`** - Fast overview search with count and top results
-
+- **`search_summary`** - Aggregated insights without individual results
 - **`get_more_results`** - Pagination support for large result sets
 
-### Permissions & Trust System
+**Targeted Search**:
 
-- **`permissions`** - Manage trusted operations to reduce permission prompts:
-  - View current trusted operations
-  - Trust specific operations (UV sync, Git operations, file management)
-  - Reset all permissions when needed
+- **`search_by_file`** - Find conversations about specific files
+- **`search_by_concept`** - Search for development concepts and patterns
+- **`search_code`** - Code-specific search with pattern matching
+- **`search_errors`** - Search error patterns and resolutions
+- **`search_temporal`** - Time-based search queries
+
+**Storage & Management**:
+
+- **`store_reflection`** - Store insights with tagging and embeddings
+- **`reflection_stats`** - Memory system statistics and health
+- **`reset_reflection_database`** - Reset/rebuild memory database
+
+**Advanced**:
+
+- **`_optimize_search_results`** - Token-aware result optimization
+
+### 📊 Crackerjack Quality Integration (11 tools)
+
+**Command Execution**:
+
+- **`execute_crackerjack_command`** / **`crackerjack_run`** - Execute crackerjack with analytics
+- **`crackerjack_help`** - Comprehensive help for choosing commands
+
+**Metrics & Analysis**:
+
+- **`crackerjack_metrics`** - Quality metrics trends over time
+- **`crackerjack_quality_trends`** - Trend analysis with actionable insights
+- **`get_crackerjack_quality_metrics`** - Detailed quality metric extraction
+- **`get_crackerjack_results_history`** - Command execution history
+
+**Pattern Detection**:
+
+- **`crackerjack_patterns`** - Test failure pattern analysis
+- **`analyze_crackerjack_test_patterns`** - Deep test pattern analysis
+- **`crackerjack_history`** - Execution history with trends
+
+**Health & Status**:
+
+- **`crackerjack_health_check`** - Integration health diagnostics
+
+### 🤖 LLM Provider Management (5 tools)
+
+- **`list_llm_providers`** - List available LLM providers and models
+- **`test_llm_providers`** - Test provider availability and functionality
+- **`generate_with_llm`** - Generate text using specified provider
+- **`chat_with_llm`** - Have conversations with LLM providers
+- **`configure_llm_provider`** - Configure provider credentials and settings
+
+### ☁️ Serverless Session Management (8 tools)
+
+- **`create_serverless_session`** - Create session with external storage
+- **`get_serverless_session`** - Retrieve session state
+- **`update_serverless_session`** - Update session state
+- **`delete_serverless_session`** - Delete session
+- **`list_serverless_sessions`** - List sessions by user/project
+- **`test_serverless_storage`** - Test storage backend availability
+- **`cleanup_serverless_sessions`** - Clean up expired sessions
+- **`configure_serverless_storage`** - Configure storage backends (Redis, S3, local)
+
+### 👥 Team Collaboration & Knowledge Sharing (4 tools)
+
+- **`create_team`** - Create team for knowledge sharing
+- **`search_team_knowledge`** - Search team reflections with access control
+- **`get_team_statistics`** - Team activity and statistics
+- **`vote_on_reflection`** - Vote on team reflections (upvote/downvote)
+
+### 🔗 Multi-Project Coordination (4 tools)
+
+- **`create_project_group`** - Create project groups for coordination
+- **`add_project_dependency`** - Add dependency relationships between projects
+- **`search_across_projects`** - Search conversations across related projects
+- **`get_project_insights`** - Cross-project insights and collaboration opportunities
+
+### 📱 Application & Activity Monitoring (5 tools)
+
+- **`start_app_monitoring`** - Start IDE and browser activity monitoring
+- **`stop_app_monitoring`** - Stop activity monitoring
+- **`get_activity_summary`** - Activity summary over time period
+- **`get_context_insights`** - Generate insights from development behavior
+- **`get_active_files`** - Get recently active files
+
+### 🔄 Interruption & Context Management (7 tools)
+
+- **`start_interruption_monitoring`** - Smart detection and context preservation
+- **`stop_interruption_monitoring`** - Stop interruption monitoring
+- **`create_session_context`** - Create session context snapshot
+- **`preserve_current_context`** - Preserve context during interruptions
+- **`restore_session_context`** - Restore preserved session context
+- **`get_interruption_history`** - Interruption history and statistics
+- **`get_interruption_statistics`** - Comprehensive interruption stats
+
+### ⏰ Natural Language Scheduling (5 tools)
+
+- **`create_natural_reminder`** - Create reminder from natural language
+- **`list_user_reminders`** - List pending reminders
+- **`cancel_user_reminder`** - Cancel specific reminder
+- **`start_reminder_service`** - Start background reminder service
+- **`stop_reminder_service`** - Stop reminder service
+
+### 🌳 Git Worktree Management (3 tools)
+
+- **`git_worktree_add`** - Create new git worktree
+- **`git_worktree_remove`** - Remove existing worktree
+- **`git_worktree_switch`** - Switch context between worktrees with session preservation
+
+### 🔍 Advanced Search Features (3 tools)
+
+- **`advanced_search`** - Faceted search with filtering
+- **`search_suggestions`** - Search completion suggestions
+- **`get_search_metrics`** - Search and activity metrics
+
+All tools use **local processing** for privacy, with **DuckDB vector storage** (FLOAT[384] embeddings) and **ONNX-based semantic search** requiring no external API calls.
 
 ## 🚀 Integration with Crackerjack
 
@@ -207,24 +277,45 @@ If installed with pip/uv, you can use the script entry point:
 
 ### Dependencies
 
-**Required**:
+**Core Requirements** (from pyproject.toml):
 
 - Python 3.13+
-- `fastmcp>=2.0.0` - MCP server framework
-- `duckdb>=0.9.0` - Conversation storage database
-- `numpy>=1.24.0` - Numerical operations for embeddings
+- `fastmcp>=2` - MCP server framework
+- `duckdb>=0.9` - Conversation storage with vector support
+- `numpy>=1.24` - Numerical operations for embeddings
+- `pydantic>=2.0` - Data validation and settings management
+- `tiktoken>=0.5` - Token counting and optimization
+- `crackerjack` - Code quality and testing integration
+- `onnxruntime>=1.15` - Local ONNX model inference
+- `transformers>=4.21` - Tokenizer for embedding models
+- `psutil>=7.0.0` - System and process utilities
+- `rich>=14.1.0` - Terminal formatting and output
+- `structlog>=25.4` - Structured logging
+- `pydantic-settings>=2.0` - Settings management
+- `tomli>=2.2.1` - TOML parsing
+- `typer>=0.17.4` - CLI interface
 
-**Optional (for semantic search)**:
+**Development Dependencies** (install with `--group dev`):
 
-- `onnxruntime` - Local ONNX model inference
-- `transformers` - Tokenizer for embedding models
+- `pytest>=7` + `pytest-asyncio>=0.21` - Testing framework
+- `pytest-cov>=4`, `pytest-benchmark>=4` - Coverage and benchmarking
+- `pytest-xdist>=3`, `pytest-timeout>=2.1` - Parallel execution and timeouts
+- `hypothesis>=6.70` - Property-based testing
+- `coverage>=7` - Code coverage analysis
+- `pytest-mock>=3.10` - Mocking utilities
+- `psutil>=5.9` - Process monitoring
 
-Install with embedding support:
+Install all dependencies:
 
 ```bash
-uv sync --extra embeddings
-# or
-pip install "session-mgmt-mcp[embeddings]"
+# Full installation with development tools
+uv sync --group dev
+
+# Minimal installation (production)
+uv sync
+
+# From PyPI with pip
+pip install session-mgmt-mcp
 ```
 
 ## Usage

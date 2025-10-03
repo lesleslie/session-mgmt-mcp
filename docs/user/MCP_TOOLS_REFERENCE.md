@@ -443,14 +443,99 @@ pip install "session-mgmt-mcp[embeddings]"
 - Use project filtering for large knowledge bases
 - Regular checkpoints improve quality scoring accuracy
 
+## 📊 Advanced Integration Tools
+
+### Crackerjack Quality Integration (11 tools)
+
+**Code Quality & Testing Integration** - Deep integration with the Crackerjack development platform:
+
+- **`/session-mgmt:crackerjack_run`** - Execute crackerjack commands with real-time analytics
+- **`/session-mgmt:execute_crackerjack_command`** - Run with enhanced AI integration
+- **`/session-mgmt:crackerjack_help`** - Comprehensive command selection help
+- **`/session-mgmt:crackerjack_metrics`** - Quality metrics trends over time
+- **`/session-mgmt:crackerjack_quality_trends`** - Trend analysis with insights
+- **`/session-mgmt:crackerjack_patterns`** - Test failure pattern analysis
+- **`/session-mgmt:crackerjack_history`** - Command execution history
+- **`/session-mgmt:crackerjack_health_check`** - Integration health diagnostics
+
+### LLM Provider Management (5 tools)
+
+- **`/session-mgmt:list_llm_providers`** - List available providers and models
+- **`/session-mgmt:test_llm_providers`** - Test provider availability
+- **`/session-mgmt:generate_with_llm`** - Generate text using any provider
+- **`/session-mgmt:chat_with_llm`** - Have conversations with LLMs
+- **`/session-mgmt:configure_llm_provider`** - Configure credentials and settings
+
+### Serverless Session Management (8 tools)
+
+**External Storage Integration** - Redis, S3, or local storage:
+
+- **`/session-mgmt:create_serverless_session`** - Create with external storage
+- **`/session-mgmt:get_serverless_session`** - Retrieve session state
+- **`/session-mgmt:update_serverless_session`** - Update session data
+- **`/session-mgmt:delete_serverless_session`** - Remove session
+- **`/session-mgmt:list_serverless_sessions`** - List by user/project
+- **`/session-mgmt:test_serverless_storage`** - Test storage backend
+- **`/session-mgmt:cleanup_serverless_sessions`** - Remove expired sessions
+- **`/session-mgmt:configure_serverless_storage`** - Configure backends
+
+### Team Collaboration (4 tools)
+
+- **`/session-mgmt:create_team`** - Create team for knowledge sharing
+- **`/session-mgmt:search_team_knowledge`** - Search with access control
+- **`/session-mgmt:get_team_statistics`** - Team activity metrics
+- **`/session-mgmt:vote_on_reflection`** - Vote on insights (upvote/downvote)
+
+### Multi-Project Coordination (4 tools)
+
+- **`/session-mgmt:create_project_group`** - Group related projects
+- **`/session-mgmt:add_project_dependency`** - Define dependencies
+- **`/session-mgmt:search_across_projects`** - Cross-project search
+- **`/session-mgmt:get_project_insights`** - Cross-project insights
+
+### Activity Monitoring (5 tools)
+
+- **`/session-mgmt:start_app_monitoring`** - Track IDE/browser activity
+- **`/session-mgmt:stop_app_monitoring`** - Stop monitoring
+- **`/session-mgmt:get_activity_summary`** - Activity summary
+- **`/session-mgmt:get_context_insights`** - Behavior insights
+- **`/session-mgmt:get_active_files`** - Recently active files
+
+### Interruption Management (7 tools)
+
+- **`/session-mgmt:start_interruption_monitoring`** - Smart detection
+- **`/session-mgmt:stop_interruption_monitoring`** - Disable monitoring
+- **`/session-mgmt:create_session_context`** - Create snapshot
+- **`/session-mgmt:preserve_current_context`** - Force preservation
+- **`/session-mgmt:restore_session_context`** - Restore context
+- **`/session-mgmt:get_interruption_history`** - Interruption history
+- **`/session-mgmt:get_interruption_statistics`** - Analytics
+
+### Natural Language Scheduling (5 tools)
+
+- **`/session-mgmt:create_natural_reminder`** - Create from natural language
+- **`/session-mgmt:list_user_reminders`** - List pending reminders
+- **`/session-mgmt:cancel_user_reminder`** - Cancel reminder
+- **`/session-mgmt:start_reminder_service`** - Start service
+- **`/session-mgmt:stop_reminder_service`** - Stop service
+
+### Git Worktree Management (3 tools)
+
+- **`/session-mgmt:git_worktree_add`** - Create new worktree
+- **`/session-mgmt:git_worktree_remove`** - Remove worktree
+- **`/session-mgmt:git_worktree_switch`** - Switch with context preservation
+
 ## 📚 Related Documentation
 
+- **[README.md](../../README.md)** - Project overview with complete tool inventory (70+ tools)
 - **[Quick Start Guide](QUICK_START.md)** - Get up and running in 5 minutes
-- **[MCP Schema Reference](MCP_SCHEMA_REFERENCE.md)** - Complete API reference for AI agents
-- **[AI Integration Patterns](AI_INTEGRATION_PATTERNS.md)** - Advanced workflow patterns
-- **[Architecture Guide](ARCHITECTURE.md)** - Deep dive into system design
+- **[MCP Schema Reference](../reference/MCP_SCHEMA_REFERENCE.md)** - Complete API reference
+- **[AI Integration Patterns](../features/AI_INTEGRATION_PATTERNS.md)** - Advanced patterns
+- **[CLAUDE.md](../../CLAUDE.md)** - Development guide for contributors
 - **[Configuration Reference](CONFIGURATION.md)** - Advanced setup options
 
 ______________________________________________________________________
+
+*This reference covers all **70+ MCP tools** provided by session-mgmt. For implementation details, see the codebase.*
 
 **Need help?** Use `/session-mgmt:status` to diagnose issues or check [GitHub Issues](https://github.com/lesleslie/session-mgmt-mcp/issues) for support.
