@@ -1,6 +1,7 @@
 """AI agent recommendation system for crackerjack failures."""
 
 import re
+import typing as t
 from dataclasses import dataclass
 from enum import Enum
 
@@ -34,7 +35,7 @@ class AgentAnalyzer:
     """Analyze crackerjack failures and recommend AI agents."""
 
     # Error patterns mapped to agents with confidence scores
-    PATTERNS: t.Final[list[dict[str, t.Any]]] = [  # noqa: RUF012
+    PATTERNS: t.Final[list[dict[str, t.Any]]] = [
         # Complexity issues → RefactoringAgent
         {
             "pattern": r"Complexity of (\d+) is too high",
@@ -131,6 +132,31 @@ class AgentAnalyzer:
     ]
 
     @classmethod
+    def _should_skip_coverage_recommendation(
+        cls, pattern_config: dict[str, t.Any], combined: str
+    ) -> bool:
+        """Check if coverage recommendation should be skipped."""
+        if pattern_config["agent"] != AgentType.TEST_SPECIALIST:
+            return False
+
+        coverage_match = re.search(  # REGEX OK: coverage extraction
+            r"coverage:?\s*(\d+(?:\.\d+)?)%", combined
+        )
+        return bool(coverage_match and float(coverage_match.group(1)) >= 42)
+
+    @classmethod
+    def _deduplicate_recommendations(
+        cls, recommendations: list[AgentRecommendation]
+    ) -> list[AgentRecommendation]:
+        """Remove duplicate recommendations, keeping highest confidence."""
+        unique: dict[AgentType, AgentRecommendation] = {}
+        for rec in recommendations:
+            if rec.agent not in unique or rec.confidence > unique[rec.agent].confidence:
+                unique[rec.agent] = rec
+
+        return sorted(unique.values(), key=lambda x: x.confidence, reverse=True)[:3]
+
+    @classmethod
     def analyze(
         cls, stdout: str, stderr: str, exit_code: int
     ) -> list[AgentRecommendation]:
@@ -159,42 +185,19 @@ class AgentAnalyzer:
                 )
             )
 
-            if matches:
-                # Adjust confidence based on coverage check
-                confidence = pattern_config["confidence"]
-                if pattern_config["agent"] == AgentType.TEST_SPECIALIST:
-                    # Only recommend if coverage is actually below 42%
-                    coverage_match = (
-                        re.search(  # REGEX OK: coverage extraction from output
-                            r"coverage:?\s*(\d+(?:\.\d+)?)%", combined
-                        )
-                    )
-                    if coverage_match and float(coverage_match.group(1)) >= 42:
-                        continue  # Skip recommendation if coverage is fine
-
+            if matches and not cls._should_skip_coverage_recommendation(
+                pattern_config, combined
+            ):
                 recommendation = AgentRecommendation(
                     agent=pattern_config["agent"],
-                    confidence=confidence,
+                    confidence=pattern_config["confidence"],
                     reason=pattern_config["reason"],
                     quick_fix_command=pattern_config["command"],
                     pattern_matched=pattern,
                 )
                 recommendations.append(recommendation)
 
-        # Remove duplicates (keep highest confidence)
-        unique_recommendations: dict[AgentType, AgentRecommendation] = {}
-        for rec in recommendations:
-            if (
-                rec.agent not in unique_recommendations
-                or rec.confidence > unique_recommendations[rec.agent].confidence
-            ):
-                unique_recommendations[rec.agent] = rec
-
-        # Sort by confidence (highest first) and return top 3
-        sorted_recommendations = sorted(
-            unique_recommendations.values(), key=lambda x: x.confidence, reverse=True
-        )
-        return sorted_recommendations[:3]
+        return cls._deduplicate_recommendations(recommendations)
 
     @classmethod
     def format_recommendations(cls, recommendations: list[AgentRecommendation]) -> str:

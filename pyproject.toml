@@ -296,6 +296,8 @@ source = [
 omit = [
     "session_mgmt_mcp/__main__.py",
     "tests/*",
+    "*/test_*.py",
+    "*_test.py",
     ".venv/*",
     "build/*",
     "dist/*",

@@ -2,9 +2,9 @@
 
 import pytest
 from datetime import datetime, timedelta
-from .agent_analyzer import AgentAnalyzer, AgentType
-from .quality_metrics import QualityMetricsExtractor, QualityMetrics
-from .recommendation_engine import RecommendationEngine
+from session_mgmt_mcp.tools.agent_analyzer import AgentAnalyzer, AgentType
+from session_mgmt_mcp.tools.quality_metrics import QualityMetricsExtractor, QualityMetrics
+from session_mgmt_mcp.tools.recommendation_engine import RecommendationEngine
 
 
 class MockReflectionDatabase:
@@ -256,7 +256,7 @@ class TestEndToEndWorkflow:
         ]
 
         # Convert dict to AgentRecommendation for adjustment
-        from .agent_analyzer import AgentRecommendation
+        from session_mgmt_mcp.tools.agent_analyzer import AgentRecommendation
 
         recommendations = [
             AgentRecommendation(
@@ -357,7 +357,7 @@ class TestMetricsQualityIntegration:
 
         # All None/zero values should be excluded
         metrics_dict = metrics.to_dict()
-        assert metrics_dict == {}
+        assert not metrics_dict
 
         # Display should be empty
         display = metrics.format_for_display()

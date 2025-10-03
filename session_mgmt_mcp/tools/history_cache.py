@@ -49,7 +49,7 @@ class HistoryAnalysisCache:
         """
         # Create deterministic key from parameters
         params = f"{project}:{days}"
-        return hashlib.md5(params.encode()).hexdigest()
+        return hashlib.md5(params.encode(), usedforsecurity=False).hexdigest()
 
     def get(self, project: str, days: int) -> dict[str, Any] | None:
         """Retrieve cached analysis result.
@@ -104,8 +104,10 @@ class HistoryAnalysisCache:
             # Remove all entries for this project
             keys_to_remove = [
                 key
-                for key, entry in self._cache.items()
-                if key.startswith(hashlib.md5(project.encode()).hexdigest()[:8])
+                for key in self._cache  # FURB135: Value is unused
+                if key.startswith(
+                    hashlib.md5(project.encode(), usedforsecurity=False).hexdigest()[:8]
+                )
             ]
             for key in keys_to_remove:
                 del self._cache[key]

@@ -1,7 +1,7 @@
 """Unit tests for QualityMetricsExtractor."""
 
 import pytest
-from .quality_metrics import QualityMetrics, QualityMetricsExtractor
+from session_mgmt_mcp.tools.quality_metrics import QualityMetrics, QualityMetricsExtractor
 
 
 class TestQualityMetrics:

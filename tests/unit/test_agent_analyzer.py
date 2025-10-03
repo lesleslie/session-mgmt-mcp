@@ -1,7 +1,7 @@
 """Unit tests for AgentAnalyzer."""
 
 import pytest
-from .agent_analyzer import AgentAnalyzer, AgentRecommendation, AgentType
+from session_mgmt_mcp.tools.agent_analyzer import AgentAnalyzer, AgentRecommendation, AgentType
 
 
 class TestAgentAnalyzer:
@@ -15,7 +15,7 @@ class TestAgentAnalyzer:
 
         recommendations = AgentAnalyzer.analyze(stdout, stderr, exit_code)
 
-        assert recommendations == []
+        assert not recommendations
 
     def test_complexity_violation_high_confidence(self):
         """Test RefactoringAgent recommendation for complexity violations."""

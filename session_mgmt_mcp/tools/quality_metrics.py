@@ -1,6 +1,7 @@
 """Quality metrics extraction from crackerjack output."""
 
 import re
+import typing as t
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,60 +27,78 @@ class QualityMetrics:
             if v is not None and (not isinstance(v, int) or v > 0)
         }
 
+    def _format_coverage(self) -> str:
+        """Format coverage metric."""
+        if self.coverage_percent is None:
+            return ""
+        emoji = "✅" if self.coverage_percent >= 42 else "⚠️"
+        result = f"- {emoji} Coverage: {self.coverage_percent:.1f}%"
+        if self.coverage_percent < 42:
+            result += " (below 42% baseline)"
+        return result + "\n"
+
+    def _format_complexity(self) -> str:
+        """Format complexity metric."""
+        if not self.max_complexity:
+            return ""
+        emoji = "✅" if self.max_complexity <= 15 else "❌"
+        result = f"- {emoji} Max Complexity: {self.max_complexity}"
+        if self.max_complexity > 15:
+            result += " (exceeds limit of 15)"
+        return result + "\n"
+
+    def _format_violations(self) -> str:
+        """Format violation metrics."""
+        lines = []
+        if self.complexity_violations:
+            plural = "s" if self.complexity_violations != 1 else ""
+            lines.append(
+                f"- ⚠️ Complexity Violations: {self.complexity_violations} function{plural}"
+            )
+        if self.security_issues:
+            plural = "s" if self.security_issues != 1 else ""
+            lines.append(
+                f"- 🔒 Security Issues: {self.security_issues} (Bandit finding{plural})"
+            )
+        return "\n".join(lines) + ("\n" if lines else "")
+
+    def _format_tests(self) -> str:
+        """Format test results."""
+        if self.tests_failed:
+            return f"- ❌ Tests Failed: {self.tests_failed}\n"
+        if self.tests_passed:
+            return f"- ✅ Tests Passed: {self.tests_passed}\n"
+        return ""
+
+    def _format_errors(self) -> str:
+        """Format error metrics."""
+        lines = []
+        if self.type_errors:
+            lines.append(f"- 📝 Type Errors: {self.type_errors}")
+        if self.formatting_issues:
+            lines.append(f"- ✨ Formatting Issues: {self.formatting_issues}")
+        return "\n".join(lines) + ("\n" if lines else "")
+
     def format_for_display(self) -> str:
         """Format metrics for user-friendly display."""
         if not self.to_dict():
             return ""
 
-        output = "\n📈 **Quality Metrics**:\n"
-
-        if self.coverage_percent is not None:
-            # Coverage ratchet baseline is 42%
-            emoji = "✅" if self.coverage_percent >= 42 else "⚠️"
-            output += f"- {emoji} Coverage: {self.coverage_percent:.1f}%"
-            if self.coverage_percent < 42:
-                output += " (below 42% baseline)"
-            output += "\n"
-
-        if self.max_complexity:
-            # Crackerjack enforces complexity ≤15
-            emoji = "✅" if self.max_complexity <= 15 else "❌"
-            output += f"- {emoji} Max Complexity: {self.max_complexity}"
-            if self.max_complexity > 15:
-                output += " (exceeds limit of 15)"
-            output += "\n"
-
-        if self.complexity_violations:
-            output += (
-                f"- ⚠️ Complexity Violations: {self.complexity_violations} "
-                f"function{'s' if self.complexity_violations != 1 else ''}\n"
-            )
-
-        if self.security_issues:
-            output += (
-                f"- 🔒 Security Issues: {self.security_issues} "
-                f"(Bandit finding{'s' if self.security_issues != 1 else ''})\n"
-            )
-
-        if self.tests_failed:
-            output += f"- ❌ Tests Failed: {self.tests_failed}\n"
-        elif self.tests_passed:
-            output += f"- ✅ Tests Passed: {self.tests_passed}\n"
-
-        if self.type_errors:
-            output += f"- 📝 Type Errors: {self.type_errors}\n"
-
-        if self.formatting_issues:
-            output += f"- ✨ Formatting Issues: {self.formatting_issues}\n"
-
-        return output
+        return (
+            "\n📈 **Quality Metrics**:\n"
+            + self._format_coverage()
+            + self._format_complexity()
+            + self._format_violations()
+            + self._format_tests()
+            + self._format_errors()
+        )
 
 
 class QualityMetricsExtractor:
     """Extract structured quality metrics from crackerjack output."""
 
     # Regex patterns for metric extraction
-    PATTERNS: t.Final[dict[str, str]] = {  # noqa: RUF012
+    PATTERNS: t.Final[dict[str, str]] = {
         "coverage": r"coverage:?\s*(\d+(?:\.\d+)?)%",
         "complexity": r"Complexity of (\d+) is too high",
         "security": r"B\d{3}:",  # Bandit security codes

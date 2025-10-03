@@ -90,6 +90,169 @@ async def _execute_crackerjack_command_impl(
         return f"❌ Crackerjack execution failed: {e!s}"
 
 
+def _format_basic_result(result: Any, command: str) -> str:
+    """Format basic execution result with status and output."""
+    formatted = f"🔧 **Crackerjack {command}** executed\n\n"
+
+    if result.exit_code == 0:
+        formatted += "✅ **Status**: Success\n"
+    else:
+        formatted += f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+
+    if result.stdout.strip():
+        formatted += f"\n**Output**:\n```\n{result.stdout}\n```\n"
+
+    if result.stderr.strip():
+        formatted += f"\n**Errors**:\n```\n{result.stderr}\n```\n"
+
+    return formatted
+
+
+async def _get_ai_recommendations_with_history(
+    result: Any, working_directory: str
+) -> tuple[str, list[Any], dict[str, Any]]:
+    """Get AI recommendations adjusted by historical effectiveness."""
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+    from .agent_analyzer import AgentAnalyzer
+    from .recommendation_engine import RecommendationEngine
+
+    # Get base recommendations
+    recommendations = AgentAnalyzer.analyze(
+        result.stdout, result.stderr, result.exit_code
+    )
+
+    # Analyze history and adjust
+    db = ReflectionDatabase()
+    async with db:
+        history_analysis = await RecommendationEngine.analyze_history(
+            db, Path(working_directory).name, days=30
+        )
+
+        if history_analysis["agent_effectiveness"]:
+            recommendations = RecommendationEngine.adjust_confidence(
+                recommendations, history_analysis["agent_effectiveness"]
+            )
+
+        # Format output
+        output = AgentAnalyzer.format_recommendations(recommendations)
+
+        if history_analysis["insights"]:
+            output += "\n💡 **Historical Insights**:\n"
+            for insight in history_analysis["insights"][:3]:
+                output += f"   {insight}\n"
+
+    return output, recommendations, history_analysis
+
+
+def _build_execution_metadata(
+    working_directory: str,
+    result: Any,
+    metrics: Any,
+    recommendations: list[Any] | None = None,
+    history_analysis: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build metadata dictionary for execution storage."""
+    metadata = {
+        "project": Path(working_directory).name,
+        "exit_code": result.exit_code,
+        "execution_time": result.execution_time,
+        "metrics": metrics.to_dict(),
+    }
+
+    if recommendations:
+        metadata["agent_recommendations"] = [
+            {
+                "agent": rec.agent.value,
+                "confidence": rec.confidence,
+                "reason": rec.reason,
+                "quick_fix": rec.quick_fix_command,
+            }
+            for rec in recommendations
+        ]
+
+    if history_analysis:
+        metadata["pattern_analysis"] = {
+            "total_patterns": len(history_analysis["patterns"]),
+            "total_executions": history_analysis["total_executions"],
+            "insights": history_analysis["insights"][:3],
+        }
+
+    return metadata
+
+
+async def _store_execution_result(
+    command: str,
+    formatted_result: str,
+    result: Any,
+    metrics: Any,
+    working_directory: str,
+    ai_agent_mode: bool,
+    recommendations: list[Any] | None = None,
+    history_analysis: dict[str, Any] | None = None,
+    db: Any | None = None,
+) -> str:
+    """Store execution result in history."""
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+    try:
+        metadata = _build_execution_metadata(
+            working_directory, result, metrics, recommendations, history_analysis
+        )
+
+        content = f"Crackerjack {command} execution: {formatted_result[:500]}..."
+
+        if ai_agent_mode and result.exit_code != 0 and db:
+            # Reuse existing db connection
+            await db.store_conversation(content=content, metadata=metadata)
+        else:
+            # Create new connection
+            db = ReflectionDatabase()
+            async with db:
+                await db.store_conversation(content=content, metadata=metadata)
+
+        return "📝 Execution stored in session history\n"
+
+    except Exception as e:
+        logger.debug(f"Failed to store crackerjack execution: {e}")
+        return ""
+
+
+def _build_error_troubleshooting(
+    error: Exception, timeout: int, working_directory: str
+) -> str:
+    """Build error-specific troubleshooting steps."""
+    if isinstance(error, ImportError):
+        return (
+            "1. Verify crackerjack is installed: `uv pip list | grep crackerjack`\n"
+            "2. Reinstall if needed: `uv pip install crackerjack`\n"
+            "3. Check Python environment: `which python`\n"
+        )
+    if isinstance(error, FileNotFoundError):
+        return (
+            f"1. Verify working directory exists: `ls -la {working_directory}`\n"
+            "2. Check if directory is a git repository: `git status`\n"
+            "3. Ensure you're in the correct project directory\n"
+        )
+    if isinstance(error, TimeoutError) or "timeout" in str(error).lower():
+        return (
+            f"1. Command exceeded {timeout}s timeout\n"
+            "2. Try increasing timeout or use `--skip-hooks` for faster iteration\n"
+            "3. Check for infinite loops or hanging processes\n"
+        )
+    if isinstance(error, (OSError, PermissionError)):
+        return (
+            "1. Check file permissions in working directory\n"
+            "2. Ensure you have write access to project files\n"
+            "3. Verify no files are locked by other processes\n"
+        )
+    return (
+        "1. Try running command directly: `python -m crackerjack`\n"
+        "2. Check crackerjack logs for detailed errors\n"
+        "3. Use `--ai-debug` for deeper analysis\n"
+    )
+
+
 async def _crackerjack_run_impl(
     command: str,
     args: str = "",
@@ -101,11 +264,9 @@ async def _crackerjack_run_impl(
     try:
         from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
 
-        from .agent_analyzer import AgentAnalyzer
         from .quality_metrics import QualityMetricsExtractor
-        from .recommendation_engine import RecommendationEngine
 
-        # Use the enhanced execution method
+        # Execute crackerjack command
         integration = CrackerjackIntegration()
         result = await integration.execute_crackerjack_command(
             command,
@@ -115,167 +276,63 @@ async def _crackerjack_run_impl(
             ai_agent_mode,
         )
 
-        # Format response similar to execute_crackerjack_command
-        formatted_result = f"🔧 **Crackerjack {command}** executed\n\n"
-
-        if result.exit_code == 0:
-            formatted_result += "✅ **Status**: Success\n"
-        else:
-            formatted_result += (
-                f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
-            )
-
-        if result.stdout.strip():
-            formatted_result += f"\n**Output**:\n```\n{result.stdout}\n```\n"
-
-        if result.stderr.strip():
-            formatted_result += f"\n**Errors**:\n```\n{result.stderr}\n```\n"
+        # Format basic result
+        formatted_result = _format_basic_result(result, command)
 
         # Extract and display quality metrics
         metrics = QualityMetricsExtractor.extract(result.stdout, result.stderr)
         formatted_result += metrics.format_for_display()
 
-        # AI Agent recommendations with learning (only when ai_agent_mode=True and failures exist)
+        # AI recommendations with learning (only on failures)
+        recommendations = None
+        history_analysis = None
+        db = None
+
         if ai_agent_mode and result.exit_code != 0:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            (
+                ai_output,
+                recommendations,
+                history_analysis,
+            ) = await _get_ai_recommendations_with_history(result, working_directory)
+            formatted_result += ai_output
 
-            # Get base recommendations from pattern analysis
-            recommendations = AgentAnalyzer.analyze(
-                result.stdout, result.stderr, result.exit_code
-            )
-
-            # Analyze history to adjust confidence scores based on learned effectiveness
-            db = ReflectionDatabase()
-            async with db:
-                history_analysis = await RecommendationEngine.analyze_history(
-                    db, Path(working_directory).name, days=30
-                )
-
-                # Adjust recommendations based on historical effectiveness
-                if history_analysis["agent_effectiveness"]:
-                    recommendations = RecommendationEngine.adjust_confidence(
-                        recommendations, history_analysis["agent_effectiveness"]
-                    )
-
-                # Display adjusted recommendations
-                formatted_result += AgentAnalyzer.format_recommendations(
-                    recommendations
-                )
-
-                # Add insights from pattern analysis
-                if history_analysis["insights"]:
-                    formatted_result += "\n💡 **Historical Insights**:\n"
-                    for insight in history_analysis["insights"][:3]:  # Top 3 insights
-                        formatted_result += f"   {insight}\n"
-
-        # Add session management integration
+        # Build final output
         output = f"🔧 **Enhanced Crackerjack Run**\n\n{formatted_result}\n"
 
         # Store execution in history
-        try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
-            # Store in reflection database for future reference
-            # Note: db connection already opened above if ai_agent_mode, reuse it
-            if ai_agent_mode and result.exit_code != 0:
-                # db already connected, just store
-                await db.store_conversation(
-                    content=f"Crackerjack {command} execution: {formatted_result[:500]}...",
-                    metadata={
-                        "project": Path(working_directory).name,
-                        "exit_code": result.exit_code,
-                        "execution_time": result.execution_time,
-                        "metrics": metrics.to_dict(),
-                        "agent_recommendations": [
-                            {
-                                "agent": rec.agent.value,
-                                "confidence": rec.confidence,
-                                "reason": rec.reason,
-                                "quick_fix": rec.quick_fix_command,
-                            }
-                            for rec in recommendations
-                        ]
-                        if recommendations
-                        else [],
-                        "pattern_analysis": {
-                            "total_patterns": len(history_analysis["patterns"]),
-                            "total_executions": history_analysis["total_executions"],
-                            "insights": history_analysis["insights"][:3],
-                        }
-                        if history_analysis
-                        else {},
-                    },
-                )
-            else:
-                # No AI mode, create new connection
-                db = ReflectionDatabase()
-                async with db:
-                    await db.store_conversation(
-                        content=f"Crackerjack {command} execution: {formatted_result[:500]}...",
-                        metadata={
-                            "project": Path(working_directory).name,
-                            "exit_code": result.exit_code,
-                            "execution_time": result.execution_time,
-                            "metrics": metrics.to_dict(),
-                        },
-                    )
-
-            output += "📝 Execution stored in session history\n"
-
-        except Exception as e:
-            logger.debug(f"Failed to store crackerjack execution: {e}")
+        storage_msg = await _store_execution_result(
+            command,
+            formatted_result,
+            result,
+            metrics,
+            working_directory,
+            ai_agent_mode,
+            recommendations,
+            history_analysis,
+            db,
+        )
+        output += storage_msg
 
         return output
 
     except Exception as e:
         error_type = type(e).__name__
-
-        # Build context-aware error message
         error_msg = f"❌ **Enhanced crackerjack run failed**: {error_type}\n\n"
         error_msg += f"**Error Details**: {e!s}\n\n"
-
         error_msg += "**Context**:\n"
         error_msg += f"- Command: `{command} {args}`\n"
         error_msg += f"- Working Directory: `{working_directory}`\n"
         error_msg += f"- Timeout: {timeout}s\n"
         error_msg += f"- AI Mode: {'Enabled' if ai_agent_mode else 'Disabled'}\n\n"
-
         error_msg += "**Troubleshooting Steps**:\n"
-
-        if isinstance(e, ImportError):
-            error_msg += (
-                "1. Verify crackerjack is installed: `uv pip list | grep crackerjack`\n"
-            )
-            error_msg += "2. Reinstall if needed: `uv pip install crackerjack`\n"
-            error_msg += "3. Check Python environment: `which python`\n"
-        elif isinstance(e, FileNotFoundError):
-            error_msg += (
-                f"1. Verify working directory exists: `ls -la {working_directory}`\n"
-            )
-            error_msg += "2. Check if directory is a git repository: `git status`\n"
-            error_msg += "3. Ensure you're in the correct project directory\n"
-        elif isinstance(e, TimeoutError) or "timeout" in str(e).lower():
-            error_msg += f"1. Command exceeded {timeout}s timeout\n"
-            error_msg += (
-                "2. Try increasing timeout or use `--skip-hooks` for faster iteration\n"
-            )
-            error_msg += "3. Check for infinite loops or hanging processes\n"
-        elif isinstance(e, (OSError, PermissionError)):
-            error_msg += "1. Check file permissions in working directory\n"
-            error_msg += "2. Ensure you have write access to project files\n"
-            error_msg += "3. Verify no files are locked by other processes\n"
-        else:
-            error_msg += "1. Try running command directly: `python -m crackerjack`\n"
-            error_msg += "2. Check crackerjack logs for detailed errors\n"
-            error_msg += "3. Use `--ai-debug` for deeper analysis\n"
-
+        error_msg += _build_error_troubleshooting(e, timeout, working_directory)
         error_msg += "\n**Quick Fix**: Run `python -m crackerjack --help` to verify installation\n"
 
         logger.exception(
             "Crackerjack execution failed",
             extra={
                 "command": command,
-                "cmd_args": args,  # Renamed from 'args' to avoid LogRecord conflict
+                "cmd_args": args,
                 "working_dir": working_directory,
                 "ai_mode": ai_agent_mode,
                 "error_type": error_type,
@@ -322,6 +379,54 @@ def _format_recent_executions(results: list[dict[str, Any]]) -> str:
     return output
 
 
+def _parse_result_timestamp(result: dict[str, Any]) -> Any | None:
+    """Parse timestamp from result dict."""
+    from datetime import datetime
+
+    timestamp_str = result.get("timestamp")
+    if not timestamp_str:
+        return None
+
+    try:
+        if isinstance(timestamp_str, str):
+            return datetime.fromisoformat(timestamp_str)
+        return timestamp_str
+    except (ValueError, AttributeError):
+        return None
+
+
+def _filter_results_by_date(
+    results: list[dict[str, Any]], start_date: Any
+) -> list[dict[str, Any]]:
+    """Filter results by date range."""
+    filtered_results = []
+    for result in results:
+        result_date = _parse_result_timestamp(result)
+
+        # Include if no date or within range
+        if result_date is None or result_date >= start_date:
+            filtered_results.append(result)
+
+    return filtered_results
+
+
+def _format_history_output(filtered_results: list[dict[str, Any]], days: int) -> str:
+    """Format history output string."""
+    output = f"📊 **Crackerjack History** (last {days} days)\n\n"
+
+    # Group by command
+    commands = _extract_crackerjack_commands(filtered_results)
+
+    # Display summary
+    output += f"**Total Executions**: {len(filtered_results)}\n"
+    output += f"**Commands Used**: {', '.join(commands.keys())}\n\n"
+
+    # Show recent executions
+    output += _format_recent_executions(filtered_results)
+
+    return output
+
+
 async def _crackerjack_history_impl(
     command_filter: str = "",
     days: int = 7,
@@ -345,45 +450,13 @@ async def _crackerjack_history_impl(
                 limit=50,
             )
 
-            # Filter results by date (in-memory since API doesn't support date params)
-            filtered_results = []
-            for result in results:
-                # Parse timestamp from result
-                timestamp_str = result.get("timestamp")
-                if timestamp_str:
-                    try:
-                        # Handle various timestamp formats
-                        if isinstance(timestamp_str, str):
-                            result_date = datetime.fromisoformat(timestamp_str)
-                        else:
-                            result_date = timestamp_str
-
-                        # Only include results within date range
-                        if result_date >= start_date:
-                            filtered_results.append(result)
-                    except (ValueError, AttributeError):
-                        # If timestamp parsing fails, include it (safer than excluding)
-                        filtered_results.append(result)
-                else:
-                    # No timestamp, include it
-                    filtered_results.append(result)
+            # Filter results by date
+            filtered_results = _filter_results_by_date(results, start_date)
 
             if not filtered_results:
                 return f"📊 No crackerjack executions found in last {days} days"
 
-            output = f"📊 **Crackerjack History** (last {days} days)\n\n"
-
-            # Group by command
-            commands = _extract_crackerjack_commands(filtered_results)
-
-            # Display summary
-            output += f"**Total Executions**: {len(filtered_results)}\n"
-            output += f"**Commands Used**: {', '.join(commands.keys())}\n\n"
-
-            # Show recent executions
-            output += _format_recent_executions(filtered_results)
-
-            return output
+            return _format_history_output(filtered_results, days)
 
     except Exception as e:
         logger.exception(f"Crackerjack history failed: {e}")

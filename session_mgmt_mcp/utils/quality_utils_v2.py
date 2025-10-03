@@ -680,11 +680,40 @@ def _parse_metrics_history(metrics_history: list[dict[str, Any]]) -> dict[str, A
         if metric_type == "code_coverage" and "code_coverage" not in metrics:
             # First coverage metric found
             metrics["code_coverage"] = metric_value
-        elif metric_type in ["lint_score", "security_score", "complexity_score"]:
+        elif metric_type in (
+            "lint_score",
+            "security_score",
+            "complexity_score",
+        ):  # FURB109
             # Update these if found
             metrics[metric_type] = metric_value
 
     return metrics
+
+
+def _read_coverage_json(project_dir: Path) -> float:
+    """Read coverage percentage from coverage.json."""
+    coverage_json = project_dir / "coverage.json"
+    if not coverage_json.exists():
+        return 0
+
+    with suppress(Exception):
+        import json
+
+        coverage_data = json.loads(coverage_json.read_text())
+        return float(coverage_data.get("totals", {}).get("percent_covered", 0))
+
+    return 0
+
+
+def _create_fallback_metrics(coverage_pct: float) -> dict[str, Any]:
+    """Create default metrics with coverage."""
+    return {
+        "code_coverage": coverage_pct,
+        "lint_score": 100,
+        "security_score": 100,
+        "complexity_score": 100,
+    }
 
 
 async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
@@ -692,8 +721,7 @@ async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
     cache_key = str(project_dir.resolve())
 
     # Check cache
-    cached = _get_cached_metrics(cache_key)
-    if cached is not None:
+    if cached := _get_cached_metrics(cache_key):
         return cached
 
     # Fetch fresh metrics
@@ -711,40 +739,18 @@ async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
 
             # If coverage is missing from Crackerjack, try coverage.json fallback
             if "code_coverage" not in metrics:
-                coverage_json = project_dir / "coverage.json"
-                if coverage_json.exists():
-                    with suppress(Exception):
-                        import json
-
-                        coverage_data = json.loads(coverage_json.read_text())
-                        coverage_pct = coverage_data.get("totals", {}).get(
-                            "percent_covered", 0
-                        )
-                        if coverage_pct > 0:
-                            metrics["code_coverage"] = coverage_pct
+                if coverage_pct := _read_coverage_json(project_dir):
+                    metrics["code_coverage"] = coverage_pct
 
             # Cache the result
             _metrics_cache[cache_key] = (metrics, datetime.now())
             return metrics
 
     # Complete fallback: No Crackerjack data at all, try coverage.json
-    coverage_json = project_dir / "coverage.json"
-    if coverage_json.exists():
-        with suppress(Exception):
-            import json
-
-            coverage_data = json.loads(coverage_json.read_text())
-            coverage_pct = coverage_data.get("totals", {}).get("percent_covered", 0)
-            if coverage_pct > 0:
-                fallback_metrics = {
-                    "code_coverage": coverage_pct,
-                    "lint_score": 100,  # Defaults
-                    "security_score": 100,
-                    "complexity_score": 100,
-                }
-                # Cache the fallback result
-                _metrics_cache[cache_key] = (fallback_metrics, datetime.now())
-                return fallback_metrics
+    if coverage_pct := _read_coverage_json(project_dir):
+        fallback_metrics = _create_fallback_metrics(coverage_pct)
+        _metrics_cache[cache_key] = (fallback_metrics, datetime.now())
+        return fallback_metrics
 
     return {}
 

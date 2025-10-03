@@ -547,16 +547,9 @@ class AdvancedSearchEngine:
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
-    async def _update_search_facets(self) -> None:
-        """Update search facets based on indexed content."""
-        if not self.reflection_db.conn:
-            return
-
-        # Clear existing facets
-        self.reflection_db.conn.execute("DELETE FROM search_facets")
-
-        # Generate facets using parameterized queries to prevent SQL injection
-        facet_queries = {
+    def _get_facet_queries(self) -> dict[str, str]:
+        """Get facet query definitions."""
+        return {
             "project": """
                 SELECT JSON_EXTRACT_STRING(search_metadata, '$.project') as facet_value, COUNT(*) as count
                 FROM search_index
@@ -587,42 +580,67 @@ class AdvancedSearchEngine:
             """,
         }
 
+    def _should_process_facet_value(self, facet_value: Any) -> bool:
+        """Check if facet value should be processed."""
+        return isinstance(facet_value, str) and bool(facet_value)
+
+    def _insert_facet_value(self, facet_name: str, facet_value: str) -> None:
+        """Insert a single facet value into the database."""
+        if not self.reflection_db.conn:
+            return
+
+        facet_id = hashlib.md5(
+            f"{facet_name}_{facet_value}".encode(),
+            usedforsecurity=False,
+        ).hexdigest()
+
+        self.reflection_db.conn.execute(
+            """
+            INSERT INTO search_facets
+            (id, content_type, content_id, facet_name, facet_value, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE SET
+            content_type = EXCLUDED.content_type,
+            content_id = EXCLUDED.content_id,
+            facet_name = EXCLUDED.facet_name,
+            facet_value = EXCLUDED.facet_value,
+            created_at = EXCLUDED.created_at
+            """,
+            [
+                facet_id,
+                "search_facet",
+                f"{facet_name}_{facet_value}",
+                facet_name,
+                facet_value,
+                datetime.now(UTC).isoformat(),
+            ],
+        )
+
+    def _process_facet_query(self, facet_name: str, sql: str) -> None:
+        """Process a single facet query."""
+        if not self.reflection_db.conn:
+            return
+
+        results = self.reflection_db.conn.execute(sql).fetchall()
+
+        for facet_value, _count in results:
+            if self._should_process_facet_value(facet_value):
+                self._insert_facet_value(facet_name, facet_value)
+
+    async def _update_search_facets(self) -> None:
+        """Update search facets based on indexed content."""
+        if not self.reflection_db.conn:
+            return
+
+        # Clear existing facets
+        self.reflection_db.conn.execute("DELETE FROM search_facets")
+
+        # Process each facet query
+        facet_queries = self._get_facet_queries()
         for facet_name, sql in facet_queries.items():
-            if not self.reflection_db.conn:
-                continue
+            self._process_facet_query(facet_name, sql)
 
-            results = self.reflection_db.conn.execute(sql).fetchall()
-
-            for facet_value, _count in results:
-                if isinstance(facet_value, str) and facet_value:
-                    facet_id = hashlib.md5(
-                        f"{facet_name}_{facet_value}".encode(),
-                        usedforsecurity=False,
-                    ).hexdigest()
-
-                    if self.reflection_db.conn:
-                        self.reflection_db.conn.execute(
-                            """
-                            INSERT INTO search_facets
-                            (id, content_type, content_id, facet_name, facet_value, created_at)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            ON CONFLICT (id) DO UPDATE SET
-                            content_type = EXCLUDED.content_type,
-                            content_id = EXCLUDED.content_id,
-                            facet_name = EXCLUDED.facet_name,
-                            facet_value = EXCLUDED.facet_value,
-                            created_at = EXCLUDED.created_at
-                            """,
-                            [
-                                facet_id,
-                                "search_facet",
-                                f"{facet_name}_{facet_value}",
-                                facet_name,
-                                facet_value,
-                                datetime.now(UTC).isoformat(),
-                            ],
-                        )
-
+        # Commit all changes
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
@@ -969,18 +987,17 @@ class AdvancedSearchEngine:
         """Parse timeframe string into start and end times."""
         now = datetime.now(UTC)
 
-        if timeframe == "1h":
-            start_time = now - timedelta(hours=1)
-        elif timeframe == "1d":
-            start_time = now - timedelta(days=1)
-        elif timeframe == "1w":
-            start_time = now - timedelta(weeks=1)
-        elif timeframe == "1m":
-            start_time = now - timedelta(days=30)
-        elif timeframe == "1y":
-            start_time = now - timedelta(days=365)
-        else:
-            # Try to parse as ISO date range or default to 30 days
-            start_time = now - timedelta(days=30)
+        # Mapping of timeframe strings to timedelta
+        timeframe_map = {
+            "1h": timedelta(hours=1),
+            "1d": timedelta(days=1),
+            "1w": timedelta(weeks=1),
+            "1m": timedelta(days=30),
+            "1y": timedelta(days=365),
+        }
+
+        # Get delta from map, default to 30 days
+        delta = timeframe_map.get(timeframe, timedelta(days=30))
+        start_time = now - delta
 
         return start_time, now
