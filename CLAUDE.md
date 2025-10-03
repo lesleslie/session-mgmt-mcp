@@ -833,7 +833,7 @@ When working with this codebase, remember these architectural patterns:
 
 <!-- CRACKERJACK INTEGRATION START -->
 
-# Crackerjack Integration for session-mgmt-mcp
+## Crackerjack Integration for session-mgmt-mcp
 
 This project uses crackerjack for Python project management and quality assurance.
 

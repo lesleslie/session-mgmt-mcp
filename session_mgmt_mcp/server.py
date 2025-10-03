@@ -910,7 +910,13 @@ async def calculate_quality_score() -> dict[str, Any]:
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
 
     # Import V2 quality scoring (late import to avoid circular dependencies)
-    from session_mgmt_mcp.utils.quality_utils_v2 import calculate_quality_score_v2
+    from session_mgmt_mcp.utils.quality_utils_v2 import (
+        _metrics_cache,
+        calculate_quality_score_v2,
+    )
+
+    # Clear metrics cache to ensure fresh coverage data
+    _metrics_cache.clear()
 
     # Get V2 quality score with actual code metrics
     permissions_count = len(permissions_manager.trusted_operations)
