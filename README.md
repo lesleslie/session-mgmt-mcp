@@ -224,6 +224,96 @@ The `crackerjack_integration.py` module (50KB+) provides:
 
 The integration is automatic once both servers are configured - they coordinate through the MCP protocol without requiring additional setup.
 
+### Crackerjack MCP Tool Usage
+
+When using Crackerjack through MCP tools, follow these patterns for correct usage:
+
+#### ✅ Correct Usage
+
+```python
+# Run tests with AI auto-fix
+await crackerjack_run(command="test", ai_agent_mode=True)
+
+# Run all checks with verbose output
+await crackerjack_run(
+    command="check",
+    args="--verbose",
+    ai_agent_mode=True,
+    timeout=600,  # 10 minutes for complex fixes
+)
+
+# Dry-run to preview fixes
+await crackerjack_run(command="test", args="--dry-run", ai_agent_mode=True)
+
+# Run security checks
+await execute_crackerjack_command(command="security")
+
+# Run with custom iteration limit
+await crackerjack_run(command="test", args="--max-iterations 15", ai_agent_mode=True)
+```
+
+#### ❌ Common Mistakes
+
+```python
+# WRONG - Don't put flags in command parameter
+await crackerjack_run(command="--ai-fix -t")
+
+# WRONG - Don't put --ai-fix in args
+await crackerjack_run(command="test", args="--ai-fix")
+
+# WRONG - Don't use CLI flag syntax
+await execute_crackerjack_command(command="-t --verbose")
+
+# CORRECT
+await crackerjack_run(command="test", ai_agent_mode=True)
+```
+
+#### Parameters
+
+- **`command`** (required): Semantic command name
+
+  - Valid: `test`, `lint`, `check`, `format`, `security`, `complexity`, `all`
+  - Invalid: `--ai-fix`, `-t`, any CLI flags
+
+- **`ai_agent_mode`** (optional, default False): Enable AI-powered auto-fix
+
+  - Replaces the `--ai-fix` CLI flag
+  - Requires Anthropic API key configured in crackerjack
+  - Max 10 iterations by default (configurable via `--max-iterations` in args)
+
+- **`args`** (optional): Additional arguments
+
+  - Examples: `--verbose`, `--dry-run`, `--max-iterations 5`
+  - Do NOT include `--ai-fix` here - use `ai_agent_mode=True` instead
+
+- **`working_directory`** (optional, default "."): Working directory for command execution
+
+- **`timeout`** (optional, default 300): Timeout in seconds
+
+  - Increase for complex auto-fix operations (e.g., 600-1200 seconds)
+
+#### Auto-Fix Workflow
+
+When `ai_agent_mode=True`, Crackerjack will:
+
+1. Run pre-commit hooks and detect issues
+1. Apply AI-powered fixes using Claude AI
+1. Re-run hooks to verify fixes
+1. Iterate up to 10 times (or custom `--max-iterations`) until convergence
+1. Stop when all hooks pass or no progress can be made
+
+**Configuration Requirements:**
+
+```bash
+# 1. Set API key
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# 2. Configure adapter in settings/adapters.yml
+ai: claude
+```
+
+See [Crackerjack AUTO_FIX_GUIDE.md](https://github.com/lesleslie/crackerjack/blob/main/docs/AUTO_FIX_GUIDE.md) for detailed auto-fix documentation.
+
 ## Installation
 
 ### From Source

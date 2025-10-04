@@ -16,12 +16,98 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Import the production-ready hook parser
+try:
+    from .hook_parser import ParseError, parse_hook_output
+except ImportError:
+    # Fallback if hook_parser isn't available
+    logger.warning("hook_parser module not available, using fallback parser")
+    parse_hook_output = None
+    ParseError = None
+
+
+def _parse_hook_results(stdout: str) -> tuple[list[str], list[str]]:
+    """Parse hook results from stdout to find actual failures.
+
+    Uses the production-ready reverse-parsing algorithm from hook_parser module.
+
+    Expected format:
+        hook-name........... ✅
+        hook-name........... ❌
+
+    Returns:
+        Tuple of (passed_hooks, failed_hooks)
+
+    """
+    passed_hooks = []
+    failed_hooks = []
+
+    if not stdout or not isinstance(stdout, str):
+        logger.warning("Invalid stdout provided to hook parser")
+        return passed_hooks, failed_hooks
+
+    try:
+        # Use the robust hook_parser if available
+        if parse_hook_output is not None:
+            results = parse_hook_output(stdout)
+            for result in results:
+                if result.passed:
+                    passed_hooks.append(result.hook_name)
+                else:
+                    failed_hooks.append(result.hook_name)
+        else:
+            # Fallback: basic parsing (less robust but works for simple cases)
+            logger.debug("Using fallback hook parser")
+            for line in stdout.split("\n"):
+                line = line.strip()
+                if not line or "..." not in line:
+                    continue
+
+                parts = line.split("...", 1)
+                if len(parts) < 2:
+                    continue
+
+                hook_name = parts[0].strip()
+                status_part = parts[1]
+
+                if not hook_name:
+                    continue
+
+                if "❌" in status_part or "Failed" in status_part:
+                    failed_hooks.append(hook_name)
+                elif "✅" in status_part or "Passed" in status_part:
+                    passed_hooks.append(hook_name)
+
+    except ParseError as e:
+        logger.exception(f"Hook parsing failed: {e}")
+    except Exception as e:
+        logger.exception(f"Unexpected error in hook parsing: {e}")
+
+    return passed_hooks, failed_hooks
+
 
 def _format_execution_status(result: CrackerjackResult) -> str:
     """Format execution status for output."""
-    if result.exit_code == 0:
-        return "✅ **Status**: Success\n"
-    return f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+    # Parse actual hook results from stdout
+    passed_hooks, failed_hooks = _parse_hook_results(result.stdout)
+
+    # Validate parsing worked
+    if not passed_hooks and not failed_hooks and result.stdout.strip():
+        logger.warning(
+            "Hook parsing returned no results despite non-empty stdout - "
+            "this may indicate a parsing failure or unexpected output format"
+        )
+
+    # Determine true status based on both exit code AND hook failures
+    has_failures = result.exit_code != 0 or len(failed_hooks) > 0
+
+    if has_failures:
+        status = f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+        if failed_hooks:
+            status += f"**Failed Hooks**: {', '.join(failed_hooks)}\n"
+        return status
+
+    return "✅ **Status**: Success\n"
 
 
 def _format_output_sections(result: CrackerjackResult) -> str:
@@ -94,10 +180,25 @@ def _format_basic_result(result: Any, command: str) -> str:
     """Format basic execution result with status and output."""
     formatted = f"🔧 **Crackerjack {command}** executed\n\n"
 
-    if result.exit_code == 0:
-        formatted += "✅ **Status**: Success\n"
-    else:
+    # Parse actual hook results from stdout
+    passed_hooks, failed_hooks = _parse_hook_results(result.stdout)
+
+    # Validate parsing worked
+    if not passed_hooks and not failed_hooks and result.stdout.strip():
+        logger.warning(
+            "Hook parsing returned no results despite non-empty stdout - "
+            "this may indicate a parsing failure or unexpected output format"
+        )
+
+    # Determine true status based on both exit code AND hook failures
+    has_failures = result.exit_code != 0 or len(failed_hooks) > 0
+
+    if has_failures:
         formatted += f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+        if failed_hooks:
+            formatted += f"**Failed Hooks**: {', '.join(failed_hooks)}\n"
+    else:
+        formatted += "✅ **Status**: Success\n"
 
     if result.stdout.strip():
         formatted += f"\n**Output**:\n```\n{result.stdout}\n```\n"
@@ -216,6 +317,23 @@ async def _store_execution_result(
     except Exception as e:
         logger.debug(f"Failed to store crackerjack execution: {e}")
         return ""
+
+
+def _suggest_command(invalid: str, valid: set[str]) -> str:
+    """Suggest closest valid command using fuzzy matching.
+
+    Args:
+        invalid: Invalid command that was provided
+        valid: Set of valid command names
+
+    Returns:
+        Suggested command name or "check" as fallback
+
+    """
+    from difflib import get_close_matches
+
+    matches = get_close_matches(invalid, valid, n=1, cutoff=0.6)
+    return matches[0] if matches else "check"
 
 
 def _build_error_troubleshooting(
@@ -886,7 +1004,73 @@ def register_crackerjack_tools(mcp: Any) -> None:
         timeout: int = 300,
         ai_agent_mode: bool = False,
     ) -> str:
-        """Execute a Crackerjack command with enhanced AI integration."""
+        """Execute a Crackerjack command with enhanced AI integration.
+
+        Args:
+            command: Semantic command name (test, lint, check, format, security, all)
+            args: Additional arguments (NOT including --ai-fix)
+            working_directory: Working directory
+            timeout: Timeout in seconds
+            ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
+
+        Examples:
+            # ✅ Correct usage
+            execute_crackerjack_command(command="test", ai_agent_mode=True)
+            execute_crackerjack_command(command="check", args="--verbose", ai_agent_mode=True)
+
+            # ❌ Wrong usage
+            execute_crackerjack_command(command="--ai-fix -t")  # Will raise error!
+
+        Returns:
+            Formatted execution results with validation errors if invalid input
+
+        """
+        # Validate command parameter
+        valid_commands = {
+            "test",
+            "lint",
+            "check",
+            "format",
+            "security",
+            "complexity",
+            "all",
+        }
+
+        if command.startswith("--"):
+            return (
+                f"❌ **Invalid Command**: {command!r}\n\n"
+                f"**Error**: Commands should be semantic names, not flags.\n\n"
+                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+                f"**Correct usage**:\n"
+                f"```python\n"
+                f"execute_crackerjack_command(command='test', ai_agent_mode=True)\n"
+                f"```\n\n"
+                f"**Not**:\n"
+                f"```python\n"
+                f"execute_crackerjack_command(command='--ai-fix -t')  # Wrong!\n"
+                f"```"
+            )
+
+        if command not in valid_commands:
+            suggested = _suggest_command(command, valid_commands)
+            return (
+                f"❌ **Unknown Command**: {command!r}\n\n"
+                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+                f"**Did you mean**: `{suggested}`"
+            )
+
+        # Check for --ai-fix in args
+        if "--ai-fix" in args:
+            return (
+                "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
+                "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
+                "**Correct**:\n"
+                "```python\n"
+                f"execute_crackerjack_command(command='{command}', ai_agent_mode=True)\n"
+                "```"
+            )
+
+        # Proceed with validated inputs
         return await _execute_crackerjack_command_impl(
             command, args, working_directory, timeout, ai_agent_mode
         )
@@ -899,7 +1083,73 @@ def register_crackerjack_tools(mcp: Any) -> None:
         timeout: int = 300,
         ai_agent_mode: bool = False,
     ) -> str:
-        """Run crackerjack with enhanced analytics (replaces /crackerjack:run)."""
+        """Run crackerjack with enhanced analytics.
+
+        Args:
+            command: Semantic command name (test, lint, check, format, security, all)
+            args: Additional arguments (NOT including --ai-fix)
+            working_directory: Working directory
+            timeout: Timeout in seconds
+            ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
+
+        Examples:
+            # ✅ Correct usage
+            crackerjack_run(command="test", ai_agent_mode=True)
+            crackerjack_run(command="check", args="--verbose", ai_agent_mode=True)
+
+            # ❌ Wrong usage
+            crackerjack_run(command="--ai-fix -t")  # Will raise error!
+
+        Returns:
+            Formatted execution results with validation errors if invalid input
+
+        """
+        # Validate command parameter
+        valid_commands = {
+            "test",
+            "lint",
+            "check",
+            "format",
+            "security",
+            "complexity",
+            "all",
+        }
+
+        if command.startswith("--"):
+            return (
+                f"❌ **Invalid Command**: {command!r}\n\n"
+                f"**Error**: Commands should be semantic names, not flags.\n\n"
+                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+                f"**Correct usage**:\n"
+                f"```python\n"
+                f"crackerjack_run(command='test', ai_agent_mode=True)\n"
+                f"```\n\n"
+                f"**Not**:\n"
+                f"```python\n"
+                f"crackerjack_run(command='--ai-fix -t')  # Wrong!\n"
+                f"```"
+            )
+
+        if command not in valid_commands:
+            suggested = _suggest_command(command, valid_commands)
+            return (
+                f"❌ **Unknown Command**: {command!r}\n\n"
+                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+                f"**Did you mean**: `{suggested}`"
+            )
+
+        # Check for --ai-fix in args
+        if "--ai-fix" in args:
+            return (
+                "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
+                "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
+                "**Correct**:\n"
+                "```python\n"
+                f"crackerjack_run(command='{command}', ai_agent_mode=True)\n"
+                "```"
+            )
+
+        # Proceed with validated inputs
         return await _crackerjack_run_impl(
             command, args, working_directory, timeout, ai_agent_mode
         )
