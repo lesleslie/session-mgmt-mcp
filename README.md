@@ -546,12 +546,10 @@ The project documentation is organized into the following categories:
 
 ### For Developers
 
-- **[Testing Strategy](docs/developer/TESTING_STRATEGY.md)** - Comprehensive testing approach and implementation plan
-- **[Testing Status](docs/developer/TESTING_STATUS.md)** - Current testing progress and improvements
+- **[Testing Guide](docs/TESTING.md)** - Comprehensive testing strategy, status, and standards
 - **[Parameter Validation](docs/developer/PARAMETER_VALIDATION.md)** - Pydantic parameter validation guide
 - **[Architecture](docs/developer/ARCHITECTURE.md)** - System architecture and design patterns
 - **[Integration](docs/developer/INTEGRATION.md)** - Integration patterns and best practices
-- **[Advanced Search Fixes](docs/developer/ADVANCED_SEARCH_FIXES_PLAN.md)** - Search functionality improvements
 
 ### For Users
 
@@ -562,10 +560,11 @@ The project documentation is organized into the following categories:
 
 ### Features
 
-- **[AI Integration Patterns](docs/features/AI_INTEGRATION_PATTERNS.md)** - AI integration strategies
-- **[Token Optimization](docs/features/TOKEN_OPTIMIZATION_FEATURES.md)** - Token management features
-- **[Auto Lifecycle](docs/features/AUTO_LIFECYCLE_IMPLEMENTATION.md)** - Automatic session management
-- **[Crackerjack Integration](docs/features/CRACKERJACK_INTEGRATION.md)** - Code quality integration
+- **[AI Integration](docs/features/AI_INTEGRATION.md)** - AI integration strategies and patterns
+- **[Token Optimization](docs/features/TOKEN_OPTIMIZATION.md)** - Token management and chunking features
+- **[Auto Lifecycle](docs/features/AUTO_LIFECYCLE.md)** - Automatic session management
+- **[Crackerjack Integration](docs/CRACKERJACK.md)** - Comprehensive code quality integration
+- **[Selective Auto-Store](docs/features/SELECTIVE_AUTO_STORE.md)** - Smart reflection storage
 
 ### Reference
 

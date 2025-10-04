@@ -24,7 +24,7 @@
 ## Testing Guidelines
 
 - Write pytest cases alongside code under matching paths (`session_mgmt_mcp/foo.py` → `tests/unit/test_foo.py`); lean on async fixtures already provided.
-- Preserve or raise the project’s 30.8% coverage toward the 42% minimum and long-term 85% goal noted in `docs/TEST_PROGRESS_REPORT.md`.
+- Preserve or raise the project's coverage toward the long-term 85% goal (current status in `docs/TESTING.md`).
 - Regenerate reports with `uv run pytest --cov ... --cov-report=html` and review `htmlcov/index.html` before submitting.
 - Document flaky behavior in test notes and mark with `@pytest.mark.xfail` plus an issue link when a temporary skip is unavoidable.
 
