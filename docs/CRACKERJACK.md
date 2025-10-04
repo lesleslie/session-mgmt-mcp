@@ -5,15 +5,15 @@ This document provides comprehensive guidance on session-mgmt-mcp's deep integra
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [MCP Tool Interface](#mcp-tool-interface)
-3. [Integration Architecture](#integration-architecture)
-4. [Hook Output Parsing](#hook-output-parsing)
-5. [API Reference](#api-reference)
-6. [Workflow Examples](#workflow-examples)
-7. [Configuration](#configuration)
-8. [Troubleshooting](#troubleshooting)
+1. [MCP Tool Interface](#mcp-tool-interface)
+1. [Integration Architecture](#integration-architecture)
+1. [Hook Output Parsing](#hook-output-parsing)
+1. [API Reference](#api-reference)
+1. [Workflow Examples](#workflow-examples)
+1. [Configuration](#configuration)
+1. [Troubleshooting](#troubleshooting)
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -28,10 +28,7 @@ await crackerjack_run(command="test", ai_agent_mode=True)
 
 # With additional arguments
 await crackerjack_run(
-    command="check",
-    args="--verbose",
-    ai_agent_mode=True,
-    timeout=600
+    command="check", args="--verbose", ai_agent_mode=True, timeout=600
 )
 ```
 
@@ -39,22 +36,22 @@ await crackerjack_run(
 
 ```python
 # Quality checks
-crackerjack_run(command="check")    # Basic quality checks
-crackerjack_run(command="lint")     # Linting and style
-crackerjack_run(command="test")     # Test execution
+crackerjack_run(command="check")  # Basic quality checks
+crackerjack_run(command="lint")  # Linting and style
+crackerjack_run(command="test")  # Test execution
 crackerjack_run(command="analyze")  # Comprehensive analysis
 
 # Security and complexity
-crackerjack_run(command="security")    # Security scanning
+crackerjack_run(command="security")  # Security scanning
 crackerjack_run(command="complexity")  # Complexity analysis
-crackerjack_run(command="coverage")    # Coverage reporting
+crackerjack_run(command="coverage")  # Coverage reporting
 
 # Maintenance
-crackerjack_run(command="format")   # Code formatting
-crackerjack_run(command="clean")    # Cleanup operations
+crackerjack_run(command="format")  # Code formatting
+crackerjack_run(command="clean")  # Cleanup operations
 ```
 
----
+______________________________________________________________________
 
 ## MCP Tool Interface
 
@@ -90,26 +87,20 @@ async def crackerjack_run(
 The tool includes comprehensive input validation to prevent common mistakes:
 
 **✅ Correct Usage:**
+
 ```python
 # Semantic command with ai_agent_mode
 await crackerjack_run(command="test", ai_agent_mode=True)
 
 # With additional args
-await crackerjack_run(
-    command="check",
-    args="--verbose",
-    ai_agent_mode=True
-)
+await crackerjack_run(command="check", args="--verbose", ai_agent_mode=True)
 
 # Dry-run mode
-await crackerjack_run(
-    command="test",
-    args="--dry-run",
-    ai_agent_mode=True
-)
+await crackerjack_run(command="test", args="--dry-run", ai_agent_mode=True)
 ```
 
 **❌ Incorrect Usage (Will Error):**
+
 ```python
 # Flags in command parameter
 await crackerjack_run(command="--ai-fix -t")
@@ -142,7 +133,7 @@ await crackerjack_run(command="invalid")
 | `clean` | Cleanup operations |
 | `docs` | Documentation generation |
 
----
+______________________________________________________________________
 
 ## Integration Architecture
 
@@ -221,7 +212,7 @@ Store Session Memory
 Return to User
 ```
 
----
+______________________________________________________________________
 
 ## Hook Output Parsing
 
@@ -251,10 +242,7 @@ def parse_hook_line(line: str) -> HookResult:
     # Step 3: Extract hook name
     hook_name = left_part.rstrip(".")
 
-    return HookResult(
-        hook_name=hook_name,
-        passed=(status_marker in ["✅", "Passed"])
-    )
+    return HookResult(hook_name=hook_name, passed=(status_marker in ["✅", "Passed"]))
 ```
 
 ### Why Reverse Parsing?
@@ -262,9 +250,10 @@ def parse_hook_line(line: str) -> HookResult:
 **Problem:** Hook names can contain dots (e.g., `test.integration.api`)
 
 **Solution:** Parse from right to left:
+
 1. Split on last whitespace: `hook_name....... ❌` → `[hook_name......., ❌]`
-2. Strip dots from right: `hook_name.......` → `hook_name`
-3. Handles any hook name pattern correctly
+1. Strip dots from right: `hook_name.......` → `hook_name`
+1. Handles any hook name pattern correctly
 
 ### Example Parsing
 
@@ -287,14 +276,16 @@ Result:
 ### Supported Status Markers
 
 **Pass Markers:**
+
 - `✅` (green checkmark)
 - `Passed` (text)
 
 **Fail Markers:**
+
 - `❌` (red X)
 - `Failed` (text)
 
----
+______________________________________________________________________
 
 ## API Reference
 
@@ -390,32 +381,32 @@ async def analyze_crackerjack_test_patterns(
 ```python
 @dataclass
 class CrackerjackResult:
-    command: str                          # Command executed
-    exit_code: int                        # Process exit code
-    stdout: str                           # Standard output
-    stderr: str                           # Standard error
-    execution_time: float                 # Execution time (seconds)
-    timestamp: datetime                   # Completion timestamp
-    working_directory: str                # Execution directory
-    parsed_data: dict[str, Any] | None   # Structured data
-    quality_metrics: dict[str, float]     # Quality scores
-    test_results: list[dict[str, Any]]   # Individual test results
-    memory_insights: list[str]            # Session insights
+    command: str  # Command executed
+    exit_code: int  # Process exit code
+    stdout: str  # Standard output
+    stderr: str  # Standard error
+    execution_time: float  # Execution time (seconds)
+    timestamp: datetime  # Completion timestamp
+    working_directory: str  # Execution directory
+    parsed_data: dict[str, Any] | None  # Structured data
+    quality_metrics: dict[str, float]  # Quality scores
+    test_results: list[dict[str, Any]]  # Individual test results
+    memory_insights: list[str]  # Session insights
 ```
 
 #### QualityMetric
 
 ```python
 class QualityMetric(Enum):
-    CODE_COVERAGE = "coverage"           # Test coverage %
-    COMPLEXITY = "complexity"            # Cognitive complexity
-    LINT_SCORE = "lint_score"            # Code quality score
-    SECURITY_SCORE = "security_score"    # Security assessment
-    TEST_PASS_RATE = "test_pass_rate"    # Test success rate
-    BUILD_STATUS = "build_status"        # Build success/failure
+    CODE_COVERAGE = "coverage"  # Test coverage %
+    COMPLEXITY = "complexity"  # Cognitive complexity
+    LINT_SCORE = "lint_score"  # Code quality score
+    SECURITY_SCORE = "security_score"  # Security assessment
+    TEST_PASS_RATE = "test_pass_rate"  # Test success rate
+    BUILD_STATUS = "build_status"  # Build success/failure
 ```
 
----
+______________________________________________________________________
 
 ## Workflow Examples
 
@@ -440,7 +431,7 @@ All hooks passed successfully!
 result = await crackerjack_run(
     command="test",
     ai_agent_mode=True,
-    timeout=600  # Allow time for AI fixes
+    timeout=600,  # Allow time for AI fixes
 )
 
 # Output (if fixes applied):
@@ -461,9 +452,7 @@ result = await crackerjack_run(
 ```python
 # Get 30-day quality trend
 metrics = await get_crackerjack_quality_metrics(
-    days=30,
-    working_directory="/path/to/project",
-    include_trends=True
+    days=30, working_directory="/path/to/project", include_trends=True
 )
 
 # Analyze trends
@@ -479,9 +468,7 @@ else:
 ```python
 # Analyze test patterns
 patterns = await analyze_crackerjack_test_patterns(
-    days=7,
-    working_directory="/path/to/project",
-    include_failures=True
+    days=7, working_directory="/path/to/project", include_failures=True
 )
 
 # Show failure patterns
@@ -501,11 +488,7 @@ async def development_session():
     await init_session_with_crackerjack_context()
 
     # 2. Run quality analysis
-    result = await execute_crackerjack_command(
-        "analyze",
-        test=True,
-        ai_agent=True
-    )
+    result = await execute_crackerjack_command("analyze", test=True, ai_agent=True)
 
     # 3. Store results for future sessions
     await store_quality_metrics(result.quality_metrics)
@@ -515,13 +498,13 @@ async def development_session():
     insights = await generate_session_insights(result)
     await store_reflection(
         content=f"Quality: {result.quality_metrics.get('overall_score')}",
-        tags=["quality", "crackerjack", "analysis"]
+        tags=["quality", "crackerjack", "analysis"],
     )
 
     return result
 ```
 
----
+______________________________________________________________________
 
 ## Configuration
 
@@ -532,7 +515,7 @@ async def development_session():
 ```python
 # Crackerjack integration settings
 CRACKERJACK_TIMEOUT_DEFAULT = 300  # 5 minutes
-CRACKERJACK_TIMEOUT_MAX = 1800     # 30 minutes
+CRACKERJACK_TIMEOUT_MAX = 1800  # 30 minutes
 CRACKERJACK_MAX_RETRIES = 3
 ```
 
@@ -580,14 +563,15 @@ integration_config = {
 }
 ```
 
----
+______________________________________________________________________
 
 ## Error Handling
 
 ### Input Validation Errors
 
 **Error: Command with flags**
-```python
+
+````python
 await crackerjack_run(command="--ai-fix")
 
 # Returns:
@@ -601,9 +585,11 @@ await crackerjack_run(command="--ai-fix")
 **Correct usage**:
 ```python
 crackerjack_run(command='test', ai_agent_mode=True)
-```
+````
+
 """
-```
+
+````
 
 **Error: --ai-fix in args**
 ```python
@@ -618,9 +604,11 @@ await crackerjack_run(command="test", args="--ai-fix")
 **Correct**:
 ```python
 crackerjack_run(command='test', ai_agent_mode=True)
-```
+````
+
 """
-```
+
+````
 
 ### Execution Errors
 
@@ -634,9 +622,10 @@ await crackerjack_run(command="all", timeout=10)
 
 **Suggestion**: Increase timeout parameter or run fewer hooks
 """
-```
+````
 
 **Hook Failures:**
+
 ```python
 # When hooks fail (basic mode)
 result = await crackerjack_run(command="lint")
@@ -653,7 +642,7 @@ ruff.................................................................. ✅
 """
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -662,29 +651,33 @@ ruff.................................................................. ✅
 **Symptoms:** Timeout or no response
 
 **Solutions:**
+
 1. Check MCP server running: `pgrep -fl session-mgmt-mcp`
-2. Restart MCP server
-3. Check logs: `tail -f ~/.claude/logs/session-mgmt-mcp.log`
+1. Restart MCP server
+1. Check logs: `tail -f ~/.claude/logs/session-mgmt-mcp.log`
 
 ### Hook Parsing Fails
 
 **Symptoms:** "ParseError" in output
 
 **Causes:**
+
 - Unexpected hook output format
 - Extra characters in hook output
 - Status markers changed
 
 **Solutions:**
+
 1. Check raw hook output
-2. Verify hook configuration
-3. Update `hook_parser.py` if format changed
+1. Verify hook configuration
+1. Update `hook_parser.py` if format changed
 
 ### Command Validation Errors
 
 **Symptoms:** "Invalid Command" or "Invalid Args" errors
 
 **Solutions:**
+
 - Use semantic commands: `test`, `lint`, `check`
 - Don't put flags in `command` parameter
 - Use `ai_agent_mode=True` instead of `--ai-fix`
@@ -705,19 +698,13 @@ print(f"Cache hit rate: {perf_stats['cache_hit_rate']:.1f}%")
 import logging
 
 # Enable debug logging
-logging.getLogger("session_mgmt_mcp.crackerjack_integration").setLevel(
-    logging.DEBUG
-)
+logging.getLogger("session_mgmt_mcp.crackerjack_integration").setLevel(logging.DEBUG)
 
 # Execute with verbose output
-result = await execute_crackerjack_command(
-    "test",
-    verbose=True,
-    capture_progress=True
-)
+result = await execute_crackerjack_command("test", verbose=True, capture_progress=True)
 ```
 
----
+______________________________________________________________________
 
 ## Advanced Features
 
@@ -726,10 +713,7 @@ result = await execute_crackerjack_command(
 ```python
 # Predict completion time
 prediction = await predict_crackerjack_completion_time(
-    command="test",
-    ai_agent=True,
-    project_size_lines=15000,
-    test_count=450
+    command="test", ai_agent=True, project_size_lines=15000, test_count=450
 )
 
 print(f"Estimated: {prediction['estimated_minutes']} minutes")
@@ -744,13 +728,12 @@ await record_successful_fix(
     error_pattern="F401: imported but unused",
     fix_method="ai_agent_refactoring",
     success_rate=0.95,
-    project_context="/path/to/project"
+    project_context="/path/to/project",
 )
 
 # Query historical fixes
 fixes = await get_historical_fixes(
-    error_pattern="complexity exceeds 15",
-    confidence_threshold=0.8
+    error_pattern="complexity exceeds 15", confidence_threshold=0.8
 )
 ```
 
@@ -759,9 +742,7 @@ fixes = await get_historical_fixes(
 ```python
 # Get optimized workflow suggestions
 suggestions = await get_workflow_suggestions(
-    current_state="test_failures",
-    project_type="python_package",
-    quality_score=75
+    current_state="test_failures", project_type="python_package", quality_score=75
 )
 
 for suggestion in suggestions["recommended_sequence"]:
@@ -770,24 +751,27 @@ for suggestion in suggestions["recommended_sequence"]:
     print(f"Expected improvement: +{suggestion['quality_improvement']:.1f}")
 ```
 
----
+______________________________________________________________________
 
 ## Resources
 
 **Documentation:**
+
 - [Crackerjack GitHub](https://github.com/lesleslie/crackerjack)
 - [MCP Protocol Specification](https://modelcontextprotocol.io)
 
 **Project Files:**
+
 - Integration module: `session_mgmt_mcp/crackerjack_integration.py`
 - MCP tools: `session_mgmt_mcp/tools/crackerjack_tools.py`
 - Hook parser: `session_mgmt_mcp/tools/hook_parser.py`
 
 **Testing:**
+
 - Unit tests: `tests/unit/test_hook_parser.py`
 - Integration tests: `tests/integration/test_crackerjack_integration.py`
 
----
+______________________________________________________________________
 
 **Last Updated:** 2025-01-04
 **Version:** 2.0

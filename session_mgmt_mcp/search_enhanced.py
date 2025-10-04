@@ -19,6 +19,7 @@ except ImportError:
 
 
 from .reflection_tools import ReflectionDatabase
+from .types import TimeRange
 from .utils.regex_patterns import SAFE_PATTERNS
 
 
@@ -207,24 +208,18 @@ class TemporalSearchParser:
         if unit == "week":
             return timedelta(weeks=amount)
         if unit == "month":
-            return (
-                relativedelta(months=amount)
-                if DATEUTIL_AVAILABLE
-                else timedelta(days=amount * 30)
-            )
+            # Always use timedelta approximation for type safety
+            return timedelta(days=amount * 30)
         if unit == "year":
-            return (
-                relativedelta(years=amount)
-                if DATEUTIL_AVAILABLE
-                else timedelta(days=amount * 365)
-            )
+            # Always use timedelta approximation for type safety
+            return timedelta(days=amount * 365)
         return timedelta()
 
     def _parse_relative_patterns(
         self,
         expression: str,
         now: datetime,
-    ) -> tuple[datetime | None, datetime | None]:
+    ) -> TimeRange:
         """Parse relative time patterns."""
         for pattern, delta in self.relative_patterns.items():
             if pattern in expression:
@@ -234,14 +229,14 @@ class TemporalSearchParser:
                 else:
                     start_time = now - delta
                     end_time = now
-                return start_time, end_time
-        return None, None
+                return TimeRange(start=start_time, end=end_time)
+        return TimeRange()
 
     def _parse_ago_pattern(
         self,
         expression: str,
         now: datetime,
-    ) -> tuple[datetime | None, datetime | None]:
+    ) -> TimeRange:
         """Parse 'X time units ago' pattern."""
         match = SAFE_PATTERNS["time_ago_pattern"].search(expression)
         if match:
@@ -249,14 +244,14 @@ class TemporalSearchParser:
             unit = match.group(2)
             delta = self._calculate_delta(amount, unit)
             end_time = now - delta
-            return end_time, now
-        return None, None
+            return TimeRange(start=end_time, end=now)
+        return TimeRange()
 
     def _parse_last_pattern(
         self,
         expression: str,
         now: datetime,
-    ) -> tuple[datetime | None, datetime | None]:
+    ) -> TimeRange:
         """Parse 'in the last X units' pattern."""
         match = SAFE_PATTERNS["last_duration_pattern"].search(expression)
         if match:
@@ -264,30 +259,35 @@ class TemporalSearchParser:
             unit = match.group(2)
             delta = self._calculate_delta(amount, unit)
             start_time = now - delta
-            return start_time, now
-        return None, None
+            return TimeRange(start=start_time, end=now)
+        return TimeRange()
 
     def _parse_absolute_date(
         self,
         expression: str,
-    ) -> tuple[datetime | None, datetime | None]:
+    ) -> TimeRange:
         """Parse absolute date expressions."""
         if not DATEUTIL_AVAILABLE:
-            return None, None
+            return TimeRange()
 
-        try:
+        from contextlib import suppress
+
+        with suppress(ValueError, TypeError):
             parsed_date = parse_date(expression)
-            # Return day range (start of day to end of day)
-            start_time = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = start_time + timedelta(days=1)
-            return start_time, end_time
-        except (ValueError, TypeError):
-            return None, None
+            # Ensure parsed_date is a datetime object
+            if isinstance(parsed_date, datetime):
+                # Return day range (start of day to end of day)
+                start_time = parsed_date.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                end_time = start_time + timedelta(days=1)
+                return TimeRange(start=start_time, end=end_time)
+        return TimeRange()
 
     def parse_time_expression(
         self,
         expression: str,
-    ) -> tuple[datetime | None, datetime | None]:
+    ) -> TimeRange:
         """Parse time expression into start and end datetime."""
         expression = expression.lower().strip()
         now = datetime.now()
@@ -302,10 +302,10 @@ class TemporalSearchParser:
 
         for parser in parsers:
             result = parser(expression, now)
-            if result != (None, None):
+            if result.start is not None or result.end is not None:
                 return result
 
-        return None, None
+        return TimeRange()
 
 
 class EnhancedSearchEngine:
@@ -439,12 +439,15 @@ class EnhancedSearchEngine:
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """Search conversations within a time range."""
-        start_time, end_time = self.temporal_parser.parse_time_expression(
+        time_range = self.temporal_parser.parse_time_expression(
             time_expression,
         )
 
-        if not start_time or not end_time:
+        if not time_range.start or not time_range.end:
             return [{"error": f"Could not parse time expression: {time_expression}"}]
+
+        start_time = time_range.start
+        end_time = time_range.end
 
         results = []
 

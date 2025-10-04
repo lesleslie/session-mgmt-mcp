@@ -32,6 +32,8 @@ if DATEUTIL_AVAILABLE:
     from dateutil import parser as date_parser
     from dateutil.relativedelta import relativedelta
 
+from .types import RecurrenceInterval
+
 logger = logging.getLogger(__name__)
 
 
@@ -197,7 +199,10 @@ class NaturalLanguageParser:
         if DATEUTIL_AVAILABLE:
             try:
                 parsed_date = date_parser.parse(expression, default=base_time)
-                if parsed_date > base_time:  # Only future dates
+                # Ensure parsed_date is a datetime object
+                if (
+                    isinstance(parsed_date, datetime) and parsed_date > base_time
+                ):  # Only future dates
                     return datetime(
                         parsed_date.year,
                         parsed_date.month,
@@ -205,7 +210,7 @@ class NaturalLanguageParser:
                         parsed_date.hour,
                         parsed_date.minute,
                         parsed_date.second,
-                    )  # type: ignore[no-any-return]
+                    )
             except (ValueError, TypeError):
                 with contextlib.suppress(ValueError, TypeError):
                     pass
@@ -767,9 +772,7 @@ class ReminderScheduler:
         for reminder in due_reminders:
             await self.execute_reminder(reminder["id"])
 
-    def _parse_recurrence_interval(
-        self, recurrence_rule: str
-    ) -> tuple[str | None, int]:
+    def _parse_recurrence_interval(self, recurrence_rule: str) -> RecurrenceInterval:
         """Parse frequency and interval from recurrence rule."""
         parts = recurrence_rule.split(";")
         interval = 1
@@ -781,7 +784,7 @@ class ReminderScheduler:
             elif part.startswith("INTERVAL="):
                 interval = int(part.split("=")[1])
 
-        return freq, interval
+        return RecurrenceInterval(frequency=freq, interval=interval)
 
     def _calculate_simple_occurrence(
         self, last_time: datetime, recurrence_rule: str
@@ -800,7 +803,9 @@ class ReminderScheduler:
     ) -> datetime | None:
         """Calculate interval-based recurrence occurrences."""
         if "INTERVAL=" in recurrence_rule:
-            freq, interval = self._parse_recurrence_interval(recurrence_rule)
+            recurrence = self._parse_recurrence_interval(recurrence_rule)
+            freq = recurrence.frequency
+            interval = recurrence.interval
 
             if freq == "HOURLY":
                 return last_time + timedelta(hours=interval)  # type: ignore[no-any-return]

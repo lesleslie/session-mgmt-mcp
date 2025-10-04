@@ -15,6 +15,7 @@ from typing import Any
 
 from .reflection_tools import ReflectionDatabase
 from .search_enhanced import EnhancedSearchEngine
+from .types import SQLCondition, TimeRange
 from .utils.regex_patterns import SAFE_PATTERNS
 
 
@@ -245,7 +246,8 @@ class AdvancedSearchEngine:
     ) -> list[dict[str, Any]]:
         """Search within a specific timeframe."""
         # Parse timeframe
-        start_time, end_time = self._parse_timeframe(timeframe)
+        time_range = self._parse_timeframe(timeframe)
+        start_time, end_time = time_range.start, time_range.end
 
         # Build time filter
         time_filter = SearchFilter(
@@ -292,7 +294,8 @@ class AdvancedSearchEngine:
         filters: list[SearchFilter] | None = None,
     ) -> dict[str, Any]:
         """Calculate aggregate metrics from search data."""
-        start_time, end_time = self._parse_timeframe(timeframe)
+        time_range = self._parse_timeframe(timeframe)
+        start_time, end_time = time_range.start, time_range.end
 
         # Use predefined parameterized queries to prevent SQL injection
         metric_queries = {
@@ -696,22 +699,20 @@ class AdvancedSearchEngine:
     def _build_filter_conditions(
         self,
         filters: list[SearchFilter],
-    ) -> tuple[list[str], list[str | int | datetime]]:
+    ) -> SQLCondition:
         """Build SQL conditions from filters."""
         conditions = []
-        params = []
+        params: list[str | datetime] = []
 
         for filt in filters:
             condition_result = self._build_single_filter_condition(filt)
             if condition_result:
-                conditions.append(condition_result["condition"])
-                params.extend(condition_result["params"])
+                conditions.append(condition_result.condition)
+                params.extend(condition_result.params)
 
-        return conditions, params
+        return SQLCondition(condition=" AND ".join(conditions), params=params)
 
-    def _build_single_filter_condition(
-        self, filt: SearchFilter
-    ) -> dict[str, Any] | None:
+    def _build_single_filter_condition(self, filt: SearchFilter) -> SQLCondition | None:
         """Build a single filter condition."""
         if filt.field == "timestamp" and filt.operator == "range":
             return self._build_timestamp_range_condition(filt)
@@ -723,7 +724,7 @@ class AdvancedSearchEngine:
 
     def _build_timestamp_range_condition(
         self, filt: SearchFilter
-    ) -> dict[str, Any] | None:
+    ) -> SQLCondition | None:
         """Build timestamp range condition."""
         if not isinstance(filt.value, tuple | list) or len(filt.value) != 2:
             return None  # Skip invalid range values
@@ -732,30 +733,43 @@ class AdvancedSearchEngine:
         condition = "last_indexed BETWEEN ? AND ?"
         negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
 
-        return {
-            "condition": negated_condition,
-            "params": [start_time, end_time],
-        }
+        # Ensure params are strings or datetime objects
+        params: list[str | datetime] = []
+        if isinstance(start_time, str | datetime):
+            params.append(start_time)
+        if isinstance(end_time, str | datetime):
+            params.append(end_time)
 
-    def _build_equality_condition(self, filt: SearchFilter) -> dict[str, Any]:
+        return SQLCondition(condition=negated_condition, params=params)
+
+    def _build_equality_condition(self, filt: SearchFilter) -> SQLCondition:
         """Build equality condition."""
         condition = f"JSON_EXTRACT_STRING(search_metadata, '$.{filt.field}') = ?"
         negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
 
-        return {
-            "condition": negated_condition,
-            "params": [filt.value],
-        }
+        # Ensure value is a string or datetime
+        params: list[str | datetime] = []
+        if isinstance(filt.value, str | datetime):
+            params.append(filt.value)
+        elif (
+            isinstance(filt.value, list)
+            and filt.value
+            and isinstance(filt.value[0], str | datetime)
+        ):
+            params.append(filt.value[0])
 
-    def _build_contains_condition(self, filt: SearchFilter) -> dict[str, Any]:
+        return SQLCondition(condition=negated_condition, params=params)
+
+    def _build_contains_condition(self, filt: SearchFilter) -> SQLCondition:
         """Build contains condition."""
         condition = "indexed_content LIKE ?"
         negated_condition = f"{'NOT ' if filt.negate else ''}{condition}"
 
-        return {
-            "condition": negated_condition,
-            "params": [f"%{filt.value}%"],
-        }
+        # Ensure value is a string
+        value_str = str(filt.value) if not isinstance(filt.value, str) else filt.value
+        params: list[str | datetime] = [f"%{value_str}%"]
+
+        return SQLCondition(condition=negated_condition, params=params)
 
     async def _execute_search(
         self,
@@ -768,7 +782,7 @@ class AdvancedSearchEngine:
         timeframe: str | None = None,
     ) -> list[SearchResult]:
         """Execute the actual search."""
-        sql, params = self._build_search_sql(
+        sql_result = self._build_search_sql(
             query, content_type, timeframe, filters, sort_by, limit, offset
         )
 
@@ -776,7 +790,7 @@ class AdvancedSearchEngine:
             return []
 
         results = self.reflection_db.conn.execute(
-            sql, self._prepare_sql_params(params)
+            sql_result.condition, self._prepare_sql_params(sql_result.params)
         ).fetchall()
         return self._convert_sql_results_to_search_results(results)
 
@@ -789,7 +803,7 @@ class AdvancedSearchEngine:
         sort_by: str,
         limit: int,
         offset: int,
-    ) -> tuple[str, list[str | datetime]]:
+    ) -> SQLCondition:
         """Build complete SQL query for search."""
         sql = """
             SELECT content_id, content_type, indexed_content, search_metadata, last_indexed
@@ -798,23 +812,29 @@ class AdvancedSearchEngine:
         """
         params: list[str | datetime] = [f"%{query}%"]
 
-        sql, params = self._add_content_type_filter(sql, params, content_type)
-        sql, params = self._add_timeframe_filter(sql, params, timeframe, content_type)
-        sql, params = self._add_filter_conditions_to_sql(sql, params, filters)
+        result = self._add_content_type_filter(sql, params, content_type)
+        sql, params = result.condition, result.params
+
+        result = self._add_timeframe_filter(sql, params, timeframe, content_type)
+        sql, params = result.condition, result.params
+
+        result = self._add_filter_conditions_to_sql(sql, params, filters)
+        sql, params = result.condition, result.params
+
         sql = self._add_sorting_to_sql(sql, sort_by)
         sql += " LIMIT ? OFFSET ?"
         params.extend([str(limit), str(offset)])
 
-        return sql, params
+        return SQLCondition(condition=sql, params=params)
 
     def _add_content_type_filter(
         self, sql: str, params: list[str | datetime], content_type: str | None
-    ) -> tuple[str, list[str | datetime]]:
+    ) -> SQLCondition:
         """Add content type filter to SQL query."""
         if content_type:
             sql += " AND content_type = ?"
             params.append(content_type)
-        return sql, params
+        return SQLCondition(condition=sql, params=params)
 
     def _add_timeframe_filter(
         self,
@@ -822,7 +842,7 @@ class AdvancedSearchEngine:
         params: list[str | datetime],
         timeframe: str | None,
         content_type: str | None,
-    ) -> tuple[str, list[str | datetime]]:
+    ) -> SQLCondition:
         """Add timeframe filter to SQL query."""
         if (
             timeframe and content_type
@@ -831,7 +851,7 @@ class AdvancedSearchEngine:
             if cutoff_date:
                 sql += " AND last_indexed >= ?"
                 params.append(cutoff_date.isoformat())
-        return sql, params
+        return SQLCondition(condition=sql, params=params)
 
     def _parse_timeframe_single(self, timeframe: str) -> datetime | None:
         """Parse timeframe string into datetime."""
@@ -846,17 +866,17 @@ class AdvancedSearchEngine:
 
     def _add_filter_conditions_to_sql(
         self, sql: str, params: list[str | datetime], filters: list[SearchFilter] | None
-    ) -> tuple[str, list[str | datetime]]:
+    ) -> SQLCondition:
         """Add filter conditions to SQL query."""
         if filters:
-            filter_conditions, filter_params = self._build_filter_conditions(filters)
-            if filter_conditions:
-                sql += " AND " + " AND ".join(filter_conditions)
+            filter_result = self._build_filter_conditions(filters)
+            if filter_result.condition:
+                sql += " AND " + filter_result.condition
                 # Ensure filter_params contains only strings and datetimes
-                for param in filter_params:
+                for param in filter_result.params:
                     if isinstance(param, str | datetime):
                         params.append(param)
-        return sql, params
+        return SQLCondition(condition=sql, params=params)
 
     def _add_sorting_to_sql(self, sql: str, sort_by: str) -> str:
         """Add sorting clause to SQL query."""
@@ -983,7 +1003,7 @@ class AdvancedSearchEngine:
 
         return facets
 
-    def _parse_timeframe(self, timeframe: str) -> tuple[datetime, datetime]:
+    def _parse_timeframe(self, timeframe: str) -> TimeRange:
         """Parse timeframe string into start and end times."""
         now = datetime.now(UTC)
 
@@ -1000,4 +1020,4 @@ class AdvancedSearchEngine:
         delta = timeframe_map.get(timeframe, timedelta(days=30))
         start_time = now - delta
 
-        return start_time, now
+        return TimeRange(start=start_time, end=now)

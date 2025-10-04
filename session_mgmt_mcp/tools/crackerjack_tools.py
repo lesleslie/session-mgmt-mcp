@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
 
+
 logger = logging.getLogger(__name__)
 
 # Import the production-ready hook parser
@@ -22,8 +23,61 @@ try:
 except ImportError:
     # Fallback if hook_parser isn't available
     logger.warning("hook_parser module not available, using fallback parser")
-    parse_hook_output = None
-    ParseError = None
+    parse_hook_output = None  # type: ignore[assignment]
+    ParseError = None  # type: ignore[assignment,misc,no-redef]
+
+
+def _is_valid_hook_line(line: str) -> bool:
+    """Check if line is a valid hook result line."""
+    return bool(line and "..." in line)
+
+
+def _extract_hook_parts(line: str) -> tuple[str, str] | None:
+    """Extract hook name and status from line."""
+    parts = line.split("...", 1)
+    if len(parts) < 2:
+        return None
+
+    hook_name = parts[0].strip()
+    if not hook_name:
+        return None
+
+    return hook_name, parts[1]
+
+
+def _is_failed_hook(status_part: str) -> bool:
+    """Check if status indicates failure."""
+    return "❌" in status_part or "Failed" in status_part
+
+
+def _is_passed_hook(status_part: str) -> bool:
+    """Check if status indicates success."""
+    return "✅" in status_part or "Passed" in status_part
+
+
+def _parse_fallback_hook_output(stdout: str) -> tuple[list[str], list[str]]:
+    """Fallback parser for hook output when hook_parser unavailable."""
+    passed_hooks = []
+    failed_hooks = []
+
+    for line in stdout.split("\n"):
+        line = line.strip()
+
+        if not _is_valid_hook_line(line):
+            continue
+
+        parts = _extract_hook_parts(line)
+        if parts is None:
+            continue
+
+        hook_name, status_part = parts
+
+        if _is_failed_hook(status_part):
+            failed_hooks.append(hook_name)
+        elif _is_passed_hook(status_part):
+            passed_hooks.append(hook_name)
+
+    return passed_hooks, failed_hooks
 
 
 def _parse_hook_results(stdout: str) -> tuple[list[str], list[str]]:
@@ -39,8 +93,8 @@ def _parse_hook_results(stdout: str) -> tuple[list[str], list[str]]:
         Tuple of (passed_hooks, failed_hooks)
 
     """
-    passed_hooks = []
-    failed_hooks = []
+    passed_hooks: list[str] = []
+    failed_hooks: list[str] = []
 
     if not stdout or not isinstance(stdout, str):
         logger.warning("Invalid stdout provided to hook parser")
@@ -58,25 +112,7 @@ def _parse_hook_results(stdout: str) -> tuple[list[str], list[str]]:
         else:
             # Fallback: basic parsing (less robust but works for simple cases)
             logger.debug("Using fallback hook parser")
-            for line in stdout.split("\n"):
-                line = line.strip()
-                if not line or "..." not in line:
-                    continue
-
-                parts = line.split("...", 1)
-                if len(parts) < 2:
-                    continue
-
-                hook_name = parts[0].strip()
-                status_part = parts[1]
-
-                if not hook_name:
-                    continue
-
-                if "❌" in status_part or "Failed" in status_part:
-                    failed_hooks.append(hook_name)
-                elif "✅" in status_part or "Passed" in status_part:
-                    passed_hooks.append(hook_name)
+            passed_hooks, failed_hooks = _parse_fallback_hook_output(stdout)
 
     except ParseError as e:
         logger.exception(f"Hook parsing failed: {e}")

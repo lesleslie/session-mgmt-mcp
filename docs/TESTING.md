@@ -21,11 +21,12 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85
 ```
 
 **Coverage Targets:**
+
 - Overall: 85%+
 - Critical components (ReflectionDatabase, SessionManager): 95%+
 - New code: 100% required
 
----
+______________________________________________________________________
 
 ## Current Status
 
@@ -45,11 +46,13 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85
 ### Areas Needing Attention (⚠️)
 
 **Critical Components with No Coverage:**
+
 - InterruptionManager (0% - 353 lines)
 - NaturalScheduler (0% - 338 lines)
 - TeamKnowledge (0% - 284 lines)
 
 **Low-Coverage Core Modules:**
+
 - AdvancedSearch (16.88%) - 16/24 tests passing, needs filtering/sorting implementation
 - MultiProjectCoordinator (21.43%) - Cross-project functionality
 - TokenOptimizer (13.20%) - Token management and chunking
@@ -58,6 +61,7 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85
 ### Recent Improvements
 
 **Infrastructure Fixes Completed:**
+
 - ✅ Fixed database initialization issues in tests
 - ✅ Resolved DuckDB connection and syntax problems
 - ✅ Updated SessionPermissionsManager constructor handling
@@ -65,18 +69,20 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85
 - ✅ Implemented proper logging configuration for tests
 
 **New Test Suites:**
+
 - ✅ Reflection Tools Tests - 83 test cases (21/24 passing)
 - ✅ Memory Tools Tests - 30 test cases (comprehensive coverage)
 - ✅ Worktree Manager Tests - 32 test cases (edge cases included)
 - ✅ SessionLifecycleManager Tests - Complete workflow coverage
 
----
+______________________________________________________________________
 
 ## Testing Strategy
 
 ### Test Categories
 
 #### 1. Unit Tests (`tests/unit/`)
+
 **Focus:** Isolated functionality testing
 
 - Test individual functions and methods
@@ -85,6 +91,7 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85
 - Fast execution (< 1 second per test)
 
 **Example:**
+
 ```python
 def test_reflection_storage():
     """Test basic reflection storage."""
@@ -94,6 +101,7 @@ def test_reflection_storage():
 ```
 
 #### 2. Integration Tests (`tests/integration/`)
+
 **Focus:** Component interaction and workflows
 
 - Test cross-component functionality
@@ -102,6 +110,7 @@ def test_reflection_storage():
 - Critical paths and user journeys
 
 **Example:**
+
 ```python
 async def test_session_lifecycle_integration():
     """Test complete session workflow."""
@@ -113,6 +122,7 @@ async def test_session_lifecycle_integration():
 ```
 
 #### 3. Functional Tests (`tests/functional/`)
+
 **Focus:** End-to-end functionality
 
 - User-facing features from user perspective
@@ -120,6 +130,7 @@ async def test_session_lifecycle_integration():
 - Real-world usage scenarios
 
 #### 4. Performance Tests (`tests/performance/`)
+
 **Focus:** Scalability and resource usage
 
 - Response time benchmarks
@@ -128,6 +139,7 @@ async def test_session_lifecycle_integration():
 - Tools: pytest-benchmark
 
 #### 5. Security Tests (`tests/security/`)
+
 **Focus:** Security aspects
 
 - Input validation and sanitization
@@ -136,6 +148,7 @@ async def test_session_lifecycle_integration():
 - Tools: pytest, bandit
 
 #### 6. Property-Based Tests
+
 **Focus:** Robustness with random inputs
 
 - Edge cases and boundary conditions
@@ -146,6 +159,7 @@ async def test_session_lifecycle_integration():
 ### Test Structure Guidelines
 
 **File Organization:**
+
 ```
 tests/
 ├── unit/           # Isolated component tests
@@ -158,17 +172,19 @@ tests/
 ```
 
 **Naming Conventions:**
+
 - Test files: `test_*.py`
 - Test classes: `Test[ComponentName][TestType]`
 - Test methods: `test_[action]_[expected_result]`
 
 **Test Data Management:**
+
 - Use temporary directories for file operations
 - Mock external dependencies (APIs, file systems)
 - Clean up resources in teardown
 - Use pytest fixtures for reusable test setup
 
----
+______________________________________________________________________
 
 ## Implementation Roadmap
 
@@ -177,18 +193,21 @@ tests/
 **Priority: HIGH**
 
 1. **Complete AdvancedSearch Tests** ✅ In Progress
+
    - Fix remaining 8 failing tests
    - Implement content type filtering
    - Add sorting functionality
    - Implement timeframe-based filtering
 
-2. **InterruptionManager Testing** 📅 Not Started
+1. **InterruptionManager Testing** 📅 Not Started
+
    - Create `tests/unit/test_interruption_manager.py`
    - Test context preservation and recovery
    - Test file system monitoring
    - Test activity pattern detection
 
-3. **NaturalScheduler Testing** 📅 Not Started
+1. **NaturalScheduler Testing** 📅 Not Started
+
    - Create `tests/unit/test_natural_scheduler.py`
    - Test time expression parsing
    - Test reminder creation and execution
@@ -199,18 +218,21 @@ tests/
 **Priority: MEDIUM**
 
 1. **MultiProjectCoordinator Testing**
+
    - Test project group management
    - Test dependency tracking
    - Test cross-project search
    - Test session linking
 
-2. **TokenOptimizer Testing**
+1. **TokenOptimizer Testing**
+
    - Test token counting accuracy
    - Test optimization strategies
    - Test caching mechanisms
    - Test chunking for large content
 
-3. **Parameter Validation Testing**
+1. **Parameter Validation Testing**
+
    - Test all validation models
    - Test edge cases and invalid inputs
    - Test data normalization
@@ -220,11 +242,13 @@ tests/
 **Priority: MEDIUM-LOW**
 
 1. **Integration Test Suites**
+
    - Memory and search integration
    - Worktree management workflows
    - Session lifecycle end-to-end
 
-2. **Performance Baselines**
+1. **Performance Baselines**
+
    - Reflection database operations
    - Search performance with large datasets
    - Worktree operations
@@ -234,16 +258,18 @@ tests/
 **Priority: LOW (Future Work)**
 
 1. **Security Testing**
+
    - Input validation comprehensive testing
    - Access control verification
    - Injection attack scenarios
 
-2. **Property-Based Testing**
+1. **Property-Based Testing**
+
    - Use Hypothesis for generative testing
    - Test concurrency edge cases
    - Boundary condition exploration
 
----
+______________________________________________________________________
 
 ## Quality Standards
 
@@ -261,16 +287,19 @@ tests/
 ### Test Quality Metrics
 
 **Performance:**
+
 - Unit tests: < 1 second execution time
 - Integration tests: < 5 seconds execution time
 - Full suite: < 5 minutes total
 
 **Reliability:**
+
 - Test pass rate: 100%
 - Flaky test rate: < 10%
 - Test determinism: Required
 
 **Maintainability:**
+
 - Clear, descriptive test names
 - Comprehensive docstrings
 - Minimal test duplication
@@ -279,6 +308,7 @@ tests/
 ### Documentation Standards
 
 All test files must include:
+
 - Module-level docstring explaining purpose
 - Complex scenario documentation
 - Fixture documentation with examples
@@ -287,12 +317,13 @@ All test files must include:
 ### Continuous Integration
 
 **Requirements:**
+
 - All tests run in CI pipeline
 - Parallel test execution enabled
 - Coverage reports generated automatically
 - Performance regression detection
 
----
+______________________________________________________________________
 
 ## Success Metrics
 
@@ -317,7 +348,7 @@ All test files must include:
 - 📅 Full CI/CD integration
 - 📅 Property-based test coverage
 
----
+______________________________________________________________________
 
 ## Common Testing Patterns
 
@@ -325,6 +356,7 @@ All test files must include:
 
 ```python
 import pytest
+
 
 @pytest.mark.asyncio
 async def test_async_operation():
@@ -352,24 +384,23 @@ async def temp_database():
 ```python
 from unittest.mock import patch, MagicMock
 
+
 def test_with_mocked_git():
     """Test git operations with mocked subprocess."""
     with patch("subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="mocked output"
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="mocked output")
         result = perform_git_operation()
         assert result == "expected"
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
 ### Common Test Issues
 
 **Issue: Tests failing with DuckDB connection errors**
+
 ```python
 # Solution: Use temporary database in fixtures
 @pytest.fixture
@@ -380,14 +411,15 @@ async def db():
 ```
 
 **Issue: Async tests not running**
+
 ```python
 # Solution: Add pytest-asyncio marker
 @pytest.mark.asyncio
-async def test_function():
-    ...
+async def test_function(): ...
 ```
 
 **Issue: Flaky tests due to timing**
+
 ```python
 # Solution: Use proper async/await patterns
 await asyncio.sleep(0.1)  # Give time for async operations
@@ -409,21 +441,24 @@ pytest -k "reflection" -v
 pytest tests/unit/test_reflection_tools.py -v -s --pdb
 ```
 
----
+______________________________________________________________________
 
 ## Resources
 
 **Documentation:**
+
 - [pytest documentation](https://docs.pytest.org/)
 - [pytest-asyncio](https://pytest-asyncio.readthedocs.io/)
 - [Hypothesis](https://hypothesis.readthedocs.io/)
 
 **Project Files:**
+
 - Test configuration: `pyproject.toml` (tool.pytest.ini_options)
 - Shared fixtures: `tests/conftest.py`
 - Test utilities: `tests/helpers.py`
 
 **Coverage Reports:**
+
 ```bash
 # Generate HTML coverage report
 pytest --cov=session_mgmt_mcp --cov-report=html
@@ -432,7 +467,7 @@ pytest --cov=session_mgmt_mcp --cov-report=html
 open htmlcov/index.html
 ```
 
----
+______________________________________________________________________
 
 **Last Updated:** 2025-01-04
 **Current Coverage:** 14.7%
