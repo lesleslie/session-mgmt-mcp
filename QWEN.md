@@ -59,7 +59,7 @@ session-mgmt-mcp/
    Or using pip:
 
    ```bash
-   pip install -e ".[embeddings,dev]"
+   pip install -e .
    ```
 
 ### MCP Configuration
@@ -131,9 +131,10 @@ Dependencies are managed using:
 Install optional dependencies for semantic search:
 
 ```bash
-uv sync --extra embeddings
+# Ensure all dependencies are installed (embeddings are included by default)
+uv sync
 # or
-pip install "session-mgmt-mcp[embeddings]"
+pip install session-mgmt-mcp
 ```
 
 ## Available MCP Tools
@@ -203,7 +204,7 @@ uv run pytest --cov=session_mgmt_mcp
 
 Common issues:
 
-- Memory not working: Install optional dependencies with `pip install "session-mgmt-mcp[embeddings]"`
+- Memory not working: Ensure all dependencies are installed with `uv sync` or `pip install session-mgmt-mcp`
 - Path errors: Ensure `cwd` and `PYTHONPATH` are set correctly in `.mcp.json`
 - Permission issues: Use `/session-mgmt:permissions` to trust operations
 

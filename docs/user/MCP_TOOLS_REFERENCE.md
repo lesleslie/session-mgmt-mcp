@@ -412,10 +412,10 @@ Large responses are automatically managed:
 #### "Memory system not available"
 
 ```bash
-# Install embedding dependencies
-uv sync --extra embeddings
+# Ensure all dependencies are installed (embeddings are included by default)
+uv sync
 # or
-pip install "session-mgmt-mcp[embeddings]"
+pip install session-mgmt-mcp
 ```
 
 #### "No conversations found"

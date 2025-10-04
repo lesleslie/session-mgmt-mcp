@@ -20,7 +20,7 @@ git clone https://github.com/lesleslie/session-mgmt-mcp.git
 cd session-mgmt-mcp
 
 # Install with UV (recommended)
-uv sync --extra embeddings
+uv sync
 
 # Verify installation
 python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready')"
@@ -134,7 +134,7 @@ fi
 # Deploy new version
 sudo rm -rf "$APP_DIR"
 sudo -u session-mgmt git clone https://github.com/lesleslie/session-mgmt-mcp.git "$APP_DIR"
-sudo -u session-mgmt bash -c "cd $APP_DIR && uv sync --extra embeddings"
+sudo -u session-mgmt bash -c "cd $APP_DIR && uv sync"
 
 # Set permissions
 sudo chown -R session-mgmt:session-mgmt "$APP_DIR"
@@ -186,7 +186,7 @@ COPY pyproject.toml uv.lock ./
 
 # Install UV and dependencies
 RUN pip install uv
-RUN uv sync --extra embeddings --no-dev
+RUN uv sync --no-dev
 
 # Copy application code
 COPY . .

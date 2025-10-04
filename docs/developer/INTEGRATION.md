@@ -19,7 +19,7 @@ The Session Management MCP server integrates directly with Claude Code through t
    ```bash
    git clone https://github.com/lesleslie/session-mgmt-mcp.git
    cd session-mgmt-mcp
-   uv sync --extra embeddings
+   uv sync
    ```
 
 1. **Configure Claude Code** (`.mcp.json`):
@@ -292,7 +292,7 @@ jobs:
       run: |
         git clone https://github.com/lesleslie/session-mgmt-mcp.git /tmp/session-mgmt-mcp
         cd /tmp/session-mgmt-mcp
-        pip install -e ".[embeddings]"
+        pip install -e .
 
     - name: Initialize Session
       run: |

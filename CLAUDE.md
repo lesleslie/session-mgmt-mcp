@@ -802,7 +802,7 @@ PYTHONPATH=. python -m session_mgmt_mcp.server --debug
 uv --version || curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Reset environment if corrupted
-rm -rf .venv && uv sync --group dev --extra embeddings
+rm -rf .venv && uv sync --group dev
 
 # Check for conflicting dependencies
 uv pip check

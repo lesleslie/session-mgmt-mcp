@@ -170,7 +170,7 @@ VOLUME ["/data/session-mgmt"]
 
 COPY . /app
 WORKDIR /app
-RUN uv sync --extra embeddings
+RUN uv sync
 
 ENTRYPOINT ["python", "-m", "session_mgmt_mcp.server"]
 ```

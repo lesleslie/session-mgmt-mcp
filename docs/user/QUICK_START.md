@@ -17,7 +17,10 @@ Get up and running with the Session Management MCP server in under 5 minutes.
 # Clone and install
 git clone https://github.com/lesleslie/session-mgmt-mcp.git
 cd session-mgmt-mcp
-uv sync --extra embeddings
+uv sync
+
+# Or install with development/testing tools
+uv sync --group dev
 
 # Verify installation
 python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready to go!')"
@@ -26,7 +29,8 @@ python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready to go!')"
 ### Option 2: With pip
 
 ```bash
-pip install "session-mgmt-mcp[embeddings]"
+# Install from PyPI
+pip install session-mgmt-mcp
 ```
 
 ## Configure Claude Code
@@ -148,10 +152,11 @@ Automatic cleanup with:
 ### Memory/Embeddings Not Working
 
 ```bash
-# Install optional dependencies
-uv sync --extra embeddings
-# or
-pip install "session-mgmt-mcp[embeddings]"
+# Ensure all dependencies are installed (embeddings are included by default)
+uv sync
+
+# Or reinstall with pip
+pip install session-mgmt-mcp
 ```
 
 ### Server Won't Start

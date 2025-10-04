@@ -323,11 +323,14 @@ See [Crackerjack AUTO_FIX_GUIDE.md](https://github.com/lesleslie/crackerjack/blo
 git clone https://github.com/lesleslie/session-mgmt-mcp.git
 cd session-mgmt-mcp
 
-# Install dependencies
+# Install with all dependencies (development + testing)
 uv sync --group dev
 
-# Or use pip
-pip install -e ".[embeddings,dev]"
+# Or install minimal production dependencies only
+uv sync
+
+# Or use pip (for production only)
+pip install session-mgmt-mcp
 ```
 
 ### MCP Configuration
@@ -398,14 +401,20 @@ If installed with pip/uv, you can use the script entry point:
 Install all dependencies:
 
 ```bash
-# Full installation with development tools
+# Full installation with development + testing tools
 uv sync --group dev
 
-# Minimal installation (production)
+# Minimal installation (production only)
 uv sync
 
-# From PyPI with pip
+# Install from PyPI with pip
 pip install session-mgmt-mcp
+
+# Add to existing UV project
+uv add session-mgmt-mcp
+
+# Add with development dependencies
+uv add session-mgmt-mcp --group dev
 ```
 
 ## Usage
@@ -575,7 +584,7 @@ The project documentation is organized into the following categories:
 
 ### Common Issues
 
-- **Memory not working**: Install optional dependencies with `pip install "session-mgmt-mcp[embeddings]"`
+- **Memory/embedding issues**: Ensure all dependencies are installed with `uv sync` (embeddings are now included by default)
 - **Path errors**: Ensure `cwd` and `PYTHONPATH` are set correctly in `.mcp.json`
 - **Permission issues**: Use `/session-mgmt:permissions` to trust operations
 - **Project context**: Analyze current project health and structure
