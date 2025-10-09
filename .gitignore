@@ -1,38 +1,53 @@
-*/__pycache__/
-/dist/
-/.venv/
-/.claude/
-/.hypothesis/
-/.benchmarks/
-/.mcp.json
-/.envrc
-/htmlcov/
-/coverage.xml
-/.coverage
-
-# Crackerjack patterns
-# Crackerjack generated files
-*$py.class
-*.crackerjack.bak
-*.py[cod]
-*/__pycache__/
-.coverage.*
-.crackerjack/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-.tox/
-/.benchmarks/
-/.claude/
-/.coverage
-/.envrc
-/.hypothesis/
-/.mcp.json
-/.venv/
-/coverage.xml
-/dist/
-/htmlcov/
-/session_handoff_*.md
+# Python cache and compiled files
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing and coverage
+.pytest_cache/
+.hypothesis/
+.benchmarks/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+
+# Type checking and linting
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project specific
+.claude/
+.mcp.json
+.envrc
+session_handoff_*.md
+
+# Crackerjack
+.crackerjack/
+*.crackerjack.bak
 crackerjack-debug-*.log
+
+# Temporary directories
 docs (1)/

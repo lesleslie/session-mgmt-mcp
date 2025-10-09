@@ -599,20 +599,32 @@ class ReflectionDatabase:
         try:
             conv_count = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self._get_conn()
-                .execute(
-                    "SELECT COUNT(*) FROM conversations",
+                lambda: (
+                    (
+                        result := self._get_conn()
+                        .execute(
+                            "SELECT COUNT(*) FROM conversations",
+                        )
+                        .fetchone()
+                    )
+                    and result[0]
                 )
-                .fetchone()[0],
+                or 0,
             )
 
             refl_count = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self._get_conn()
-                .execute(
-                    "SELECT COUNT(*) FROM reflections",
+                lambda: (
+                    (
+                        result := self._get_conn()
+                        .execute(
+                            "SELECT COUNT(*) FROM reflections",
+                        )
+                        .fetchone()
+                    )
+                    and result[0]
                 )
-                .fetchone()[0],
+                or 0,
             )
 
             provider = (

@@ -7,6 +7,7 @@ This module provides efficient connection pooling and management for DuckDB oper
 import asyncio
 import atexit
 import threading
+import typing as t
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -19,7 +20,7 @@ try:
     DUCKDB_AVAILABLE = True
 except ImportError:
     DUCKDB_AVAILABLE = False
-    duckdb = None
+    duckdb: t.Any = None  # type: ignore[assignment, no-redef]
 
 from .logging import get_session_logger
 
