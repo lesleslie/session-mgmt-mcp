@@ -53,6 +53,12 @@ from .reflection_utils import (
     generate_auto_store_tags,
     should_auto_store_checkpoint,
 )
+from .instance_managers import (
+    get_app_monitor,
+    get_llm_manager,
+    get_serverless_manager,
+    reset_instances,
+)
 
 __all__ = [
     # Existing utilities
@@ -85,8 +91,11 @@ __all__ = [
     "create_commit",
     "format_auto_store_summary",
     "generate_auto_store_tags",
+    "get_app_monitor",
     "get_database_pool",
     "get_dependency_status",
+    "get_llm_manager",
+    "get_serverless_manager",
     "get_git_status",
     "get_session_logger",
     "get_staged_files",
@@ -95,6 +104,7 @@ __all__ = [
     "log_dependency_status",
     "optional_dependency",
     "require_dependency",
+    "reset_instances",
     "should_auto_store_checkpoint",
     "stage_files",
     "validate_claude_directory",

@@ -4,7 +4,7 @@
 import asyncio
 import os
 import tempfile
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
@@ -14,6 +14,48 @@ import numpy as np
 import pytest
 from fastmcp import FastMCP
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+
+# =====================================
+# MockFastMCP for Testing (Phase 2.6)
+# =====================================
+
+
+class MockFastMCP:
+    """Minimal mock FastMCP for testing environments.
+
+    Extracted from server.py Phase 2.6 to consolidate test infrastructure.
+    """
+
+    def __init__(self, name: str) -> None:
+        """Initialize mock FastMCP server."""
+        self.name = name
+        self.tools: dict[str, Any] = {}
+        self.prompts: dict[str, Any] = {}
+
+    def tool(
+        self, *args: Any, **kwargs: Any
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Mock tool decorator."""
+
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
+
+        return decorator
+
+    def prompt(
+        self, *args: Any, **kwargs: Any
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Mock prompt decorator."""
+
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
+
+        return decorator
+
+    def run(self, *args: Any, **kwargs: Any) -> None:
+        """Mock run method."""
+        pass
 
 # Import test factories for enhanced test data generation
 try:

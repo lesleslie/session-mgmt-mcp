@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable
+    from collections.abc import AsyncGenerator
 
 # Suppress transformers warnings about PyTorch/TensorFlow for cleaner CLI output
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
@@ -52,191 +52,50 @@ from session_mgmt_mcp.server_core import (
     _format_conversation_summary,
     # Utility functions
     _should_retry_search,
+    # Phase 2.6: Feature detection
+    get_feature_flags,
 )
 
 # Initialize logger
 claude_dir = Path.home() / ".claude"
 session_logger = SessionLogger(claude_dir / "logs")
 
+# Import FastMCP with test environment fallback
 try:
     from fastmcp import FastMCP
 
     MCP_AVAILABLE = True
 except ImportError:
-    # Check if we're in a test environment
     if "pytest" in sys.modules or "test" in sys.argv[0].lower():
-        print(
-            "Warning: FastMCP not available in test environment, using mock",
-            file=sys.stderr,
-        )
+        from tests.conftest import MockFastMCP
 
-        # Create a minimal mock FastMCP for testing
-        class MockFastMCP:
-            def __init__(self, name: str) -> None:
-                self.name = name
-                self.tools: dict[str, Any] = {}
-                self.prompts: dict[str, Any] = {}
-
-            def tool(
-                self, *args: Any, **kwargs: Any
-            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-                    return func
-
-                return decorator
-
-            def prompt(
-                self, *args: Any, **kwargs: Any
-            ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-                def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-                    return func
-
-                return decorator
-
-            def run(self, *args: Any, **kwargs: Any) -> None:
-                pass
-
-        FastMCP = MockFastMCP  # type: ignore[no-redef]
+        FastMCP = MockFastMCP  # type: ignore[no-redef,misc]
         MCP_AVAILABLE = False
     else:
         print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
         sys.exit(1)
 
-# Import session management core
-try:
-    from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-
-    SESSION_MANAGEMENT_AVAILABLE = True
-except ImportError as e:
-    print(f"Session management core import failed: {e}", file=sys.stderr)
-    SESSION_MANAGEMENT_AVAILABLE = False
-
-# Import reflection tools
-try:
-    from session_mgmt_mcp.reflection_tools import (
-        ReflectionDatabase,
-        get_current_project,
-        get_reflection_database,
-    )
-
-    REFLECTION_TOOLS_AVAILABLE = True
-except ImportError as e:
-    print(f"Reflection tools import failed: {e}", file=sys.stderr)
-    REFLECTION_TOOLS_AVAILABLE = False
-
-# Import enhanced search tools
-try:
-    # EnhancedSearchEngine will be imported when needed
-    import session_mgmt_mcp.search_enhanced
-
-    ENHANCED_SEARCH_AVAILABLE = True
-except ImportError as e:
-    print(f"Enhanced search import failed: {e}", file=sys.stderr)
-    ENHANCED_SEARCH_AVAILABLE = False
-
-# Import utility functions
-try:
-    from session_mgmt_mcp.tools.search_tools import _optimize_search_results_impl
-    from session_mgmt_mcp.utils.format_utils import _format_session_statistics
-
-    UTILITY_FUNCTIONS_AVAILABLE = True
-except ImportError as e:
-    print(f"Utility functions import failed: {e}", file=sys.stderr)
-    UTILITY_FUNCTIONS_AVAILABLE = False
+# Phase 2.6: Get all feature flags from centralized detector
+_features = get_feature_flags()
+SESSION_MANAGEMENT_AVAILABLE = _features["SESSION_MANAGEMENT_AVAILABLE"]
+REFLECTION_TOOLS_AVAILABLE = _features["REFLECTION_TOOLS_AVAILABLE"]
+ENHANCED_SEARCH_AVAILABLE = _features["ENHANCED_SEARCH_AVAILABLE"]
+UTILITY_FUNCTIONS_AVAILABLE = _features["UTILITY_FUNCTIONS_AVAILABLE"]
+MULTI_PROJECT_AVAILABLE = _features["MULTI_PROJECT_AVAILABLE"]
+ADVANCED_SEARCH_AVAILABLE = _features["ADVANCED_SEARCH_AVAILABLE"]
+CONFIG_AVAILABLE = _features["CONFIG_AVAILABLE"]
+AUTO_CONTEXT_AVAILABLE = _features["AUTO_CONTEXT_AVAILABLE"]
+MEMORY_OPTIMIZER_AVAILABLE = _features["MEMORY_OPTIMIZER_AVAILABLE"]
+APP_MONITOR_AVAILABLE = _features["APP_MONITOR_AVAILABLE"]
+LLM_PROVIDERS_AVAILABLE = _features["LLM_PROVIDERS_AVAILABLE"]
+SERVERLESS_MODE_AVAILABLE = _features["SERVERLESS_MODE_AVAILABLE"]
+CRACKERJACK_INTEGRATION_AVAILABLE = _features["CRACKERJACK_INTEGRATION_AVAILABLE"]
 
 # Global feature instances (initialized on-demand)
 multi_project_coordinator: Any = None
 advanced_search_engine: Any = None
 app_config: Any = None
 current_project: str | None = None
-
-# Import multi-project coordination tools
-try:
-    from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
-
-    MULTI_PROJECT_AVAILABLE = True
-except ImportError as e:
-    print(f"Multi-project coordinator import failed: {e}", file=sys.stderr)
-    MULTI_PROJECT_AVAILABLE = False
-
-# Import advanced search engine
-try:
-    from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
-
-    ADVANCED_SEARCH_AVAILABLE = True
-except ImportError as e:
-    print(f"Advanced search engine import failed: {e}", file=sys.stderr)
-    ADVANCED_SEARCH_AVAILABLE = False
-
-# Import configuration management
-try:
-    from session_mgmt_mcp.settings import get_settings
-
-    CONFIG_AVAILABLE = True
-except ImportError as e:
-    print(f"Configuration management import failed: {e}", file=sys.stderr)
-    CONFIG_AVAILABLE = False
-
-# Import auto-context loading tools
-try:
-    # AutoContextLoader will be imported when needed
-    import session_mgmt_mcp.context_manager
-
-    AUTO_CONTEXT_AVAILABLE = True
-except ImportError as e:
-    print(f"Auto-context loading import failed: {e}", file=sys.stderr)
-    AUTO_CONTEXT_AVAILABLE = False
-
-# Import memory optimization tools
-try:
-    # MemoryOptimizer will be imported when needed
-    import session_mgmt_mcp.memory_optimizer
-
-    MEMORY_OPTIMIZER_AVAILABLE = True
-except ImportError as e:
-    print(f"Memory optimizer import failed: {e}", file=sys.stderr)
-    MEMORY_OPTIMIZER_AVAILABLE = False
-
-# Import application monitoring tools
-try:
-    from session_mgmt_mcp.app_monitor import ApplicationMonitor
-
-    APP_MONITOR_AVAILABLE = True
-except ImportError as e:
-    print(f"Application monitoring import failed: {e}", file=sys.stderr)
-    APP_MONITOR_AVAILABLE = False
-
-# Import LLM providers
-try:
-    from session_mgmt_mcp.llm_providers import LLMManager
-
-    LLM_PROVIDERS_AVAILABLE = True
-except ImportError as e:
-    print(f"LLM providers import failed: {e}", file=sys.stderr)
-    LLM_PROVIDERS_AVAILABLE = False
-
-# Import serverless mode
-try:
-    from session_mgmt_mcp.serverless_mode import (
-        ServerlessConfigManager,
-        ServerlessSessionManager,
-    )
-
-    SERVERLESS_MODE_AVAILABLE = True
-except ImportError as e:
-    print(f"Serverless mode import failed: {e}", file=sys.stderr)
-    SERVERLESS_MODE_AVAILABLE = False
-
-# Import Crackerjack integration tools
-try:
-    # CrackerjackIntegration will be imported when needed
-    import session_mgmt_mcp.crackerjack_integration
-
-    CRACKERJACK_INTEGRATION_AVAILABLE = True
-except ImportError as e:
-    print(f"Crackerjack integration import failed: {e}", file=sys.stderr)
-    CRACKERJACK_INTEGRATION_AVAILABLE = False
-
 
 # Create global permissions manager instance
 permissions_manager = SessionPermissionsManager(claude_dir)
@@ -299,7 +158,6 @@ lifecycle_manager = SessionLifecycleManager()
 @asynccontextmanager
 async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only (wrapper)."""
-    # Delegate to the extracted implementation with required parameters
     async with _session_lifecycle_impl(app, lifecycle_manager, session_logger):
         yield
 
@@ -311,7 +169,6 @@ _mcp_config = _load_mcp_config()
 mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
 
 # Register extracted tool modules following crackerjack architecture patterns
-# Import session command definitions
 from .tools import (
     register_crackerjack_tools,
     register_llm_tools,
@@ -352,15 +209,11 @@ register_serverless_tools(mcp)
 register_session_tools(mcp)
 register_team_tools(mcp)
 
-# Register slash commands as MCP prompts (not resources!)
-
 
 # Wrapper for initialize_new_features that manages global state
 async def initialize_new_features() -> None:
     """Initialize multi-project coordination and advanced search features (wrapper)."""
     global multi_project_coordinator, advanced_search_engine, app_config
-
-    # Delegate to the extracted implementation
     await _initialize_new_features_impl(
         session_logger,
         multi_project_coordinator,
@@ -408,9 +261,10 @@ from session_mgmt_mcp.quality_engine import (
     _analyze_context_compaction,
     _store_context_summary,
     _perform_quality_assessment,
-    # Quality score calculation (fixed bug)
+    # Quality score calculation
     calculate_quality_score,
 )
+
 
 # Wrapper for health_check that provides required parameters
 async def health_check() -> dict[str, Any]:
@@ -418,66 +272,6 @@ async def health_check() -> dict[str, Any]:
     return await _health_check_impl(
         session_logger, permissions_manager, validate_claude_directory
     )
-
-
-# Token Optimization Tools
-
-
-# Enhanced Search Tools (Phase 1)
-
-
-async def get_app_monitor() -> ApplicationMonitor | None:
-    """Get or initialize application monitor."""
-    global _app_monitor
-    if not APP_MONITOR_AVAILABLE:
-        return None
-
-    if _app_monitor is None:
-        data_dir = Path.home() / ".claude" / "data" / "app_monitoring"
-        working_dir = os.environ.get("PWD", str(Path.cwd()))
-        project_paths = [working_dir] if Path(working_dir).exists() else []
-        _app_monitor = ApplicationMonitor(str(data_dir), project_paths)
-
-    return _app_monitor
-
-
-# Global instances
-_llm_manager = None
-_app_monitor = None
-
-
-async def get_llm_manager() -> LLMManager | None:
-    """Get or initialize LLM manager."""
-    global _llm_manager
-    if not LLM_PROVIDERS_AVAILABLE:
-        return None
-
-    if _llm_manager is None:
-        config_path = Path.home() / ".claude" / "data" / "llm_config.json"
-        _llm_manager = LLMManager(str(config_path) if config_path.exists() else None)
-
-    return _llm_manager
-
-
-# Global serverless session manager
-_serverless_manager = None
-
-
-async def get_serverless_manager() -> ServerlessSessionManager | None:
-    """Get or initialize serverless session manager."""
-    global _serverless_manager
-    if not SERVERLESS_MODE_AVAILABLE:
-        return None
-
-    if _serverless_manager is None:
-        config_path = Path.home() / ".claude" / "data" / "serverless_config.json"
-        config = ServerlessConfigManager.load_config(
-            str(config_path) if config_path.exists() else None,
-        )
-        storage_backend = ServerlessConfigManager.create_storage_backend(config)
-        _serverless_manager = ServerlessSessionManager(storage_backend)
-
-    return _serverless_manager
 
 
 # Phase 2.4: Import advanced feature tools from advanced_features module
@@ -528,17 +322,9 @@ mcp.tool()(git_worktree_switch)
 mcp.tool()(session_welcome)
 
 
-# =====================================
-# Crackerjack Integration MCP Tools
-# =====================================
-
-
 def main(http_mode: bool = False, http_port: int | None = None) -> None:
     """Main entry point for the MCP server."""
     # Initialize new features on startup
-    import asyncio
-    from contextlib import suppress
-
     with suppress(Exception):
         asyncio.run(initialize_new_features())
 

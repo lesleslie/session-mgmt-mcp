@@ -794,3 +794,199 @@ def _should_retry_search(error: Exception) -> bool:
         "index not found",
     ]
     return any(condition in error_msg for condition in retry_conditions)
+
+
+# =====================================
+# Feature Detection (Phase 2.6)
+# =====================================
+
+
+class FeatureDetector:
+    """Centralized feature detection for MCP server capabilities."""
+
+    def __init__(self) -> None:
+        """Initialize feature detector with all availability checks."""
+        self.SESSION_MANAGEMENT_AVAILABLE = self._check_session_management()
+        self.REFLECTION_TOOLS_AVAILABLE = self._check_reflection_tools()
+        self.ENHANCED_SEARCH_AVAILABLE = self._check_enhanced_search()
+        self.UTILITY_FUNCTIONS_AVAILABLE = self._check_utility_functions()
+        self.MULTI_PROJECT_AVAILABLE = self._check_multi_project()
+        self.ADVANCED_SEARCH_AVAILABLE = self._check_advanced_search()
+        self.CONFIG_AVAILABLE = self._check_config()
+        self.AUTO_CONTEXT_AVAILABLE = self._check_auto_context()
+        self.MEMORY_OPTIMIZER_AVAILABLE = self._check_memory_optimizer()
+        self.APP_MONITOR_AVAILABLE = self._check_app_monitor()
+        self.LLM_PROVIDERS_AVAILABLE = self._check_llm_providers()
+        self.SERVERLESS_MODE_AVAILABLE = self._check_serverless_mode()
+        self.CRACKERJACK_INTEGRATION_AVAILABLE = self._check_crackerjack()
+
+    @staticmethod
+    def _check_session_management() -> bool:
+        """Check if session management is available."""
+        try:
+            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_reflection_tools() -> bool:
+        """Check if reflection tools are available."""
+        try:
+            from session_mgmt_mcp.reflection_tools import (
+                ReflectionDatabase,
+                get_current_project,
+                get_reflection_database,
+            )
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_enhanced_search() -> bool:
+        """Check if enhanced search is available."""
+        try:
+            import session_mgmt_mcp.search_enhanced
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_utility_functions() -> bool:
+        """Check if utility functions are available."""
+        try:
+            from session_mgmt_mcp.tools.search_tools import _optimize_search_results_impl
+            from session_mgmt_mcp.utils.format_utils import _format_session_statistics
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_multi_project() -> bool:
+        """Check if multi-project coordination is available."""
+        try:
+            from session_mgmt_mcp.multi_project_coordinator import (
+                MultiProjectCoordinator,
+            )
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_advanced_search() -> bool:
+        """Check if advanced search engine is available."""
+        try:
+            from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_config() -> bool:
+        """Check if configuration management is available."""
+        try:
+            from session_mgmt_mcp.settings import get_settings
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_auto_context() -> bool:
+        """Check if auto-context loading is available."""
+        try:
+            import session_mgmt_mcp.context_manager
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_memory_optimizer() -> bool:
+        """Check if memory optimizer is available."""
+        try:
+            import session_mgmt_mcp.memory_optimizer
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_app_monitor() -> bool:
+        """Check if application monitoring is available."""
+        try:
+            from session_mgmt_mcp.app_monitor import ApplicationMonitor
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_llm_providers() -> bool:
+        """Check if LLM providers are available."""
+        try:
+            from session_mgmt_mcp.llm_providers import LLMManager
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_serverless_mode() -> bool:
+        """Check if serverless mode is available."""
+        try:
+            from session_mgmt_mcp.serverless_mode import (
+                ServerlessConfigManager,
+                ServerlessSessionManager,
+            )
+
+            return True
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _check_crackerjack() -> bool:
+        """Check if crackerjack integration is available."""
+        try:
+            import session_mgmt_mcp.crackerjack_integration
+
+            return True
+        except ImportError:
+            return False
+
+    def get_feature_flags(self) -> dict[str, bool]:
+        """Get all feature flags as a dictionary."""
+        return {
+            "SESSION_MANAGEMENT_AVAILABLE": self.SESSION_MANAGEMENT_AVAILABLE,
+            "REFLECTION_TOOLS_AVAILABLE": self.REFLECTION_TOOLS_AVAILABLE,
+            "ENHANCED_SEARCH_AVAILABLE": self.ENHANCED_SEARCH_AVAILABLE,
+            "UTILITY_FUNCTIONS_AVAILABLE": self.UTILITY_FUNCTIONS_AVAILABLE,
+            "MULTI_PROJECT_AVAILABLE": self.MULTI_PROJECT_AVAILABLE,
+            "ADVANCED_SEARCH_AVAILABLE": self.ADVANCED_SEARCH_AVAILABLE,
+            "CONFIG_AVAILABLE": self.CONFIG_AVAILABLE,
+            "AUTO_CONTEXT_AVAILABLE": self.AUTO_CONTEXT_AVAILABLE,
+            "MEMORY_OPTIMIZER_AVAILABLE": self.MEMORY_OPTIMIZER_AVAILABLE,
+            "APP_MONITOR_AVAILABLE": self.APP_MONITOR_AVAILABLE,
+            "LLM_PROVIDERS_AVAILABLE": self.LLM_PROVIDERS_AVAILABLE,
+            "SERVERLESS_MODE_AVAILABLE": self.SERVERLESS_MODE_AVAILABLE,
+            "CRACKERJACK_INTEGRATION_AVAILABLE": self.CRACKERJACK_INTEGRATION_AVAILABLE,
+        }
+
+
+# Create global feature detector instance
+_feature_detector = FeatureDetector()
+
+
+def get_feature_flags() -> dict[str, bool]:
+    """Get feature availability flags for the MCP server.
+
+    Returns:
+        Dictionary mapping feature names to availability status.
+    """
+    return _feature_detector.get_feature_flags()
