@@ -13,6 +13,8 @@ from typing import Any
 
 import tiktoken
 
+from session_mgmt_mcp.acb_cache_adapter import get_chunk_cache
+
 
 @dataclass
 class TokenUsageMetrics:
@@ -45,7 +47,7 @@ class TokenOptimizer:
         self.chunk_size = chunk_size
         self.encoding = self._get_encoding()
         self.usage_history: list[TokenUsageMetrics] = []
-        self.chunk_cache: dict[str, ChunkResult] = {}
+        self.chunk_cache = get_chunk_cache()  # ACB-backed cache
 
         # Token optimization strategies
         self.strategies = {
@@ -402,20 +404,23 @@ class TokenOptimizer:
         return cache_key
 
     def get_chunk(self, cache_key: str, chunk_index: int) -> dict[str, Any] | None:
-        """Get a specific chunk from cache."""
+        """Get a specific chunk from cache.
+
+        Args:
+            cache_key: Unique cache key for the chunked data
+            chunk_index: Index of chunk to retrieve (1-indexed)
+
+        Returns:
+            Dict with chunk data and metadata, or None if not found
+
+        """
         if cache_key not in self.chunk_cache:
             return None
 
         chunk_result = self.chunk_cache[cache_key]
 
-        # Check expiration
-        from contextlib import suppress
-
-        with suppress(ValueError, KeyError):
-            expires = datetime.fromisoformat(chunk_result.metadata["expires"])
-            if datetime.now() > expires:
-                del self.chunk_cache[cache_key]
-                return None
+        # ACB cache handles expiration automatically via TTL
+        # No manual expiration check needed
 
         if 1 <= chunk_index <= len(chunk_result.chunks):
             chunk_data = json.loads(chunk_result.chunks[chunk_index - 1])
@@ -536,22 +541,21 @@ class TokenOptimizer:
         }
 
     def cleanup_cache(self, max_age_hours: int = 1) -> int:
-        """Clean up expired cache entries."""
-        cutoff = datetime.now() - timedelta(hours=max_age_hours)
-        expired_keys = []
+        """Clean up expired cache entries.
 
-        for key, chunk_result in self.chunk_cache.items():
-            try:
-                expires = datetime.fromisoformat(chunk_result.metadata["expires"])
-                if expires < cutoff:
-                    expired_keys.append(key)
-            except (ValueError, KeyError):
-                expired_keys.append(key)  # Remove entries with invalid expiration
+        Note: ACB cache handles expiration automatically via TTL.
+        This method is maintained for backwards compatibility but
+        returns 0 as cleanup is handled automatically.
 
-        for key in expired_keys:
-            del self.chunk_cache[key]
+        Args:
+            max_age_hours: Maximum age in hours (unused with ACB cache)
 
-        return len(expired_keys)
+        Returns:
+            Number of entries cleaned (always 0 with ACB cache)
+
+        """
+        # ACB cache with TTL handles cleanup automatically
+        return 0
 
 
 # Global optimizer instance

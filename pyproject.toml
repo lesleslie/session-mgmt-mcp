@@ -34,6 +34,7 @@ classifiers = [
 ]
 dependencies = [
     "acb>=0.25.2",
+    "aiocache>=0.12.3",
     "crackerjack",
     "duckdb>=0.9",
     "fastmcp>=2",
