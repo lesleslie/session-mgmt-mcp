@@ -33,6 +33,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
+    "acb>=0.25.2",
     "crackerjack",
     "duckdb>=0.9",
     "fastmcp>=2",
@@ -88,7 +89,6 @@ select = [
     "ALL",
 ]
 extend-select = [
-    "C901",
     "F",
     "I",
     "UP",
@@ -114,7 +114,6 @@ ignore = [
     "B023",
     "B904",
     "BLE001",
-    "C901",
     "COM812",
     "D100",
     "D101",
@@ -293,7 +292,7 @@ data_file = ".coverage"
 parallel = false
 
 [tool.coverage.report]
-fail_under = 0
+fail_under = 35
 show_missing = true
 skip_covered = false
 precision = 2

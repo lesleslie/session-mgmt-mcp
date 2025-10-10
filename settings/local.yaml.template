@@ -1,0 +1,27 @@
+# Local Configuration Overrides (Template)
+# Copy this file to settings/local.yaml and customize for your environment.
+# settings/local.yaml is gitignored and has highest priority.
+
+# === Example Local Overrides ===
+
+# Enable debug mode for development
+# debug: true
+# log_level: "DEBUG"
+# enable_performance_logging: true
+
+# Custom database location
+# database_path: "~/custom/path/reflection.duckdb"
+
+# Development server settings
+# server_port: 3001
+# enable_hot_reload: true
+
+# Disable certain features for testing
+# enable_semantic_search: false
+# enable_auto_commit: false
+
+# Custom logging
+# log_file_path: "~/custom/logs/session-mgmt.log"
+# slow_query_threshold: 0.5
+
+# Add your custom settings below:

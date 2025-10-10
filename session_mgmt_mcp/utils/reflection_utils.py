@@ -8,7 +8,7 @@ comprehensive session memory capture.
 import typing as t
 from enum import Enum
 
-from session_mgmt_mcp.config import get_config
+from session_mgmt_mcp.settings import get_settings
 
 
 class CheckpointReason(Enum):
@@ -73,10 +73,10 @@ def should_auto_store_checkpoint(
         <CheckpointReason.ROUTINE_SKIP: 'routine_skip'>
 
     """
-    config = get_config()
+    config = get_settings()
 
     # Check if auto-store is globally enabled
-    if not config.session.enable_auto_store_reflections:
+    if not config.enable_auto_store_reflections:
         return AutoStoreDecision(
             should_store=False,
             reason=CheckpointReason.ROUTINE_SKIP,
@@ -84,7 +84,7 @@ def should_auto_store_checkpoint(
         )
 
     # Always store manual checkpoints
-    if is_manual and config.session.auto_store_manual_checkpoints:
+    if is_manual and config.auto_store_manual_checkpoints:
         return AutoStoreDecision(
             should_store=True,
             reason=CheckpointReason.MANUAL_CHECKPOINT,
@@ -95,7 +95,7 @@ def should_auto_store_checkpoint(
         )
 
     # Always store session end
-    if session_phase == "end" and config.session.auto_store_session_end:
+    if session_phase == "end" and config.auto_store_session_end:
         return AutoStoreDecision(
             should_store=True,
             reason=CheckpointReason.SESSION_END,
@@ -106,20 +106,20 @@ def should_auto_store_checkpoint(
         )
 
     # Store exceptional quality sessions
-    if quality_score >= config.session.auto_store_exceptional_quality_threshold:
+    if quality_score >= config.auto_store_exceptional_quality_threshold:
         return AutoStoreDecision(
             should_store=True,
             reason=CheckpointReason.EXCEPTIONAL_QUALITY,
             metadata={
                 "quality_score": quality_score,
-                "threshold": config.session.auto_store_exceptional_quality_threshold,
+                "threshold": config.auto_store_exceptional_quality_threshold,
             },
         )
 
     # Store significant quality changes
     if previous_score is not None:
         quality_delta = abs(quality_score - previous_score)
-        threshold = config.session.auto_store_quality_delta_threshold
+        threshold = config.auto_store_quality_delta_threshold
 
         if quality_delta >= threshold:
             reason = (

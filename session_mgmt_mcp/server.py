@@ -220,7 +220,7 @@ except ImportError as e:
 
 # Import configuration management
 try:
-    from session_mgmt_mcp.config import get_config
+    from session_mgmt_mcp.settings import get_settings
 
     CONFIG_AVAILABLE = True
 except ImportError as e:
@@ -632,7 +632,7 @@ async def initialize_new_features() -> None:
 
     # Load configuration
     if CONFIG_AVAILABLE:
-        app_config = get_config()
+        app_config = get_settings()
 
     # Initialize reflection database for new features
     if REFLECTION_TOOLS_AVAILABLE:

@@ -51,3 +51,4 @@ crackerjack-debug-*.log
 
 # Temporary directories
 docs (1)/
+settings/local.yaml
