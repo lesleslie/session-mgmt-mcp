@@ -1,97 +1,215 @@
-#!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.utils.logging_utils module.
+"""Tests for logging utilities.
 
-Tests structured logging utilities and SessionLogger.
+Tests the SessionLogger class and structured logging functionality.
 """
 
-from __future__ import annotations
-
+import json
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-
-class TestSessionLogger:
-    """Test SessionLogger class."""
-
-    def test_logger_initialization(self) -> None:
-        """Test logger initialization."""
-        # TODO: Implement logger init tests
-        assert True
-
-    def test_logger_configuration(self) -> None:
-        """Test logger configuration."""
-        # TODO: Implement configuration tests
-        assert True
+from session_mgmt_mcp.utils.logging_utils import SessionLogger
 
 
-class TestLogFormatting:
-    """Test log message formatting."""
-
-    def test_structured_logging(self) -> None:
-        """Test structured log output."""
-        # TODO: Implement structured logging tests
-        assert True
-
-    def test_json_formatting(self) -> None:
-        """Test JSON log formatting."""
-        # TODO: Implement JSON format tests
-        assert True
-
-    def test_timestamp_formatting(self) -> None:
-        """Test timestamp formatting."""
-        # TODO: Implement timestamp tests
-        assert True
+@pytest.fixture
+def temp_log_dir(tmp_path: Path) -> Path:
+    """Create temporary log directory for testing."""
+    log_dir = tmp_path / "logs"
+    return log_dir
 
 
-class TestLogLevels:
-    """Test logging levels."""
-
-    def test_debug_logging(self) -> None:
-        """Test DEBUG level logging."""
-        # TODO: Implement debug level tests
-        assert True
-
-    def test_info_logging(self) -> None:
-        """Test INFO level logging."""
-        # TODO: Implement info level tests
-        assert True
-
-    def test_error_logging(self) -> None:
-        """Test ERROR level logging."""
-        # TODO: Implement error level tests
-        assert True
+@pytest.fixture
+def session_logger(temp_log_dir: Path) -> SessionLogger:
+    """Create SessionLogger instance for testing."""
+    return SessionLogger(temp_log_dir)
 
 
-class TestLogHandlers:
-    """Test log handlers."""
+class TestSessionLoggerInitialization:
+    """Test SessionLogger initialization and setup."""
 
-    def test_file_handler(self, tmp_path: Path) -> None:
-        """Test file handler configuration."""
-        # TODO: Implement file handler tests
-        assert True
+    def test_creates_log_directory(self, temp_log_dir: Path) -> None:
+        """Test that log directory is created."""
+        assert not temp_log_dir.exists()
+        logger = SessionLogger(temp_log_dir)
+        assert temp_log_dir.exists()
+        assert temp_log_dir.is_dir()
 
-    def test_console_handler(self) -> None:
-        """Test console handler configuration."""
-        # TODO: Implement console handler tests
-        assert True
+    def test_creates_log_file(self, session_logger: SessionLogger) -> None:
+        """Test that log file is created with date stamp."""
+        assert session_logger.log_file.exists()
+        assert session_logger.log_file.name.startswith("session_management_")
+        assert session_logger.log_file.name.endswith(".log")
 
-    def test_rotation_handler(self, tmp_path: Path) -> None:
-        """Test log rotation."""
-        # TODO: Implement rotation tests
-        assert True
+    def test_logger_has_correct_level(self, session_logger: SessionLogger) -> None:
+        """Test that logger is configured with INFO level."""
+        assert session_logger.logger.level == logging.INFO
+
+    def test_logger_has_file_handler(self, session_logger: SessionLogger) -> None:
+        """Test that logger has file handler configured."""
+        handlers = session_logger.logger.handlers
+        file_handlers = [h for h in handlers if isinstance(h, logging.FileHandler)]
+        assert len(file_handlers) > 0
+        assert file_handlers[0].level == logging.INFO
+
+    def test_logger_has_console_handler(self, session_logger: SessionLogger) -> None:
+        """Test that logger has console handler configured."""
+        handlers = session_logger.logger.handlers
+        stream_handlers = [h for h in handlers if isinstance(h, logging.StreamHandler)]
+        assert len(stream_handlers) > 0
+        assert stream_handlers[0].level == logging.ERROR
+
+    def test_no_duplicate_handlers(self, temp_log_dir: Path) -> None:
+        """Test that creating multiple loggers doesn't duplicate handlers."""
+        logger1 = SessionLogger(temp_log_dir)
+        initial_handler_count = len(logger1.logger.handlers)
+
+        logger2 = SessionLogger(temp_log_dir)
+        # Should reuse existing logger, not add more handlers
+        assert len(logger2.logger.handlers) == initial_handler_count
 
 
-class TestPerformanceLogging:
-    """Test performance logging."""
+class TestSessionLoggerBasicLogging:
+    """Test basic logging operations."""
 
-    def test_log_execution_time(self) -> None:
-        """Test execution time logging."""
-        # TODO: Implement timing tests
-        assert True
+    def test_info_logging(self, session_logger: SessionLogger) -> None:
+        """Test info level logging."""
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info("Test message")
+            mock_info.assert_called_once_with("Test message")
 
-    def test_log_slow_operations(self) -> None:
-        """Test slow operation logging."""
-        # TODO: Implement slow query tests
-        assert True
+    def test_warning_logging(self, session_logger: SessionLogger) -> None:
+        """Test warning level logging."""
+        with patch.object(session_logger.logger, "warning") as mock_warning:
+            session_logger.warning("Warning message")
+            mock_warning.assert_called_once_with("Warning message")
+
+    def test_error_logging(self, session_logger: SessionLogger) -> None:
+        """Test error level logging."""
+        with patch.object(session_logger.logger, "error") as mock_error:
+            session_logger.error("Error message")
+            mock_error.assert_called_once_with("Error message")
+
+
+class TestSessionLoggerStructuredLogging:
+    """Test structured logging with context."""
+
+    def test_info_with_context(self, session_logger: SessionLogger) -> None:
+        """Test info logging with structured context."""
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info("Test message", user="alice", action="login")
+
+            call_args = mock_info.call_args[0][0]
+            assert "Test message" in call_args
+            assert "Context:" in call_args
+            assert "user" in call_args
+            assert "alice" in call_args
+            assert "action" in call_args
+            assert "login" in call_args
+
+    def test_warning_with_context(self, session_logger: SessionLogger) -> None:
+        """Test warning logging with structured context."""
+        with patch.object(session_logger.logger, "warning") as mock_warning:
+            session_logger.warning("Rate limit", attempts=5, ip="127.0.0.1")
+
+            call_args = mock_warning.call_args[0][0]
+            assert "Rate limit" in call_args
+            assert "attempts" in call_args
+            assert "5" in call_args
+
+    def test_error_with_context(self, session_logger: SessionLogger) -> None:
+        """Test error logging with structured context."""
+        with patch.object(session_logger.logger, "error") as mock_error:
+            session_logger.error("Database error", table="users", error_code=500)
+
+            call_args = mock_error.call_args[0][0]
+            assert "Database error" in call_args
+            assert "table" in call_args
+            assert "error_code" in call_args
+
+    def test_context_serialization(self, session_logger: SessionLogger) -> None:
+        """Test that context is properly JSON serialized."""
+        with patch.object(session_logger.logger, "info") as mock_info:
+            context = {"key": "value", "number": 42, "nested": {"data": "test"}}
+            session_logger.info("Message", **context)
+
+            call_args = mock_info.call_args[0][0]
+            # Should contain valid JSON
+            assert "Context:" in call_args
+            context_str = call_args.split("Context:")[1].strip()
+            # Should be valid JSON
+            parsed = json.loads(context_str)
+            assert parsed == context
+
+
+class TestSessionLoggerFileOutput:
+    """Test actual file logging output."""
+
+    def test_log_written_to_file(self, session_logger: SessionLogger) -> None:
+        """Test that log messages are written to file."""
+        test_message = "Test log entry"
+        session_logger.info(test_message)
+
+        # Read log file
+        log_content = session_logger.log_file.read_text()
+        assert test_message in log_content
+
+    def test_log_format_structure(self, session_logger: SessionLogger) -> None:
+        """Test that log format includes expected components."""
+        session_logger.info("Test message")
+
+        log_content = session_logger.log_file.read_text()
+        # Should have timestamp, level, function, line number, message
+        assert "INFO" in log_content
+        assert "|" in log_content  # Separator character
+
+    def test_multiple_log_entries(self, session_logger: SessionLogger) -> None:
+        """Test multiple log entries are written correctly."""
+        messages = ["Message 1", "Message 2", "Message 3"]
+        for msg in messages:
+            session_logger.info(msg)
+
+        log_content = session_logger.log_file.read_text()
+        for msg in messages:
+            assert msg in log_content
+
+
+class TestSessionLoggerEdgeCases:
+    """Test edge cases and error conditions."""
+
+    def test_empty_message(self, session_logger: SessionLogger) -> None:
+        """Test logging empty message."""
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info("")
+            mock_info.assert_called_once_with("")
+
+    def test_none_in_context(self, session_logger: SessionLogger) -> None:
+        """Test handling None values in context."""
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info("Message", value=None, other="test")
+            call_args = mock_info.call_args[0][0]
+            # Should handle None gracefully (JSON serializes to null)
+            assert "null" in call_args or "None" in call_args
+
+    def test_special_characters_in_message(self, session_logger: SessionLogger) -> None:
+        """Test logging message with special characters."""
+        special_msg = "Message with ñ, 中文, and emoji 🚀"
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info(special_msg)
+            mock_info.assert_called_once_with(special_msg)
+
+    def test_large_context(self, session_logger: SessionLogger) -> None:
+        """Test logging with large context dictionary."""
+        large_context = {f"key_{i}": f"value_{i}" for i in range(100)}
+        with patch.object(session_logger.logger, "info") as mock_info:
+            session_logger.info("Large context test", **large_context)
+            # Should complete without error
+            assert mock_info.called
+
+    def test_existing_log_directory(self, temp_log_dir: Path) -> None:
+        """Test initialization with existing log directory."""
+        temp_log_dir.mkdir(parents=True, exist_ok=True)
+        logger = SessionLogger(temp_log_dir)
+        # Should not raise error, should use existing directory
+        assert logger.log_dir.exists()
