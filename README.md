@@ -575,6 +575,12 @@ The project documentation is organized into the following categories:
 - **[Crackerjack Integration](docs/CRACKERJACK.md)** - Comprehensive code quality integration
 - **[Selective Auto-Store](docs/features/SELECTIVE_AUTO_STORE.md)** - Smart reflection storage
 
+### Development & Migration
+
+- **[ACB Config Migration Summary](docs/ACB_CONFIG_MIGRATION_SUMMARY.md)** - Phase 1 ACB integration (complete)
+- **[Comprehensive Improvement Plan](docs/SESSION-MGMT-MCP-COMPREHENSIVE-IMPROVEMENT-PLAN.md)** - 16-week ACB transformation roadmap
+- **[Config Migration Strategy](docs/config-migration-strategy.md)** - Detailed migration approach analysis
+
 ### Reference
 
 - **[MCP Schema Reference](docs/reference/MCP_SCHEMA_REFERENCE.md)** - MCP protocol schemas
