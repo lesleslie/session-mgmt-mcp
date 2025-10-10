@@ -3,23 +3,23 @@
 This module provides advanced MCP tools for multi-project coordination,
 git worktree management, natural language scheduling, and enhanced search.
 
-Phase 2 Migration Target:
-- AdvancedFeaturesHub class (NEW - coordinates advanced features)
-- Natural language reminder tools (~200 lines, 5 MCP tools)
-- Interruption management tools (~100 lines, 1 MCP tool)
-- Multi-project coordination (~200 lines, 4 MCP tools)
-- Advanced search capabilities (~200 lines, 3 MCP tools)
-- Git worktree management (~200 lines, 4 MCP tools)
-- Session welcome tool (~100 lines, 1 MCP tool)
-
-Target Size: ~1000 lines
+Extracted from server.py Phase 2.4 - Contains 17 MCP tool implementations:
+- Natural language reminder tools (5 MCP tools)
+- Interruption management tools (1 MCP tool)
+- Multi-project coordination (4 MCP tools)
+- Advanced search capabilities (3 MCP tools)
+- Git worktree management (3 MCP tools)
+- Session welcome tool (1 MCP tool)
 """
 
 from __future__ import annotations
 
 import typing as t
+from pathlib import Path
 
 if t.TYPE_CHECKING:
+    from collections.abc import Any
+
     from session_mgmt_mcp.server_core import SessionLogger
 
 
@@ -73,7 +73,8 @@ class AdvancedFeaturesHub:
         raise NotImplementedError(msg)
 
 
-# Natural Language Reminder Tools
+# ================================
+# Natural Language Scheduling Tools
 # ================================
 
 
@@ -84,323 +85,757 @@ async def create_natural_reminder(
     user_id: str = "default",
     project_id: str | None = None,
     notification_method: str = "session",
-) -> dict[str, t.Any]:
-    """Create reminder from natural language time expression.
+) -> str:
+    """Create reminder from natural language time expression."""
+    try:
+        from .natural_scheduler import (
+            create_natural_reminder as _create_natural_reminder,
+        )
 
-    Args:
-        title: Reminder title
-        time_expression: Natural language time (e.g., "in 2 hours")
-        description: Optional reminder description
-        user_id: User identifier
-        project_id: Optional project identifier
-        notification_method: How to notify (session/email/etc)
+        reminder_id = await _create_natural_reminder(
+            title,
+            time_expression,
+            description,
+            user_id,
+            project_id,
+            notification_method,
+        )
 
-    Returns:
-        Created reminder data
+        if reminder_id:
+            output = []
+            output.append("⏰ Natural reminder created successfully!")
+            output.append(f"🆔 Reminder ID: {reminder_id}")
+            output.append(f"📝 Title: {title}")
+            output.append(f"📄 Description: {description}")
+            output.append(f"🕐 When: {time_expression}")
+            output.append(f"👤 User: {user_id}")
+            if project_id:
+                output.append(f"📁 Project: {project_id}")
+            output.append(f"📢 Notification: {notification_method}")
+            output.append(
+                "🎯 Reminder will trigger automatically at the scheduled time",
+            )
+            return "\n".join(output)
+        return f"❌ Failed to parse time expression: '{time_expression}'\n💡 Try formats like 'in 30 minutes', 'tomorrow at 9am', 'every day at 5pm'"
 
-    """
-    msg = "create_natural_reminder not yet implemented"
-    raise NotImplementedError(msg)
+    except ImportError:
+        return "❌ Natural scheduling tools not available. Install: pip install python-dateutil schedule python-crontab"
+    except Exception as e:
+        return f"❌ Error creating reminder: {e}"
 
 
 async def list_user_reminders(
     user_id: str = "default",
     project_id: str | None = None,
-) -> dict[str, t.Any]:
-    """List pending reminders for user/project.
+) -> str:
+    """List pending reminders for user/project."""
+    try:
+        from .natural_scheduler import list_user_reminders as _list_user_reminders
 
-    Args:
-        user_id: User identifier
-        project_id: Optional project filter
+        # Import formatting functions
+        from .utils.server_helpers import (
+            _format_no_reminders_message,
+            _format_reminders_list,
+        )
 
-    Returns:
-        List of pending reminders
+        reminders = await _list_user_reminders(user_id, project_id)
 
-    """
-    msg = "list_user_reminders not yet implemented"
-    raise NotImplementedError(msg)
+        if not reminders:
+            output = _format_no_reminders_message(user_id, project_id)
+            return "\n".join(output)
 
+        output = _format_reminders_list(reminders, user_id, project_id)
+        return "\n".join(output)
 
-async def cancel_user_reminder(reminder_id: str) -> dict[str, t.Any]:
-    """Cancel a specific reminder.
-
-    Args:
-        reminder_id: Reminder to cancel
-
-    Returns:
-        Cancellation result
-
-    """
-    msg = "cancel_user_reminder not yet implemented"
-    raise NotImplementedError(msg)
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error listing reminders: {e}"
 
 
-async def start_reminder_service() -> dict[str, t.Any]:
-    """Start the background reminder service.
+async def cancel_user_reminder(reminder_id: str) -> str:
+    """Cancel a specific reminder."""
+    try:
+        from .natural_scheduler import cancel_user_reminder as _cancel_user_reminder
 
-    Returns:
-        Service startup result
+        success = await _cancel_user_reminder(reminder_id)
 
-    """
-    msg = "start_reminder_service not yet implemented"
-    raise NotImplementedError(msg)
+        if success:
+            output = []
+            output.append("❌ Reminder cancelled successfully!")
+            output.append(f"🆔 Reminder ID: {reminder_id}")
+            output.append("🚫 The reminder will no longer trigger")
+            output.append("💡 You can create a new reminder if needed")
+            return "\n".join(output)
+        return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists."
 
-
-async def stop_reminder_service() -> dict[str, t.Any]:
-    """Stop the background reminder service.
-
-    Returns:
-        Service shutdown result
-
-    """
-    msg = "stop_reminder_service not yet implemented"
-    raise NotImplementedError(msg)
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error cancelling reminder: {e}"
 
 
+def _calculate_overdue_time(scheduled_for: str) -> str:
+    """Calculate and format overdue time."""
+    try:
+        from datetime import datetime
+
+        scheduled = datetime.fromisoformat(scheduled_for)
+        now = datetime.now()
+        overdue = now - scheduled
+
+        if overdue.total_seconds() > 0:
+            hours = int(overdue.total_seconds() // 3600)
+            minutes = int((overdue.total_seconds() % 3600) // 60)
+            if hours > 0:
+                return f"⏱️ Overdue: {hours}h {minutes}m"
+            return f"⏱️ Overdue: {minutes}m"
+        return "⏱️ Not yet due"
+    except Exception as e:
+        return f"❌ Error checking due reminders: {e}"
+
+
+async def start_reminder_service() -> str:
+    """Start the background reminder service."""
+    try:
+        from .natural_scheduler import (
+            register_session_notifications,
+        )
+        from .natural_scheduler import (
+            start_reminder_service as _start_reminder_service,
+        )
+
+        # Register default session notifications
+        register_session_notifications()
+
+        # Start the service
+        _start_reminder_service()
+
+        output = []
+        output.append("🚀 Natural reminder service started!")
+        output.append("⏰ Background scheduler is now active")
+        output.append("🔍 Checking for due reminders every minute")
+        output.append("📢 Session notifications are registered")
+        output.append(
+            "💡 Reminders will automatically trigger at their scheduled times",
+        )
+        output.append("🛑 Use 'stop_reminder_service' to stop the background service")
+
+        return "\n".join(output)
+
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error starting reminder service: {e}"
+
+
+async def stop_reminder_service() -> str:
+    """Stop the background reminder service."""
+    try:
+        from .natural_scheduler import stop_reminder_service as _stop_reminder_service
+
+        _stop_reminder_service()
+
+        output = []
+        output.append("🛑 Natural reminder service stopped")
+        output.append("❌ Background scheduler is no longer active")
+        output.append("⚠️ Existing reminders will not trigger automatically")
+        output.append("🚀 Use 'start_reminder_service' to restart the service")
+        output.append(
+            "💡 You can still check due reminders manually with 'check_due_reminders'",
+        )
+
+        return "\n".join(output)
+
+    except ImportError:
+        return "❌ Natural scheduling tools not available"
+    except Exception as e:
+        return f"❌ Error stopping reminder service: {e}"
+
+
+# ================================
 # Interruption Management Tools
-# ==============================
+# ================================
 
 
-async def get_interruption_statistics(user_id: str) -> dict[str, t.Any]:
-    """Get comprehensive interruption and context preservation statistics.
+async def get_interruption_statistics(user_id: str) -> str:
+    """Get comprehensive interruption and context preservation statistics."""
+    try:
+        from .interruption_manager import (
+            get_interruption_statistics as _get_interruption_statistics,
+        )
 
-    Args:
-        user_id: User identifier
+        # Import formatting functions
+        from .utils import (
+            _format_efficiency_metrics,
+            _format_no_data_message,
+            _format_statistics_header,
+        )
+        from .utils.server_helpers import (
+            _format_interruption_statistics,
+            _format_snapshot_statistics,
+        )
 
-    Returns:
-        Interruption statistics and patterns
+        stats = await _get_interruption_statistics(user_id)
+        output = _format_statistics_header(user_id)
 
-    """
-    msg = "get_interruption_statistics not yet implemented"
-    raise NotImplementedError(msg)
+        # Get statistics sections
+        sessions = stats.get("sessions", {})
+        interruptions = stats.get("interruptions", {})
+        snapshots = stats.get("snapshots", {})
+        by_type = interruptions.get("by_type", [])
+
+        # Format all sections
+        output.extend(_format_session_statistics(sessions))
+        output.extend(_format_interruption_statistics(interruptions))
+        output.extend(_format_snapshot_statistics(snapshots))
+        output.extend(_format_efficiency_metrics(sessions, interruptions, by_type))
+
+        # Check if we have any data
+        if not _has_statistics_data(sessions, interruptions, snapshots):
+            output = _format_no_data_message(user_id)
+
+        return "\n".join(output)
+
+    except ImportError:
+        return "❌ Interruption management tools not available"
+    except Exception as e:
+        return f"❌ Error getting statistics: {e}"
 
 
+def _format_session_statistics(sessions: dict[str, t.Any]) -> list[str]:
+    """Format session statistics section."""
+    output = []
+    if sessions:
+        output.append("\n📊 Session Statistics:")
+        if "total_sessions" in sessions:
+            output.append(f"   • Total sessions: {sessions['total_sessions']}")
+        if "active_sessions" in sessions:
+            output.append(f"   • Active sessions: {sessions['active_sessions']}")
+        if "avg_duration" in sessions:
+            output.append(f"   • Average duration: {sessions['avg_duration']}")
+    return output
+
+
+def _has_statistics_data(
+    sessions: t.Any,
+    interruptions: t.Any,
+    snapshots: t.Any,
+) -> bool:
+    """Check if we have any statistics data to display."""
+    return bool(sessions or interruptions or snapshots)
+
+
+# ================================
 # Multi-Project Coordination Tools
-# =================================
+# ================================
 
 
 async def create_project_group(
     name: str,
     projects: list[str],
     description: str = "",
-) -> dict[str, t.Any]:
-    """Create new project group for multi-project coordination.
+) -> str:
+    """Create a new project group for multi-project coordination."""
+    # Lazy initialization
+    from typing import Literal
 
-    Args:
-        name: Project group name
-        projects: List of project paths
-        description: Optional group description
+    multi_project_coordinator = await _get_multi_project_coordinator()
+    if not multi_project_coordinator:
+        return "❌ Multi-project coordination not available"
 
-    Returns:
-        Created project group data
+    try:
+        group = await multi_project_coordinator.create_project_group(
+            name=name,
+            projects=projects,
+            description=description,
+        )
 
-    """
-    msg = "create_project_group not yet implemented"
-    raise NotImplementedError(msg)
+        return f"""✅ **Project Group Created**
+
+**Group:** {group.name}
+**Projects:** {", ".join(group.projects)}
+**Description:** {group.description or "None"}
+**ID:** {group.id}
+
+The project group is now available for cross-project coordination and knowledge sharing."""
+
+    except Exception as e:
+        return f"❌ Failed to create project group: {e}"
 
 
 async def add_project_dependency(
     source_project: str,
     target_project: str,
-    dependency_type: str,
+    dependency_type: t.Literal["uses", "extends", "references", "shares_code"],
     description: str = "",
-) -> dict[str, t.Any]:
-    """Add dependency relationship between projects.
+) -> str:
+    """Add a dependency relationship between projects."""
+    multi_project_coordinator = await _get_multi_project_coordinator()
+    if not multi_project_coordinator:
+        return "❌ Multi-project coordination not available"
 
-    Args:
-        source_project: Source project path
-        target_project: Target project path
-        dependency_type: Type of dependency (uses/extends/references/shares_code)
-        description: Optional relationship description
+    try:
+        dependency = await multi_project_coordinator.add_project_dependency(
+            source_project=source_project,
+            target_project=target_project,
+            dependency_type=dependency_type,
+            description=description,
+        )
 
-    Returns:
-        Created dependency data
+        return f"""✅ **Project Dependency Added**
 
-    """
-    msg = "add_project_dependency not yet implemented"
-    raise NotImplementedError(msg)
+**Source:** {dependency.source_project}
+**Target:** {dependency.target_project}
+**Type:** {dependency.dependency_type}
+**Description:** {dependency.description or "None"}
+
+This relationship will be used for cross-project search and coordination."""
+
+    except Exception as e:
+        return f"❌ Failed to add project dependency: {e}"
 
 
 async def search_across_projects(
     query: str,
     current_project: str,
     limit: int = 10,
-) -> dict[str, t.Any]:
-    """Search conversations across related projects.
+) -> str:
+    """Search conversations across related projects."""
+    multi_project_coordinator = await _get_multi_project_coordinator()
+    if not multi_project_coordinator:
+        return "❌ Multi-project coordination not available"
 
-    Args:
-        query: Search query
-        current_project: Current project path
-        limit: Maximum results per project
+    try:
+        results = await multi_project_coordinator.find_related_conversations(
+            current_project=current_project,
+            query=query,
+            limit=limit,
+        )
 
-    Returns:
-        Cross-project search results
+        if not results:
+            return f"🔍 No results found for '{query}' across related projects"
 
-    """
-    msg = "search_across_projects not yet implemented"
-    raise NotImplementedError(msg)
+        output = [f"🔍 **Cross-Project Search Results** ({len(results)} found)\n"]
 
+        for i, result in enumerate(results, 1):
+            project_indicator = (
+                "📍 Current"
+                if result["is_current_project"]
+                else f"🔗 {result['source_project']}"
+            )
 
-async def get_project_insights(
-    projects: list[str],
-    time_range_days: int = 30,
-) -> dict[str, t.Any]:
-    """Get cross-project insights and collaboration opportunities.
+            output.append(f"""**{i}.** {project_indicator}
+**Score:** {result["score"]:.3f}
+**Content:** {result["content"][:200]}{"..." if len(result["content"]) > 200 else ""}
+**Timestamp:** {result.get("timestamp", "Unknown")}
+---""")
 
-    Args:
-        projects: List of project paths
-        time_range_days: Analysis time range
+        return "\n".join(output)
 
-    Returns:
-        Project insights and recommendations
-
-    """
-    msg = "get_project_insights not yet implemented"
-    raise NotImplementedError(msg)
+    except Exception as e:
+        return f"❌ Search failed: {e}"
 
 
+async def get_project_insights(projects: list[str], time_range_days: int = 30) -> str:
+    """Get cross-project insights and collaboration opportunities."""
+    multi_project_coordinator = await _get_multi_project_coordinator()
+    if not multi_project_coordinator:
+        return "❌ Multi-project coordination not available"
+
+    try:
+        from .utils.server_helpers import _format_project_insights
+
+        insights = await multi_project_coordinator.get_cross_project_insights(
+            projects=projects,
+            time_range_days=time_range_days,
+        )
+        return _format_project_insights(insights, time_range_days)
+
+    except Exception as e:
+        return f"❌ Failed to get insights: {e}"
+
+
+async def _get_multi_project_coordinator() -> t.Any:
+    """Get or initialize multi-project coordinator."""
+    try:
+        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_mgmt_mcp.reflection_tools import get_reflection_database
+
+        db = await get_reflection_database()
+        return MultiProjectCoordinator(db)
+    except Exception:
+        return None
+
+
+# ================================
 # Advanced Search Tools
-# ======================
+# ================================
 
 
 async def advanced_search(
     query: str,
     content_type: str | None = None,
+    project: str | None = None,
     timeframe: str | None = None,
     sort_by: str = "relevance",
     limit: int = 10,
-    project: str | None = None,
-) -> dict[str, t.Any]:
-    """Perform advanced search with faceted filtering.
+) -> str:
+    """Perform advanced search with faceted filtering."""
+    advanced_search_engine = await _get_advanced_search_engine()
+    if not advanced_search_engine:
+        return "❌ Advanced search not available"
 
-    Args:
-        query: Search query
-        content_type: Filter by content type
-        timeframe: Time range filter
-        sort_by: Sort order (relevance/date/score)
-        limit: Maximum results
-        project: Optional project filter
+    try:
+        from .utils.server_helpers import _format_advanced_search_results
 
-    Returns:
-        Advanced search results with facets
+        filters = _build_advanced_search_filters(content_type, project, timeframe)
+        search_results = await advanced_search_engine.search(
+            query=query,
+            filters=filters,
+            sort_by=sort_by,
+            limit=limit,
+            include_highlights=True,
+        )
 
-    """
-    msg = "advanced_search not yet implemented"
-    raise NotImplementedError(msg)
+        results = search_results["results"]
+        if not results:
+            return f"🔍 No results found for '{query}'"
 
+        return _format_advanced_search_results(results)
 
-async def search_suggestions(
-    query: str,
-    field: str = "content",
-    limit: int = 5,
-) -> dict[str, t.Any]:
-    """Get search completion suggestions.
-
-    Args:
-        query: Partial search query
-        field: Field to suggest from
-        limit: Maximum suggestions
-
-    Returns:
-        Search suggestions
-
-    """
-    msg = "search_suggestions not yet implemented"
-    raise NotImplementedError(msg)
+    except Exception as e:
+        return f"❌ Advanced search failed: {e}"
 
 
-async def get_search_metrics(
-    metric_type: str,
-    timeframe: str = "30d",
-) -> dict[str, t.Any]:
-    """Get search and activity metrics.
+def _build_advanced_search_filters(
+    content_type: str | None, project: str | None, timeframe: str | None
+) -> list[t.Any]:
+    """Build search filters from parameters."""
+    filters = []
 
-    Args:
-        metric_type: Type of metric to retrieve
-        timeframe: Time range for metrics
+    if content_type:
+        from session_mgmt_mcp.advanced_search import SearchFilter
 
-    Returns:
-        Search metrics data
+        filters.append(
+            SearchFilter(field="content_type", operator="eq", value=content_type)
+        )
 
-    """
-    msg = "get_search_metrics not yet implemented"
-    raise NotImplementedError(msg)
+    if project:
+        from session_mgmt_mcp.advanced_search import SearchFilter
+
+        filters.append(SearchFilter(field="project", operator="eq", value=project))
+
+    if timeframe:
+        from session_mgmt_mcp.advanced_search import SearchFilter
+
+        # Get engine for timeframe parsing
+        advanced_search_engine = _get_advanced_search_engine_sync()
+        if advanced_search_engine:
+            start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
+            filters.append(
+                SearchFilter(
+                    field="timestamp", operator="range", value=(start_time, end_time)
+                )
+            )
+
+    return filters
 
 
+async def search_suggestions(query: str, field: str = "content", limit: int = 5) -> str:
+    """Get search completion suggestions."""
+    advanced_search_engine = await _get_advanced_search_engine()
+    if not advanced_search_engine:
+        return "❌ Advanced search not available"
+
+    try:
+        suggestions = await advanced_search_engine.suggest_completions(
+            query=query,
+            field=field,
+            limit=limit,
+        )
+
+        if not suggestions:
+            return f"💡 No suggestions found for '{query}'"
+
+        output = [f"💡 **Search Suggestions** for '{query}':\n"]
+
+        for i, suggestion in enumerate(suggestions, 1):
+            output.append(
+                f"{i}. {suggestion['text']} (frequency: {suggestion['frequency']})",
+            )
+
+        return "\n".join(output)
+
+    except Exception as e:
+        return f"❌ Failed to get suggestions: {e}"
+
+
+async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
+    """Get search and activity metrics."""
+    advanced_search_engine = await _get_advanced_search_engine()
+    if not advanced_search_engine:
+        return "❌ Advanced search not available"
+
+    try:
+        metrics = await advanced_search_engine.aggregate_metrics(
+            metric_type=metric_type,
+            timeframe=timeframe,
+        )
+
+        if "error" in metrics:
+            return f"❌ {metrics['error']}"
+
+        output = [f"📊 **{metric_type.title()} Metrics** ({timeframe})\n"]
+
+        for item in metrics["data"][:10]:  # Top 10
+            output.append(f"• **{item['key']}:** {item['value']}")
+
+        if not metrics["data"]:
+            output.append("No data available for the specified timeframe.")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        return f"❌ Failed to get metrics: {e}"
+
+
+async def _get_advanced_search_engine() -> t.Any:
+    """Get or initialize advanced search engine."""
+    try:
+        from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
+        from session_mgmt_mcp.reflection_tools import get_reflection_database
+
+        db = await get_reflection_database()
+        return AdvancedSearchEngine(db)
+    except Exception:
+        return None
+
+
+def _get_advanced_search_engine_sync() -> t.Any:
+    """Synchronous helper to get advanced search engine."""
+    try:
+        import asyncio
+
+        return asyncio.run(_get_advanced_search_engine())
+    except Exception:
+        return None
+
+
+# ================================
 # Git Worktree Management Tools
-# ==============================
+# ================================
+
+
+def _get_worktree_indicators(is_main: bool, is_detached: bool) -> tuple[str, str]:
+    """Get the main and detached indicators for a worktree."""
+    main_indicator = " (main)" if is_main else ""
+    detached_indicator = " (detached)" if is_detached else ""
+    return main_indicator, detached_indicator
 
 
 async def git_worktree_add(
     branch: str,
     path: str,
-    create_branch: bool = False,
     working_directory: str | None = None,
-) -> dict[str, t.Any]:
-    """Create new git worktree.
+    create_branch: bool = False,
+) -> str:
+    """Create a new git worktree."""
+    from .worktree_manager import WorktreeManager
 
-    Args:
-        branch: Branch to checkout
-        path: Worktree path
-        create_branch: Whether to create new branch
-        working_directory: Optional working directory override
+    # Import session_logger from server
+    from .server import session_logger
 
-    Returns:
-        Worktree creation result
+    working_dir = Path(working_directory or str(Path.cwd()))
+    new_path = Path(path)
 
-    """
-    msg = "git_worktree_add not yet implemented"
-    raise NotImplementedError(msg)
+    if not new_path.is_absolute():
+        new_path = working_dir.parent / path
+
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.create_worktree(
+            repository_path=working_dir,
+            new_path=new_path,
+            branch=branch,
+            create_branch=create_branch,
+        )
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        output = [
+            "🎉 **Worktree Created Successfully!**\n",
+            f"🌿 Branch: {result['branch']}",
+            f"📁 Path: {result['worktree_path']}",
+            f"🎯 Created new branch: {'Yes' if create_branch else 'No'}",
+        ]
+
+        if result.get("output"):
+            output.append(f"\n📝 Git output: {result['output']}")
+
+        output.append(f"\n💡 To start working: cd {result['worktree_path']}")
+        output.append("💡 Use `git_worktree_list` to see all worktrees")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.exception(f"git_worktree_add failed: {e}")
+        return f"❌ Failed to create worktree: {e}"
 
 
 async def git_worktree_remove(
     path: str,
-    force: bool = False,
     working_directory: str | None = None,
-) -> dict[str, t.Any]:
-    """Remove existing git worktree.
+    force: bool = False,
+) -> str:
+    """Remove an existing git worktree."""
+    from .worktree_manager import WorktreeManager
 
-    Args:
-        path: Worktree path to remove
-        force: Force removal even with changes
-        working_directory: Optional working directory override
+    # Import session_logger from server
+    from .server import session_logger
 
-    Returns:
-        Worktree removal result
+    working_dir = Path(working_directory or str(Path.cwd()))
+    remove_path = Path(path)
 
-    """
-    msg = "git_worktree_remove not yet implemented"
-    raise NotImplementedError(msg)
+    if not remove_path.is_absolute():
+        remove_path = working_dir.parent / path
+
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.remove_worktree(
+            repository_path=working_dir,
+            worktree_path=remove_path,
+            force=force,
+        )
+
+        if not result["success"]:
+            return f"❌ {result['error']}"
+
+        output = [
+            "🗑️ **Worktree Removed Successfully!**\n",
+            f"📁 Removed path: {result['removed_path']}",
+        ]
+
+        if result.get("output"):
+            output.append(f"📝 Git output: {result['output']}")
+
+        output.append(f"\n💡 Used force removal: {'Yes' if force else 'No'}")
+        output.append("💡 Use `git_worktree_list` to see remaining worktrees")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.exception(f"git_worktree_remove failed: {e}")
+        return f"❌ Failed to remove worktree: {e}"
 
 
-async def git_worktree_switch(
-    from_path: str,
-    to_path: str,
-) -> dict[str, t.Any]:
-    """Switch context between git worktrees with session preservation.
+async def git_worktree_switch(from_path: str, to_path: str) -> str:
+    """Switch context between git worktrees with session preservation."""
+    from pathlib import Path
 
-    Args:
-        from_path: Current worktree path
-        to_path: Target worktree path
+    from .worktree_manager import WorktreeManager
 
-    Returns:
-        Context switch result
+    # Import session_logger from server
+    from .server import session_logger
 
-    """
-    msg = "git_worktree_switch not yet implemented"
-    raise NotImplementedError(msg)
+    manager = WorktreeManager(session_logger=session_logger)
+
+    try:
+        result = await manager.switch_worktree_context(Path(from_path), Path(to_path))
+
+        if not result["success"]:
+            return f" {result['error']}"
+
+        output = [
+            "**Worktree Context Switch Complete**\n",
+            f" From: {result['from_worktree']['branch']} ({result['from_worktree']['path']})",
+            f" To: {result['to_worktree']['branch']} ({result['to_worktree']['path']})",
+        ]
+
+        if result["context_preserved"]:
+            output.append(" Session context preserved during switch")
+            if result.get("session_state_saved"):
+                output.append(" Current session state saved")
+            if result.get("session_state_restored"):
+                output.append(" Session state restored for target worktree")
+        else:
+            output.append(
+                " Session context preservation failed (basic switch performed)"
+            )
+            if result.get("session_error"):
+                output.append(f"   Error: {result['session_error']}")
+
+        return "\n".join(output)
+
+    except Exception as e:
+        session_logger.exception(f"git_worktree_switch failed: {e}")
+        return f"❌ Failed to switch worktree context: {e}"
 
 
+# ================================
 # Session Welcome Tool
-# ====================
+# ================================
+
+# Global connection info (will be set by server lifecycle)
+_connection_info: dict[str, t.Any] | None = None
 
 
-async def session_welcome() -> dict[str, t.Any]:
-    """Display session connection information and previous session details.
+def set_connection_info(info: dict[str, t.Any]) -> None:
+    """Set connection info for session welcome (called from server lifespan)."""
+    global _connection_info
+    _connection_info = info
 
-    Returns:
-        Session welcome information
 
-    """
-    msg = "session_welcome not yet implemented"
-    raise NotImplementedError(msg)
+async def session_welcome() -> str:
+    """Display session connection information and previous session details."""
+    global _connection_info
+
+    if not _connection_info:
+        return "ℹ️ Session information not available (may not be a git repository)"
+
+    output = []
+    output.append("🚀 Session Management Connected!")
+    output.append("=" * 40)
+
+    # Current session info
+    output.append(f"📁 Project: {_connection_info['project']}")
+    output.append(f"📊 Current quality score: {_connection_info['quality_score']}/100")
+    output.append(f"🔗 Connection status: {_connection_info['connected_at']}")
+
+    # Previous session info
+    previous = _connection_info.get("previous_session")
+    if previous:
+        output.append("\n📋 Previous Session Summary:")
+        output.append("-" * 30)
+
+        if "ended_at" in previous:
+            output.append(f"⏰ Last session ended: {previous['ended_at']}")
+        if "quality_score" in previous:
+            output.append(f"📈 Final score: {previous['quality_score']}")
+        if "top_recommendation" in previous:
+            output.append(f"💡 Key recommendation: {previous['top_recommendation']}")
+
+        output.append("\n✨ Session continuity restored - your progress is preserved!")
+    else:
+        output.append("\n🌟 This is your first session in this project!")
+        output.append("💡 Session data will be preserved for future continuity")
+
+    # Current recommendations
+    recommendations = _connection_info.get("recommendations", [])
+    if recommendations:
+        output.append("\n🎯 Current Recommendations:")
+        for i, rec in enumerate(recommendations[:3], 1):
+            output.append(f"   {i}. {rec}")
+
+    output.append("\n🔧 Use other session-mgmt tools for:")
+    output.append("   • /session-mgmt:status - Detailed project health")
+    output.append("   • /session-mgmt:checkpoint - Mid-session quality check")
+    output.append("   • /session-mgmt:end - Graceful session cleanup")
+
+    # Clear the connection info after display
+    _connection_info = None
+
+    return "\n".join(output)
