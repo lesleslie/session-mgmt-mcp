@@ -145,7 +145,9 @@ async def calculate_quality_score_v2(
     )
 
     return QualityScoreV2(
-        total_score=round(total, 1),
+        total_score=round(
+            total
+        ),  # Convert to int for backward compatibility with tests
         version="2.0",
         code_quality=code_quality,
         project_health=project_health,

@@ -127,15 +127,15 @@ class TestSessionLifecycleManagerQualityScore:
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("shutil.which")
     async def test_calculate_quality_score_all_factors(
-        self, mock_which, mock_is_git_repo
+        self, mock_which, mock_is_git_repo, tmp_path
     ):
         """Test calculate_quality_score with all positive factors."""
         mock_is_git_repo.return_value = True
         mock_which.return_value = "/usr/local/bin/uv"  # UV available
 
         manager = SessionLifecycleManager()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            project_dir = Path(temp_dir)
+        with patch("os.getcwd", return_value=str(tmp_path)):
+            project_dir = tmp_path
             (project_dir / "pyproject.toml").touch()
             (project_dir / "README.md").touch()
             (project_dir / "tests").mkdir()
@@ -167,7 +167,7 @@ class TestSessionLifecycleManagerQualityScore:
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("shutil.which")
     async def test_calculate_quality_score_low_quality(
-        self, mock_which, mock_is_git_repo
+        self, mock_which, mock_is_git_repo, tmp_path
     ):
         """Test calculate_quality_score with V2 metrics-based scoring."""
         mock_is_git_repo.return_value = False
@@ -175,58 +175,60 @@ class TestSessionLifecycleManagerQualityScore:
 
         manager = SessionLifecycleManager()
 
-        # V2 scoring is based on real code metrics, not mocked context
-        result = await manager.calculate_quality_score()
+        with patch("os.getcwd", return_value=str(tmp_path)):
+            # V2 scoring is based on real code metrics, not mocked context
+            result = await manager.calculate_quality_score()
 
-        # V2 provides structured breakdown with actual metrics
-        assert "total_score" in result
-        assert "version" in result
-        assert result["version"] == "2.0"
-        assert "breakdown" in result
-        assert "code_quality" in result["breakdown"]
-        assert "project_health" in result["breakdown"]
-        assert "dev_velocity" in result["breakdown"]
-        assert "security" in result["breakdown"]
+            # V2 provides structured breakdown with actual metrics
+            assert "total_score" in result
+            assert "version" in result
+            assert result["version"] == "2.0"
+            assert "breakdown" in result
+            assert "code_quality" in result["breakdown"]
+            assert "project_health" in result["breakdown"]
+            assert "dev_velocity" in result["breakdown"]
+            assert "security" in result["breakdown"]
 
-        # V2 separates trust score from quality
-        assert "trust_score" in result
-        assert "recommendations" in result
+            # V2 separates trust score from quality
+            assert "trust_score" in result
+            assert "recommendations" in result
 
-        # Recommendations are based on actual metrics
-        assert isinstance(result["recommendations"], list)
+            # Recommendations are based on actual metrics
+            assert isinstance(result["recommendations"], list)
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_generate_quality_recommendations(self, mock_is_git_repo):
+    async def test_generate_quality_recommendations(self, mock_is_git_repo, tmp_path):
         """Test V2 quality recommendations generation."""
         mock_is_git_repo.return_value = False
         manager = SessionLifecycleManager()
 
-        # V2 generates recommendations from real metrics
-        result = await manager.calculate_quality_score()
+        with patch("os.getcwd", return_value=str(tmp_path)):
+            # V2 generates recommendations from real metrics
+            result = await manager.calculate_quality_score()
 
-        # Verify recommendations structure
-        assert "recommendations" in result
-        recommendations = result["recommendations"]
-        assert isinstance(recommendations, list)
-        assert len(recommendations) > 0
+            # Verify recommendations structure
+            assert "recommendations" in result
+            recommendations = result["recommendations"]
+            assert isinstance(recommendations, list)
+            assert len(recommendations) > 0
 
-        # V2 recommendations are specific to actual metrics
-        # They mention concrete improvements like test coverage, lint scores, etc.
-        rec_text = " ".join(recommendations).lower()
+            # V2 recommendations are specific to actual metrics
+            # They mention concrete improvements like test coverage, lint scores, etc.
+            rec_text = " ".join(recommendations).lower()
 
-        # At least one recommendation should mention actionable improvements
-        assert any(
-            keyword in rec_text
-            for keyword in [
-                "coverage",
-                "test",
-                "lint",
-                "quality",
-                "git",
-                "branch",
-                "security",
-            ]
-        )
+            # At least one recommendation should mention actionable improvements
+            assert any(
+                keyword in rec_text
+                for keyword in [
+                    "coverage",
+                    "test",
+                    "lint",
+                    "quality",
+                    "git",
+                    "branch",
+                    "security",
+                ]
+            )
 
 
 
@@ -441,7 +443,7 @@ class TestSessionLifecycleManagerSessionInitialization:
 
     @patch("os.chdir")
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_initialize_session_success(self, mock_is_git_repo, mock_chdir):
+    async def test_initialize_session_success(self, mock_is_git_repo, mock_chdir, tmp_path):
         """Test initialize_session with successful operation."""
         mock_is_git_repo.return_value = True
 
@@ -475,8 +477,8 @@ class TestSessionLifecycleManagerSessionInitialization:
                 with patch.object(
                     manager, "_find_latest_handoff_file", return_value=None
                 ):
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        result = await manager.initialize_session(temp_dir)
+                    with patch("os.getcwd", return_value=str(tmp_path)):
+                        result = await manager.initialize_session(str(tmp_path))
 
                         assert result["success"] is True
                         assert result["project"] is not None
@@ -503,7 +505,7 @@ class TestSessionLifecycleManagerCheckpoint:
     """Test SessionLifecycleManager session checkpoint."""
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_checkpoint_session_success(self, mock_is_git_repo):
+    async def test_checkpoint_session_success(self, mock_is_git_repo, tmp_path):
         """Test checkpoint_session with successful operation."""
         mock_is_git_repo.return_value = True
 
@@ -535,16 +537,17 @@ class TestSessionLifecycleManagerCheckpoint:
                     "format_quality_results",
                     return_value=["✅ Quality: 85/100"],
                 ):
-                    result = await manager.checkpoint_session()
+                    with patch("os.getcwd", return_value=str(tmp_path)):
+                        result = await manager.checkpoint_session()
 
-                    assert result["success"] is True
-                    assert result["quality_score"] == 85
-                    assert "quality_output" in result
-                    assert "git_output" in result
-                    assert "timestamp" in result
+                        assert result["success"] is True
+                        assert result["quality_score"] == 85
+                        assert "quality_output" in result
+                        assert "git_output" in result
+                        assert "timestamp" in result
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_checkpoint_session_exception(self, mock_is_git_repo):
+    async def test_checkpoint_session_exception(self, mock_is_git_repo, tmp_path):
         """Test checkpoint_session with exception."""
         mock_is_git_repo.return_value = True
 
@@ -556,17 +559,18 @@ class TestSessionLifecycleManagerCheckpoint:
             "perform_quality_assessment",
             side_effect=Exception("Checkpoint failed"),
         ):
-            result = await manager.checkpoint_session()
+            with patch("os.getcwd", return_value=str(tmp_path)):
+                result = await manager.checkpoint_session()
 
-            assert result["success"] is False
-            assert "checkpoint failed" in result["error"].lower()
+                assert result["success"] is False
+                assert "checkpoint failed" in result["error"].lower()
 
 
 class TestSessionLifecycleManagerSessionEnd:
     """Test SessionLifecycleManager session end."""
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_end_session_success(self, mock_is_git_repo):
+    async def test_end_session_success(self, mock_is_git_repo, tmp_path):
         """Test end_session with successful operation."""
         mock_is_git_repo.return_value = True
 
@@ -598,15 +602,16 @@ class TestSessionLifecycleManagerSessionEnd:
                     "_save_handoff_documentation",
                     return_value=Path("/tmp/handoff.md"),
                 ):
-                    result = await manager.end_session()
+                    with patch("os.getcwd", return_value=str(tmp_path)):
+                        result = await manager.end_session()
 
-                    assert result["success"] is True
-                    assert "summary" in result
-                    assert result["summary"]["final_quality_score"] == 90
-                    assert "handoff_documentation" in result["summary"]
+                        assert result["success"] is True
+                        assert "summary" in result
+                        assert result["summary"]["final_quality_score"] == 90
+                        assert "handoff_documentation" in result["summary"]
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_end_session_exception(self, mock_is_git_repo):
+    async def test_end_session_exception(self, mock_is_git_repo, tmp_path):
         """Test end_session with exception."""
         mock_is_git_repo.return_value = True
 
@@ -616,10 +621,11 @@ class TestSessionLifecycleManagerSessionEnd:
         with patch.object(
             manager, "perform_quality_assessment", side_effect=Exception("End failed")
         ):
-            result = await manager.end_session()
+            with patch("os.getcwd", return_value=str(tmp_path)):
+                result = await manager.end_session()
 
-            assert result["success"] is False
-            assert "end failed" in result["error"].lower()
+                assert result["success"] is False
+                assert "end failed" in result["error"].lower()
 
 
 class TestSessionLifecycleManagerHandoffDocumentation:
@@ -766,7 +772,7 @@ class TestSessionLifecycleManagerSessionStatus:
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("shutil.which")
-    async def test_get_session_status_success(self, mock_which, mock_is_git_repo):
+    async def test_get_session_status_success(self, mock_which, mock_is_git_repo, tmp_path):
         """Test get_session_status with successful operation."""
         mock_is_git_repo.return_value = True
         mock_which.return_value = "/usr/local/bin/uv"
@@ -800,8 +806,8 @@ class TestSessionLifecycleManagerSessionStatus:
                 "perform_quality_assessment",
                 return_value=(85, mock_quality_data),
             ):
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    result = await manager.get_session_status(temp_dir)
+                with patch("os.getcwd", return_value=str(tmp_path)):
+                    result = await manager.get_session_status(str(tmp_path))
 
                     assert result["success"] is True
                     assert result["project"] == "test-project"

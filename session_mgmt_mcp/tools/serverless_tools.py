@@ -7,45 +7,37 @@ following crackerjack architecture patterns.
 
 from __future__ import annotations
 
-import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.utils.instance_managers import (
+    get_serverless_manager as resolve_serverless_manager,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+logger = get_session_logger()
 
-# Lazy loading for optional serverless dependencies
-_serverless_manager = None
-_serverless_available = None
+# Lazy loading flag for optional serverless dependencies
+_serverless_available: bool | None = None
 
 
 async def _get_serverless_manager() -> Any:
     """Get serverless manager instance with lazy loading."""
-    global _serverless_manager, _serverless_available
+    global _serverless_available
 
     if _serverless_available is False:
         return None
 
-    if _serverless_manager is None:
-        try:
-            from session_mgmt_mcp.serverless_mode import (
-                LocalFileStorage,
-                ServerlessSessionManager,
-            )
+    manager = await resolve_serverless_manager()
+    if manager is None:
+        logger.warning("Serverless mode not available.")
+        _serverless_available = False
+        return None
 
-            storage_backend = LocalFileStorage(
-                {"storage_dir": str(Path.home() / ".claude" / "data" / "sessions")}
-            )
-            _serverless_manager = ServerlessSessionManager(storage_backend)
-            _serverless_available = True
-        except ImportError as e:
-            logger.warning(f"Serverless mode not available: {e}")
-            _serverless_available = False
-            return None
-
-    return _serverless_manager
+    _serverless_available = True
+    return manager
 
 
 def _check_serverless_available() -> bool:

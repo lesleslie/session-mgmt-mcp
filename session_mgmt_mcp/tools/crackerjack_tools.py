@@ -7,15 +7,255 @@ code analysis, and development workflow integration.
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.utils.instance_managers import (
+    get_reflection_database as resolve_reflection_database,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
 
 
-logger = logging.getLogger(__name__)
+# Extracted tool functions to reduce register_crackerjack_tools complexity
+async def execute_crackerjack_command(
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300,
+    ai_agent_mode: bool = False,
+) -> str:
+    """Execute a Crackerjack command with enhanced AI integration.
+
+    Args:
+        command: Semantic command name (test, lint, check, format, security, all)
+        args: Additional arguments (NOT including --ai-fix)
+        working_directory: Working directory
+        timeout: Timeout in seconds
+        ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
+
+    Examples:
+        # ✅ Correct usage
+        execute_crackerjack_command(command="test", ai_agent_mode=True)
+        execute_crackerjack_command(command="check", args="--verbose", ai_agent_mode=True)
+
+        # ❌ Wrong usage
+        execute_crackerjack_command(command="--ai-fix -t")  # Will raise error!
+
+    Returns:
+        Formatted execution results with validation errors if invalid input
+
+    """
+    # Validate command parameter
+    valid_commands = {
+        "test",
+        "lint",
+        "check",
+        "format",
+        "security",
+        "complexity",
+        "all",
+    }
+
+    if command.startswith("--"):
+        return (
+            f"❌ **Invalid Command**: {command!r}\n\n"
+            f"**Error**: Commands should be semantic names, not flags.\n\n"
+            f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+            f"**Correct usage**:\n"
+            f"```python\n"
+            f"execute_crackerjack_command(command='test', ai_agent_mode=True)\n"
+            f"```\n\n"
+            f"**Not**:\n"
+            f"```python\n"
+            f"execute_crackerjack_command(command='--ai-fix -t')  # Wrong!\n"
+            f"```"
+        )
+
+    if command not in valid_commands:
+        suggested = _suggest_command(command, valid_commands)
+        return (
+            f"❌ **Unknown Command**: {command!r}\n\n"
+            f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+            f"**Did you mean**: `{suggested}`"
+        )
+
+    # Check for --ai-fix in args
+    if "--ai-fix" in args:
+        return (
+            "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
+            "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
+            "**Correct**:\n"
+            "```python\n"
+            f"execute_crackerjack_command(command='{command}', ai_agent_mode=True)\n"
+            "```"
+        )
+
+    # Proceed with validated inputs
+    return await _execute_crackerjack_command_impl(
+        command, args, working_directory, timeout, ai_agent_mode
+    )
+
+
+async def crackerjack_run(
+    command: str,
+    args: str = "",
+    working_directory: str = ".",
+    timeout: int = 300,
+    ai_agent_mode: bool = False,
+) -> str:
+    """Run crackerjack with enhanced analytics.
+
+    Args:
+        command: Semantic command name (test, lint, check, format, security, all)
+        args: Additional arguments (NOT including --ai-fix)
+        working_directory: Working directory
+        timeout: Timeout in seconds
+        ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
+
+    Examples:
+        # ✅ Correct usage
+        crackerjack_run(command="test", ai_agent_mode=True)
+        crackerjack_run(command="check", args="--verbose", ai_agent_mode=True)
+
+        # ❌ Wrong usage
+        crackerjack_run(command="--ai-fix -t")  # Will raise error!
+
+    Returns:
+        Formatted execution results with validation errors if invalid input
+
+    """
+    # Validate command parameter
+    valid_commands = {
+        "test",
+        "lint",
+        "check",
+        "format",
+        "security",
+        "complexity",
+        "all",
+    }
+
+    if command.startswith("--"):
+        return (
+            f"❌ **Invalid Command**: {command!r}\n\n"
+            f"**Error**: Commands should be semantic names, not flags.\n\n"
+            f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+            f"**Correct usage**:\n"
+            f"```python\n"
+            f"crackerjack_run(command='test', ai_agent_mode=True)\n"
+            f"```\n\n"
+            f"**Not**:\n"
+            f"```python\n"
+            f"crackerjack_run(command='--ai-fix -t')  # Wrong!\n"
+            f"```"
+        )
+
+    if command not in valid_commands:
+        suggested = _suggest_command(command, valid_commands)
+        return (
+            f"❌ **Unknown Command**: {command!r}\n\n"
+            f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
+            f"**Did you mean**: `{suggested}`"
+        )
+
+    # Check for --ai-fix in args
+    if "--ai-fix" in args:
+        return (
+            "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
+            "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
+            "**Correct**:\n"
+            "```python\n"
+            f"crackerjack_run(command='{command}', ai_agent_mode=True)\n"
+            "```"
+        )
+
+    # Proceed with validated inputs
+    return await _crackerjack_run_impl(
+        command, args, working_directory, timeout, ai_agent_mode
+    )
+
+
+async def crackerjack_history(
+    command_filter: str = "",
+    days: int = 7,
+    working_directory: str = ".",
+) -> str:
+    """View crackerjack execution history with trends and patterns."""
+    return await _crackerjack_history_impl(command_filter, days, working_directory)
+
+
+async def crackerjack_metrics(working_directory: str = ".", days: int = 30) -> str:
+    """Get quality metrics trends from crackerjack execution history."""
+    return await _crackerjack_metrics_impl(working_directory, days)
+
+
+async def crackerjack_patterns(days: int = 7, working_directory: str = ".") -> str:
+    """Analyze test failure patterns and trends."""
+    return await _crackerjack_patterns_impl(days, working_directory)
+
+
+async def crackerjack_help() -> str:
+    """Get comprehensive help for choosing the right crackerjack commands."""
+    return await _crackerjack_help_impl()
+
+
+async def get_crackerjack_results_history(
+    command_filter: str = "",
+    days: int = 7,
+    working_directory: str = ".",
+) -> str:
+    """Get recent Crackerjack command execution history."""
+    return await _crackerjack_history_impl(command_filter, days, working_directory)
+
+
+async def get_crackerjack_quality_metrics(
+    days: int = 30,
+    working_directory: str = ".",
+) -> str:
+    """Get quality metrics trends from Crackerjack execution history."""
+    return await _crackerjack_metrics_impl(working_directory, days)
+
+
+async def analyze_crackerjack_test_patterns(
+    days: int = 7,
+    working_directory: str = ".",
+) -> str:
+    """Analyze test failure patterns and trends for debugging insights."""
+    return await _crackerjack_patterns_impl(days, working_directory)
+
+
+async def crackerjack_quality_trends(
+    days: int = 30,
+    working_directory: str = ".",
+) -> str:
+    """Analyze quality trends over time with actionable insights."""
+    return await _crackerjack_quality_trends_impl(days, working_directory)
+
+
+async def crackerjack_health_check() -> str:
+    """Check Crackerjack integration health and provide diagnostics."""
+    return await _crackerjack_health_check_impl()
+
+
+# Alias for backward compatibility
+async def quality_monitor() -> str:
+    """Phase 3: Proactive quality monitoring with early warning system."""
+    return await _crackerjack_health_check_impl()
+
+
+logger = get_session_logger()
+
+
+async def _get_reflection_db() -> Any | None:
+    """Resolve reflection database via DI helper."""
+    db = await resolve_reflection_database()
+    if db is None:
+        logger.warning("Reflection database not available for crackerjack operations.")
+    return db
+
 
 # Import the production-ready hook parser
 try:
@@ -249,8 +489,6 @@ async def _get_ai_recommendations_with_history(
     result: Any, working_directory: str
 ) -> tuple[str, list[Any], dict[str, Any]]:
     """Get AI recommendations adjusted by historical effectiveness."""
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
     from .agent_analyzer import AgentAnalyzer
     from .recommendation_engine import RecommendationEngine
 
@@ -260,24 +498,26 @@ async def _get_ai_recommendations_with_history(
     )
 
     # Analyze history and adjust
-    db = ReflectionDatabase()
-    async with db:
-        history_analysis = await RecommendationEngine.analyze_history(
-            db, Path(working_directory).name, days=30
-        )
+    db = await _get_reflection_db()
+    history_analysis: dict[str, Any] = {}
 
-        if history_analysis["agent_effectiveness"]:
-            recommendations = RecommendationEngine.adjust_confidence(
-                recommendations, history_analysis["agent_effectiveness"]
+    if db:
+        async with db:
+            history_analysis = await RecommendationEngine.analyze_history(
+                db, Path(working_directory).name, days=30
             )
 
-        # Format output
-        output = AgentAnalyzer.format_recommendations(recommendations)
+            if history_analysis["agent_effectiveness"]:
+                recommendations = RecommendationEngine.adjust_confidence(
+                    recommendations, history_analysis["agent_effectiveness"]
+                )
 
-        if history_analysis["insights"]:
-            output += "\n💡 **Historical Insights**:\n"
-            for insight in history_analysis["insights"][:3]:
-                output += f"   {insight}\n"
+    output = AgentAnalyzer.format_recommendations(recommendations)
+
+    if history_analysis.get("insights"):
+        output += "\n💡 **Historical Insights**:\n"
+        for insight in history_analysis["insights"][:3]:
+            output += f"   {insight}\n"
 
     return output, recommendations, history_analysis
 
@@ -330,8 +570,6 @@ async def _store_execution_result(
     db: Any | None = None,
 ) -> str:
     """Store execution result in history."""
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
     try:
         metadata = _build_execution_metadata(
             working_directory, result, metrics, recommendations, history_analysis
@@ -339,14 +577,16 @@ async def _store_execution_result(
 
         content = f"Crackerjack {command} execution: {formatted_result[:500]}..."
 
-        if ai_agent_mode and result.exit_code != 0 and db:
-            # Reuse existing db connection
-            await db.store_conversation(content=content, metadata=metadata)
+        active_db = db
+        if ai_agent_mode and result.exit_code != 0 and active_db:
+            await active_db.store_conversation(content=content, metadata=metadata)
         else:
-            # Create new connection
-            db = ReflectionDatabase()
-            async with db:
-                await db.store_conversation(content=content, metadata=metadata)
+            if active_db is None:
+                active_db = await _get_reflection_db()
+            if not active_db:
+                return ""
+            async with active_db:
+                await active_db.store_conversation(content=content, metadata=metadata)
 
         return "📝 Execution stored in session history\n"
 
@@ -590,11 +830,11 @@ async def _crackerjack_history_impl(
     try:
         from datetime import datetime, timedelta
 
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        db = await _get_reflection_db()
+        if not db:
+            return "❌ Reflection database not available for crackerjack history."
 
-        db = ReflectionDatabase()
         async with db:
-            # Search for crackerjack executions
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
 
@@ -604,13 +844,12 @@ async def _crackerjack_history_impl(
                 limit=50,
             )
 
-            # Filter results by date
-            filtered_results = _filter_results_by_date(results, start_date)
+        filtered_results = _filter_results_by_date(results, start_date)
 
-            if not filtered_results:
-                return f"📊 No crackerjack executions found in last {days} days"
+        if not filtered_results:
+            return f"📊 No crackerjack executions found in last {days} days"
 
-            return _format_history_output(filtered_results, days)
+        return _format_history_output(filtered_results, days)
 
     except Exception as e:
         logger.exception(f"Crackerjack history failed: {e}")
@@ -670,9 +909,10 @@ async def _crackerjack_metrics_impl(
 ) -> str:
     """Get quality metrics trends from crackerjack execution history."""
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        db = await _get_reflection_db()
+        if not db:
+            return "❌ Reflection database not available for quality metrics."
 
-        db = ReflectionDatabase()
         async with db:
             results = await db.search_conversations(
                 query="crackerjack metrics quality",
@@ -680,12 +920,15 @@ async def _crackerjack_metrics_impl(
                 limit=100,
             )
 
-            if not results:
-                return f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\nNo quality metrics data available\n💡 Run `crackerjack analyze` to generate metrics\n"
+        if not results:
+            return (
+                f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\n"
+                "No quality metrics data available\n💡 Run `crackerjack analyze` to generate metrics\n"
+            )
 
-            summary = _calculate_execution_summary(results)
-            keywords = _extract_quality_keywords(results)
-            return _format_quality_metrics_output(days, summary, keywords)
+        summary = _calculate_execution_summary(results)
+        keywords = _extract_quality_keywords(results)
+        return _format_quality_metrics_output(days, summary, keywords)
 
     except Exception as e:
         logger.exception(f"Metrics analysis failed: {e}")
@@ -772,9 +1015,10 @@ async def _get_failure_pattern_results(
     working_directory: str, limit: int = 50
 ) -> list[dict[str, Any]]:
     """Get failure pattern results from the reflection database."""
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+    db = await _get_reflection_db()
+    if not db:
+        return []
 
-    db = ReflectionDatabase()
     async with db:
         return await db.search_conversations(
             query="test failure error pattern",
@@ -863,9 +1107,10 @@ async def _crackerjack_quality_trends_impl(
 ) -> str:
     """Analyze quality trends over time with actionable insights."""
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        db = await _get_reflection_db()
+        if not db:
+            return "❌ Reflection database not available for trend analysis."
 
-        db = ReflectionDatabase()
         async with db:
             results = await db.search_conversations(
                 query="crackerjack quality success failed",
@@ -873,19 +1118,19 @@ async def _crackerjack_quality_trends_impl(
                 limit=200,
             )
 
-            output = f"📈 **Quality Trends Analysis** (last {days} days)\n\n"
+        output = f"📈 **Quality Trends Analysis** (last {days} days)\n\n"
 
-            if len(results) < 5:
-                return _format_insufficient_trend_data(output)
+        if len(results) < 5:
+            return _format_insufficient_trend_data(output)
 
-            success_trend, failure_trend = _analyze_quality_trend_results(results)
-            success_rate = _calculate_trend_success_rate(success_trend, failure_trend)
+        success_trend, failure_trend = _analyze_quality_trend_results(results)
+        success_rate = _calculate_trend_success_rate(success_trend, failure_trend)
 
-            output += _format_trend_overview(success_trend, failure_trend, success_rate)
-            output += _format_trend_quality_insights(success_rate)
-            output += _format_trend_recommendations(success_rate)
+        output += _format_trend_overview(success_trend, failure_trend, success_rate)
+        output += _format_trend_quality_insights(success_rate)
+        output += _format_trend_recommendations(success_rate)
 
-            return output
+        return output
 
     except Exception as e:
         logger.exception(f"Trend analysis failed: {e}")
@@ -1005,14 +1250,14 @@ async def _crackerjack_health_check_impl() -> str:
 
     # Check reflection database for history
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
-        db = ReflectionDatabase()
-        async with db:
-            # Quick test
-            stats = await db.get_stats()
+        db = await _get_reflection_db()
+        if db:
+            async with db:
+                stats = await db.get_stats()
             output += "✅ **History Storage**: Available\n"
             output += f"   Conversations: {stats.get('conversation_count', 0)}\n"
+        else:
+            output += "⚠️ **History Storage**: Reflection database unavailable\n"
     except Exception as e:
         output += f"⚠️ **History Storage**: Limited - {e!s}\n"
 
@@ -1032,228 +1277,15 @@ def register_crackerjack_tools(mcp: Any) -> None:
 
     """
 
-    @mcp.tool()  # type: ignore[misc]
-    async def execute_crackerjack_command(
-        command: str,
-        args: str = "",
-        working_directory: str = ".",
-        timeout: int = 300,
-        ai_agent_mode: bool = False,
-    ) -> str:
-        """Execute a Crackerjack command with enhanced AI integration.
-
-        Args:
-            command: Semantic command name (test, lint, check, format, security, all)
-            args: Additional arguments (NOT including --ai-fix)
-            working_directory: Working directory
-            timeout: Timeout in seconds
-            ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
-
-        Examples:
-            # ✅ Correct usage
-            execute_crackerjack_command(command="test", ai_agent_mode=True)
-            execute_crackerjack_command(command="check", args="--verbose", ai_agent_mode=True)
-
-            # ❌ Wrong usage
-            execute_crackerjack_command(command="--ai-fix -t")  # Will raise error!
-
-        Returns:
-            Formatted execution results with validation errors if invalid input
-
-        """
-        # Validate command parameter
-        valid_commands = {
-            "test",
-            "lint",
-            "check",
-            "format",
-            "security",
-            "complexity",
-            "all",
-        }
-
-        if command.startswith("--"):
-            return (
-                f"❌ **Invalid Command**: {command!r}\n\n"
-                f"**Error**: Commands should be semantic names, not flags.\n\n"
-                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
-                f"**Correct usage**:\n"
-                f"```python\n"
-                f"execute_crackerjack_command(command='test', ai_agent_mode=True)\n"
-                f"```\n\n"
-                f"**Not**:\n"
-                f"```python\n"
-                f"execute_crackerjack_command(command='--ai-fix -t')  # Wrong!\n"
-                f"```"
-            )
-
-        if command not in valid_commands:
-            suggested = _suggest_command(command, valid_commands)
-            return (
-                f"❌ **Unknown Command**: {command!r}\n\n"
-                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
-                f"**Did you mean**: `{suggested}`"
-            )
-
-        # Check for --ai-fix in args
-        if "--ai-fix" in args:
-            return (
-                "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
-                "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
-                "**Correct**:\n"
-                "```python\n"
-                f"execute_crackerjack_command(command='{command}', ai_agent_mode=True)\n"
-                "```"
-            )
-
-        # Proceed with validated inputs
-        return await _execute_crackerjack_command_impl(
-            command, args, working_directory, timeout, ai_agent_mode
-        )
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_run(
-        command: str,
-        args: str = "",
-        working_directory: str = ".",
-        timeout: int = 300,
-        ai_agent_mode: bool = False,
-    ) -> str:
-        """Run crackerjack with enhanced analytics.
-
-        Args:
-            command: Semantic command name (test, lint, check, format, security, all)
-            args: Additional arguments (NOT including --ai-fix)
-            working_directory: Working directory
-            timeout: Timeout in seconds
-            ai_agent_mode: Enable AI-powered auto-fix (replaces --ai-fix flag)
-
-        Examples:
-            # ✅ Correct usage
-            crackerjack_run(command="test", ai_agent_mode=True)
-            crackerjack_run(command="check", args="--verbose", ai_agent_mode=True)
-
-            # ❌ Wrong usage
-            crackerjack_run(command="--ai-fix -t")  # Will raise error!
-
-        Returns:
-            Formatted execution results with validation errors if invalid input
-
-        """
-        # Validate command parameter
-        valid_commands = {
-            "test",
-            "lint",
-            "check",
-            "format",
-            "security",
-            "complexity",
-            "all",
-        }
-
-        if command.startswith("--"):
-            return (
-                f"❌ **Invalid Command**: {command!r}\n\n"
-                f"**Error**: Commands should be semantic names, not flags.\n\n"
-                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
-                f"**Correct usage**:\n"
-                f"```python\n"
-                f"crackerjack_run(command='test', ai_agent_mode=True)\n"
-                f"```\n\n"
-                f"**Not**:\n"
-                f"```python\n"
-                f"crackerjack_run(command='--ai-fix -t')  # Wrong!\n"
-                f"```"
-            )
-
-        if command not in valid_commands:
-            suggested = _suggest_command(command, valid_commands)
-            return (
-                f"❌ **Unknown Command**: {command!r}\n\n"
-                f"**Valid commands**: {', '.join(sorted(valid_commands))}\n\n"
-                f"**Did you mean**: `{suggested}`"
-            )
-
-        # Check for --ai-fix in args
-        if "--ai-fix" in args:
-            return (
-                "❌ **Invalid Args**: Found '--ai-fix' in args parameter\n\n"
-                "**Use instead**: Set `ai_agent_mode=True` parameter\n\n"
-                "**Correct**:\n"
-                "```python\n"
-                f"crackerjack_run(command='{command}', ai_agent_mode=True)\n"
-                "```"
-            )
-
-        # Proceed with validated inputs
-        return await _crackerjack_run_impl(
-            command, args, working_directory, timeout, ai_agent_mode
-        )
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_history(
-        command_filter: str = "",
-        days: int = 7,
-        working_directory: str = ".",
-    ) -> str:
-        """View crackerjack execution history with trends and patterns."""
-        return await _crackerjack_history_impl(command_filter, days, working_directory)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_metrics(working_directory: str = ".", days: int = 30) -> str:
-        """Get quality metrics trends from crackerjack execution history."""
-        return await _crackerjack_metrics_impl(working_directory, days)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_patterns(days: int = 7, working_directory: str = ".") -> str:
-        """Analyze test failure patterns and trends."""
-        return await _crackerjack_patterns_impl(days, working_directory)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_help() -> str:
-        """Get comprehensive help for choosing the right crackerjack commands."""
-        return await _crackerjack_help_impl()
-
-    @mcp.tool()  # type: ignore[misc]
-    async def get_crackerjack_results_history(
-        command_filter: str = "",
-        days: int = 7,
-        working_directory: str = ".",
-    ) -> str:
-        """Get recent Crackerjack command execution history."""
-        return await _crackerjack_history_impl(command_filter, days, working_directory)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def get_crackerjack_quality_metrics(
-        days: int = 30,
-        working_directory: str = ".",
-    ) -> str:
-        """Get quality metrics trends from Crackerjack execution history."""
-        return await _crackerjack_metrics_impl(working_directory, days)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def analyze_crackerjack_test_patterns(
-        days: int = 7,
-        working_directory: str = ".",
-    ) -> str:
-        """Analyze test failure patterns and trends for debugging insights."""
-        return await _crackerjack_patterns_impl(days, working_directory)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_quality_trends(
-        days: int = 30,
-        working_directory: str = ".",
-    ) -> str:
-        """Analyze quality trends over time with actionable insights."""
-        return await _crackerjack_quality_trends_impl(days, working_directory)
-
-    @mcp.tool()  # type: ignore[misc]
-    async def crackerjack_health_check() -> str:
-        """Check Crackerjack integration health and provide diagnostics."""
-        return await _crackerjack_health_check_impl()
-
-    # Alias for backward compatibility
-    @mcp.tool()  # type: ignore[misc]
-    async def quality_monitor() -> str:
-        """Phase 3: Proactive quality monitoring with early warning system."""
-        return await _crackerjack_health_check_impl()
+    mcp.tool()(execute_crackerjack_command)
+    mcp.tool()(crackerjack_run)
+    mcp.tool()(crackerjack_history)
+    mcp.tool()(crackerjack_metrics)
+    mcp.tool()(crackerjack_patterns)
+    mcp.tool()(crackerjack_help)
+    mcp.tool()(get_crackerjack_results_history)
+    mcp.tool()(get_crackerjack_quality_metrics)
+    mcp.tool()(analyze_crackerjack_test_patterns)
+    mcp.tool()(crackerjack_quality_trends)
+    mcp.tool()(crackerjack_health_check)
+    mcp.tool()(quality_monitor)

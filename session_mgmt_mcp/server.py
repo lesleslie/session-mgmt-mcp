@@ -26,39 +26,78 @@ if TYPE_CHECKING:
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 
+from acb.depends import depends
+from session_mgmt_mcp.di import configure as configure_di
+
 # Phase 2.5: Import core infrastructure from server_core
 from session_mgmt_mcp.server_core import (
-    # Classes
-    SessionLogger,
     SessionPermissionsManager,
-    # Configuration functions
-    _detect_other_mcp_servers,
-    _generate_server_guidance,
     _load_mcp_config,
-    # Session lifecycle handler
-    session_lifecycle as _session_lifecycle_impl,
-    # Initialization functions
-    auto_setup_git_working_directory,
-    initialize_new_features as _initialize_new_features_impl,
-    analyze_project_context,
-    # Health & status functions
-    health_check as _health_check_impl,
-    _add_basic_status_info,
-    _add_health_status_info,
-    _get_project_context_info,
-    # Quality & formatting functions
-    _format_quality_results,
-    _perform_git_checkpoint,
-    _format_conversation_summary,
-    # Utility functions
-    _should_retry_search,
-    # Phase 2.6: Feature detection
     get_feature_flags,
 )
+from session_mgmt_mcp.server_core import (
+    # Health & status functions
+    health_check as _health_check_impl,
+)
+from session_mgmt_mcp.server_core import (
+    initialize_new_features as _initialize_new_features_impl,
+)
+from session_mgmt_mcp.server_core import (
+    # Session lifecycle handler
+    session_lifecycle as _session_lifecycle_impl,
+)
+from session_mgmt_mcp.utils.logging import SessionLogger, get_session_logger
 
-# Initialize logger
-claude_dir = Path.home() / ".claude"
-session_logger = SessionLogger(claude_dir / "logs")
+configure_di()
+
+try:
+    session_logger = depends.get(SessionLogger)
+except Exception:
+    session_logger = get_session_logger()
+
+try:
+    from session_mgmt_mcp.token_optimizer import (
+        get_cached_chunk,
+        get_token_usage_stats,
+        optimize_memory_usage,
+        optimize_search_response,
+        track_token_usage,
+    )
+
+    TOKEN_OPTIMIZER_AVAILABLE = True
+except ImportError:
+    TOKEN_OPTIMIZER_AVAILABLE = False
+
+    async def optimize_search_response(
+        results: list[dict[str, Any]],
+        strategy: str = "prioritize_recent",
+        max_tokens: int = 4000,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        return results, {}
+
+    async def track_token_usage(
+        operation: str,
+        request_tokens: int,
+        response_tokens: int,
+        optimization_applied: str | None = None,
+    ) -> None:
+        return None
+
+    async def get_cached_chunk(
+        cache_key: str, chunk_index: int
+    ) -> dict[str, Any] | None:
+        return None
+
+    async def get_token_usage_stats(hours: int = 24) -> dict[str, Any]:
+        return {"status": "token optimizer unavailable"}
+
+    async def optimize_memory_usage(
+        strategy: str = "auto",
+        max_age_days: int = 30,
+        dry_run: bool = True,
+    ) -> str:
+        return "❌ Token optimizer not available."
+
 
 # Import FastMCP with test environment fallback
 try:
@@ -98,60 +137,25 @@ app_config: Any = None
 current_project: str | None = None
 
 # Create global permissions manager instance
-permissions_manager = SessionPermissionsManager(claude_dir)
+try:
+    permissions_manager = depends.get(SessionPermissionsManager)
+except Exception:
+    claude_root = session_logger.log_dir.parent
+    permissions_manager = SessionPermissionsManager(claude_root)
+    depends.set(SessionPermissionsManager, permissions_manager)
 
 # Import required components for automatic lifecycle
 from session_mgmt_mcp.core import SessionLifecycleManager
-from session_mgmt_mcp.utils.git_operations import get_git_root, is_git_repository
+from session_mgmt_mcp.reflection_tools import get_reflection_database
 
 # Phase 2.2: Import utility and formatting functions from server_helpers
-from session_mgmt_mcp.utils.server_helpers import (
-    # Formatting functions (26)
-    _format_advanced_search_results,
-    _format_basic_worktree_info,
-    _format_common_patterns_section,
-    _format_current_worktree_info,
-    _format_detached_head_warning,
-    _format_git_worktree_header,
-    _format_interruption_statistics,
-    _format_metrics_summary,
-    _format_no_reminders_message,
-    _format_other_branches_info,
-    _format_project_activity_section,
-    _format_project_insights,
-    _format_project_maturity_section,
-    _format_reminder_basic_info,
-    _format_reminders_header,
-    _format_reminders_list,
-    _format_session_info,
-    _format_session_summary,
-    _format_single_reminder,
-    _format_single_worktree,
-    _format_snapshot_statistics,
-    _format_worktree_count_info,
-    _format_worktree_list_header,
-    _format_worktree_status,
-    _format_worktree_status_display,
-    _format_worktree_suggestions,
-    # Helper functions (14)
-    _add_basic_tools_info,
-    _add_configuration_info,
-    _add_crackerjack_integration_info,
-    _add_current_session_context,
-    _add_feature_status_info,
-    _add_final_summary,
-    _add_permissions_and_tools_summary,
-    _add_permissions_info,
-    _add_session_health_insights,
-    _handle_uv_operations,
-    _run_uv_sync_and_compile,
-    _setup_claude_directory,
-    _setup_session_management,
-    _setup_uv_dependencies,
-)
 
 # Global session manager for lifespan handlers
-lifecycle_manager = SessionLifecycleManager()
+try:
+    lifecycle_manager = depends.get(SessionLifecycleManager)
+except Exception:
+    lifecycle_manager = SessionLifecycleManager()
+    depends.set(SessionLifecycleManager, lifecycle_manager)
 
 
 # Lifespan handler wrapper for FastMCP
@@ -182,20 +186,7 @@ from .tools import (
 
 # Import utility functions
 from .utils import (
-    _analyze_quality_trend,
-    _build_search_header,
-    _cleanup_session_logs,
-    _cleanup_temp_files,
-    _cleanup_uv_cache,
-    _extract_quality_scores,
-    _format_efficiency_metrics,
-    _format_no_data_message,
     _format_search_results,
-    _format_statistics_header,
-    _generate_quality_trend_recommendations,
-    _get_intelligence_error_result,
-    _get_time_based_recommendations,
-    _optimize_git_repository,
     validate_claude_directory,
 )
 
@@ -210,11 +201,105 @@ register_session_tools(mcp)
 register_team_tools(mcp)
 
 
+async def reflect_on_past(
+    query: str,
+    limit: int = 5,
+    min_score: float = 0.7,
+    project: str | None = None,
+    optimize_tokens: bool = True,
+    max_tokens: int = 4000,
+) -> str:
+    """Search past conversations with optional token optimization."""
+    if not REFLECTION_TOOLS_AVAILABLE:
+        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
+
+    try:
+        db = await get_reflection_database()
+    except Exception as exc:  # pragma: no cover - defensive logging
+        session_logger.exception(
+            "Failed to initialize reflection database", exc_info=exc
+        )
+        return f"❌ Error searching conversations: {exc}"
+
+    if not db:
+        return "❌ Reflection system not available. Install optional dependencies with `uv sync --extra embeddings`"
+
+    try:
+        async with db:
+            results = await db.search_conversations(
+                query=query,
+                project=project or current_project,
+                limit=limit,
+                min_score=min_score,
+            )
+    except Exception as exc:
+        session_logger.exception("Reflection search failed", extra={"query": query})
+        return f"❌ Error searching conversations: {exc}"
+
+    if not results:
+        return (
+            f"🔍 No relevant conversations found for query: '{query}'\n"
+            "💡 Try adjusting the search terms or lowering min_score."
+        )
+
+    optimization_info: dict[str, Any] = {}
+    if optimize_tokens and TOKEN_OPTIMIZER_AVAILABLE:
+        try:
+            optimized_results, optimization_info = await optimize_search_response(
+                results,
+                strategy="prioritize_recent",
+                max_tokens=max_tokens,
+            )
+            if optimized_results:
+                results = optimized_results
+
+            token_savings = optimization_info.get("token_savings", {})
+            await track_token_usage(
+                operation="reflect_on_past",
+                request_tokens=max_tokens,
+                response_tokens=max_tokens - token_savings.get("tokens_saved", 0),
+                optimization_applied=optimization_info.get("strategy"),
+            )
+        except Exception as exc:
+            session_logger.warning(
+                "Token optimization failed for reflect_on_past",
+                extra={"error": str(exc)},
+            )
+            optimization_info = {}
+
+    output_lines = [
+        f"🔍 **Search Results for: '{query}'**",
+        "",
+        f"📊 Found {len(results)} relevant conversations",
+        "",
+    ]
+
+    token_savings = (
+        optimization_info.get("token_savings")
+        if isinstance(optimization_info, dict)
+        else None
+    )
+    if token_savings and token_savings.get("savings_percentage") is not None:
+        output_lines.append(
+            f"⚡ Token optimization: {token_savings.get('savings_percentage')}% saved"
+        )
+        output_lines.append("")
+
+    output_lines.extend(_format_search_results(results))
+    return "\n".join(output_lines)
+
+
 # Wrapper for initialize_new_features that manages global state
 async def initialize_new_features() -> None:
     """Initialize multi-project coordination and advanced search features (wrapper)."""
     global multi_project_coordinator, advanced_search_engine, app_config
-    await _initialize_new_features_impl(
+
+    # Get the initialized instances from the implementation
+    (
+        multi_project_coordinator,
+        advanced_search_engine,
+        app_config,
+    ) = await _initialize_new_features_impl(
         session_logger,
         multi_project_coordinator,
         advanced_search_engine,
@@ -224,46 +309,28 @@ async def initialize_new_features() -> None:
 
 # Phase 2.3: Import quality engine functions
 from session_mgmt_mcp.quality_engine import (
-    # Main quality functions (5)
-    should_suggest_compact,
-    perform_strategic_compaction,
-    monitor_proactive_quality,
-    generate_session_intelligence,
-    analyze_context_usage,
-    # Context analysis (4)
-    summarize_current_conversation,
-    _generate_basic_insights,
-    _add_project_context_insights,
-    _generate_session_tags,
-    # Token & conversation analysis (5)
-    analyze_token_usage_patterns,
-    analyze_conversation_flow,
-    analyze_memory_patterns,
-    analyze_project_workflow_patterns,
-    analyze_advanced_context_metrics,
-    # Quality analysis & recommendations (6)
-    _perform_quality_analysis,
-    _get_quality_error_result,
-    _analyze_token_usage_recommendations,
-    _analyze_conversation_flow_recommendations,
-    _analyze_memory_recommendations,
-    _analyze_quality_monitoring_recommendations,
-    # Intelligence & insights (3)
-    _capture_intelligence_insights,
-    _analyze_reflection_based_intelligence,
-    _analyze_project_workflow_recommendations,
-    _analyze_session_intelligence_recommendations,
-    _add_fallback_recommendations,
-    # Helper functions
-    _generate_quality_recommendations,
-    _check_workflow_drift,
-    _optimize_reflection_database,
-    _analyze_context_compaction,
-    _store_context_summary,
-    _perform_quality_assessment,
-    # Quality score calculation
-    calculate_quality_score,
+    calculate_quality_score as _calculate_quality_score_impl,
 )
+
+
+# Expose quality scoring function for external use
+async def calculate_quality_score(project_dir: Path | None = None) -> dict[str, Any]:
+    """Calculate session quality score using V2 algorithm.
+
+    This function provides a consistent interface for calculating quality scores
+    across the system.
+
+    Args:
+        project_dir: Path to the project directory. If not provided, will use current directory.
+
+    Returns:
+        Dict with quality score and breakdown information.
+
+    """
+    if project_dir is None:
+        project_dir = Path(os.environ.get("PWD", Path.cwd()))
+
+    return await _calculate_quality_score_impl(project_dir=project_dir)
 
 
 # Wrapper for health_check that provides required parameters
@@ -276,30 +343,29 @@ async def health_check() -> dict[str, Any]:
 
 # Phase 2.4: Import advanced feature tools from advanced_features module
 from session_mgmt_mcp.advanced_features import (
-    # Natural Language Scheduling Tools (5 MCP tools)
-    create_natural_reminder,
-    list_user_reminders,
-    cancel_user_reminder,
-    start_reminder_service,
-    stop_reminder_service,
-    # Interruption Management Tools (1 MCP tool)
-    get_interruption_statistics,
-    # Multi-Project Coordination Tools (4 MCP tools)
-    create_project_group,
     add_project_dependency,
-    search_across_projects,
-    get_project_insights,
     # Advanced Search Tools (3 MCP tools)
     advanced_search,
-    search_suggestions,
+    cancel_user_reminder,
+    # Natural Language Scheduling Tools (5 MCP tools)
+    create_natural_reminder,
+    # Multi-Project Coordination Tools (4 MCP tools)
+    create_project_group,
+    # Interruption Management Tools (1 MCP tool)
+    get_interruption_statistics,
+    get_project_insights,
     get_search_metrics,
     # Git Worktree Management Tools (3 MCP tools)
     git_worktree_add,
     git_worktree_remove,
     git_worktree_switch,
+    list_user_reminders,
+    search_across_projects,
+    search_suggestions,
     # Session Welcome Tool (1 MCP tool)
     session_welcome,
-    set_connection_info,
+    start_reminder_service,
+    stop_reminder_service,
 )
 
 # Register all 17 advanced MCP tools

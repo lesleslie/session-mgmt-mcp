@@ -4,10 +4,7 @@ This module now uses ACB-backed cache for improved performance and
 lifecycle management while maintaining backwards-compatible API.
 """
 
-from typing import Any
-
 from session_mgmt_mcp.acb_cache_adapter import ACBHistoryCache, get_history_cache
-
 
 # Backwards-compatible alias
 HistoryAnalysisCache = ACBHistoryCache

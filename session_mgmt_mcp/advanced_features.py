@@ -18,9 +18,7 @@ import typing as t
 from pathlib import Path
 
 if t.TYPE_CHECKING:
-    from collections.abc import Any
-
-    from session_mgmt_mcp.server_core import SessionLogger
+    from session_mgmt_mcp.utils.logging import SessionLogger
 
 
 class AdvancedFeaturesHub:
@@ -338,7 +336,6 @@ async def create_project_group(
 ) -> str:
     """Create a new project group for multi-project coordination."""
     # Lazy initialization
-    from typing import Literal
 
     multi_project_coordinator = await _get_multi_project_coordinator()
     if not multi_project_coordinator:
@@ -641,10 +638,9 @@ async def git_worktree_add(
     create_branch: bool = False,
 ) -> str:
     """Create a new git worktree."""
-    from .worktree_manager import WorktreeManager
-
     # Import session_logger from server
     from .server import session_logger
+    from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or str(Path.cwd()))
     new_path = Path(path)
@@ -691,10 +687,9 @@ async def git_worktree_remove(
     force: bool = False,
 ) -> str:
     """Remove an existing git worktree."""
-    from .worktree_manager import WorktreeManager
-
     # Import session_logger from server
     from .server import session_logger
+    from .worktree_manager import WorktreeManager
 
     working_dir = Path(working_directory or str(Path.cwd()))
     remove_path = Path(path)
@@ -736,10 +731,9 @@ async def git_worktree_switch(from_path: str, to_path: str) -> str:
     """Switch context between git worktrees with session preservation."""
     from pathlib import Path
 
-    from .worktree_manager import WorktreeManager
-
     # Import session_logger from server
     from .server import session_logger
+    from .worktree_manager import WorktreeManager
 
     manager = WorktreeManager(session_logger=session_logger)
 

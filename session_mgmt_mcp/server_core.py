@@ -4,7 +4,6 @@ This module handles FastMCP initialization, server lifecycle management,
 tool registration, and core infrastructure components.
 
 Extracted Components:
-- SessionLogger class (structured logging with context)
 - SessionPermissionsManager class (singleton permissions management)
 - Configuration functions (_load_mcp_config, _detect_other_mcp_servers, etc.)
 - Session lifecycle handler (session_lifecycle)
@@ -16,8 +15,8 @@ Extracted Components:
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
-import logging
 import os
 import shutil
 import subprocess
@@ -26,10 +25,12 @@ import warnings
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from session_mgmt_mcp.utils.logging import SessionLogger
 
 # Suppress transformers warnings
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
@@ -39,76 +40,6 @@ try:
     import tomli
 except ImportError:
     tomli = None  # type: ignore[assignment]
-
-
-# =====================================
-# SessionLogger Class
-# =====================================
-
-
-class SessionLogger:
-    """Structured logging for session management with context."""
-
-    def __init__(self, log_dir: Path) -> None:
-        self.log_dir = log_dir
-        self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = (
-            log_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
-        )
-
-        # Configure logger
-        self.logger = logging.getLogger("session_management")
-        self.logger.setLevel(logging.INFO)
-
-        # Avoid duplicate handlers
-        if not self.logger.handlers:
-            # File handler with structured format
-            file_handler = logging.FileHandler(self.log_file)
-            file_handler.setLevel(logging.INFO)
-
-            # Console handler for errors
-            console_handler = logging.StreamHandler(sys.stderr)
-            console_handler.setLevel(logging.ERROR)
-
-            # Structured formatter
-            formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s",
-            )
-            file_handler.setFormatter(formatter)
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(file_handler)
-            self.logger.addHandler(console_handler)
-
-    def debug(self, message: str, **context: Any) -> None:
-        """Log debug with optional context."""
-        if context:
-            message = f"{message} | Context: {json.dumps(context)}"
-        self.logger.debug(message)
-
-    def info(self, message: str, **context: Any) -> None:
-        """Log info with optional context."""
-        if context:
-            message = f"{message} | Context: {json.dumps(context)}"
-        self.logger.info(message)
-
-    def warning(self, message: str, **context: Any) -> None:
-        """Log warning with optional context."""
-        if context:
-            message = f"{message} | Context: {json.dumps(context)}"
-        self.logger.warning(message)
-
-    def error(self, message: str, **context: Any) -> None:
-        """Log error with optional context."""
-        if context:
-            message = f"{message} | Context: {json.dumps(context)}"
-        self.logger.error(message)
-
-    def exception(self, message: str, **context: Any) -> None:
-        """Log exception with optional context."""
-        if context:
-            message = f"{message} | Context: {json.dumps(context)}"
-        self.logger.exception(message)
 
 
 # =====================================
@@ -419,7 +350,7 @@ async def initialize_new_features(
     multi_project_coordinator_ref: Any,
     advanced_search_engine_ref: Any,
     app_config_ref: Any,
-) -> None:
+) -> tuple[Any, Any, Any]:
     """Initialize multi-project coordination and advanced search features.
 
     Args:
@@ -427,6 +358,9 @@ async def initialize_new_features(
         multi_project_coordinator_ref: Reference to store coordinator instance
         advanced_search_engine_ref: Reference to store search engine instance
         app_config_ref: Reference to store configuration
+
+    Returns:
+        Tuple of (multi_project_coordinator, advanced_search_engine, app_config)
 
     """
     # Import availability flags
@@ -440,11 +374,16 @@ async def initialize_new_features(
     # Auto-setup git working directory for enhanced DX
     await auto_setup_git_working_directory(session_logger)
 
+    # Initialize default return values
+    multi_project_coordinator = multi_project_coordinator_ref
+    advanced_search_engine = advanced_search_engine_ref
+    app_config = app_config_ref
+
     # Load configuration
     if CONFIG_AVAILABLE:
         from session_mgmt_mcp.settings import get_settings
 
-        app_config_ref = get_settings()
+        app_config = get_settings()
 
     # Initialize reflection database for new features
     if REFLECTION_TOOLS_AVAILABLE:
@@ -459,13 +398,15 @@ async def initialize_new_features(
                     MultiProjectCoordinator,
                 )
 
-                multi_project_coordinator_ref = MultiProjectCoordinator(db)
+                multi_project_coordinator = MultiProjectCoordinator(db)
 
             # Initialize advanced search engine
             if ADVANCED_SEARCH_AVAILABLE:
                 from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
 
-                advanced_search_engine_ref = AdvancedSearchEngine(db)
+                advanced_search_engine = AdvancedSearchEngine(db)
+
+    return multi_project_coordinator, advanced_search_engine, app_config
 
 
 async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
@@ -824,8 +765,11 @@ class FeatureDetector:
     def _check_session_management() -> bool:
         """Check if session management is available."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            import session_mgmt_mcp.core
 
+            _ = (
+                session_mgmt_mcp.core.session_manager
+            )  # Reference to avoid unused import warning during static analysis
             return True
         except ImportError:
             return False
@@ -834,12 +778,11 @@ class FeatureDetector:
     def _check_reflection_tools() -> bool:
         """Check if reflection tools are available."""
         try:
-            from session_mgmt_mcp.reflection_tools import (
-                ReflectionDatabase,
-                get_current_project,
-                get_reflection_database,
-            )
+            import session_mgmt_mcp.reflection_tools
 
+            _ = (
+                session_mgmt_mcp.reflection_tools
+            )  # Use the import to avoid unused import warning
             return True
         except ImportError:
             return False
@@ -848,9 +791,7 @@ class FeatureDetector:
     def _check_enhanced_search() -> bool:
         """Check if enhanced search is available."""
         try:
-            import session_mgmt_mcp.search_enhanced
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.search_enhanced") is not None
         except ImportError:
             return False
 
@@ -858,10 +799,11 @@ class FeatureDetector:
     def _check_utility_functions() -> bool:
         """Check if utility functions are available."""
         try:
-            from session_mgmt_mcp.tools.search_tools import _optimize_search_results_impl
-            from session_mgmt_mcp.utils.format_utils import _format_session_statistics
-
-            return True
+            # Check for the general module availability without importing unused functions
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.tools.search_tools")
+                is not None
+            )
         except ImportError:
             return False
 
@@ -869,11 +811,10 @@ class FeatureDetector:
     def _check_multi_project() -> bool:
         """Check if multi-project coordination is available."""
         try:
-            from session_mgmt_mcp.multi_project_coordinator import (
-                MultiProjectCoordinator,
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.multi_project_coordinator")
+                is not None
             )
-
-            return True
         except ImportError:
             return False
 
@@ -881,9 +822,7 @@ class FeatureDetector:
     def _check_advanced_search() -> bool:
         """Check if advanced search engine is available."""
         try:
-            from session_mgmt_mcp.advanced_search import AdvancedSearchEngine
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.advanced_search") is not None
         except ImportError:
             return False
 
@@ -891,9 +830,7 @@ class FeatureDetector:
     def _check_config() -> bool:
         """Check if configuration management is available."""
         try:
-            from session_mgmt_mcp.settings import get_settings
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.settings") is not None
         except ImportError:
             return False
 
@@ -901,9 +838,7 @@ class FeatureDetector:
     def _check_auto_context() -> bool:
         """Check if auto-context loading is available."""
         try:
-            import session_mgmt_mcp.context_manager
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.context_manager") is not None
         except ImportError:
             return False
 
@@ -911,9 +846,9 @@ class FeatureDetector:
     def _check_memory_optimizer() -> bool:
         """Check if memory optimizer is available."""
         try:
-            import session_mgmt_mcp.memory_optimizer
-
-            return True
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.memory_optimizer") is not None
+            )
         except ImportError:
             return False
 
@@ -921,9 +856,7 @@ class FeatureDetector:
     def _check_app_monitor() -> bool:
         """Check if application monitoring is available."""
         try:
-            from session_mgmt_mcp.app_monitor import ApplicationMonitor
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.app_monitor") is not None
         except ImportError:
             return False
 
@@ -931,9 +864,7 @@ class FeatureDetector:
     def _check_llm_providers() -> bool:
         """Check if LLM providers are available."""
         try:
-            from session_mgmt_mcp.llm_providers import LLMManager
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.llm_providers") is not None
         except ImportError:
             return False
 
@@ -941,12 +872,7 @@ class FeatureDetector:
     def _check_serverless_mode() -> bool:
         """Check if serverless mode is available."""
         try:
-            from session_mgmt_mcp.serverless_mode import (
-                ServerlessConfigManager,
-                ServerlessSessionManager,
-            )
-
-            return True
+            return importlib.util.find_spec("session_mgmt_mcp.serverless_mode") is not None
         except ImportError:
             return False
 
@@ -954,9 +880,10 @@ class FeatureDetector:
     def _check_crackerjack() -> bool:
         """Check if crackerjack integration is available."""
         try:
-            import session_mgmt_mcp.crackerjack_integration
-
-            return True
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.crackerjack_integration")
+                is not None
+            )
         except ImportError:
             return False
 
@@ -988,5 +915,6 @@ def get_feature_flags() -> dict[str, bool]:
 
     Returns:
         Dictionary mapping feature names to availability status.
+
     """
     return _feature_detector.get_feature_flags()

@@ -7,13 +7,14 @@ team coordination, and collaborative development workflows.
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+logger = get_session_logger()
 
 
 async def _create_team_impl(

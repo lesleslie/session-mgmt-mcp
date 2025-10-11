@@ -7,61 +7,58 @@ and managing session context following crackerjack architecture patterns.
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.utils.instance_managers import (
+    get_app_monitor as resolve_app_monitor,
+)
+from session_mgmt_mcp.utils.instance_managers import (
+    get_interruption_manager as resolve_interruption_manager,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+logger = get_session_logger()
 
-# Lazy loading for optional monitoring dependencies
-_app_monitor = None
-_app_monitor_available = None
-_interruption_manager = None
-_interruption_available = None
+# Lazy loading flags
+_app_monitor_available: bool | None = None
+_interruption_available: bool | None = None
 
 
 async def _get_app_monitor() -> Any:
     """Get application monitor instance with lazy loading."""
-    global _app_monitor, _app_monitor_available
+    global _app_monitor_available
 
     if _app_monitor_available is False:
         return None
 
-    if _app_monitor is None:
-        try:
-            from session_mgmt_mcp.app_monitor import ApplicationMonitor
+    monitor = await resolve_app_monitor()
+    if monitor is None:
+        logger.warning("Application monitoring not available.")
+        _app_monitor_available = False
+        return None
 
-            _app_monitor = ApplicationMonitor(data_dir="~/.claude/data")
-            _app_monitor_available = True
-        except ImportError as e:
-            logger.warning(f"Application monitoring not available: {e}")
-            _app_monitor_available = False
-            return None
-
-    return _app_monitor
+    _app_monitor_available = True
+    return monitor
 
 
 async def _get_interruption_manager() -> Any:
     """Get interruption manager instance with lazy loading."""
-    global _interruption_manager, _interruption_available
+    global _interruption_available
 
     if _interruption_available is False:
         return None
 
-    if _interruption_manager is None:
-        try:
-            from session_mgmt_mcp.interruption_manager import InterruptionManager
+    manager = await resolve_interruption_manager()
+    if manager is None:
+        logger.warning("Interruption management not available.")
+        _interruption_available = False
+        return None
 
-            _interruption_manager = InterruptionManager()
-            _interruption_available = True
-        except ImportError as e:
-            logger.warning(f"Interruption management not available: {e}")
-            _interruption_available = False
-            return None
-
-    return _interruption_manager
+    _interruption_available = True
+    return manager
 
 
 def _check_app_monitor_available() -> bool:
@@ -77,7 +74,7 @@ def _check_app_monitor_available() -> bool:
         except ImportError:
             _app_monitor_available = False
 
-    return _app_monitor_available
+    return bool(_app_monitor_available)
 
 
 def _check_interruption_available() -> bool:
@@ -93,7 +90,7 @@ def _check_interruption_available() -> bool:
         except ImportError:
             _interruption_available = False
 
-    return _interruption_available
+    return bool(_interruption_available)
 
 
 async def _start_app_monitoring_impl(project_paths: list[str] | None = None) -> str:

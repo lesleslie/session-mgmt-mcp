@@ -29,6 +29,12 @@ from .git_utils import (
     _parse_git_status,
     _stage_and_commit_files,
 )
+from .instance_managers import (
+    get_app_monitor,
+    get_llm_manager,
+    get_serverless_manager,
+    reset_instances,
+)
 from .lazy_imports import (
     LazyImport,
     LazyLoader,
@@ -52,12 +58,6 @@ from .reflection_utils import (
     format_auto_store_summary,
     generate_auto_store_tags,
     should_auto_store_checkpoint,
-)
-from .instance_managers import (
-    get_app_monitor,
-    get_llm_manager,
-    get_serverless_manager,
-    reset_instances,
 )
 
 __all__ = [
@@ -94,9 +94,9 @@ __all__ = [
     "get_app_monitor",
     "get_database_pool",
     "get_dependency_status",
+    "get_git_status",
     "get_llm_manager",
     "get_serverless_manager",
-    "get_git_status",
     "get_session_logger",
     "get_staged_files",
     "is_git_repository",

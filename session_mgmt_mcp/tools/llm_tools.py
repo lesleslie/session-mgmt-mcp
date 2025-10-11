@@ -7,38 +7,37 @@ following crackerjack architecture patterns.
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
+
+from session_mgmt_mcp.utils.instance_managers import (
+    get_llm_manager as resolve_llm_manager,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+logger = get_session_logger()
 
-# Lazy loading for optional LLM dependencies
-_llm_manager = None
-_llm_available = None
+# Lazy loading flag for optional LLM dependencies
+_llm_available: bool | None = None
 
 
 async def _get_llm_manager() -> Any:
     """Get LLM manager instance with lazy loading."""
-    global _llm_manager, _llm_available
+    global _llm_available
 
     if _llm_available is False:
         return None
 
-    if _llm_manager is None:
-        try:
-            from session_mgmt_mcp.llm_providers import LLMManager
+    manager = await resolve_llm_manager()
+    if manager is None:
+        logger.warning("LLM providers not available.")
+        _llm_available = False
+        return None
 
-            _llm_manager = LLMManager()
-            _llm_available = True
-        except ImportError as e:
-            logger.warning(f"LLM providers not available: {e}")
-            _llm_available = False
-            return None
-
-    return _llm_manager
+    _llm_available = True
+    return manager
 
 
 def _check_llm_available() -> bool:

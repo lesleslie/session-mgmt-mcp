@@ -149,6 +149,7 @@ ______________________________________________________________________
 **STATUS:** ✅ **COMPLETE** - Finished Oct 10, 2025 (Ahead of schedule by ~3 weeks!)
 
 **Phase 2.1: Module Skeleton Creation** ✅
+
 - Created 4 module skeletons with comprehensive structure
 - server_core.py (220 lines stub)
 - quality_engine.py (200 lines stub)
@@ -157,12 +158,14 @@ ______________________________________________________________________
 - **Commit:** 73cbb73a
 
 **Phase 2.2: Utility Function Extraction** ✅
+
 - Extracted 40 functions (26 formatting + 14 helpers)
 - server.py: 4,008 → 2,940 lines (-1,068, -26.6%)
 - utils/server_helpers.py: 70 → 371 lines
 - **Commit:** 898539cd
 
 **Phase 2.3: Quality Engine Extraction** ✅
+
 - Extracted 52 quality functions (exceeded target)
 - server.py: 2,940 → 1,840 lines (-1,100, -37.4%)
 - quality_engine.py: 200 → 1,219 lines (full implementation)
@@ -170,12 +173,14 @@ ______________________________________________________________________
 - **Commit:** 76e6117e
 
 **Phase 2.4: Advanced Features Extraction** ✅
+
 - Extracted 17 MCP tool functions
 - server.py: 1,840 → 1,219 lines (-621, -33.8%)
 - advanced_features.py: 310 → 841 lines (full implementation)
 - **Commit:** ee4370e7
 
 **Phase 2.5: Core Infrastructure Extraction** ✅ (HIGHEST RISK)
+
 - Extracted 17 functions + 2 classes
 - Moved SessionLogger and SessionPermissionsManager
 - Preserved FastMCP lifespan handler (critical)
@@ -184,6 +189,7 @@ ______________________________________________________________________
 - **Commit:** 4905c8a6
 
 **Phase 2.6: Final Cleanup** ✅
+
 - Created FeatureDetector class (13 features)
 - Created utils/instance_managers.py (104 lines)
 - Moved MockFastMCP to tests/conftest.py
@@ -200,6 +206,7 @@ ______________________________________________________________________
 - Test Coverage: 34.6% (maintained, testing deferred per plan)
 
 **NEW MODULAR ARCHITECTURE:**
+
 ```
 session_mgmt_mcp/
 ├── server.py (392 lines) - Pure MCP coordinator ✅
@@ -212,13 +219,68 @@ session_mgmt_mcp/
 └── [existing structure maintained]
 ```
 
-**Phase 2.7: ACB Dependency Injection** (NOW READY)
+**Phase 2.7: ACB Dependency Injection** (✅ IN PROGRESS – CORE PLATFORM WIRED)
 
-With modular architecture complete, ACB DI can now proceed:
-1. Add ACB DI with `depends.inject` to decomposed modules
-1. Replace manual DI patterns in tools/\*.py (-800 lines estimated)
-1. Implement adapter pattern for external dependencies
-1. Add comprehensive DI tests (target: 70% coverage for new modules)
+**Objectives**
+
+- Replace manual dependency wiring with ACB `depends.inject` across server, quality, and tool layers.
+- Centralize provider configuration for logging, config, caching, and external clients.
+- Establish an override-friendly DI graph so tests, CLI, and adapters can supply fakes without patching.
+
+**Status Update (2025-10-10)**
+
+- DI bootstrap package created (`session_mgmt_mcp/di/`) with providers for logger, permissions, lifecycle, and critical filesystem paths.
+- Server entrypoint and core tooling now resolve dependencies through DI; tool modules (search, monitoring, serverless, LLM, team, crackerjack, memory, validated-memory) are injection-ready. Recommendation-engine DI bridge and token-optimizer lifecycle remain planned follow-ups.
+- Legacy `reflect_on_past` workflow restored on top of DI stack with token optimizer re-exports.
+- Instance managers migrated to DI-backed factories; unit coverage verifies registration and override behaviour.
+- Targeted validation executed: `uv run pytest --no-cov tests/unit/test_di_container.py tests/unit/test_instance_managers.py tests/unit/test_logging_utils.py`.
+- Full-suite coverage run attempted (`uv run pytest --cov=session_mgmt_mcp --cov-report=term-missing`); run currently fails (34.16% coverage vs. 35% fail-under) with extensive regressions across reflection-dependent tools, session workflows, crackerjack analytics, and performance/security suites. Failures logged for Day 4 remediation.
+
+**Scope**
+
+- `session_mgmt_mcp/server_core.py`, `quality_engine.py`, `advanced_features.py`, `utils/instance_managers.py`.
+- All modules in `session_mgmt_mcp/tools/` that currently instantiate dependencies directly (search, monitoring, serverless, LLM, team, crackerjack complete; others queued).
+- Integration adapters (`crackerjack_integration.py`, `session_mgmt_mcp/utils`) where singletons remain.
+
+**Execution Plan (5-day sprint)**
+
+1. ✅ **Day 1 – Container scaffolding:** create `session_mgmt_mcp/di/` package with provider registry, enumerate required dependencies, document override strategy, and wire config/logging providers.
+1. ✅ **Day 2 – Core refactor:** apply container lookups for `SessionLogger`, `SessionPermissionsManager`, lifecycle handlers, and FastMCP setup paths; replace manual constructors and ensure startup uses container bindings.
+1. ✅ **Day 3 – Tool layer migration:** refactor remaining tool modules (memory, validated memory, monitoring, serverless, LLM, crackerjack) to request dependencies via injection and extract external service adapters as needed. Recommendation-engine/token optimizer lifecycle still pending clean-up task (tracked separately).
+1. 🔄 **Day 4 – Testing + overrides:** expand unit/integration coverage (≥70% for new DI code) using `depends.override`; resolve failing suites from coverage run before re-attempting full quality gates.
+1. 🔄 **Day 5 – Cleanup + docs:** retire redundant factories, update architecture notes, and run full quality gates (`uv run pre-commit`, `uv run pytest --cov`, `uv run session-mgmt-mcp --start-mcp-server --status`).
+
+**Deliverables**
+
+- `session_mgmt_mcp/di/` package with provider map and override guidance. ✅ Delivered.
+- Core/server/tool modules progressively freed from manual singletons and using ACB injection patterns (server, search, monitoring, LLM, serverless, team, crackerjack ✅; remaining modules scheduled 🔄).
+- Expanded test suite demonstrating DI overrides and validating wiring (unit coverage for DI container, instance managers, logging ✅; integration suite enhancements pending 🔄).
+- Architecture addendum highlighting the new dependency graph and adapter boundaries.
+
+**Quality Gates**
+
+- Pyright, Ruff, Bandit, and Complexipy clean; no new suppressions. 🔄
+- Coverage ≥35% overall with ≥70% on new DI code paths (unit focus achieved; full-suite target outstanding after failing coverage run 🔄).
+- Smoke test: `uv run session-mgmt-mcp --start-mcp-server --status` passes with injected dependencies (scheduled once failing suites are addressed 🔄).
+
+**Risks & Mitigations**
+
+- **Risk:** Hidden singleton usage persists in tools. **Mitigation:** Track migration via checklist per module and require code review sign-off before marking complete.
+- **Risk:** Asynchronous resources leak when injected. **Mitigation:** Use ACB scopes (`depends.scoped`) and add teardown hooks in tests.
+- **Risk:** Tool registration regressions. **Mitigation:** Add integration test asserting 70+ tools register and review FastMCP logs during smoke test.
+
+**Exit Criteria**
+
+- No direct instantiations of logging, cache, or database adapters outside the DI package.
+- All runtime modules import dependencies via `depends.inject` or `depends.provider`.
+- Documentation updated and follow-up tickets created for any deferred adapters.
+
+**Phase 3 Readiness Checklist**
+
+- [x] DI package merged with architecture sign-off.
+- [ ] Smoke test transcript attached to docs for stakeholder review.
+- [ ] Tool registry count unchanged (baseline: 70+ registrations).
+- [ ] Knowledge hand-off captured in docs (how to add new providers and overrides).
 
 ______________________________________________________________________
 
@@ -227,23 +289,27 @@ ______________________________________________________________________
 ### What Worked Exceptionally Well
 
 1. **Skeleton-First Approach**
+
    - Creating empty module structures first allowed early validation
    - Import aliases ensured 100% backwards compatibility
    - Caught architectural issues before large-scale code movement
 
-2. **Agent-Assisted Refactoring**
+1. **Agent-Assisted Refactoring**
+
    - Used `refactoring-specialist` agent for complex extractions
    - Achieved ~50% time savings vs. manual extraction
    - Agent discovered and fixed pre-existing bug (missing `calculate_quality_score()` wrapper)
    - Zero extraction errors across 148+ functions moved
 
-3. **Gradual 6-Phase Strategy**
+1. **Gradual 6-Phase Strategy**
+
    - Each phase had clear success criteria and rollback point
    - Low-risk phases first (utilities) built confidence
    - High-risk Phase 2.5 (core infrastructure) de-risked by prior successes
    - Git commit after each phase provided safety net
 
-4. **Zero Breaking Changes**
+1. **Zero Breaking Changes**
+
    - All tests passed with identical results throughout
    - No user-visible functionality changes
    - Maintained production stability while achieving 90.2% reduction
@@ -251,16 +317,19 @@ ______________________________________________________________________
 ### Key Discoveries
 
 1. **FastMCP Lifespan Handler Pattern**
+
    - Required wrapper pattern with parameter injection (Phase 2.5)
    - Critical component that couldn't be simply moved
    - Solution: Keep lightweight wrapper in server.py, move implementation to server_core.py
 
-2. **Feature Detection Consolidation**
+1. **Feature Detection Consolidation**
+
    - 13 try/except blocks scattered across server.py (Phase 2.6)
    - Consolidated into `FeatureDetector` class with centralized logic
    - Improved maintainability and testability
 
-3. **Lazy Initialization Benefits**
+1. **Lazy Initialization Benefits**
+
    - Heavy instances (app_monitor, llm_manager, serverless_manager) moved to instance_managers.py
    - Startup time improved by deferring expensive initializations
    - Memory usage reduced when features not used
@@ -279,16 +348,19 @@ ______________________________________________________________________
 ### Recommendations for Future Work
 
 1. **Phase 2.7 ACB DI** should be next priority
+
    - Modular structure now makes DI integration straightforward
    - Estimated 1 week vs. original 2-3 weeks (structure already clean)
    - Will further improve architecture and quality scores
 
-2. **Test Coverage** can be tackled independently
+1. **Test Coverage** can be tackled independently
+
    - Modular structure makes testing each component easier
    - Target: 34.6% → 55% (new modules well-scoped for testing)
    - Property-based testing with Hypothesis recommended
 
-3. **Template Migration** (Phase 3) significantly de-risked
+1. **Template Migration** (Phase 3) significantly de-risked
+
    - 128 formatting functions now isolated in server_helpers.py
    - Clear boundaries make template extraction straightforward
    - Estimated time reduced from 2 weeks to 1 week
@@ -313,26 +385,114 @@ ______________________________________________________________________
 
 ### Phase 3: Deep ACB Integration (Week 7-12)
 
-**Week 7-8: Template-Based Formatting**
+**Strategic Goals**
 
-1. Extract 128 formatting functions to Jinja2 templates (-2,500 lines)
-1. Create template system with ACB patterns
-1. Add template rendering tests
-1. Migrate all string formatting to templates
+- Drive ACB adoption to 9/10 by replacing legacy formatting, query, and event systems.
+- Reduce bespoke infrastructure by ~5,500 lines while improving maintainability and clarity.
+- Lift quality and coverage targets ahead of Phase 4 performance and reliability work.
 
-**Week 9-10: Universal Query Interface**
+**Entry Criteria**
 
-1. Implement ACB query interface for DuckDB (-1,000 lines)
-1. Migrate reflection_tools.py to ACB query patterns
-1. Add query layer tests (target: 80% coverage)
-1. Optimize database connection pooling with ACB
+- Phase 2.7 exit criteria met and DI container merged.
+- Baseline templates/test harness established for rendering smoke tests.
+- Legacy query hotspots and event handlers inventoried with owners assigned.
 
-**Week 11-12: Event-Driven Orchestration**
+**Phase 3.1 – Template-Based Formatting (Weeks 7-8)**
 
-1. Replace custom event handling with ACB EventBus (-2,000 lines)
-1. Implement event subscribers for session lifecycle
-1. Add event-driven monitoring and analytics
-1. Test event flows comprehensively
+Focus: Replace 128 string-formatting helpers with Jinja2 templates orchestrated by ACB.
+
+Implementation Steps:
+
+1. Build `session_mgmt_mcp/templates/` hierarchy and register loader via DI; document data models for each template family.
+1. Migrate formatting functions from `utils/server_helpers.py` and `quality_engine.py` into template renderers using injected context objects.
+1. Introduce renderer service (e.g., `TemplateRenderer`) with caching, localization hooks, and CLI fallbacks.
+1. Update MCP tool outputs to use templates, delete deprecated helpers, and run snapshot diff against baseline transcripts.
+
+Deliverables:
+
+- Template bundle with versioned naming, renderer service, and developer docs.
+- Updated modules relying on template rendering pipeline only.
+- Snapshot and property-based tests guaranteeing formatting stability.
+
+Testing & Validation:
+
+- Golden transcript comparisons for top 10 workflows.
+- Hypothesis-driven tests for template data models.
+- CLI smoke run to confirm no regression in ANSI formatting.
+
+Risks & Mitigations:
+
+- Formatting drift → maintain snapshots and require reviewer approval for template diffs.
+- Performance regressions → benchmark template render time; add caching where needed.
+
+**Phase 3.2 – Universal Query Interface (Weeks 9-10)**
+
+Focus: Adopt ACB query interfaces for DuckDB and related data sources.
+
+Implementation Steps:
+
+1. Create `session_mgmt_mcp/adapters/database.py` with ACB query client and connection pooling configured via DI.
+1. Convert `reflection_tools.py`, analytics modules, and scoring helpers to use the query adapter instead of handcrafted SQL.
+1. Implement query composition helpers and parameterized builders for reusable statements.
+1. Add error handling, logging, and retry strategies through injected middleware.
+
+Deliverables:
+
+- ACB-backed query adapter with pooling and metrics hooks.
+- Refactored modules consuming adapter abstractions.
+- Query layer documentation describing schema evolution and migration notes.
+
+Testing & Validation:
+
+- Integration tests against DuckDB fixture database (target 80% coverage for adapter module).
+- Property-based tests for query builders.
+- Load-test script (baseline 10 concurrent queries) to validate pooling.
+
+Risks & Mitigations:
+
+- Data contract mismatches → stage schema diff review before migration.
+- Connection leaks → enforce context managers and add lint check for raw cursor usage.
+
+**Phase 3.3 – Event-Driven Orchestration (Weeks 11-12)**
+
+Focus: Replace bespoke callbacks with ACB EventBus and structured subscribers.
+
+Implementation Steps:
+
+1. Map existing lifecycle hooks (session start/checkpoint/end, tool results, alerts) and define canonical event schema.
+1. Implement `session_mgmt_mcp/events.py` with EventBus configuration, topic definitions, and tracing hooks.
+1. Refactor listeners in server core, monitoring, and notification modules to subscribe via ACB decorators.
+1. Add telemetry, replay protection, and graceful degradation for environments without EventBus.
+
+Deliverables:
+
+- Event schema catalog and EventBus configuration managed via DI.
+- Subscriber modules with clear responsibilities and metrics emission.
+- Monitoring dashboards or logs demonstrating event flow visibility.
+
+Testing & Validation:
+
+- Async unit tests covering publish/subscribe scenarios and error paths.
+- End-to-end scenario exercising session lifecycle through EventBus.
+- Chaos test (drop event handler) validating fallback path.
+
+Risks & Mitigations:
+
+- Race conditions between legacy and new handlers → feature flag rollout with staged toggles.
+- Observability gaps → enforce structured logging and status metrics for each event topic.
+
+**Cross-Phase Governance**
+
+- Weekly architecture review to track migration burndown and unblock dependencies.
+- Metrics dashboard updated after each sub-phase (LOC deltas, quality scores, tool count).
+- Feature flags controlling new systems with rollback instructions documented.
+
+**Exit Criteria**
+
+- Templates, query adapter, and EventBus modules fully integrated with DI and passing smoke tests.
+- Tool registry count and CLI workflows unchanged from Phase 2 baselines.
+- Coverage ≥70% on new modules; overall coverage trending toward 55%.
+- Stakeholder sign-off with release notes drafted for Phase 3 milestone.
 
 **Expected Impact:**
 

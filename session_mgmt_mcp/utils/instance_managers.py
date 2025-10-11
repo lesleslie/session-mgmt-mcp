@@ -9,74 +9,63 @@ Extracted from server.py Phase 2.6 to reduce cognitive complexity.
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from acb.depends import depends
+from bevy import get_container
+from session_mgmt_mcp.di.constants import CLAUDE_DIR_KEY
+
 if TYPE_CHECKING:
     from session_mgmt_mcp.app_monitor import ApplicationMonitor
+    from session_mgmt_mcp.interruption_manager import InterruptionManager
     from session_mgmt_mcp.llm_providers import LLMManager
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
     from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
 
 
-# Global singleton instances
-_app_monitor: ApplicationMonitor | None = None
-_llm_manager: LLMManager | None = None
-_serverless_manager: ServerlessSessionManager | None = None
-
-
 async def get_app_monitor() -> ApplicationMonitor | None:
-    """Get or initialize application monitor singleton.
-
-    Returns:
-        ApplicationMonitor instance if available, None otherwise.
-    """
-    global _app_monitor
-
-    # Check if feature is available
+    """Resolve application monitor via DI, creating it on demand."""
     try:
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
     except ImportError:
         return None
 
-    if _app_monitor is None:
-        data_dir = Path.home() / ".claude" / "data" / "app_monitoring"
-        working_dir = os.environ.get("PWD", str(Path.cwd()))
-        project_paths = [working_dir] if Path(working_dir).exists() else []
-        _app_monitor = ApplicationMonitor(str(data_dir), project_paths)
+    with suppress(Exception):
+        monitor = depends.get(ApplicationMonitor)
+        if isinstance(monitor, ApplicationMonitor):
+            return monitor
 
-    return _app_monitor
+    data_dir = _resolve_claude_dir() / "data" / "app_monitoring"
+    working_dir = Path(os.environ.get("PWD", str(Path.cwd())))
+    project_paths = [str(working_dir)] if working_dir.exists() else []
+
+    monitor = ApplicationMonitor(str(data_dir), project_paths)
+    depends.set(ApplicationMonitor, monitor)
+    return monitor
 
 
 async def get_llm_manager() -> LLMManager | None:
-    """Get or initialize LLM manager singleton.
-
-    Returns:
-        LLMManager instance if available, None otherwise.
-    """
-    global _llm_manager
-
-    # Check if feature is available
+    """Resolve LLM manager via DI, creating it on demand."""
     try:
         from session_mgmt_mcp.llm_providers import LLMManager
     except ImportError:
         return None
 
-    if _llm_manager is None:
-        config_path = Path.home() / ".claude" / "data" / "llm_config.json"
-        _llm_manager = LLMManager(str(config_path) if config_path.exists() else None)
+    with suppress(Exception):
+        manager = depends.get(LLMManager)
+        if isinstance(manager, LLMManager):
+            return manager
 
-    return _llm_manager
+    config_path = _resolve_claude_dir() / "data" / "llm_config.json"
+    manager = LLMManager(str(config_path) if config_path.exists() else None)
+    depends.set(LLMManager, manager)
+    return manager
 
 
 async def get_serverless_manager() -> ServerlessSessionManager | None:
-    """Get or initialize serverless session manager singleton.
-
-    Returns:
-        ServerlessSessionManager instance if available, None otherwise.
-    """
-    global _serverless_manager
-
-    # Check if feature is available
+    """Resolve serverless session manager via DI, creating it on demand."""
     try:
         from session_mgmt_mcp.serverless_mode import (
             ServerlessConfigManager,
@@ -85,20 +74,102 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
     except ImportError:
         return None
 
-    if _serverless_manager is None:
-        config_path = Path.home() / ".claude" / "data" / "serverless_config.json"
-        config = ServerlessConfigManager.load_config(
-            str(config_path) if config_path.exists() else None,
-        )
-        storage_backend = ServerlessConfigManager.create_storage_backend(config)
-        _serverless_manager = ServerlessSessionManager(storage_backend)
+    with suppress(Exception):
+        manager = depends.get(ServerlessSessionManager)
+        if isinstance(manager, ServerlessSessionManager):
+            return manager
 
-    return _serverless_manager
+    claude_dir = _resolve_claude_dir()
+    config_path = claude_dir / "data" / "serverless_config.json"
+    config = ServerlessConfigManager.load_config(
+        str(config_path) if config_path.exists() else None,
+    )
+    storage_backend = ServerlessConfigManager.create_storage_backend(config)
+    manager = ServerlessSessionManager(storage_backend)
+    depends.set(ServerlessSessionManager, manager)
+    return manager
+
+
+async def get_reflection_database() -> ReflectionDatabase | None:
+    """Resolve reflection database via DI, creating it on demand."""
+    try:
+        from session_mgmt_mcp.reflection_tools import (
+            ReflectionDatabase,
+        )
+        from session_mgmt_mcp.reflection_tools import (
+            get_reflection_database as load_reflection_database,
+        )
+    except ImportError:
+        return None
+
+    with suppress(Exception):
+        db = depends.get(ReflectionDatabase)
+        if isinstance(db, ReflectionDatabase):
+            return db
+
+    db = await load_reflection_database()
+    depends.set(ReflectionDatabase, db)
+    return db
+
+
+async def get_interruption_manager() -> InterruptionManager | None:
+    """Resolve interruption manager via DI, creating it on demand."""
+    try:
+        from session_mgmt_mcp.interruption_manager import InterruptionManager
+    except ImportError:
+        return None
+
+    with suppress(Exception):
+        manager = depends.get(InterruptionManager)
+        if isinstance(manager, InterruptionManager):
+            return manager
+
+    manager = InterruptionManager()
+    depends.set(InterruptionManager, manager)
+    return manager
 
 
 def reset_instances() -> None:
-    """Reset all singleton instances (useful for testing)."""
-    global _app_monitor, _llm_manager, _serverless_manager
-    _app_monitor = None
-    _llm_manager = None
-    _serverless_manager = None
+    """Reset registered instances in the DI container."""
+    container = get_container()
+    for dependency in _iter_dependencies():
+        with suppress(Exception):
+            container.instances.pop(dependency, None)
+
+
+def _resolve_claude_dir() -> Path:
+    with suppress(Exception):
+        claude_dir = depends.get(CLAUDE_DIR_KEY)
+        if isinstance(claude_dir, Path):
+            claude_dir.mkdir(parents=True, exist_ok=True)
+            return claude_dir
+
+    default_dir = Path.home() / ".claude"
+    default_dir.mkdir(parents=True, exist_ok=True)
+    depends.set(CLAUDE_DIR_KEY, default_dir)
+    return default_dir
+
+
+def _iter_dependencies() -> list[type[Any]]:
+    deps: list[type[Any]] = []
+    with suppress(ImportError):
+        from session_mgmt_mcp.app_monitor import ApplicationMonitor
+
+        deps.append(ApplicationMonitor)
+    with suppress(ImportError):
+        from session_mgmt_mcp.llm_providers import LLMManager
+
+        deps.append(LLMManager)
+    with suppress(ImportError):
+        from session_mgmt_mcp.interruption_manager import InterruptionManager
+
+        deps.append(InterruptionManager)
+    with suppress(ImportError):
+        from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
+
+        deps.append(ServerlessSessionManager)
+    with suppress(ImportError):
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        deps.append(ReflectionDatabase)
+    return deps

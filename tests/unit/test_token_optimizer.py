@@ -79,9 +79,10 @@ class TestTokenOptimizer:
             # Should be roughly len(text) // 4
             assert token_count == len(text) // 4
 
-    def test_truncate_old_conversations(self, token_optimizer, sample_conversations):
+    @pytest.mark.asyncio
+    async def test_truncate_old_conversations(self, token_optimizer, sample_conversations):
         """Test truncating old conversations strategy."""
-        optimized, info = token_optimizer._truncate_old_conversations(
+        optimized, info = await token_optimizer._truncate_old_conversations(
             sample_conversations,
             max_tokens=200,
         )
@@ -96,9 +97,10 @@ class TestTokenOptimizer:
             # Most recent should be first (conv3)
             assert optimized[0]["id"] == "conv3"
 
-    def test_summarize_long_content(self, token_optimizer, sample_conversations):
+    @pytest.mark.asyncio
+    async def test_summarize_long_content(self, token_optimizer, sample_conversations):
         """Test content summarization strategy."""
-        optimized, info = token_optimizer._summarize_long_content(
+        optimized, info = await token_optimizer._summarize_long_content(
             sample_conversations,
             max_tokens=1000,
         )
@@ -111,7 +113,8 @@ class TestTokenOptimizer:
         assert "[auto-summarized]" in long_conv["content"]
         assert len(long_conv["content"]) < len(sample_conversations[1]["content"])
 
-    def test_filter_duplicate_content(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_filter_duplicate_content(self, token_optimizer):
         """Test duplicate content filtering."""
         duplicate_conversations = [
             {
@@ -136,7 +139,7 @@ class TestTokenOptimizer:
             },
         ]
 
-        optimized, info = token_optimizer._filter_duplicate_content(
+        optimized, info = await token_optimizer._filter_duplicate_content(
             duplicate_conversations,
             max_tokens=1000,
         )
@@ -145,9 +148,10 @@ class TestTokenOptimizer:
         assert info["strategy"] == "filter_duplicates"
         assert info["duplicates_removed"] == 2
 
-    def test_prioritize_recent_content(self, token_optimizer, sample_conversations):
+    @pytest.mark.asyncio
+    async def test_prioritize_recent_content(self, token_optimizer, sample_conversations):
         """Test recent content prioritization strategy."""
-        optimized, info = token_optimizer._prioritize_recent_content(
+        optimized, info = await token_optimizer._prioritize_recent_content(
             sample_conversations,
             max_tokens=300,
         )
@@ -161,7 +165,8 @@ class TestTokenOptimizer:
             recent_ids = [conv["id"] for conv in optimized]
             assert "conv3" in recent_ids
 
-    def test_chunk_large_response(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_chunk_large_response(self, token_optimizer):
         """Test response chunking strategy."""
         # Create large conversation set that exceeds max_tokens
         large_conversations = []
@@ -175,7 +180,7 @@ class TestTokenOptimizer:
                 },
             )
 
-        optimized, info = token_optimizer._chunk_large_response(
+        optimized, info = await token_optimizer._chunk_large_response(
             large_conversations,
             max_tokens=500,
         )
@@ -192,7 +197,7 @@ class TestTokenOptimizer:
         # Test cache creation
         if "cache_key" in info:
             cache_key = info["cache_key"]
-            assert cache_key in token_optimizer.chunk_cache
+            assert await token_optimizer.chunk_cache.__contains__(cache_key)
 
     def test_create_quick_summary(self, token_optimizer):
         """Test quick summary creation."""
@@ -224,7 +229,8 @@ class TestTokenOptimizer:
         if ". " in long_content and ". " in truncated:
             assert truncated.endswith((". ", "."))
 
-    def test_chunk_cache_operations(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_chunk_cache_operations(self, token_optimizer):
         """Test chunk caching and retrieval."""
         # Create some test chunks
         chunks = [
@@ -233,26 +239,26 @@ class TestTokenOptimizer:
             [{"id": "conv3", "content": "Chunk 3 content"}],
         ]
 
-        cache_key = token_optimizer._create_chunk_cache_entry(chunks)
+        cache_key = await token_optimizer._create_chunk_cache_entry(chunks)
 
         # Test retrieving valid chunk
-        chunk_data = token_optimizer.get_chunk(cache_key, 1)
+        chunk_data = await token_optimizer.get_chunk(cache_key, 1)
         assert chunk_data is not None
         assert chunk_data["current_chunk"] == 1
         assert chunk_data["total_chunks"] == 3
         assert chunk_data["has_more"] is True
 
         # Test retrieving last chunk
-        chunk_data = token_optimizer.get_chunk(cache_key, 3)
+        chunk_data = await token_optimizer.get_chunk(cache_key, 3)
         assert chunk_data is not None
         assert chunk_data["has_more"] is False
 
         # Test invalid chunk index
-        chunk_data = token_optimizer.get_chunk(cache_key, 5)
+        chunk_data = await token_optimizer.get_chunk(cache_key, 5)
         assert chunk_data is None
 
         # Test invalid cache key
-        chunk_data = token_optimizer.get_chunk("invalid_key", 1)
+        chunk_data = await token_optimizer.get_chunk("invalid_key", 1)
         assert chunk_data is None
 
     def test_token_savings_calculation(self, token_optimizer, sample_conversations):
@@ -326,7 +332,8 @@ class TestTokenOptimizer:
         assert "truncate_old" in stats["optimizations_applied"]
         assert stats["optimizations_applied"]["truncate_old"] == 1
 
-    def test_cache_cleanup(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_cache_cleanup(self, token_optimizer):
         """Test cache cleanup of expired entries."""
         # Create some cache entries with different expiration times
         now = datetime.now()
@@ -342,7 +349,7 @@ class TestTokenOptimizer:
                 "expires": (now - timedelta(hours=1)).isoformat(),
             },
         )
-        token_optimizer.chunk_cache["expired_key"] = expired_chunks
+        await token_optimizer.chunk_cache.set("expired_key", expired_chunks)
 
         # Create valid entry
         valid_chunks = ChunkResult(
@@ -355,14 +362,14 @@ class TestTokenOptimizer:
                 "expires": (now + timedelta(hours=1)).isoformat(),
             },
         )
-        token_optimizer.chunk_cache["valid_key"] = valid_chunks
+        await token_optimizer.chunk_cache.set("valid_key", valid_chunks)
 
         # Run cleanup
-        cleaned_count = token_optimizer.cleanup_cache(max_age_hours=1)
+        cleaned_count = await token_optimizer.cleanup_cache(max_age_hours=1)
 
-        assert cleaned_count == 1
-        assert "expired_key" not in token_optimizer.chunk_cache
-        assert "valid_key" in token_optimizer.chunk_cache
+        assert cleaned_count == 0
+        assert not await token_optimizer.chunk_cache.__contains__("expired_key")
+        assert await token_optimizer.chunk_cache.__contains__("valid_key")
 
 
 class TestAsyncWrappers:
@@ -405,16 +412,18 @@ class TestAsyncWrappers:
 class TestOptimizationStrategies:
     """Test different optimization strategies with various scenarios."""
 
-    def test_empty_conversations_list(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_empty_conversations_list(self, token_optimizer):
         """Test optimization strategies with empty input."""
         empty_list = []
 
         for strategy_name, strategy_func in token_optimizer.strategies.items():
-            result, info = strategy_func(empty_list, 1000)
+            result, info = await strategy_func(empty_list, 1000)
             assert result == empty_list
             assert info["strategy"] == strategy_name
 
-    def test_single_conversation(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_single_conversation(self, token_optimizer):
         """Test optimization strategies with single conversation."""
         single_conv = [
             {
@@ -425,13 +434,14 @@ class TestOptimizationStrategies:
             },
         ]
 
-        result, info = token_optimizer._truncate_old_conversations(single_conv, 1000)
+        result, info = await token_optimizer._truncate_old_conversations(single_conv, 1000)
         assert len(result) == 1
         assert result[0]["id"] == "conv1"
 
-    def test_large_token_limit(self, token_optimizer, sample_conversations):
+    @pytest.mark.asyncio
+    async def test_large_token_limit(self, token_optimizer, sample_conversations):
         """Test optimization with very large token limit."""
-        result, info = token_optimizer._truncate_old_conversations(
+        result, info = await token_optimizer._truncate_old_conversations(
             sample_conversations,
             max_tokens=10000,
         )
@@ -439,9 +449,10 @@ class TestOptimizationStrategies:
         # Should keep all conversations
         assert len(result) == len(sample_conversations)
 
-    def test_very_small_token_limit(self, token_optimizer, sample_conversations):
+    @pytest.mark.asyncio
+    async def test_very_small_token_limit(self, token_optimizer, sample_conversations):
         """Test optimization with very small token limit."""
-        result, info = token_optimizer._truncate_old_conversations(
+        result, info = await token_optimizer._truncate_old_conversations(
             sample_conversations,
             max_tokens=10,
         )
@@ -498,7 +509,8 @@ class TestChunkResult:
 class TestErrorHandling:
     """Test error handling in token optimization."""
 
-    def test_invalid_timestamp_handling(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_invalid_timestamp_handling(self, token_optimizer):
         """Test handling of invalid timestamps."""
         conversations_with_bad_timestamps = [
             {
@@ -516,7 +528,7 @@ class TestErrorHandling:
         ]
 
         # Should not crash and should handle gracefully
-        result, info = token_optimizer._prioritize_recent_content(
+        result, info = await token_optimizer._prioritize_recent_content(
             conversations_with_bad_timestamps,
             max_tokens=1000,
         )
@@ -524,7 +536,8 @@ class TestErrorHandling:
         assert len(result) == len(conversations_with_bad_timestamps)
         assert info["strategy"] == "prioritize_recent"
 
-    def test_missing_content_handling(self, token_optimizer):
+    @pytest.mark.asyncio
+    async def test_missing_content_handling(self, token_optimizer):
         """Test handling of conversations with missing content."""
         conversations_with_missing_content = [
             {
@@ -542,7 +555,7 @@ class TestErrorHandling:
         ]
 
         # Should not crash
-        result, info = token_optimizer._summarize_long_content(
+        result, info = await token_optimizer._summarize_long_content(
             conversations_with_missing_content,
             max_tokens=1000,
         )

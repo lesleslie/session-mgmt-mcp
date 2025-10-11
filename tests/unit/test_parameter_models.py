@@ -29,7 +29,7 @@ from session_mgmt_mcp.parameter_models import (
 class TestWorkingDirectoryParams:
     """Test working directory parameter validation."""
 
-    def test_valid_working_directory(self):
+    def test_valid_working_directory(self, tmp_path):
         """Test valid working directory paths."""
         # Current directory
         params = WorkingDirectoryParams(working_directory=".")
@@ -42,6 +42,7 @@ class TestWorkingDirectoryParams:
         # Existing directory (assuming current dir exists)
         import os
 
+        os.chdir(tmp_path)
         current_dir = os.getcwd()
         params = WorkingDirectoryParams(working_directory=current_dir)
         assert params.working_directory == current_dir

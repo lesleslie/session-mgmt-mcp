@@ -192,9 +192,9 @@ class TestCachedChunkRetrieval:
 
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk") as mock_get_chunk,
+            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
         ):
-            mock_get_chunk.return_value = mock_chunk_data
+            mock_get_chunk.return_value = "📄 Chunk 1 of 3\n--------------------\nTest content\n\nMore chunks available..."
 
             result = await get_cached_chunk("test_key", 1)
 
@@ -208,9 +208,9 @@ class TestCachedChunkRetrieval:
         """Test chunk retrieval when chunk not found."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk") as mock_get_chunk,
+            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
         ):
-            mock_get_chunk.return_value = None
+            mock_get_chunk.return_value = "❌ Chunk not found or expired."
 
             result = await get_cached_chunk("invalid_key", 1)
 
@@ -237,9 +237,9 @@ class TestCachedChunkRetrieval:
 
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk") as mock_get_chunk,
+            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
         ):
-            mock_get_chunk.return_value = mock_chunk_data
+            mock_get_chunk.return_value = "📄 Chunk 3 of 3\n--------------------\nFinal chunk content"
 
             result = await get_cached_chunk("test_key", 3)
 
@@ -268,9 +268,20 @@ class TestTokenUsageStats:
 
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_token_usage_stats") as mock_get_stats,
+            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
         ):
-            mock_get_stats.return_value = mock_stats
+            mock_get_stats.return_value = f"""📊 Token Usage Statistics (last 24 hours):
+- Total Requests: 25
+- Total Tokens Used: 5,000
+- Average Tokens per Request: 200.0
+
+💡 Optimizations Applied:
+- prioritize_recent: 10 times
+- truncate_old: 5 times
+
+💰 Estimated Cost Savings:
+- $0.0125 USD saved (1,250 tokens)
+"""
 
             result = await get_token_usage_stats(hours=24)
 
@@ -290,9 +301,9 @@ class TestTokenUsageStats:
 
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_token_usage_stats") as mock_get_stats,
+            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
         ):
-            mock_get_stats.return_value = mock_stats
+            mock_get_stats.return_value = "No token usage data available for the last 24 hours."
 
             result = await get_token_usage_stats(hours=24)
 
@@ -311,7 +322,7 @@ class TestTokenUsageStats:
         """Test error handling in token usage stats."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_token_usage_stats") as mock_get_stats,
+            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
         ):
             mock_get_stats.side_effect = Exception("Stats error")
 
@@ -347,33 +358,31 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
         ):
             # Mock MemoryOptimizer
             mock_db = AsyncMock()
             mock_get_db.return_value = mock_db
 
-            with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer",
-            ) as mock_optimizer_class:
-                mock_optimizer = AsyncMock()
-                mock_optimizer.compress_memory.return_value = mock_optimization_results
-                mock_optimizer_class.return_value = mock_optimizer
+            mock_optimizer = AsyncMock()
+            mock_optimizer.compress_memory.return_value = mock_optimization_results
+            mock_optimizer_class.return_value = mock_optimizer
 
-                result = await optimize_memory_usage(
-                    strategy="auto",
-                    max_age_days=30,
-                    dry_run=True,
-                )
+            result = await optimize_memory_usage(
+                strategy="auto",
+                max_age_days=30,
+                dry_run=True,
+            )
 
-                assert "🧠 Memory Optimization Results (DRY RUN)" in result
-                assert "Total Conversations: 100" in result
-                assert "Conversations to Keep: 60" in result
-                assert "Conversations to Consolidate: 40" in result
-                assert "Clusters Created: 8" in result
-                assert "15,000 characters saved" in result
-                assert "35.0% compression ratio" in result
-                assert "5 conversations → 1 summary" in result
-                assert "Run with dry_run=False to apply changes" in result
+            assert "🧠 Memory Optimization Results (DRY RUN)" in result
+            assert "Total Conversations: 100" in result
+            assert "Conversations to Keep: 60" in result
+            assert "Conversations to Consolidate: 40" in result
+            assert "Clusters Created: 8" in result
+            assert "15,000 characters saved" in result
+            assert "35.0% compression ratio" in result
+            assert "5 conversations → 1 summary" in result
+            assert "Run with dry_run=False to apply changes" in result
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_aggressive_strategy(self):
@@ -390,32 +399,30 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
             mock_get_db.return_value = mock_db
 
-            with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer",
-            ) as mock_optimizer_class:
-                mock_optimizer = AsyncMock()
-                mock_optimizer.compress_memory.return_value = mock_optimization_results
-                mock_optimizer_class.return_value = mock_optimizer
+            mock_optimizer = AsyncMock()
+            mock_optimizer.compress_memory.return_value = mock_optimization_results
+            mock_optimizer_class.return_value = mock_optimizer
 
-                result = await optimize_memory_usage(
-                    strategy="aggressive",
-                    max_age_days=15,
-                    dry_run=False,
-                )
+            result = await optimize_memory_usage(
+                strategy="aggressive",
+                max_age_days=15,
+                dry_run=False,
+            )
 
-                # Verify aggressive policy was set
-                mock_optimizer.compress_memory.assert_called_once()
-                call_args = mock_optimizer.compress_memory.call_args
-                policy = call_args.kwargs["policy"]
-                assert policy["consolidation_age_days"] == 15
-                assert policy["importance_threshold"] == 0.3  # Aggressive threshold
+            # Verify aggressive policy was set
+            mock_optimizer.compress_memory.assert_called_once()
+            call_args = mock_optimizer.compress_memory.call_args
+            policy = call_args.kwargs["policy"]
+            assert policy["consolidation_age_days"] == 15
+            assert policy["importance_threshold"] == 0.3  # Aggressive threshold
 
-                assert "🧠 Memory Optimization Results" in result
-                assert "(DRY RUN)" not in result  # Not in dry run
+            assert "🧠 Memory Optimization Results" in result
+            assert "(DRY RUN)" not in result  # Not in dry run
 
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_dependencies_unavailable(self):
@@ -462,20 +469,18 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
             mock_get_db.return_value = mock_db
 
-            with patch(
-                "session_mgmt_mcp.server.MemoryOptimizer",
-            ) as mock_optimizer_class:
-                mock_optimizer = AsyncMock()
-                mock_optimizer.compress_memory.return_value = mock_error_results
-                mock_optimizer_class.return_value = mock_optimizer
+            mock_optimizer = AsyncMock()
+            mock_optimizer.compress_memory.return_value = mock_error_results
+            mock_optimizer_class.return_value = mock_optimizer
 
-                result = await optimize_memory_usage()
+            result = await optimize_memory_usage()
 
-                assert "❌ Memory optimization error: Database not available" in result
+            assert "❌ Memory optimization error: Database not available" in result
 
 
 class TestOptimizationIntegration:
@@ -489,8 +494,8 @@ class TestOptimizationIntegration:
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
-            patch("session_mgmt_mcp.server.track_token_usage") as mock_track,
+            patch("session_mgmt_mcp.server.optimize_search_response", new_callable=AsyncMock) as mock_optimize,
+            patch("session_mgmt_mcp.server.track_token_usage", new_callable=AsyncMock) as mock_track,
         ):
             mock_get_db.return_value = mock_reflection_db
 
@@ -516,10 +521,10 @@ class TestOptimizationIntegration:
             )
 
             assert "⚡ Token optimization: 40% saved" in search_result
-            mock_track.assert_called()
+            mock_track.assert_called_once()
 
             # Step 2: Retrieve additional chunks
-            with patch("session_mgmt_mcp.server.get_cached_chunk") as mock_get_chunk:
+            with patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk:
                 mock_chunk_data = {
                     "chunk": [mock_reflection_db.search_conversations.return_value[1]],
                     "current_chunk": 2,
@@ -527,7 +532,7 @@ class TestOptimizationIntegration:
                     "cache_key": "test_cache_key",
                     "has_more": True,
                 }
-                mock_get_chunk.return_value = mock_chunk_data
+                mock_get_chunk.return_value = f"📄 Chunk 2 of 3\n--------------------\n{mock_chunk_data['chunk'][0]['content']}\n\nMore chunks available..."
 
                 chunk_result = await get_cached_chunk("test_cache_key", 2)
                 assert "📄 Chunk 2 of 3" in chunk_result

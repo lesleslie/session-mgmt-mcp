@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Structured logging utilities for session management."""
 
+from __future__ import annotations
+
 import json
 import logging
 import sys
+import typing as t
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+
+from acb.depends import depends
+from session_mgmt_mcp.di.constants import LOGS_DIR_KEY
 
 
 class SessionLogger:
@@ -23,51 +29,51 @@ class SessionLogger:
         self.logger = logging.getLogger("session_management")
         self.logger.setLevel(logging.INFO)
 
-        # Avoid duplicate handlers
-        if not self.logger.handlers:
-            # File handler with structured format
-            file_handler = logging.FileHandler(self.log_file)
-            file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s",
+        )
 
-            # Console handler for errors
+        # Ensure console handler exists with correct settings
+        console_handler = _get_console_handler(self.logger)
+        if console_handler is None:
             console_handler = logging.StreamHandler(sys.stderr)
-            console_handler.setLevel(logging.ERROR)
-
-            # Structured formatter
-            formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s",
-            )
-            file_handler.setFormatter(formatter)
-            console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
+        console_handler.setLevel(logging.ERROR)
+        console_handler.setFormatter(formatter)
 
-    def info(self, message: str, **context: Any) -> None:
+        # Ensure file handler for this log directory exists
+        file_handler = _get_file_handler(self.logger, self.log_file)
+        if file_handler is None:
+            file_handler = logging.FileHandler(self.log_file)
+            self.logger.addHandler(file_handler)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+
+    def info(self, message: str, **context: t.Any) -> None:
         """Log info with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.info(message)
 
-    def warning(self, message: str, **context: Any) -> None:
+    def warning(self, message: str, **context: t.Any) -> None:
         """Log warning with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.warning(message)
 
-    def error(self, message: str, **context: Any) -> None:
+    def error(self, message: str, **context: t.Any) -> None:
         """Log error with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.error(message)
 
-    def debug(self, message: str, **context: Any) -> None:
+    def debug(self, message: str, **context: t.Any) -> None:
         """Log debug with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
         self.logger.debug(message)
 
-    def exception(self, message: str, **context: Any) -> None:
+    def exception(self, message: str, **context: t.Any) -> None:
         """Log exception with optional context."""
         if context:
             message = f"{message} | Context: {json.dumps(context)}"
@@ -75,6 +81,48 @@ class SessionLogger:
 
 
 def get_session_logger() -> SessionLogger:
-    """Get the global session logger instance."""
-    claude_dir = Path.home() / ".claude"
-    return SessionLogger(claude_dir / "logs")
+    """Get the global session logger instance managed by the DI container."""
+    with suppress(Exception):
+        logger = depends.get(SessionLogger)
+        if isinstance(logger, SessionLogger):
+            return logger
+
+    logger = SessionLogger(_resolve_logs_dir())
+    depends.set(SessionLogger, logger)
+    return logger
+
+
+def _resolve_logs_dir() -> Path:
+    with suppress(Exception):
+        configured = depends.get(LOGS_DIR_KEY)
+        if isinstance(configured, Path):
+            configured.mkdir(parents=True, exist_ok=True)
+            return configured
+
+    logs_dir = Path.home() / ".claude" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    depends.set(LOGS_DIR_KEY, logs_dir)
+    return logs_dir
+
+
+def _get_console_handler(logger: logging.Logger) -> logging.StreamHandler | None:
+    for handler in logger.handlers:
+        if isinstance(handler, logging.StreamHandler) and not isinstance(
+            handler, logging.FileHandler
+        ):
+            return handler
+    return None
+
+
+def _get_file_handler(
+    logger: logging.Logger,
+    log_file: Path,
+) -> logging.FileHandler | None:
+    for handler in logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            try:
+                if Path(handler.baseFilename) == log_file:
+                    return handler
+            except Exception:
+                continue
+    return None

@@ -233,11 +233,11 @@ def mock_tokenizer() -> Mock:
 @pytest.fixture
 async def mock_mcp_server() -> AsyncGenerator[Mock]:
     """Provide mock MCP server for testing."""
-    mock_server = Mock(spec=FastMCP)
+    mock_server = Mock()
     mock_server.tool = Mock()
     mock_server.prompt = Mock()
 
-    # Mock async context manager behavior
+    # Mock async context manager behavior - assign directly to the mock object
     mock_server.__aenter__ = AsyncMock(return_value=mock_server)
     mock_server.__aexit__ = AsyncMock(return_value=None)
 
@@ -245,7 +245,7 @@ async def mock_mcp_server() -> AsyncGenerator[Mock]:
 
 
 @pytest.fixture
-def clean_environment() -> Generator[dict[str, Any]]:
+def clean_environment(tmp_path) -> Generator[dict[str, Any]]:
     """Provide clean environment with common patches."""
     original_env = os.environ.copy()
 
@@ -256,7 +256,7 @@ def clean_environment() -> Generator[dict[str, Any]]:
     }
 
     # Remove potentially problematic env vars
-    env_to_remove = ["PWD", "OLDPWD", "VIRTUAL_ENV"]
+    env_to_remove = ["OLDPWD", "VIRTUAL_ENV"]
 
     try:
         # Update environment
@@ -264,12 +264,17 @@ def clean_environment() -> Generator[dict[str, Any]]:
         for key in env_to_remove:
             os.environ.pop(key, None)
 
+        # Change to a safe temporary directory to avoid cwd issues
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+
         yield test_env
 
     finally:
-        # Restore original environment
+        # Restore original environment and working directory
         os.environ.clear()
         os.environ.update(original_env)
+        os.chdir(original_cwd)
 
 
 @pytest.fixture

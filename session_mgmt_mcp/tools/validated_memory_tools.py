@@ -22,35 +22,33 @@ from session_mgmt_mcp.parameter_models import (
     SearchQueryParams,
     validate_mcp_params,
 )
+from session_mgmt_mcp.utils.instance_managers import (
+    get_reflection_database as resolve_reflection_database,
+)
 from session_mgmt_mcp.utils.logging import get_session_logger
 
 logger = get_session_logger()
 
-# Lazy loading for optional dependencies
-_reflection_db = None
-_reflection_tools_available = None
+# Lazy detection flag for optional dependencies
+_reflection_tools_available: bool | None = None
 
 
 async def _get_reflection_database() -> Any:
-    """Get reflection database instance with lazy loading."""
-    global _reflection_db, _reflection_tools_available
+    """Get reflection database instance via DI."""
+    global _reflection_tools_available
 
     if _reflection_tools_available is False:
         msg = "Reflection tools not available"
         raise ImportError(msg)
 
-    if _reflection_db is None:
-        try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+    db = await resolve_reflection_database()
+    if db is None:
+        _reflection_tools_available = False
+        msg = "Reflection tools not available. Install dependencies: uv sync --extra embeddings"
+        raise ImportError(msg)
 
-            _reflection_db = ReflectionDatabase()
-            _reflection_tools_available = True
-        except ImportError as e:
-            _reflection_tools_available = False
-            msg = f"Reflection tools not available. Install dependencies: {e}"
-            raise ImportError(msg) from e
-
-    return _reflection_db
+    _reflection_tools_available = True
+    return db
 
 
 def _check_reflection_tools_available() -> bool:
@@ -66,7 +64,7 @@ def _check_reflection_tools_available() -> bool:
         except ImportError:
             _reflection_tools_available = False
 
-    return _reflection_tools_available
+    return bool(_reflection_tools_available)
 
 
 # Tool implementations with parameter validation

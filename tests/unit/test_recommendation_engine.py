@@ -273,7 +273,7 @@ class TestRecommendationEngine:
         from session_mgmt_mcp.tools.history_cache import get_cache, reset_cache
 
         # Reset cache for clean test
-        reset_cache()
+        await reset_cache()
 
         mock_results = [
             {
@@ -319,4 +319,4 @@ class TestRecommendationEngine:
         assert result3["total_executions"] == 2  # Now sees both executions
 
         # Clean up
-        reset_cache()
+        await reset_cache()

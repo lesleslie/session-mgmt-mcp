@@ -7,16 +7,34 @@ for conversation memory, semantic search, and knowledge retrieval.
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from session_mgmt_mcp.reflection_tools import get_reflection_database
+from session_mgmt_mcp.utils.instance_managers import (
+    get_reflection_database as resolve_reflection_database,
+)
+from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
-logger = logging.getLogger(__name__)
+logger = get_session_logger()
+
+
+async def get_reflection_database() -> ReflectionDatabase | None:
+    """Backward-compatible helper for resolving the reflection database.
+
+    Maintains legacy behaviour for callers that patch this helper in tests
+    by instantiating a fresh ReflectionDatabase.
+    """
+    try:
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        return ReflectionDatabase()
+    except ImportError:
+        return None
+    except Exception:
+        return None
 
 
 async def _optimize_search_results_impl(
@@ -52,7 +70,7 @@ async def _optimize_search_results_impl(
 async def _store_reflection_impl(content: str, tags: list[str] | None = None) -> str:
     """Store an important insight or reflection for future reference."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Reflection system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -75,7 +93,7 @@ async def _quick_search_impl(
 ) -> str:
     """Quick search that returns only the count and top result for fast overview."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -157,7 +175,7 @@ async def _search_summary_impl(
 ) -> str:
     """Get aggregated insights from search results without individual result details."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -194,7 +212,7 @@ async def _get_more_results_impl(
 ) -> str:
     """Get additional search results after an initial search (pagination support)."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -281,7 +299,7 @@ async def _search_by_file_impl(
 ) -> str:
     """Search for conversations that analyzed a specific file."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -371,7 +389,7 @@ def _format_related_files(files: list[str]) -> str:
 
 async def _get_concept_search_database() -> ReflectionDatabase | None:
     """Get database connection for concept search."""
-    db = await get_reflection_database()
+    db = await resolve_reflection_database()
     if not db:
         return None
     return db
@@ -430,7 +448,7 @@ async def _search_by_concept_impl(
 async def _reset_reflection_database_impl() -> str:
     """Reset the reflection database connection to fix lock issues."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Reflection database not available"
 
@@ -446,7 +464,7 @@ async def _reset_reflection_database_impl() -> str:
 async def _reflection_stats_impl() -> str:
     """Get statistics about the reflection database."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Reflection database not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -530,7 +548,7 @@ async def _search_code_impl(
 ) -> str:
     """Search for code patterns in conversations using AST parsing."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -631,7 +649,7 @@ async def _search_errors_impl(
 ) -> str:
     """Search for error patterns and debugging contexts in conversations."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
@@ -700,7 +718,7 @@ async def _search_temporal_impl(
 ) -> str:
     """Search conversations within a specific time range using natural language."""
     try:
-        db = await get_reflection_database()
+        db = await resolve_reflection_database()
         if not db:
             return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 

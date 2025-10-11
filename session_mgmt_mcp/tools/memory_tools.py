@@ -6,43 +6,46 @@ This module provides tools for storing, searching, and managing reflections and 
 
 from __future__ import annotations
 
+import importlib.util
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-
+from session_mgmt_mcp.utils.instance_managers import (
+    get_reflection_database as resolve_reflection_database,
+)
 from session_mgmt_mcp.utils.logging import get_session_logger
 
 logger = get_session_logger()
 
-# Lazy loading for optional dependencies
-_reflection_db = None
-_reflection_tools_available = None
+# Lazy detection flag
+_reflection_tools_available: bool | None = None
+
+
+def _format_score(score: float) -> str:
+    """Format a score as a percentage or relevance indicator."""
+    return f"{score:.2f}"
+
+
+if TYPE_CHECKING:
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 
 async def _get_reflection_database() -> ReflectionDatabase:
-    """Get reflection database instance with lazy loading."""
-    global _reflection_db, _reflection_tools_available
+    """Resolve reflection database via DI and ensure availability."""
+    global _reflection_tools_available
 
     if _reflection_tools_available is False:
         msg = "Reflection tools not available"
         raise ImportError(msg)
 
-    if _reflection_db is None:
-        try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+    db = await resolve_reflection_database()
+    if db is None:
+        _reflection_tools_available = False
+        msg = "Reflection tools not available. Install dependencies: uv sync --extra embeddings"
+        raise ImportError(msg)
 
-            _reflection_db = ReflectionDatabase()
-            _reflection_tools_available = True
-        except ImportError as e:
-            _reflection_tools_available = False
-            msg = f"Reflection tools not available. Install dependencies: {e}"
-            raise ImportError(
-                msg,
-            )
-
-    return _reflection_db
+    _reflection_tools_available = True
+    return db
 
 
 def _check_reflection_tools_available() -> bool:
@@ -51,15 +54,12 @@ def _check_reflection_tools_available() -> bool:
 
     if _reflection_tools_available is None:
         try:
-            # Check if reflection_tools module is importable
-            import importlib.util
-
             spec = importlib.util.find_spec("session_mgmt_mcp.reflection_tools")
             _reflection_tools_available = spec is not None
         except ImportError:
             _reflection_tools_available = False
 
-    return _reflection_tools_available
+    return bool(_reflection_tools_available)
 
 
 # Tool implementations
@@ -109,8 +109,8 @@ def _format_quick_search_results(results: list[dict[str, Any]]) -> list[str]:
         )
         if result.get("project"):
             output.append(f"📁 Project: {result['project']}")
-        if result.get("score"):
-            output.append(f"⭐ Relevance: {result['score']:.2f}")
+        if result.get("score") is not None:
+            output.append(f"⭐ Relevance: {_format_score(result['score'])}")
         output.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
     else:
         output.append("🔍 No results found")
@@ -243,7 +243,7 @@ async def _format_relevance_scores(results: list[dict[str, Any]]) -> list[str]:
     output = []
     avg_score, scores = await _analyze_relevance_scores(results)
     if scores:
-        output.append(f"⭐ Average relevance: {avg_score:.2f}")
+        output.append(f"⭐ Average relevance: {_format_score(avg_score)}")
     return output
 
 
@@ -336,8 +336,8 @@ def _format_file_search_result(result: dict[str, Any], index: int) -> list[str]:
     )
     if result.get("project"):
         output.append(f"   📁 Project: {result['project']}")
-    if result.get("score"):
-        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+        if result.get("score") is not None:
+            output.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
     if result.get("timestamp"):
         output.append(f"   📅 Date: {result['timestamp']}")
 
@@ -398,8 +398,8 @@ def _format_concept_search_result(
     )
     if result.get("project"):
         output.append(f"   📁 Project: {result['project']}")
-    if result.get("score"):
-        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
+        if result.get("score") is not None:
+            output.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
     if result.get("timestamp"):
         output.append(f"   📅 Date: {result['timestamp']}")
 

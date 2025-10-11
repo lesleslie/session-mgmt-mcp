@@ -59,16 +59,25 @@ class SessionLifecycleManager:
         self.current_project: str | None = None
         self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 
-    async def calculate_quality_score(self) -> dict[str, Any]:
+    async def calculate_quality_score(
+        self, project_dir: Path | None = None
+    ) -> dict[str, Any]:
         """Calculate session quality score using V2 algorithm.
 
         Delegates to the centralized quality scoring in server.py to avoid
         code duplication and ensure consistent scoring across the system.
+
+        Args:
+            project_dir: Path to the project directory. If not provided, will use current directory.
+
         """
         # Import to avoid circular dependencies
         from session_mgmt_mcp import server
 
-        return await server.calculate_quality_score()
+        if project_dir is None:
+            project_dir = Path.cwd()
+
+        return await server.calculate_quality_score(project_dir=project_dir)
 
     def _calculate_project_score(self, project_context: dict[str, bool]) -> float:
         """Calculate project health score (40% of total)."""
@@ -246,9 +255,11 @@ class SessionLifecycleManager:
         if "import flask" in content or "from flask" in content:
             indicators["uses_flask"] = True
 
-    async def perform_quality_assessment(self) -> tuple[int, dict[str, Any]]:
+    async def perform_quality_assessment(
+        self, project_dir: Path | None = None
+    ) -> tuple[int, dict[str, Any]]:
         """Perform quality assessment and return score and data."""
-        quality_data = await self.calculate_quality_score()
+        quality_data = await self.calculate_quality_score(project_dir=project_dir)
         quality_score = quality_data["total_score"]
         return quality_score, quality_data
 
@@ -409,7 +420,9 @@ class SessionLifecycleManager:
 
             # Analyze project and assess quality
             project_context = await self.analyze_project_context(current_dir)
-            quality_score, quality_data = await self.perform_quality_assessment()
+            quality_score, quality_data = await self.perform_quality_assessment(
+                project_dir=current_dir
+            )
 
             # Get previous session info
             previous_session_info = self._get_previous_session_info(current_dir)
@@ -471,7 +484,9 @@ class SessionLifecycleManager:
             self.current_project = current_dir.name
 
             # Quality assessment
-            quality_score, quality_data = await self.perform_quality_assessment()
+            quality_score, quality_data = await self.perform_quality_assessment(
+                project_dir=current_dir
+            )
 
             # Get previous score for trend analysis
             previous_score = self.get_previous_quality_score(self.current_project)
@@ -527,7 +542,9 @@ class SessionLifecycleManager:
             self.current_project = current_dir.name
 
             # Final quality assessment
-            quality_score, quality_data = await self.perform_quality_assessment()
+            quality_score, quality_data = await self.perform_quality_assessment(
+                project_dir=current_dir
+            )
 
             # Create session summary
             summary = {
@@ -783,7 +800,9 @@ class SessionLifecycleManager:
 
             # Get comprehensive status
             project_context = await self.analyze_project_context(current_dir)
-            quality_score, quality_data = await self.perform_quality_assessment()
+            quality_score, quality_data = await self.perform_quality_assessment(
+                project_dir=current_dir
+            )
 
             # Check system health
             uv_available = shutil.which("uv") is not None

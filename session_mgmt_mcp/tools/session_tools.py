@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -64,7 +67,17 @@ class SessionSetupResults:
 
 
 # Global session manager
-session_manager = SessionLifecycleManager()
+def _get_session_manager() -> SessionLifecycleManager:
+    with suppress(Exception):
+        manager = depends.get(SessionLifecycleManager)
+        if isinstance(manager, SessionLifecycleManager):
+            return manager
+    manager = SessionLifecycleManager()
+    depends.set(SessionLifecycleManager, manager)
+    return manager
+
+
+session_manager = _get_session_manager()
 logger = get_session_logger()
 
 

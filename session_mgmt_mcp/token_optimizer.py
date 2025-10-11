@@ -12,8 +12,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import tiktoken
-
-from session_mgmt_mcp.acb_cache_adapter import get_chunk_cache
+from session_mgmt_mcp.acb_cache_adapter import ACBChunkCache, get_chunk_cache
 
 
 @dataclass
@@ -47,7 +46,7 @@ class TokenOptimizer:
         self.chunk_size = chunk_size
         self.encoding = self._get_encoding()
         self.usage_history: list[TokenUsageMetrics] = []
-        self.chunk_cache = get_chunk_cache()  # ACB-backed cache
+        self.chunk_cache: ACBChunkCache = get_chunk_cache()  # ACB-backed cache
 
         # Token optimization strategies
         self.strategies = {
@@ -73,7 +72,7 @@ class TokenOptimizer:
         # Rough approximation: ~4 chars per token
         return len(text) // 4
 
-    def optimize_search_results(
+    async def optimize_search_results(
         self,
         results: list[dict[str, Any]],
         strategy: str = "truncate_old",
@@ -83,7 +82,7 @@ class TokenOptimizer:
         max_tokens = max_tokens or self.max_tokens
 
         if strategy in self.strategies:
-            optimized_results, optimization_info = self.strategies[strategy](
+            optimized_results, optimization_info = await self.strategies[strategy](
                 results,
                 max_tokens,
             )
@@ -100,7 +99,7 @@ class TokenOptimizer:
 
         return optimized_results, optimization_info
 
-    def _truncate_old_conversations(
+    async def _truncate_old_conversations(
         self,
         results: list[dict[str, Any]],
         max_tokens: int,
@@ -153,7 +152,7 @@ class TokenOptimizer:
             "final_token_count": current_tokens,
         }
 
-    def _summarize_long_content(
+    async def _summarize_long_content(
         self,
         results: list[dict[str, Any]],
         max_tokens: int,
@@ -181,7 +180,7 @@ class TokenOptimizer:
             "summarized_count": summarized_count,
         }
 
-    def _chunk_large_response(
+    async def _chunk_large_response(
         self,
         results: list[dict[str, Any]],
         max_tokens: int,
@@ -222,7 +221,7 @@ class TokenOptimizer:
 
         # Return first chunk and create cache entry for the rest
         if chunks:
-            cache_key = self._create_chunk_cache_entry(chunks)
+            cache_key = await self._create_chunk_cache_entry(chunks)
             return chunks[0], {
                 "strategy": "chunk_response",
                 "action": "chunked",
@@ -234,7 +233,7 @@ class TokenOptimizer:
 
         return results, {"strategy": "chunk_response", "action": "failed"}
 
-    def _filter_duplicate_content(
+    async def _filter_duplicate_content(
         self,
         results: list[dict[str, Any]],
         max_tokens: int,
@@ -270,7 +269,7 @@ class TokenOptimizer:
             "duplicates_removed": duplicates_removed,
         }
 
-    def _prioritize_recent_content(
+    async def _prioritize_recent_content(
         self,
         results: list[dict[str, Any]],
         max_tokens: int,
@@ -382,7 +381,9 @@ class TokenOptimizer:
 
         return summary
 
-    def _create_chunk_cache_entry(self, chunks: list[list[dict[str, Any]]]) -> str:
+    async def _create_chunk_cache_entry(
+        self, chunks: list[list[dict[str, Any]]]
+    ) -> str:
         """Create cache entry for chunked results."""
         cache_key = hashlib.md5(
             f"chunks_{datetime.now().isoformat()}_{len(chunks)}".encode(),
@@ -400,10 +401,12 @@ class TokenOptimizer:
             },
         )
 
-        self.chunk_cache[cache_key] = chunk_result
+        await self.chunk_cache.set(cache_key, chunk_result)
         return cache_key
 
-    def get_chunk(self, cache_key: str, chunk_index: int) -> dict[str, Any] | None:
+    async def get_chunk(
+        self, cache_key: str, chunk_index: int
+    ) -> dict[str, Any] | None:
         """Get a specific chunk from cache.
 
         Args:
@@ -414,15 +417,12 @@ class TokenOptimizer:
             Dict with chunk data and metadata, or None if not found
 
         """
-        if cache_key not in self.chunk_cache:
+        if not await self.chunk_cache.__contains__(cache_key):
             return None
 
-        chunk_result = self.chunk_cache[cache_key]
+        chunk_result = await self.chunk_cache.get(cache_key)
 
-        # ACB cache handles expiration automatically via TTL
-        # No manual expiration check needed
-
-        if 1 <= chunk_index <= len(chunk_result.chunks):
+        if chunk_result and 1 <= chunk_index <= len(chunk_result.chunks):
             chunk_data = json.loads(chunk_result.chunks[chunk_index - 1])
             return {
                 "chunk": chunk_data,
@@ -540,26 +540,14 @@ class TokenOptimizer:
             "estimated_tokens_saved": int(estimated_savings_tokens),
         }
 
-    def cleanup_cache(self, max_age_hours: int = 1) -> int:
-        """Clean up expired cache entries.
-
-        Note: ACB cache handles expiration automatically via TTL.
-        This method is maintained for backwards compatibility but
-        returns 0 as cleanup is handled automatically.
-
-        Args:
-            max_age_hours: Maximum age in hours (unused with ACB cache)
-
-        Returns:
-            Number of entries cleaned (always 0 with ACB cache)
-
-        """
+    async def cleanup_cache(self, max_age_hours: int = 1) -> int:
+        """Clean up expired cache entries asynchronously."""
         # ACB cache with TTL handles cleanup automatically
         return 0
 
 
 # Global optimizer instance
-_token_optimizer = None
+_token_optimizer: TokenOptimizer | None = None
 
 
 def get_token_optimizer() -> TokenOptimizer:
@@ -577,13 +565,13 @@ async def optimize_search_response(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Async wrapper for search result optimization."""
     optimizer = get_token_optimizer()
-    return optimizer.optimize_search_results(results, strategy, max_tokens)
+    return await optimizer.optimize_search_results(results, strategy, max_tokens)
 
 
 async def get_cached_chunk(cache_key: str, chunk_index: int) -> dict[str, Any] | None:
     """Async wrapper for chunk retrieval."""
     optimizer = get_token_optimizer()
-    return optimizer.get_chunk(cache_key, chunk_index)
+    return await optimizer.get_chunk(cache_key, chunk_index)
 
 
 async def track_token_usage(
