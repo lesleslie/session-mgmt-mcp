@@ -52,31 +52,31 @@ class SessionLogger:
     def info(self, message: str, **context: t.Any) -> None:
         """Log info with optional context."""
         if context:
-            message = f"{message} | Context: {json.dumps(context)}"
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.info(message)
 
     def warning(self, message: str, **context: t.Any) -> None:
         """Log warning with optional context."""
         if context:
-            message = f"{message} | Context: {json.dumps(context)}"
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.warning(message)
 
     def error(self, message: str, **context: t.Any) -> None:
         """Log error with optional context."""
         if context:
-            message = f"{message} | Context: {json.dumps(context)}"
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.error(message)
 
     def debug(self, message: str, **context: t.Any) -> None:
         """Log debug with optional context."""
         if context:
-            message = f"{message} | Context: {json.dumps(context)}"
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.debug(message)
 
     def exception(self, message: str, **context: t.Any) -> None:
         """Log exception with optional context."""
         if context:
-            message = f"{message} | Context: {json.dumps(context)}"
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.exception(message)
 
 
@@ -126,3 +126,17 @@ def _get_file_handler(
             except Exception:
                 continue
     return None
+
+
+def _safe_json_serialize(obj: t.Any) -> str:
+    """Safely serialize objects to JSON, converting non-serializable objects to strings."""
+    try:
+        return json.dumps(obj)
+    except (TypeError, ValueError):
+        # Convert non-serializable objects to string representation
+        if isinstance(obj, dict):
+            return json.dumps(
+                {k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v
+                 for k, v in obj.items()}
+            )
+        return json.dumps(str(obj))
