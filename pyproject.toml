@@ -38,6 +38,8 @@ dependencies = [
     "crackerjack",
     "duckdb>=0.9",
     "fastmcp>=2",
+    "jinja2>=3.1.6",
+    "jinja2-async-environment>=0.14.3",
     "numpy>=1.24",
     "onnxruntime>=1.15",
     "psutil>=7.0.0",
@@ -470,6 +472,9 @@ exclude-deps = [
 keyring-provider = "subprocess"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
+
+[tool.uv.sources]
+acb = { path = "../acb", editable = true }
 
 [dependency-groups]
 test = [

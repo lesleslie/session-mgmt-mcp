@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 
 import psutil
 import typer
-from rich.console import Console
+from acb.console import console
 from rich.panel import Panel
 from rich.table import Table
 
@@ -34,7 +34,7 @@ app = typer.Typer(
 # Constants for typer.Option to fix FBT003 boolean positional values
 DEFAULT_FALSE = False
 
-console = Console(width=74)
+
 
 
 def find_server_processes() -> list[psutil.Process]:

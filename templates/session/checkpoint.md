@@ -1,0 +1,64 @@
+# Checkpoint {{ checkpoint_number }} - {{ project_name }}
+
+**Session ID**: `{{ session_id }}`  
+**Checkpoint Time**: {{ checkpoint_time|datetime("%Y-%m-%d %H:%M:%S") }}  
+**Quality Score**: {{ quality_score }}/100 ({{ quality_delta|abs }} {{ "↑" if quality_delta > 0 else "↓" if quality_delta < 0 else "→" }})
+
+---
+
+## Summary
+
+{{ summary }}
+
+---
+
+## Recent Activity
+
+{% if recent_changes %}
+### Changes Since Last Checkpoint
+{% for change in recent_changes %}
+- {{ change }}
+{% endfor %}
+{% else %}
+_No significant changes tracked._
+{% endif %}
+
+### Files Modified
+{% if modified_files %}
+{% for file in modified_files[:10] %}
+- `{{ file }}`
+{% endfor %}
+{% if modified_files|length > 10 %}
+_...and {{ modified_files|length - 10 }} more files_
+{% endif %}
+{% else %}
+_No files modified._
+{% endif %}
+
+---
+
+## Quality Factors
+
+{% if quality_factors %}
+{% for factor, score in quality_factors.items() %}
+- **{{ factor }}**: {{ score }}/100
+{% endfor %}
+{% else %}
+_Quality factors not available._
+{% endif %}
+
+---
+
+## Recommendations
+
+{% if recommendations %}
+{% for rec in recommendations[:5] %}
+{{ loop.index }}. {{ rec }}
+{% endfor %}
+{% else %}
+_No specific recommendations at this time._
+{% endif %}
+
+---
+
+_Checkpoint created by session-mgmt-mcp {{ version }}_

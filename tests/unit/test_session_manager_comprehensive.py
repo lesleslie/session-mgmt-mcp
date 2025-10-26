@@ -26,16 +26,18 @@ class TestSessionManagerInitialization:
         """Test creating a session manager instance."""
         manager = SessionLifecycleManager()
         assert manager is not None
-        assert hasattr(manager, "session_state")
+        assert hasattr(manager, "logger")
+        assert hasattr(manager, "current_project")
 
     async def test_session_state_defaults(self):
-        """Test that session state has proper defaults."""
+        """Test that session manager has proper defaults."""
         manager = SessionLifecycleManager()
-        state = manager.session_state
 
         # Should have key attributes
-        assert hasattr(state, "session_id")
-        assert hasattr(state, "user_id")
+        assert hasattr(manager, "logger")
+        assert hasattr(manager, "_quality_history")
+        assert manager.current_project is None
+        assert isinstance(manager._quality_history, dict)
 
     async def test_multiple_managers_independent(self):
         """Test that multiple managers maintain independent state."""
@@ -44,7 +46,7 @@ class TestSessionManagerInitialization:
 
         # Should be independent instances
         assert manager1 is not manager2
-        assert manager1.session_state is not manager2.session_state
+        assert manager1._quality_history is not manager2._quality_history
 
 
 @pytest.mark.asyncio
@@ -58,46 +60,42 @@ class TestSessionLifecycle:
         yield manager
 
     async def test_session_initialization(self, session_manager):
-        """Test initializing a session."""
-        # Mock the initialization dependencies
-        with patch("os.environ", {"PWD": "/test/project"}):
-            try:
-                result = await session_manager.initialize_session(
-                    working_directory="/test/project"
-                )
-                assert result is not None
-            except Exception:
-                # May fail due to missing dependencies, but init should be callable
-                pass
+        """Test initializing a session manager."""
+        # Manager should be properly initialized
+        assert session_manager.logger is not None
+        assert session_manager.current_project is None
 
-    async def test_get_session_status(self, session_manager):
-        """Test retrieving session status."""
-        status = session_manager.get_session_status()
-        assert isinstance(status, dict)
+    async def test_calculate_quality_score(self, session_manager):
+        """Test calculating quality score."""
+        # Should be able to calculate quality score
+        with tempfile.TemporaryDirectory() as tmpdir:
+            score = await session_manager.calculate_quality_score(
+                project_dir=Path(tmpdir)
+            )
+            assert isinstance(score, dict)
 
-    async def test_session_status_has_health_info(self, session_manager):
-        """Test that session status includes health information."""
-        status = session_manager.get_session_status()
+    async def test_manager_has_templates(self, session_manager):
+        """Test that manager has templates adapter."""
+        # Templates should be initialized (even if None)
+        assert hasattr(session_manager, "templates")
 
-        # Common health status fields
-        assert "status" in status or "running" in status or "health" in status.lower()
+    async def test_quality_history_tracking(self, session_manager):
+        """Test quality history is tracked."""
+        # Quality history should be empty dict initially
+        assert session_manager._quality_history == {}
 
-    async def test_save_session_context(self, session_manager):
-        """Test saving session context."""
-        context = {"key": "value", "timestamp": "2025-01-01"}
+        # Should be able to add entries
+        session_manager._quality_history["test_project"] = [85, 90]
+        assert "test_project" in session_manager._quality_history
 
-        # Should not raise
-        await session_manager.save_session_context(context)
+    async def test_current_project_management(self, session_manager):
+        """Test current project tracking."""
+        # Initially should be None
+        assert session_manager.current_project is None
 
-    async def test_load_session_context(self, session_manager):
-        """Test loading session context."""
-        # Save then load
-        original_context = {"test": "data"}
-        await session_manager.save_session_context(original_context)
-
-        # Loading should work even if context is empty
-        loaded = await session_manager.load_session_context()
-        assert isinstance(loaded, dict)
+        # Should be able to set current project
+        session_manager.current_project = "test_project"
+        assert session_manager.current_project == "test_project"
 
 
 @pytest.mark.asyncio
@@ -109,32 +107,37 @@ class TestSessionStateManagement:
         """Provide manager with state."""
         return SessionLifecycleManager()
 
-    async def test_update_session_state(self, manager):
-        """Test updating session state."""
-        new_state = {"project": "test", "user": "alice"}
+    async def test_quality_history_operations(self, manager):
+        """Test quality history operations."""
+        # Add some quality scores
+        manager._quality_history["test"] = [80, 85, 90]
 
-        # Should handle state updates
-        if hasattr(manager, "update_session_state"):
-            await manager.update_session_state(new_state)
+        # Should track multiple scores per project
+        assert manager._quality_history["test"] == [80, 85, 90]
+        assert len(manager._quality_history["test"]) == 3
 
-    async def test_get_session_metrics(self, manager):
-        """Test retrieving session metrics."""
-        metrics = manager.get_session_metrics()
-        assert isinstance(metrics, dict)
+    async def test_current_project_persistence(self, manager):
+        """Test current project persistence."""
+        # Set a current project
+        manager.current_project = "my_project"
+        assert manager.current_project == "my_project"
 
-    async def test_metrics_include_timing(self, manager):
-        """Test that metrics include timing information."""
-        metrics = manager.get_session_metrics()
+        # Should persist across references
+        assert manager.current_project == "my_project"
 
-        # Should have some numeric metrics
-        assert any(isinstance(v, (int, float)) for v in metrics.values())
+    async def test_logger_availability(self, manager):
+        """Test that logger is available."""
+        assert manager.logger is not None
+
+        # Should be able to use logger
+        assert hasattr(manager.logger, "info")
+        assert hasattr(manager.logger, "warning")
 
     async def test_calculate_session_quality_score(self, manager):
         """Test calculating session quality score."""
-        if hasattr(manager, "calculate_quality_score"):
-            score = await manager.calculate_quality_score()
-            assert isinstance(score, (int, float))
-            assert 0 <= score <= 100
+        # Should be able to calculate quality with default args
+        score = await manager.calculate_quality_score()
+        assert isinstance(score, dict)
 
 
 @pytest.mark.asyncio

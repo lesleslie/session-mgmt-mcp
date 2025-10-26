@@ -62,7 +62,7 @@ class TestSessionLifecycleIntegration:
         with patch.dict("os.environ", {"PWD": working_dir}):
             init_result = await start(working_directory=working_dir)
 
-        assert "Session initialization completed successfully!" in start_result
+        assert "Session initialization completed successfully!" in init_result
         assert "MCP Server" in init_result
 
         # Verify initialization side effects

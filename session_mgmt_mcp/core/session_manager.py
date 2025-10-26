@@ -59,6 +59,26 @@ class SessionLifecycleManager:
         self.current_project: str | None = None
         self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 
+        # Initialize templates adapter for handoff documentation
+        self.templates = None
+        self._initialize_templates()
+
+    def _initialize_templates(self) -> None:
+        """Initialize ACB templates adapter for handoff documentation."""
+        try:
+            from acb.adapters.templates import TemplatesAdapter
+
+            # Templates directory is in project root
+            templates_dir = Path(__file__).parent.parent.parent / "templates"
+            self.templates = TemplatesAdapter(template_dir=templates_dir)
+            self.logger.info("Templates adapter initialized", templates_dir=str(templates_dir))
+        except Exception as e:
+            self.logger.warning(
+                "Templates adapter initialization failed, using fallback",
+                error=str(e),
+            )
+            self.templates = None
+
     async def calculate_quality_score(
         self, project_dir: Path | None = None
     ) -> dict[str, Any]:
@@ -556,7 +576,7 @@ class SessionLifecycleManager:
             }
 
             # Generate handoff documentation
-            handoff_content = self._generate_handoff_documentation(
+            handoff_content = await self._generate_handoff_documentation(
                 summary, quality_data
             )
 
@@ -635,21 +655,68 @@ class SessionLifecycleManager:
             "",
         ]
 
-    def _generate_handoff_documentation(
+    async def _generate_handoff_documentation(
         self, summary: dict[str, Any], quality_data: dict[str, Any]
     ) -> str:
         """Generate comprehensive handoff documentation in markdown format."""
-        lines = []
+        # Try to use templates adapter if available
+        if self.templates:
+            try:
+                return await self._generate_handoff_with_templates(summary, quality_data)
+            except Exception as e:
+                self.logger.warning(
+                    "Template-based handoff generation failed, using fallback",
+                    error=str(e),
+                )
 
-        # Build each section
+        # Fallback to manual generation
+        lines = []
         lines.extend(self._build_handoff_header(summary))
         lines.extend(self._build_quality_section(quality_data))
         lines.extend(
             self._build_recommendations_section(summary.get("recommendations", []))
         )
         lines.extend(self._build_static_sections())
-
         return "\n".join(lines)
+
+    async def _generate_handoff_with_templates(
+        self, summary: dict[str, Any], quality_data: dict[str, Any]
+    ) -> str:
+        """Generate handoff documentation using templates."""
+        from session_mgmt_mcp import __version__
+
+        # Prepare template context
+        context = {
+            "project_name": summary.get("project", "Unknown"),
+            "session_id": summary.get("session_id", "N/A"),
+            "session_start": summary.get("session_start_time", datetime.now()),
+            "session_end": summary.get("session_end_time", datetime.now()),
+            "duration_minutes": summary.get("duration_minutes", 0),
+            "quality_score": summary.get("final_quality_score", 0),
+            "quality_delta": summary.get("quality_delta", 0),
+            "quality_factors": quality_data.get("breakdown", {}),
+            "summary": summary.get("summary", "Session completed successfully."),
+            "metrics": summary.get("metrics", {}),
+            "completed_tasks": summary.get("tasks", []),
+            "modified_files": summary.get("modified_files", []),
+            "checkpoints": summary.get("checkpoints", []),
+            "git_commits": summary.get("git_commits", []),
+            "recommendations": summary.get("recommendations", []),
+            "pending_items": summary.get("pending_items", []),
+            "current_state": summary.get("current_state", ""),
+            "open_questions": summary.get("open_questions", []),
+            "technical_debt": summary.get("technical_debt", []),
+            "artifacts": summary.get("artifacts", []),
+            "log_path": summary.get("log_path", ""),
+            "db_path": summary.get("db_path", ""),
+            "session_data_path": summary.get("session_data_path", ""),
+            "quality_history": summary.get("quality_history", []),
+            "notes": summary.get("notes", ""),
+            "version": __version__,
+        }
+
+        # Render template
+        return await self.templates.render("session/handoff.md", context)
 
     def _save_handoff_documentation(
         self, content: str, working_dir: Path
