@@ -313,18 +313,37 @@ class SessionLifecycleManager:
         # Trust score (separate from quality)
         if "trust_score" in quality_data:
             trust = quality_data["trust_score"]
-            output.append(
-                f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)"
-            )
-            output.append(
-                f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40"
-            )
-            output.append(
-                f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30"
-            )
-            output.append(
-                f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30"
-            )
+            # Defensive check: trust_score may be a dict or object with total attribute
+            if hasattr(trust, 'total'):
+                total_score = trust.total
+            elif isinstance(trust, dict) and 'total' in trust:
+                total_score = trust['total']
+            else:
+                total_score = 0
+
+            if total_score > 0:
+                output.append(
+                    f"\n🔐 Trust score: {total_score:.0f}/100 (separate metric)"
+                )
+                # Handle both dict and object-based trust score
+                if hasattr(trust, 'details'):
+                    details = trust.details if isinstance(trust.details, dict) else {}
+                elif isinstance(trust, dict) and 'details' in trust:
+                    details = trust['details']
+                else:
+                    details = {}
+
+                # Only show breakdown if available
+                if details:
+                    output.append(
+                        f"   • Trusted operations: {details.get('permissions_count', 0)}/40"
+                    )
+                    output.append(
+                        f"   • Session features: {details.get('session_available', False)} (available)"
+                    )
+                    output.append(
+                        f"   • Tool ecosystem: {details.get('tool_count', 0)} tools"
+                    )
 
         # Recommendations
         recommendations = quality_data["recommendations"]
