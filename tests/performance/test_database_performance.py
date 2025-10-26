@@ -184,8 +184,11 @@ class TestReflectionDatabasePerformance:
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
+        # Delete empty file so DuckDB can create it fresh
+        Path(temp_file.name).unlink(missing_ok=True)
+
         db = ReflectionDatabase(temp_file.name)
-        await db._ensure_tables()
+        await db.initialize()  # Properly initialize database connection
 
         yield db
 
@@ -247,7 +250,6 @@ class TestReflectionDatabasePerformance:
 
             result = await perf_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
                 tags=reflection["tags"],
             )
 
@@ -289,7 +291,7 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             task = perf_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
+                
                 tags=reflection["tags"],
             )
             tasks.append(task)
@@ -324,7 +326,7 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             await perf_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
+                
                 tags=reflection["tags"],
             )
 
@@ -378,7 +380,7 @@ class TestReflectionDatabasePerformance:
             for reflection in batch:
                 task = perf_database.store_reflection(
                     content=reflection["content"],
-                    project=reflection["project"],
+                    
                     tags=reflection.get("tags", []),
                 )
                 tasks.append(task)
@@ -433,7 +435,7 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             await perf_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
+                
                 tags=reflection["tags"],
             )
 
@@ -497,9 +499,7 @@ class TestReflectionDatabasePerformance:
                 start = time.perf_counter()
 
                 result = await perf_database.store_reflection(
-                    content=f"Writer reflection {i}: {reflection['content']}",
-                    project=reflection["project"],
-                    tags=reflection["tags"],
+                    content=f"Writer reflection {i}: {reflection['content']}",                    tags=reflection["tags"],
                 )
 
                 end = time.perf_counter()
@@ -585,7 +585,7 @@ class TestReflectionDatabasePerformance:
                 for reflection in batch:
                     task = perf_database.store_reflection(
                         content=reflection["content"],
-                        project=reflection["project"],
+                        
                         tags=reflection.get("tags", []),
                     )
                     tasks.append(task)
@@ -641,7 +641,7 @@ class TestReflectionDatabasePerformance:
             for reflection in reflections:
                 await perf_database.store_reflection(
                     content=reflection["content"],
-                    project=reflection["project"],
+                    
                     tags=reflection.get("tags", []),
                 )
 
@@ -672,8 +672,11 @@ class TestDatabaseQueryOptimization:
         temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         temp_file.close()
 
+        # Delete empty file so DuckDB can create it fresh
+        Path(temp_file.name).unlink(missing_ok=True)
+
         db = ReflectionDatabase(temp_file.name)
-        await db._ensure_tables()
+        await db.initialize()  # Initialize database connection before ensuring tables
 
         # Add performance indexes (if not already present)
         try:
@@ -708,7 +711,7 @@ class TestDatabaseQueryOptimization:
         for reflection in reflections:
             await indexed_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
+                
                 tags=reflection.get("tags", []),
             )
 
@@ -770,7 +773,7 @@ class TestDatabaseQueryOptimization:
         for reflection in reflections:
             await indexed_database.store_reflection(
                 content=reflection["content"],
-                project=reflection["project"],
+                
                 tags=reflection.get("tags", []),
             )
 
