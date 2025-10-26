@@ -467,27 +467,42 @@ async def _reflection_stats_impl() -> str:
         output.append("📊 Reflection Database Statistics")
         output.append("=" * 40)
 
-        if stats:
-            output.append(f"📈 Total reflections: {stats.get('total_reflections', 0)}")
-            output.append(f"📁 Projects: {stats.get('projects', 0)}")
+        if stats and "error" not in stats:
+            # Handle both old and new stat formats
+            # New format from reflection_tools.py: conversations_count, reflections_count, embedding_provider
+            if "conversations_count" in stats:
+                conv_count = stats.get("conversations_count", 0)
+                refl_count = stats.get("reflections_count", 0)
+                output.append(f"📈 Total conversations: {conv_count}")
+                output.append(f"💭 Total reflections: {refl_count}")
 
-            date_range = stats.get("date_range")
-            if date_range:
+                provider = stats.get("embedding_provider", "unknown")
+                output.append(f"🔧 Embedding provider: {provider}")
+
                 output.append(
-                    f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}",
+                    f"\n🏥 Database health: {'✅ Healthy' if (conv_count + refl_count) > 0 else '⚠️ Empty'}"
                 )
+            else:
+                # Old/test format: total_reflections, projects, date_range
+                output.append(f"📈 Total reflections: {stats.get('total_reflections', 0)}")
+                output.append(f"📁 Projects: {stats.get('projects', 0)}")
 
-            recent_activity = stats.get("recent_activity", [])
-            if recent_activity:
-                output.append("\n🕐 Recent activity:")
-                for activity in recent_activity[:5]:
-                    output.append(f"   • {activity}")
+                date_range = stats.get("date_range")
+                if isinstance(date_range, dict):
+                    output.append(
+                        f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}",
+                    )
 
-            # Database health info
-            output.append(
-                f"\n🏥 Database health: {'✅ Healthy' if stats.get('total_reflections', 0) > 0 else '⚠️ Empty'}",
-            )
+                recent_activity = stats.get("recent_activity", [])
+                if recent_activity:
+                    output.append("\n🕐 Recent activity:")
+                    for activity in recent_activity[:5]:
+                        output.append(f"   • {activity}")
 
+                # Database health info
+                output.append(
+                    f"\n🏥 Database health: {'✅ Healthy' if stats.get('total_reflections', 0) > 0 else '⚠️ Empty'}",
+                )
         else:
             output.append("📊 No statistics available")
             output.append("💡 Database may be empty or inaccessible")

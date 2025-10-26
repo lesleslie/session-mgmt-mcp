@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import types
 from pathlib import Path
@@ -30,6 +31,7 @@ async def test_get_app_monitor_registers_singleton(
 ) -> None:
     """App monitor is created once and cached through the DI container."""
     module = types.ModuleType("session_mgmt_mcp.app_monitor")
+    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.app_monitor")  # type: ignore[attr-defined]
 
     class DummyMonitor:
         def __init__(self, data_dir: str, project_paths: list[str]) -> None:
@@ -48,7 +50,7 @@ async def test_get_app_monitor_registers_singleton(
     configure(force=True)
     monitor = await instance_managers.get_app_monitor()
     assert isinstance(monitor, DummyMonitor)
-    assert depends.get(module.ApplicationMonitor) is monitor  # type: ignore[arg-type]
+    assert depends.get_sync(module.ApplicationMonitor) is monitor  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
@@ -58,6 +60,7 @@ async def test_get_llm_manager_uses_di_cache(
 ) -> None:
     """LLM manager is provided from DI and preserved between calls."""
     module = types.ModuleType("session_mgmt_mcp.llm_providers")
+    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.llm_providers")  # type: ignore[attr-defined]
 
     class DummyLLMManager:
         def __init__(self, config: str | None = None) -> None:
@@ -74,13 +77,14 @@ async def test_get_llm_manager_uses_di_cache(
 
     assert isinstance(first, DummyLLMManager)
     assert first is second
-    assert depends.get(module.LLMManager) is first  # type: ignore[arg-type]
+    assert depends.get_sync(module.LLMManager) is first  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
 async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Serverless manager resolves through DI and respects config loading."""
     module = types.ModuleType("session_mgmt_mcp.serverless_mode")
+    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.serverless_mode")  # type: ignore[attr-defined]
 
     class DummyStorage:
         def __init__(self, config: dict[str, Any]) -> None:
@@ -118,5 +122,5 @@ async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, t
     assert isinstance(manager, DummyServerlessManager)
     assert DummyConfigManager.called is True
     assert manager.backend.config["path"] == "memory"
-    assert depends.get(module.ServerlessSessionManager) is manager  # type: ignore[arg-type]
-    assert depends.get(module.ServerlessSessionManager) is manager  # type: ignore[arg-type]
+    assert depends.get_sync(module.ServerlessSessionManager) is manager  # type: ignore[arg-type]
+    assert depends.get_sync(module.ServerlessSessionManager) is manager  # type: ignore[arg-type]

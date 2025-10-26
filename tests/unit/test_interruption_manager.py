@@ -47,9 +47,10 @@ class TestInterruptionType:
 
     def test_interruption_types_exist(self) -> None:
         """Test that all interruption types are defined."""
-        assert hasattr(InterruptionType, "USER_INITIATED")
-        assert hasattr(InterruptionType, "SYSTEM_CRASH")
-        assert hasattr(InterruptionType, "NETWORK_LOSS")
+        assert hasattr(InterruptionType, "APP_SWITCH")
+        assert hasattr(InterruptionType, "WINDOW_CHANGE")
+        assert hasattr(InterruptionType, "SYSTEM_IDLE")
+        assert hasattr(InterruptionType, "FOCUS_LOST")
 
 
 class TestContextState:
@@ -58,7 +59,8 @@ class TestContextState:
     def test_context_states_exist(self) -> None:
         """Test that all context states are defined."""
         assert hasattr(ContextState, "ACTIVE")
-        assert hasattr(ContextState, "SAVED")
+        assert hasattr(ContextState, "INTERRUPTED")
+        assert hasattr(ContextState, "PRESERVED")
         assert hasattr(ContextState, "RESTORED")
 
 
@@ -69,25 +71,38 @@ class TestInterruptionEvent:
     def test_interruption_event_creation(self) -> None:
         """Test creating an interruption event."""
         event = InterruptionEvent(
-            event_type=InterruptionType.USER_INITIATED,
+            id="test-event-123",
+            event_type=InterruptionType.APP_SWITCH,
             timestamp=datetime.now(timezone.utc),
-            context_snapshot={},
+            source_context={},
+            target_context={},
+            duration=None,
+            recovery_data=None,
+            auto_saved=False,
+            user_id="test-user",
+            project_id=None,
         )
-        assert event.event_type == InterruptionType.USER_INITIATED
+        assert event.event_type == InterruptionType.APP_SWITCH
         assert isinstance(event.timestamp, datetime)
-        assert event.context_snapshot == {}
+        assert event.source_context == {}
 
     @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="InterruptionEvent not fully implemented")
     def test_interruption_event_with_metadata(self) -> None:
-        """Test interruption event with metadata."""
-        metadata = {"reason": "user requested", "severity": "low"}
+        """Test interruption event with recovery data."""
+        recovery_data = {"reason": "user requested", "severity": "low"}
         event = InterruptionEvent(
-            event_type=InterruptionType.USER_INITIATED,
+            id="test-event-456",
+            event_type=InterruptionType.WINDOW_CHANGE,
             timestamp=datetime.now(timezone.utc),
-            context_snapshot={},
-            metadata=metadata,
+            source_context={},
+            target_context={},
+            duration=30.5,
+            recovery_data=recovery_data,
+            auto_saved=True,
+            user_id="test-user",
+            project_id="test-project",
         )
-        assert event.metadata == metadata
+        assert event.recovery_data == recovery_data
 
 
 class TestSessionContext:
@@ -98,25 +113,47 @@ class TestSessionContext:
         """Test creating a session context."""
         context = SessionContext(
             session_id="test-123",
-            state=ContextState.ACTIVE,
-            created_at=datetime.now(timezone.utc),
-            data={},
+            user_id="test-user",
+            project_id=None,
+            active_app=None,
+            active_window=None,
+            working_directory="/tmp",
+            open_files=[],
+            cursor_positions={},
+            environment_vars={},
+            process_state={},
+            last_activity=datetime.now(timezone.utc),
+            focus_duration=0.0,
+            interruption_count=0,
+            recovery_attempts=0,
         )
         assert context.session_id == "test-123"
-        assert context.state == ContextState.ACTIVE
-        assert isinstance(context.created_at, datetime)
+        assert context.user_id == "test-user"
+        assert isinstance(context.last_activity, datetime)
 
     @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="SessionContext not fully implemented")
     def test_session_context_with_data(self) -> None:
-        """Test session context with data."""
-        data = {"project": "test", "working_dir": "/tmp"}
+        """Test session context with additional data."""
+        open_files = ["/tmp/file1.py", "/tmp/file2.py"]
+        cursor_positions = {"file1.py": 100, "file2.py": 200}
         context = SessionContext(
             session_id="test-123",
-            state=ContextState.SAVED,
-            created_at=datetime.now(timezone.utc),
-            data=data,
+            user_id="test-user",
+            project_id="test-project",
+            active_app="VS Code",
+            active_window="main.py",
+            working_directory="/tmp",
+            open_files=open_files,
+            cursor_positions=cursor_positions,
+            environment_vars={"PWD": "/tmp"},
+            process_state={"pid": 12345},
+            last_activity=datetime.now(timezone.utc),
+            focus_duration=100.5,
+            interruption_count=2,
+            recovery_attempts=1,
         )
-        assert context.data == data
+        assert context.open_files == open_files
+        assert context.cursor_positions == cursor_positions
 
 
 @pytest.mark.asyncio

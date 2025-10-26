@@ -21,20 +21,23 @@ def test_configure_registers_singletons(tmp_path: Path, monkeypatch: pytest.Monk
 
     configure(force=True)
 
-    logger = depends.get(SessionLogger)
+    logger = depends.get_sync(SessionLogger)
     assert isinstance(logger, SessionLogger)
     assert logger.log_dir == tmp_path / ".claude" / "logs"
-    assert depends.get(SessionLogger) is logger
+    logger2 = depends.get_sync(SessionLogger)
+    assert logger2 is logger
 
-    permissions = depends.get(SessionPermissionsManager)
+    permissions = depends.get_sync(SessionPermissionsManager)
     assert permissions.permissions_file.parent == tmp_path / ".claude" / "sessions"
-    assert depends.get(SessionPermissionsManager) is permissions
+    permissions2 = depends.get_sync(SessionPermissionsManager)
+    assert permissions2 is permissions
 
-    lifecycle = depends.get(SessionLifecycleManager)
-    assert depends.get(SessionLifecycleManager) is lifecycle
+    lifecycle = depends.get_sync(SessionLifecycleManager)
+    lifecycle2 = depends.get_sync(SessionLifecycleManager)
+    assert lifecycle2 is lifecycle
 
-    claude_dir = depends.get(CLAUDE_DIR_KEY)
-    logs_dir = depends.get(LOGS_DIR_KEY)
+    claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
+    logs_dir = depends.get_sync(LOGS_DIR_KEY)
     assert claude_dir == tmp_path / ".claude"
     assert logs_dir == tmp_path / ".claude" / "logs"
 
@@ -51,11 +54,11 @@ def test_reset_restores_default_instances(tmp_path: Path, monkeypatch: pytest.Mo
     custom_logs = tmp_path / "custom" / "logs"
     custom_logger = SessionLogger(custom_logs)
     depends.set(SessionLogger, custom_logger)
-    assert depends.get(SessionLogger) is custom_logger
+    assert depends.get_sync(SessionLogger) is custom_logger
 
     reset()
 
-    restored_logger = depends.get(SessionLogger)
+    restored_logger = depends.get_sync(SessionLogger)
     assert restored_logger is not custom_logger
     assert restored_logger.log_dir == tmp_path / ".claude" / "logs"
 

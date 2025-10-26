@@ -310,7 +310,7 @@ class TestErrorHandlingProtocol:
             assert isinstance(result, dict), "Should return dict even on timeout"
             assert result["success"] is False, "Should indicate failure"
             assert result["returncode"] == -1, "Should use -1 for timeout"
-            assert "timeout" in result["stderr"].lower(), (
+            assert ("timeout" in result["stderr"].lower() or "timed out" in result["stderr"].lower()), (
                 "Should indicate timeout in stderr"
             )
 
@@ -344,7 +344,7 @@ class TestErrorHandlingProtocol:
                 "Should return CrackerjackResult even on error"
             )
             assert result.exit_code == -1, "Should use -1 for timeout"
-            assert "timeout" in result.stderr.lower(), "Should indicate timeout"
+            assert ("timeout" in result.stderr.lower() or "timed out" in result.stderr.lower()), "Should indicate timeout"
 
     async def test_async_method_general_exception_handling(self):
         """Test async method handles general exceptions."""

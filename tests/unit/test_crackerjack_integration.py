@@ -187,33 +187,24 @@ class TestExecuteCrackerjackCommandMethod:
         """Test that command mappings are correct."""
         integration = CrackerjackIntegration()
 
-        # Access the command mappings from the method
-        # We'll test this by checking the actual command construction
+        # Test the command mappings directly via _build_command_flags
         test_cases = [
-            ("lint", ["--fast"]),
-            ("check", ["--comp"]),
-            ("test", ["--test"]),
-            ("format", ["--fast"]),
-            ("typecheck", ["--comp"]),
-            ("security", ["--comp"]),
-            ("analyze", ["--comp"]),
-            ("clean", ["--clean"]),
-            ("build", []),
-            ("all", ["--all"]),
+            ("lint", ["--fast", "--quick"]),
+            ("check", ["--comp", "--quick"]),
+            ("test", ["--run-tests", "--quick"]),
+            ("format", ["--fast", "--quick"]),
+            ("typecheck", ["--comp", "--quick"]),
+            ("security", ["--comp", "--quick"]),
+            ("analyze", ["--comp", "--quick"]),
+            ("clean", ["--quick"]),
+            ("build", ["--quick"]),
+            ("all", ["--all", "--quick"]),
         ]
 
-        # We can't easily test the internal mapping without executing,
-        # but we can verify the logic exists by checking method implementation
-        import inspect
-
-        source = inspect.getsource(integration.execute_crackerjack_command)
-
-        # Verify key mappings exist in source
+        # Test the _build_command_flags method
         for command, expected_flags in test_cases:
-            assert f'"{command}"' in source, f"Command '{command}' not found in mapping"
-            for flag in expected_flags:
-                if flag:  # Skip empty flags
-                    assert f'"{flag}"' in source, f"Flag '{flag}' not found in mapping"
+            flags = integration._build_command_flags(command, ai_agent_mode=False)
+            assert flags == expected_flags, f"Command '{command}' has incorrect flags: {flags} != {expected_flags}"
 
     @patch("asyncio.create_subprocess_exec")
     async def test_execute_crackerjack_command_basic(self, mock_create_subprocess):
@@ -233,8 +224,8 @@ class TestExecuteCrackerjackCommandMethod:
         mock_create_subprocess.assert_called_once()
         call_args = mock_create_subprocess.call_args
 
-        # Should be called with crackerjack + flags
-        expected_cmd = ["crackerjack", "--fast"]  # lint maps to --fast
+        # Should be called with python -m crackerjack + flags
+        expected_cmd = ["python", "-m", "crackerjack", "--fast", "--quick"]  # lint maps to --fast --quick
         assert call_args[0] == tuple(expected_cmd)
 
         # Verify result type and content
@@ -258,7 +249,7 @@ class TestExecuteCrackerjackCommandMethod:
 
         # Verify command construction
         call_args = mock_create_subprocess.call_args
-        expected_cmd = ["crackerjack", "--test", "--verbose"]
+        expected_cmd = ["python", "-m", "crackerjack", "--run-tests", "--quick", "--verbose"]
         assert call_args[0] == tuple(expected_cmd)
 
         # Verify working directory
@@ -283,7 +274,7 @@ class TestExecuteCrackerjackCommandMethod:
 
         # Verify AI agent flag is included
         call_args = mock_create_subprocess.call_args
-        expected_cmd = ["crackerjack", "--comp", "--ai-fix"]
+        expected_cmd = ["python", "-m", "crackerjack", "--comp", "--quick", "--ai-fix"]
         assert call_args[0] == tuple(expected_cmd)
 
     @patch("asyncio.create_subprocess_exec")
@@ -320,9 +311,9 @@ class TestExecuteCrackerjackCommandMethod:
             # Execute with invalid command
             await integration.execute_crackerjack_command("invalid_command", [], ".")
 
-            # Should call with just 'crackerjack' (no flags for unknown commands)
+            # Should call with python -m crackerjack (no flags for unknown commands)
             call_args = mock_create.call_args
-            expected_cmd = ["crackerjack"]  # No flags for unknown command
+            expected_cmd = ["python", "-m", "crackerjack"]  # No flags for unknown command
             assert call_args[0] == tuple(expected_cmd)
 
 
@@ -484,8 +475,8 @@ class TestRegressionTests:
             call_args = mock_create.call_args
             cmd = call_args[0]
 
-            # Should be ['crackerjack', '--fast'], NOT ['crackerjack', 'lint']
-            assert cmd == ("crackerjack", "--fast")
+            # Should be ['python', '-m', 'crackerjack', '--fast', '--quick'], NOT ['crackerjack', 'lint']
+            assert cmd == ("python", "-m", "crackerjack", "--fast", "--quick")
             assert "lint" not in cmd, (
                 "Command should not contain 'lint' as separate argument"
             )
