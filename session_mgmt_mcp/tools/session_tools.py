@@ -69,7 +69,7 @@ class SessionSetupResults:
 # Global session manager
 def _get_session_manager() -> SessionLifecycleManager:
     with suppress(Exception):
-        manager = depends.get(SessionLifecycleManager)
+        manager = depends.get_sync(SessionLifecycleManager)
         if isinstance(manager, SessionLifecycleManager):
             return manager
     manager = SessionLifecycleManager()

@@ -44,7 +44,7 @@ def _register_path(key: str, path: Path, force: bool) -> None:
     """Register path dependency with optional override."""
     if not force:
         with suppress(Exception):
-            existing = depends.get(key)
+            existing = depends.get_sync(key)
             if isinstance(existing, Path):
                 return
     path.mkdir(parents=True, exist_ok=True)
@@ -53,7 +53,7 @@ def _register_path(key: str, path: Path, force: bool) -> None:
 
 def _resolve_path(key: str, default: Path) -> Path:
     with suppress(Exception):
-        resolved = depends.get(key)
+        resolved = depends.get_sync(key)
         if isinstance(resolved, Path):
             return resolved
     return default
@@ -64,7 +64,7 @@ def _register_logger(force: bool) -> None:
 
     if not force:
         with suppress(Exception):
-            depends.get(SessionLogger)
+            depends.get_sync(SessionLogger)
             return
     logs_dir = _resolve_path(LOGS_DIR_KEY, Path.home() / ".claude" / "logs")
     logger = SessionLogger(logs_dir)
@@ -76,7 +76,7 @@ def _register_permissions_manager(force: bool) -> None:
 
     if not force:
         with suppress(Exception):
-            depends.get(SessionPermissionsManager)
+            depends.get_sync(SessionPermissionsManager)
             return
     claude_dir = _resolve_path(CLAUDE_DIR_KEY, Path.home() / ".claude")
     manager = SessionPermissionsManager(claude_dir)
@@ -88,7 +88,7 @@ def _register_lifecycle_manager(force: bool) -> None:
 
     if not force:
         with suppress(Exception):
-            depends.get(SessionLifecycleManager)
+            depends.get_sync(SessionLifecycleManager)
             return
     manager = SessionLifecycleManager()
     depends.set(SessionLifecycleManager, manager)

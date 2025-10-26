@@ -83,7 +83,7 @@ class SessionLogger:
 def get_session_logger() -> SessionLogger:
     """Get the global session logger instance managed by the DI container."""
     with suppress(Exception):
-        logger = depends.get(SessionLogger)
+        logger = depends.get_sync(SessionLogger)
         if isinstance(logger, SessionLogger):
             return logger
 
@@ -94,7 +94,7 @@ def get_session_logger() -> SessionLogger:
 
 def _resolve_logs_dir() -> Path:
     with suppress(Exception):
-        configured = depends.get(LOGS_DIR_KEY)
+        configured = depends.get_sync(LOGS_DIR_KEY)
         if isinstance(configured, Path):
             configured.mkdir(parents=True, exist_ok=True)
             return configured

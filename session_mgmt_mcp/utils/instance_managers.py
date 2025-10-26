@@ -33,7 +33,7 @@ async def get_app_monitor() -> ApplicationMonitor | None:
         return None
 
     with suppress(Exception):
-        monitor = depends.get(ApplicationMonitor)
+        monitor = await depends.get(ApplicationMonitor)
         if isinstance(monitor, ApplicationMonitor):
             return monitor
 
@@ -54,7 +54,7 @@ async def get_llm_manager() -> LLMManager | None:
         return None
 
     with suppress(Exception):
-        manager = depends.get(LLMManager)
+        manager = await depends.get(LLMManager)
         if isinstance(manager, LLMManager):
             return manager
 
@@ -75,7 +75,7 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
         return None
 
     with suppress(Exception):
-        manager = depends.get(ServerlessSessionManager)
+        manager = await depends.get(ServerlessSessionManager)
         if isinstance(manager, ServerlessSessionManager):
             return manager
 
@@ -103,7 +103,7 @@ async def get_reflection_database() -> ReflectionDatabase | None:
         return None
 
     with suppress(Exception):
-        db = depends.get(ReflectionDatabase)
+        db = await depends.get(ReflectionDatabase)
         if isinstance(db, ReflectionDatabase):
             return db
 
@@ -120,7 +120,7 @@ async def get_interruption_manager() -> InterruptionManager | None:
         return None
 
     with suppress(Exception):
-        manager = depends.get(InterruptionManager)
+        manager = await depends.get(InterruptionManager)
         if isinstance(manager, InterruptionManager):
             return manager
 
@@ -139,7 +139,7 @@ def reset_instances() -> None:
 
 def _resolve_claude_dir() -> Path:
     with suppress(Exception):
-        claude_dir = depends.get(CLAUDE_DIR_KEY)
+        claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
         if isinstance(claude_dir, Path):
             claude_dir.mkdir(parents=True, exist_ok=True)
             return claude_dir
