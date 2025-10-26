@@ -51,7 +51,7 @@ from session_mgmt_mcp.utils.logging import SessionLogger, get_session_logger
 configure_di()
 
 try:
-    session_logger = depends.get(SessionLogger)
+    session_logger = depends.get_sync(SessionLogger)
 except Exception:
     session_logger = get_session_logger()
 
@@ -138,7 +138,7 @@ current_project: str | None = None
 
 # Create global permissions manager instance
 try:
-    permissions_manager = depends.get(SessionPermissionsManager)
+    permissions_manager = depends.get_sync(SessionPermissionsManager)
 except Exception:
     claude_root = session_logger.log_dir.parent
     permissions_manager = SessionPermissionsManager(claude_root)
@@ -152,7 +152,7 @@ from session_mgmt_mcp.reflection_tools import get_reflection_database
 
 # Global session manager for lifespan handlers
 try:
-    lifecycle_manager = depends.get(SessionLifecycleManager)
+    lifecycle_manager = depends.get_sync(SessionLifecycleManager)
 except Exception:
     lifecycle_manager = SessionLifecycleManager()
     depends.set(SessionLifecycleManager, lifecycle_manager)
