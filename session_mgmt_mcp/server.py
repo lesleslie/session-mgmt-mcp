@@ -148,6 +148,14 @@ except Exception:
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.reflection_tools import get_reflection_database
 
+# Import mcp-common ServerPanels for beautiful terminal UI
+try:
+    from mcp_common.ui import ServerPanels
+
+    SERVERPANELS_AVAILABLE = True
+except ImportError:
+    SERVERPANELS_AVAILABLE = False
+
 # Phase 2.2: Import utility and formatting functions from server_helpers
 
 # Global session manager for lifespan handlers
@@ -175,6 +183,7 @@ mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
 # Register extracted tool modules following crackerjack architecture patterns
 from .tools import (
     register_crackerjack_tools,
+    register_knowledge_graph_tools,
     register_llm_tools,
     register_monitoring_tools,
     register_prompt_tools,
@@ -193,6 +202,7 @@ from .utils import (
 # Register all extracted tool modules
 register_search_tools(mcp)
 register_crackerjack_tools(mcp)
+register_knowledge_graph_tools(mcp)  # DuckPGQ knowledge graph tools
 register_llm_tools(mcp)
 register_monitoring_tools(mcp)
 register_prompt_tools(mcp)
@@ -403,14 +413,33 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     use_http = http_mode or config_http_enabled
 
     if use_http:
-        print(
-            f"Starting Session Management MCP HTTP Server on http://{host}:{port}/mcp",
-            file=sys.stderr,
-        )
-        print(
-            f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
-            file=sys.stderr,
-        )
+        # Use ServerPanels for beautiful startup UI
+        if SERVERPANELS_AVAILABLE:
+            ServerPanels.startup_success(
+                server_name="Session Management MCP",
+                version="2.0.0",
+                features=[
+                    "Session Lifecycle Management",
+                    "Memory & Reflection System",
+                    "Crackerjack Quality Integration",
+                    "Knowledge Graph (DuckPGQ)",
+                    "LLM Provider Management",
+                ],
+                endpoint=f"http://{host}:{port}/mcp",
+                websocket_monitor=str(_mcp_config.get("websocket_monitor_port", 8677)),
+                transport="HTTP (streamable)",
+            )
+        else:
+            # Fallback to simple print
+            print(
+                f"Starting Session Management MCP HTTP Server on http://{host}:{port}/mcp",
+                file=sys.stderr,
+            )
+            print(
+                f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
+                file=sys.stderr,
+            )
+
         mcp.run(
             transport="streamable-http",
             host=host,
@@ -419,7 +448,27 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
             stateless_http=True,
         )
     else:
-        print("Starting Session Management MCP Server in STDIO mode", file=sys.stderr)
+        # Use ServerPanels for STDIO mode
+        if SERVERPANELS_AVAILABLE:
+            ServerPanels.startup_success(
+                server_name="Session Management MCP",
+                version="2.0.0",
+                features=[
+                    "Session Lifecycle Management",
+                    "Memory & Reflection System",
+                    "Crackerjack Quality Integration",
+                    "Knowledge Graph (DuckPGQ)",
+                    "LLM Provider Management",
+                ],
+                transport="STDIO",
+                mode="Claude Desktop",
+            )
+        else:
+            # Fallback to simple print
+            print(
+                "Starting Session Management MCP Server in STDIO mode", file=sys.stderr
+            )
+
         mcp.run(stateless_http=True)
 
 

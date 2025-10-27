@@ -1,6 +1,7 @@
 """MCP tools for session-mgmt-mcp."""
 
 from .crackerjack_tools import register_crackerjack_tools
+from .knowledge_graph_tools import register_knowledge_graph_tools
 from .llm_tools import register_llm_tools
 from .memory_tools import register_memory_tools
 from .monitoring_tools import register_monitoring_tools
@@ -12,6 +13,7 @@ from .team_tools import register_team_tools
 
 __all__ = [
     "register_crackerjack_tools",
+    "register_knowledge_graph_tools",
     "register_llm_tools",
     "register_memory_tools",
     "register_monitoring_tools",

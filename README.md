@@ -33,7 +33,7 @@ The server automatically detects git repositories and provides seamless session 
 
 ## Available MCP Tools
 
-**Total: 70+ specialized tools** organized into 10 functional categories:
+**Total: 79+ specialized tools** organized into 11 functional categories:
 
 ### 🎯 Core Session Management (8 tools)
 
@@ -72,6 +72,33 @@ The server automatically detects git repositories and provides seamless session 
 **Advanced**:
 
 - **`_optimize_search_results`** - Token-aware result optimization
+
+### 🕸️ Knowledge Graph (DuckPGQ) (9 tools) **NEW!**
+
+**Entity Management**:
+
+- **`create_entity`** - Create entities (projects, libraries, technologies, concepts)
+- **`add_observation`** - Add facts/observations to existing entities
+- **`search_entities`** - Search entities by name or observations
+- **`batch_create_entities`** - Bulk create multiple entities
+
+**Relationship Management**:
+
+- **`create_relation`** - Create relationships between entities ("uses", "depends_on", etc.)
+- **`get_entity_relationships`** - Get all relationships for an entity
+- **`find_path`** - Find paths between entities using SQL/PGQ graph queries
+
+**Intelligence & Analytics**:
+
+- **`extract_entities_from_context`** - Auto-extract entities from conversation (with auto-create option)
+- **`get_knowledge_graph_stats`** - Knowledge graph statistics and health
+
+**Powered by:**
+- **DuckDB + DuckPGQ Extension** - SQL:2023 property graph queries
+- **SQL/PGQ** - Standard graph pattern matching
+- **Semantic Memory** - Complements episodic memory (conversations) with entity-relationship knowledge
+
+**See also:** [Knowledge Graph Integration Guide](./docs/KNOWLEDGE_GRAPH_INTEGRATION.md)
 
 ### 📊 Crackerjack Quality Integration (11 tools)
 

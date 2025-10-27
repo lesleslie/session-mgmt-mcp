@@ -36,6 +36,14 @@ if TYPE_CHECKING:
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 
+# Import mcp-common ServerPanels for beautiful terminal UI
+try:
+    from mcp_common.ui import ServerPanels
+
+    SERVERPANELS_AVAILABLE = True
+except ImportError:
+    SERVERPANELS_AVAILABLE = False
+
 try:
     import tomli
 except ImportError:
@@ -216,10 +224,17 @@ def _load_mcp_config() -> dict[str, Any]:
             "http_enabled": session_config.get("http_enabled", False),
         }
     except Exception as e:
-        print(
-            f"Warning: Failed to load MCP config from pyproject.toml: {e}",
-            file=sys.stderr,
-        )
+        if SERVERPANELS_AVAILABLE:
+            ServerPanels.warning(
+                title="Configuration Warning",
+                message="Failed to load MCP config from pyproject.toml",
+                details=[str(e), "Using default configuration values"],
+            )
+        else:
+            print(
+                f"Warning: Failed to load MCP config from pyproject.toml: {e}",
+                file=sys.stderr,
+            )
         return {
             "http_port": 8678,
             "http_host": "127.0.0.1",
@@ -330,11 +345,21 @@ async def auto_setup_git_working_directory(session_logger: SessionLogger) -> Non
             )
 
             # Also log to stderr for immediate visibility
-            print(f"📍 Git repository detected: {git_root}", file=sys.stderr)
-            print(
-                f"💡 Tip: Auto-setup git working directory with: git_set_working_dir('{git_root}')",
-                file=sys.stderr,
-            )
+            if SERVERPANELS_AVAILABLE:
+                ServerPanels.info(
+                    title="Git Repository Detected",
+                    message=f"Repository root: {git_root}",
+                    items={
+                        "Auto-setup command": f"git_set_working_dir('{git_root}')",
+                        "Auto-lifecycle": "Enabled (init, checkpoint, cleanup)",
+                    },
+                )
+            else:
+                print(f"📍 Git repository detected: {git_root}", file=sys.stderr)
+                print(
+                    f"💡 Tip: Auto-setup git working directory with: git_set_working_dir('{git_root}')",
+                    file=sys.stderr,
+                )
         else:
             session_logger.debug(
                 "No git repository detected in current directory - skipping auto-setup"
@@ -437,10 +462,21 @@ async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
         }
     except (OSError, PermissionError) as e:
         # Log error but return safe defaults
-        print(
-            f"Warning: Could not analyze project context for {project_dir}: {e}",
-            file=sys.stderr,
-        )
+        if SERVERPANELS_AVAILABLE:
+            ServerPanels.warning(
+                title="Project Analysis Warning",
+                message=f"Could not analyze project context for {project_dir}",
+                details=[
+                    f"Error type: {type(e).__name__}",
+                    f"Error: {e}",
+                    "Using safe default values",
+                ],
+            )
+        else:
+            print(
+                f"Warning: Could not analyze project context for {project_dir}: {e}",
+                file=sys.stderr,
+            )
         return {
             "python_project": False,
             "git_repo": False,
