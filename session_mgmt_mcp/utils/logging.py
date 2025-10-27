@@ -136,7 +136,11 @@ def _safe_json_serialize(obj: t.Any) -> str:
         # Convert non-serializable objects to string representation
         if isinstance(obj, dict):
             return json.dumps(
-                {k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v
-                 for k, v in obj.items()}
+                {
+                    k: str(v)
+                    if not isinstance(v, (str, int, float, bool, type(None)))
+                    else v
+                    for k, v in obj.items()
+                }
             )
         return json.dumps(str(obj))

@@ -35,8 +35,6 @@ app = typer.Typer(
 DEFAULT_FALSE = False
 
 
-
-
 def find_server_processes() -> list[psutil.Process]:
     """Find running session-mgmt-mcp server processes."""
     processes = []

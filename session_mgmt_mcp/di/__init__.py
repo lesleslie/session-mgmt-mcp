@@ -7,11 +7,15 @@ from pathlib import Path
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from session_mgmt_mcp.core import SessionLifecycleManager as SessionLifecycleManagerT
-    from session_mgmt_mcp.server_core import (
-        SessionPermissionsManager as SessionPermissionsManagerT,
+    from session_mgmt_mcp.core import (
+        SessionLifecycleManager as SessionLifecycleManagerT,  # noqa: F401
     )
-    from session_mgmt_mcp.utils.logging import SessionLogger as SessionLoggerT
+    from session_mgmt_mcp.server_core import (
+        SessionPermissionsManager as SessionPermissionsManagerT,  # noqa: F401
+    )
+    from session_mgmt_mcp.utils.logging import (
+        SessionLogger as SessionLoggerT,  # noqa: F401
+    )
 
 from .constants import CLAUDE_DIR_KEY, COMMANDS_DIR_KEY, LOGS_DIR_KEY
 

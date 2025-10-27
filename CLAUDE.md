@@ -115,6 +115,34 @@ print('Server debug check complete')
 
 ## Architecture Overview
 
+### Recent Architecture Changes (Phase 2.7 - January 2025)
+
+**Dependency Injection Migration** (**Phase 2.7 Days 1-4 completed**)
+
+- Migrated from manual singleton management to ACB (Asynchronous Component Base) dependency injection
+- Centralized DI configuration in `session_mgmt_mcp/di/` module with `configure()` function
+- Provides container-based access via `depends.get_sync(ClassName)` for testable, modular code
+- Benefits: Improved testability, reduced coupling, simplified lifecycle management
+
+**Test Infrastructure Cleanup** (Phase 2.7 Day 5)
+
+- Removed 6 unused test factories (65% code reduction in data_factories.py)
+- Kept only actively-used factories: `ReflectionDataFactory`, `LargeDatasetFactory`, `SecurityTestDataFactory`
+- Removed redundant pytest fixtures from conftest.py
+- All 21 functional tests passing after cleanup
+
+**Quality Scoring V2 Algorithm** (Phase 2.7 Day 4)
+
+- New filesystem-based quality assessment in `utils/quality_utils_v2.py`
+- Direct file inspection instead of abstracted context (more accurate, less mocking needed)
+- Updated test expectations to match V2 scoring ranges
+
+**Async/Await Chain Fixes** (Phase 2.7 Day 4)
+
+- Fixed nested event loop bugs in session_manager.py
+- Made `_get_previous_session_info()` and `_read_previous_session_info()` properly async
+- Replaced `asyncio.run()` calls within async context with `await`
+
 ### Core Components
 
 1. **server.py** (~3,500+ lines): Main MCP server implementation
@@ -157,11 +185,19 @@ print('Server debug check complete')
 
    - **session_manager.py**: Session state and lifecycle coordination
 
+1. **di/** directory: Dependency Injection configuration (Phase 2.7)
+
+   - **__init__.py**: Centralized DI configuration with `configure()` function
+   - **constants.py**: Component identifiers and DI-related constants
+   - Provides: `depends.get_sync(ClassName)` for container-based dependency resolution
+   - Benefits: Testable components, reduced coupling, simplified lifecycle management
+
 1. **utils/** directory: Shared utilities and helper functions
 
    - **git_operations.py**: Git commit functions and repository management
    - **logging.py**: SessionLogger implementation and structured logging
-   - **quality_utils.py**: Quality assessment and scoring algorithms
+   - **quality_utils.py**: Legacy quality assessment (V1)
+   - **quality_utils_v2.py**: Filesystem-based quality scoring V2 algorithm (Phase 2.7)
 
 ### Advanced Components
 

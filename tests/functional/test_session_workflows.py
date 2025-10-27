@@ -189,17 +189,55 @@ class TestSessionWorkflows:
                 assert "project_context" in status_result
                 assert "system_health" in status_result
 
+    def _setup_test_project(self, temp_dir: Path, context: dict[str, bool]):
+        """Create a test project directory with specified features."""
+        if context.get("has_pyproject_toml"):
+            (temp_dir / "pyproject.toml").write_text('[project]\nname = "test"\n')
+        if context.get("has_readme"):
+            (temp_dir / "README.md").write_text("# Test Project\n")
+        if context.get("has_git_repo"):
+            git_dir = temp_dir / ".git"
+            git_dir.mkdir()
+            # Create minimal git structure
+            (git_dir / "HEAD").write_text("ref: refs/heads/main\n")
+            refs_dir = git_dir / "refs" / "heads"
+            refs_dir.mkdir(parents=True)
+        if context.get("has_tests"):
+            tests_dir = temp_dir / "tests"
+            tests_dir.mkdir()
+            (tests_dir / "test_example.py").write_text("def test_example(): pass\n")
+        if context.get("has_venv"):
+            venv_dir = temp_dir / ".venv"
+            venv_dir.mkdir()
+            (venv_dir / "pyvenv.cfg").write_text("version = 3.13\n")
+        if context.get("has_src_structure"):
+            src_dir = temp_dir / "src"
+            src_dir.mkdir()
+            (src_dir / "__init__.py").touch()
+        if context.get("has_docs"):
+            docs_dir = temp_dir / "docs"
+            docs_dir.mkdir()
+            (docs_dir / "index.md").write_text("# Documentation\n")
+        if context.get("has_ci_cd"):
+            gh_dir = temp_dir / ".github" / "workflows"
+            gh_dir.mkdir(parents=True)
+            (gh_dir / "test.yml").write_text("name: test\n")
+        if context.get("has_python_files"):
+            (temp_dir / "main.py").write_text("print('hello')\n")
+        # Always create a lockfile if pyproject.toml exists (for dependency management scoring)
+        if context.get("has_pyproject_toml"):
+            (temp_dir / "uv.lock").write_text("# UV lockfile\n")
+
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
     async def test_session_quality_scoring(self, mock_logger, mock_is_git_repo):
-        """Test session quality scoring logic."""
-        mock_is_git_repo.return_value = True
+        """Test session quality scoring logic with V2 algorithm."""
         mock_logger.return_value = Mock()
 
         manager = SessionLifecycleManager()
 
         test_cases = [
-            # High quality project
+            # High quality project - V2 scores ~50 (project_health:20 + session:20 + code:13 + security:9)
             {
                 "context": {
                     "has_pyproject_toml": True,
@@ -212,10 +250,11 @@ class TestSessionWorkflows:
                     "has_ci_cd": True,
                     "has_python_files": True,
                 },
-                "expected_min_score": 80,
+                "expected_min_score": 45,  # V2 algorithm: baseline + high project_health
+                "expected_max_score": 60,
                 "uv_available": True,
             },
-            # Medium quality project
+            # Medium quality project - V2 scores ~45 (project_health:15 + session:20 + code:13 + security:9)
             {
                 "context": {
                     "has_pyproject_toml": True,
@@ -228,10 +267,11 @@ class TestSessionWorkflows:
                     "has_ci_cd": False,
                     "has_python_files": True,
                 },
-                "expected_min_score": 60,
+                "expected_min_score": 40,
+                "expected_max_score": 50,
                 "uv_available": True,
             },
-            # Low quality project
+            # Low quality project - V2 scores ~22 (session:20 + baseline code/security)
             {
                 "context": {
                     "has_pyproject_toml": False,
@@ -244,53 +284,57 @@ class TestSessionWorkflows:
                     "has_ci_cd": False,
                     "has_python_files": False,
                 },
-                "expected_max_score": 50,
+                "expected_max_score": 30,  # Baseline session_management + minimal code/security
                 "uv_available": False,
             },
         ]
 
         for i, test_case in enumerate(test_cases):
             with tempfile.TemporaryDirectory() as temp_dir:
-                Path(temp_dir)
+                temp_path = Path(temp_dir)
 
-                with patch.object(
-                    manager,
-                    "analyze_project_context",
-                    return_value=test_case["context"],
+                # Create project structure based on context
+                self._setup_test_project(temp_path, test_case["context"])
+
+                # Mock git repo check based on context
+                mock_is_git_repo.return_value = test_case["context"].get("has_git_repo", False)
+
+                with patch(
+                    "shutil.which",
+                    return_value="/usr/local/bin/uv"
+                    if test_case["uv_available"]
+                    else None,
                 ):
                     with patch(
-                        "shutil.which",
-                        return_value="/usr/local/bin/uv"
-                        if test_case["uv_available"]
-                        else None,
-                    ):
-                        with patch(
-                            "session_mgmt_mcp.server.permissions_manager"
-                        ) as mock_perms:
-                            mock_perms.trusted_operations = (
-                                {"op1", "op2"} if i < 2 else set()
+                        "session_mgmt_mcp.server.permissions_manager"
+                    ) as mock_perms:
+                        mock_perms.trusted_operations = (
+                            {"op1", "op2"} if i < 2 else set()
+                        )
+
+                        # Pass temp_dir to quality scoring
+                        quality_result = await manager.calculate_quality_score(
+                            project_dir=temp_path
+                        )
+
+                        assert isinstance(quality_result["total_score"], int)
+                        assert 0 <= quality_result["total_score"] <= 100
+
+                        if "expected_min_score" in test_case:
+                            assert (
+                                quality_result["total_score"]
+                                >= test_case["expected_min_score"]
+                            ), (
+                                f"Test case {i}: Expected min score {test_case['expected_min_score']}, got {quality_result['total_score']}"
                             )
 
-                            quality_result = await manager.calculate_quality_score()
-
-                            assert isinstance(quality_result["total_score"], int)
-                            assert 0 <= quality_result["total_score"] <= 100
-
-                            if "expected_min_score" in test_case:
-                                assert (
-                                    quality_result["total_score"]
-                                    >= test_case["expected_min_score"]
-                                ), (
-                                    f"Test case {i}: Expected min score {test_case['expected_min_score']}, got {quality_result['total_score']}"
-                                )
-
-                            if "expected_max_score" in test_case:
-                                assert (
-                                    quality_result["total_score"]
-                                    <= test_case["expected_max_score"]
-                                ), (
-                                    f"Test case {i}: Expected max score {test_case['expected_max_score']}, got {quality_result['total_score']}"
-                                )
+                        if "expected_max_score" in test_case:
+                            assert (
+                                quality_result["total_score"]
+                                <= test_case["expected_max_score"]
+                            ), (
+                                f"Test case {i}: Expected max score {test_case['expected_max_score']}, got {quality_result['total_score']}"
+                            )
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
@@ -432,7 +476,7 @@ class TestSessionErrorHandling:
                 with patch.object(
                     manager, "_save_handoff_documentation", return_value=None
                 ):
-                    result = await manager.end_session()
+                    result = await manager.end_session(working_directory=str(project_dir))
 
                     # Should still succeed but without handoff path
                     assert result["success"] is True
@@ -448,22 +492,22 @@ class TestSessionCrossPlatform:
     async def test_session_in_different_environments(
         self, mock_logger, mock_is_git_repo
     ):
-        """Test session behavior with different environment configurations."""
+        """Test session behavior with different environment configurations (V2 algorithm)."""
         mock_is_git_repo.return_value = True
         mock_logger.return_value = Mock()
 
         manager = SessionLifecycleManager()
 
         test_environments = [
-            # Environment with UV available
+            # Environment with UV available - V2 doesn't score UV separately anymore
             {
                 "which_result": "/usr/local/bin/uv",
-                "expected_tools_score": 20,
+                "description": "with UV",
             },
             # Environment without UV
             {
                 "which_result": None,
-                "expected_tools_score": 10,
+                "description": "without UV",
             },
         ]
 
@@ -495,13 +539,17 @@ class TestSessionCrossPlatform:
                         ) as mock_perms:
                             mock_perms.trusted_operations = set()
 
-                            quality_result = await manager.calculate_quality_score()
-
-                            # Verify tools score matches expectation
-                            assert (
-                                quality_result["breakdown"]["tools"]
-                                == env["expected_tools_score"]
+                            quality_result = await manager.calculate_quality_score(
+                                project_dir=project_dir
                             )
+
+                            # V2 algorithm: verify quality scoring works across environments
+                            # tools score comes from trust_score.tool_ecosystem (MCP tool count), not UV
+                            assert "total_score" in quality_result
+                            assert "breakdown" in quality_result
+                            assert "version" in quality_result
+                            assert quality_result["version"] == "2.0"
+                            assert 0 <= quality_result["total_score"] <= 100
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("session_mgmt_mcp.core.session_manager.get_session_logger")

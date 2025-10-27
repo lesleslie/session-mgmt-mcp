@@ -1,6 +1,7 @@
 # Session Management MCP - Test Improvement Plan
 
 ## Executive Summary
+
 - **Current Coverage**: 34.44% (threshold: 35%)
 - **Test Status**: 469 passed, 96 failed, 2 skipped, 25 errors
 - **Target Coverage**: 50%+ (quick wins), 70%+ (comprehensive)
@@ -9,37 +10,46 @@
 ## Root Cause Analysis
 
 ### 1. Database Initialization Issues (40% of failures)
+
 **Pattern**: `ReflectionDatabase.conn is None` errors
 **Root Cause**: Tests not properly awaiting `initialize()` before database operations
 **Files Affected**:
+
 - `tests/functional/test_simple_validation.py`
 - `tests/integration/test_session_lifecycle.py`
 - Performance tests using ReflectionDatabase
 
 ### 2. CLI Command Test Failures (25% of failures)
+
 **Pattern**: CLI commands (start, stop, status) failing
 **Root Cause**: Missing module imports and improper async handling in CLI
 **Files Affected**:
+
 - `session_mgmt_mcp/cli.py:40-140` (command handlers)
 - `tests/unit/test_cli.py` (if exists)
 
 ### 3. Dependency Injection Container Issues (20% of failures)
+
 **Pattern**: DI container and instance manager failures
 **Root Cause**: Missing or misconfigured DI setup in tests
 **Files Affected**:
+
 - `session_mgmt_mcp/core/di_container.py` (needs creation/fix)
 - `session_mgmt_mcp/core/instance_manager.py` (needs creation/fix)
 
 ### 4. Tool Registration Failures (15% of failures)
+
 **Pattern**: MCP tools not properly registered or executed
 **Root Cause**: Mock MCP server not properly simulating FastMCP behavior
 **Files Affected**:
+
 - `tests/conftest.py:24-58` (MockFastMCP class)
 - `session_mgmt_mcp/tools/*.py` (tool registration)
 
 ## Priority 1: Critical Fixes (Quick Wins)
 
 ### Fix 1: Database Initialization Pattern (Effort: 2 hours)
+
 ```python
 # File: tests/conftest.py - Add this fixture at line 545
 @pytest.fixture
@@ -56,11 +66,13 @@ async def initialized_db():
 ```
 
 **Files to Update**:
+
 - `tests/conftest.py:545` - Add initialized_db fixture
 - `tests/functional/test_simple_validation.py:59-80` - Use initialized_db fixture
 - `tests/integration/test_session_lifecycle.py` - Replace temp_database with initialized_db
 
 ### Fix 2: CLI Module Dependencies (Effort: 1 hour)
+
 ```python
 # File: session_mgmt_mcp/cli.py:40 - Add missing imports
 from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
@@ -68,10 +80,12 @@ from session_mgmt_mcp.server import mcp, permissions_manager
 ```
 
 **Files to Update**:
+
 - `session_mgmt_mcp/cli.py:8-20` - Add missing imports
 - `session_mgmt_mcp/cli.py:100-200` - Fix async command handlers
 
 ### Fix 3: Mock MCP Server Enhancement (Effort: 1 hour)
+
 ```python
 # File: tests/conftest.py:24 - Enhance MockFastMCP
 class MockFastMCP:
@@ -85,22 +99,27 @@ class MockFastMCP:
         def decorator(func):
             self._registered_tools[func.__name__] = func
             return func
+
         return decorator
 ```
 
 **Files to Update**:
+
 - `tests/conftest.py:24-58` - Enhance MockFastMCP class
 - `tests/integration/test_session_lifecycle.py:19-35` - Update mock usage
 
 ## Priority 2: Coverage Improvement (Medium Effort)
 
 ### Area 1: Core Session Management (Current: 25%, Target: 60%)
+
 **Untested Critical Functions**:
+
 - `session_mgmt_mcp/core/session_manager.py:82-150` - calculate_quality_score
 - `session_mgmt_mcp/core/session_manager.py:200-250` - handoff documentation
 - `session_mgmt_mcp/utils/git_operations.py` - All git operations
 
 **New Test Files Needed**:
+
 ```bash
 tests/unit/test_session_manager.py      # 30+ tests
 tests/unit/test_git_operations.py       # 15+ tests
@@ -108,12 +127,15 @@ tests/unit/test_quality_scoring.py      # 20+ tests
 ```
 
 ### Area 2: Memory/Search Tools (Current: 30%, Target: 70%)
+
 **Untested Critical Functions**:
+
 - `session_mgmt_mcp/tools/memory_tools.py` - All MCP tool functions
 - `session_mgmt_mcp/tools/search_tools.py` - Advanced search functions
 - `session_mgmt_mcp/reflection_tools.py:200-400` - Vector search operations
 
 **New Test Files Needed**:
+
 ```bash
 tests/unit/test_memory_tools.py         # 25+ tests
 tests/unit/test_search_tools.py         # 20+ tests
@@ -121,11 +143,14 @@ tests/unit/test_vector_operations.py    # 15+ tests
 ```
 
 ### Area 3: Crackerjack Integration (Current: 15%, Target: 50%)
+
 **Untested Critical Functions**:
+
 - `session_mgmt_mcp/tools/crackerjack_tools.py` - All command execution
 - `session_mgmt_mcp/crackerjack_integration.py` - Progress parsing
 
 **New Test Files Needed**:
+
 ```bash
 tests/unit/test_crackerjack_tools.py    # 20+ tests
 tests/integration/test_crackerjack.py   # 15+ tests
@@ -134,6 +159,7 @@ tests/integration/test_crackerjack.py   # 15+ tests
 ## Priority 3: Test Infrastructure Improvements
 
 ### 1. Create Missing Test Utilities
+
 ```python
 # File: tests/helpers.py - Add at line 200
 class MCPToolTestHelper:
@@ -149,11 +175,13 @@ class MCPToolTestHelper:
 ```
 
 ### 2. Add Performance Test Infrastructure
+
 ```python
 # File: tests/fixtures/performance.py - Create new file
 import pytest
 import time
 from contextlib import contextmanager
+
 
 @contextmanager
 def measure_performance(name: str, max_time: float):
@@ -165,6 +193,7 @@ def measure_performance(name: str, max_time: float):
 ```
 
 ### 3. Add Integration Test Base Class
+
 ```python
 # File: tests/base.py - Create new file
 class IntegrationTestBase:
@@ -181,29 +210,34 @@ class IntegrationTestBase:
 ## Testing Strategy for 50%+ Coverage
 
 ### Phase 1: Fix Failures (Days 1-2)
+
 1. **Day 1**: Fix database initialization patterns (all tests using ReflectionDatabase)
-2. **Day 1**: Fix CLI command imports and async handling
-3. **Day 2**: Fix mock MCP server to properly track tool registration
-4. **Day 2**: Fix DI container issues (create missing modules if needed)
+1. **Day 1**: Fix CLI command imports and async handling
+1. **Day 2**: Fix mock MCP server to properly track tool registration
+1. **Day 2**: Fix DI container issues (create missing modules if needed)
 
 ### Phase 2: Add Critical Tests (Days 3-4)
+
 1. **Day 3**: Add session_manager tests (30 tests, +10% coverage)
-2. **Day 3**: Add memory_tools tests (25 tests, +8% coverage)
-3. **Day 4**: Add search_tools tests (20 tests, +7% coverage)
-4. **Day 4**: Add git_operations tests (15 tests, +5% coverage)
+1. **Day 3**: Add memory_tools tests (25 tests, +8% coverage)
+1. **Day 4**: Add search_tools tests (20 tests, +7% coverage)
+1. **Day 4**: Add git_operations tests (15 tests, +5% coverage)
 
 ### Phase 3: Comprehensive Coverage (Days 5-7)
+
 1. **Day 5**: Add crackerjack integration tests
-2. **Day 6**: Add performance benchmarks
-3. **Day 7**: Add end-to-end workflow tests
+1. **Day 6**: Add performance benchmarks
+1. **Day 7**: Add end-to-end workflow tests
 
 ## Quick Win Test Examples
 
 ### Example 1: Session Manager Test
+
 ```python
 # tests/unit/test_session_manager.py
 import pytest
 from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+
 
 class TestSessionManager:
     @pytest.mark.asyncio
@@ -221,17 +255,18 @@ class TestSessionManager:
 ```
 
 ### Example 2: Memory Tools Test
+
 ```python
 # tests/unit/test_memory_tools.py
 import pytest
 from session_mgmt_mcp.tools.memory_tools import store_reflection
 
+
 class TestMemoryTools:
     @pytest.mark.asyncio
     async def test_store_reflection(self, initialized_db):
         result = await store_reflection(
-            content="Test reflection",
-            tags=["test", "example"]
+            content="Test reflection", tags=["test", "example"]
         )
         assert "stored" in result.lower()
 
@@ -267,12 +302,14 @@ pytest -n auto --cov=session_mgmt_mcp
 ## Success Metrics
 
 ### Immediate Goals (2-3 days)
+
 - ✅ All database initialization errors fixed
 - ✅ CLI commands working
 - ✅ Coverage increased to 50%+
 - ✅ All critical path tests passing
 
 ### Week 1 Goals
+
 - ✅ Coverage increased to 70%+
 - ✅ Performance benchmarks established
 - ✅ Integration test suite complete
@@ -281,29 +318,32 @@ pytest -n auto --cov=session_mgmt_mcp
 ## Untested Critical Functionality
 
 ### High Priority (Security/Data Integrity)
+
 1. **Session permissions management** - No tests for trust/untrust operations
-2. **Database transaction handling** - No tests for rollback scenarios
-3. **Concurrent access patterns** - No tests for race conditions
-4. **Error recovery mechanisms** - No tests for crash recovery
+1. **Database transaction handling** - No tests for rollback scenarios
+1. **Concurrent access patterns** - No tests for race conditions
+1. **Error recovery mechanisms** - No tests for crash recovery
 
 ### Medium Priority (Core Features)
+
 1. **Multi-project coordination** - No tests for cross-project features
-2. **Token optimization** - No tests for response chunking
-3. **Serverless mode** - No tests for external storage backends
-4. **Team collaboration** - No tests for team knowledge sharing
+1. **Token optimization** - No tests for response chunking
+1. **Serverless mode** - No tests for external storage backends
+1. **Team collaboration** - No tests for team knowledge sharing
 
 ### Low Priority (Nice to Have)
+
 1. **Natural language scheduling** - No tests for time parsing
-2. **Git worktree management** - No tests for worktree operations
-3. **App monitoring** - No tests for IDE activity tracking
+1. **Git worktree management** - No tests for worktree operations
+1. **App monitoring** - No tests for IDE activity tracking
 
 ## Conclusion
 
 The test suite has systematic issues that can be fixed with targeted improvements:
 
 1. **Database initialization** is the root cause of 40% of failures
-2. **Missing imports** cause another 25% of failures
-3. **Mock infrastructure** needs enhancement for proper MCP simulation
+1. **Missing imports** cause another 25% of failures
+1. **Mock infrastructure** needs enhancement for proper MCP simulation
 
 With 2-3 days of focused effort, coverage can reach 50%+ and all tests can pass.
 The plan above provides specific file locations and code examples to accelerate fixes.

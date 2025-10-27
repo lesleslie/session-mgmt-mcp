@@ -58,34 +58,29 @@ class MockFastMCP:
         pass
 
 # Import test factories for enhanced test data generation
+# Note: After Phase 2.7 cleanup, only actively-used factories are imported
 try:
     from tests.fixtures.data_factories import (
-        ProjectDataFactory,
+        LargeDatasetFactory,
         ReflectionDataFactory,
-        SessionDataFactory,
-        UserDataFactory,
+        SecurityTestDataFactory,
     )
 except ImportError:
     # Create minimal mocks when factories aren't available
-    class ProjectDataFactory:
-        @staticmethod
-        def create():
-            return {"id": "test_project", "name": "Test Project"}
-
     class ReflectionDataFactory:
         @staticmethod
         def create():
             return {"content": "Test reflection", "tags": ["test"]}
 
-    class SessionDataFactory:
+    class LargeDatasetFactory:
         @staticmethod
-        def create():
-            return {"id": "test_session", "user": "test_user"}
+        def generate_large_reflection_dataset(count: int = 1000):
+            return [ReflectionDataFactory.create() for _ in range(count)]
 
-    class UserDataFactory:
+    class SecurityTestDataFactory:
         @staticmethod
         def create():
-            return {"id": "test_user", "name": "Test User"}
+            return {"valid_token": "test-token", "operation": "read"}
 
 
 @pytest.fixture(scope="session")
@@ -463,31 +458,6 @@ def performance_monitor():
             }
 
     return PerformanceMonitor()
-
-
-# Data Factory Fixtures
-@pytest.fixture
-def session_data():
-    """Generate test session data using factory."""
-    return SessionDataFactory.create()
-
-
-@pytest.fixture
-def reflection_data():
-    """Generate test reflection data using factory."""
-    return ReflectionDataFactory.create()
-
-
-@pytest.fixture
-def user_data():
-    """Generate test user data using factory."""
-    return UserDataFactory.create()
-
-
-@pytest.fixture
-def project_data():
-    """Generate test project data using factory."""
-    return ProjectDataFactory.create()
 
 
 def pytest_collection_modifyitems(config, items):

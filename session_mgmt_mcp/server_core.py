@@ -791,7 +791,9 @@ class FeatureDetector:
     def _check_enhanced_search() -> bool:
         """Check if enhanced search is available."""
         try:
-            return importlib.util.find_spec("session_mgmt_mcp.search_enhanced") is not None
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.search_enhanced") is not None
+            )
         except ImportError:
             return False
 
@@ -822,7 +824,9 @@ class FeatureDetector:
     def _check_advanced_search() -> bool:
         """Check if advanced search engine is available."""
         try:
-            return importlib.util.find_spec("session_mgmt_mcp.advanced_search") is not None
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.advanced_search") is not None
+            )
         except ImportError:
             return False
 
@@ -838,7 +842,9 @@ class FeatureDetector:
     def _check_auto_context() -> bool:
         """Check if auto-context loading is available."""
         try:
-            return importlib.util.find_spec("session_mgmt_mcp.context_manager") is not None
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.context_manager") is not None
+            )
         except ImportError:
             return False
 
@@ -847,7 +853,8 @@ class FeatureDetector:
         """Check if memory optimizer is available."""
         try:
             return (
-                importlib.util.find_spec("session_mgmt_mcp.memory_optimizer") is not None
+                importlib.util.find_spec("session_mgmt_mcp.memory_optimizer")
+                is not None
             )
         except ImportError:
             return False
@@ -864,7 +871,9 @@ class FeatureDetector:
     def _check_llm_providers() -> bool:
         """Check if LLM providers are available."""
         try:
-            return importlib.util.find_spec("session_mgmt_mcp.llm_providers") is not None
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.llm_providers") is not None
+            )
         except ImportError:
             return False
 
@@ -872,7 +881,9 @@ class FeatureDetector:
     def _check_serverless_mode() -> bool:
         """Check if serverless mode is available."""
         try:
-            return importlib.util.find_spec("session_mgmt_mcp.serverless_mode") is not None
+            return (
+                importlib.util.find_spec("session_mgmt_mcp.serverless_mode") is not None
+            )
         except ImportError:
             return False
 

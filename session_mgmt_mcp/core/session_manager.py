@@ -71,7 +71,9 @@ class SessionLifecycleManager:
             # Templates directory is in project root
             templates_dir = Path(__file__).parent.parent.parent / "templates"
             self.templates = TemplatesAdapter(template_dir=templates_dir)
-            self.logger.info("Templates adapter initialized", templates_dir=str(templates_dir))
+            self.logger.info(
+                "Templates adapter initialized", templates_dir=str(templates_dir)
+            )
         except Exception as e:
             self.logger.warning(
                 "Templates adapter initialization failed, using fallback",
@@ -283,13 +285,47 @@ class SessionLifecycleManager:
         quality_score = quality_data["total_score"]
         return quality_score, quality_data
 
+    def _format_trust_score(self, trust: Any) -> list[str]:
+        """Format trust score section (helper to reduce complexity). Target complexity: ≤5."""
+        output = []
+        # Defensive check: trust_score may be a dict or object with total attribute
+        if hasattr(trust, "total"):
+            total_score = trust.total
+        elif isinstance(trust, dict) and "total" in trust:
+            total_score = trust["total"]
+        else:
+            total_score = 0
+
+        if total_score > 0:
+            output.append(f"\n🔐 Trust score: {total_score:.0f}/100 (separate metric)")
+            # Handle both dict and object-based trust score
+            if hasattr(trust, "details"):
+                details = trust.details if isinstance(trust.details, dict) else {}
+            elif isinstance(trust, dict) and "details" in trust:
+                details = trust["details"]
+            else:
+                details = {}
+
+            # Only show breakdown if available
+            if details:
+                output.append(
+                    f"   • Trusted operations: {details.get('permissions_count', 0)}/40"
+                )
+                output.append(
+                    f"   • Session features: {details.get('session_available', False)} (available)"
+                )
+                output.append(
+                    f"   • Tool ecosystem: {details.get('tool_count', 0)} tools"
+                )
+        return output
+
     def format_quality_results(
         self,
         quality_score: int,
         quality_data: dict[str, Any],
         checkpoint_result: dict[str, Any] | None = None,
     ) -> list[str]:
-        """Format quality assessment results for display."""
+        """Format quality assessment results for display. Target complexity: ≤10."""
         output = []
 
         # Quality status
@@ -310,40 +346,9 @@ class SessionLifecycleManager:
         output.append(f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20")
         output.append(f"   • Security: {breakdown['security']:.1f}/10")
 
-        # Trust score (separate from quality)
+        # Trust score (separate from quality) - extracted to helper
         if "trust_score" in quality_data:
-            trust = quality_data["trust_score"]
-            # Defensive check: trust_score may be a dict or object with total attribute
-            if hasattr(trust, 'total'):
-                total_score = trust.total
-            elif isinstance(trust, dict) and 'total' in trust:
-                total_score = trust['total']
-            else:
-                total_score = 0
-
-            if total_score > 0:
-                output.append(
-                    f"\n🔐 Trust score: {total_score:.0f}/100 (separate metric)"
-                )
-                # Handle both dict and object-based trust score
-                if hasattr(trust, 'details'):
-                    details = trust.details if isinstance(trust.details, dict) else {}
-                elif isinstance(trust, dict) and 'details' in trust:
-                    details = trust['details']
-                else:
-                    details = {}
-
-                # Only show breakdown if available
-                if details:
-                    output.append(
-                        f"   • Trusted operations: {details.get('permissions_count', 0)}/40"
-                    )
-                    output.append(
-                        f"   • Session features: {details.get('session_available', False)} (available)"
-                    )
-                    output.append(
-                        f"   • Tool ecosystem: {details.get('tool_count', 0)} tools"
-                    )
+            output.extend(self._format_trust_score(quality_data["trust_score"]))
 
         # Recommendations
         recommendations = quality_data["recommendations"]
@@ -431,19 +436,21 @@ class SessionLifecycleManager:
         (claude_dir / "logs").mkdir(exist_ok=True)
         return claude_dir
 
-    def _get_previous_session_info(self, current_dir: Path) -> dict[str, Any] | None:
+    async def _get_previous_session_info(
+        self, current_dir: Path
+    ) -> dict[str, Any] | None:
         """Get previous session information if available. Target complexity: ≤5."""
         session_files = self._discover_session_files(current_dir)
 
         for file_path in session_files:
-            session_info = self._read_previous_session_info(file_path)
+            session_info = await self._read_previous_session_info(file_path)
             if session_info:
                 return session_info
 
         # Fallback to old method
         latest_handoff = self._find_latest_handoff_file(current_dir)
         if latest_handoff:
-            return self._read_previous_session_info(latest_handoff)
+            return await self._read_previous_session_info(latest_handoff)
 
         return None
 
@@ -464,7 +471,7 @@ class SessionLifecycleManager:
             )
 
             # Get previous session info
-            previous_session_info = self._get_previous_session_info(current_dir)
+            previous_session_info = await self._get_previous_session_info(current_dir)
 
             self.logger.info(
                 "Session initialized",
@@ -681,7 +688,9 @@ class SessionLifecycleManager:
         # Try to use templates adapter if available
         if self.templates:
             try:
-                return await self._generate_handoff_with_templates(summary, quality_data)
+                return await self._generate_handoff_with_templates(
+                    summary, quality_data
+                )
             except Exception as e:
                 self.logger.warning(
                     "Template-based handoff generation failed, using fallback",
@@ -821,13 +830,13 @@ class SessionLifecycleManager:
             self.logger.debug(f"Failed to parse session file {file_path}: {e}")
             return SessionInfo.empty()
 
-    def _read_previous_session_info(self, handoff_file: Path) -> dict[str, str] | None:
+    async def _read_previous_session_info(
+        self, handoff_file: Path
+    ) -> dict[str, str] | None:
         """Read previous session information. Target complexity: ≤8."""
-        import asyncio
-
         try:
-            # Use the new async parsing method
-            session_info = asyncio.run(self._parse_session_file(handoff_file))
+            # Use the async parsing method
+            session_info = await self._parse_session_file(handoff_file)
 
             if session_info.is_complete():
                 return {

@@ -5,7 +5,7 @@
 **Timeline:** 3-4 days total
 **Target Repository:** `/Users/les/Projects/acb`
 
----
+______________________________________________________________________
 
 ## Implementation Overview
 
@@ -14,6 +14,7 @@
 **Location:** `/Users/les/Projects/acb/acb/adapters/templates/`
 
 **Files to Create:**
+
 ```
 acb/adapters/templates/
 ├── __init__.py          # Main TemplatesAdapter export
@@ -28,6 +29,7 @@ acb/adapters/templates/
 **Location:** `/Users/les/Projects/acb/tests/adapters/templates/`
 
 **Files to Create:**
+
 ```
 tests/adapters/templates/
 ├── conftest.py                 # Test fixtures
@@ -41,6 +43,7 @@ tests/adapters/templates/
 ### Day 4: Documentation & Examples
 
 **Files to Create/Update:**
+
 ```
 acb/adapters/templates/README.md    # Detailed usage guide
 acb/examples/templates/
@@ -53,7 +56,7 @@ acb/examples/templates/
     └── user_profile.html           # Complex example
 ```
 
----
+______________________________________________________________________
 
 ## Day 1 Tasks (Today)
 
@@ -69,11 +72,12 @@ touch acb/adapters/templates/_filters.py
 touch acb/adapters/templates/README.md
 ```
 
-### Task 2: Implement _base.py (Settings & Base Classes)
+### Task 2: Implement \_base.py (Settings & Base Classes)
 
 **Pattern:** Follow `acb/adapters/cache/_base.py` pattern
 
 **Code:**
+
 ```python
 # acb/adapters/templates/_base.py
 import typing as t
@@ -139,6 +143,7 @@ class TemplatesBase:
 ### Task 3: Implement jinja2.py (Main Adapter)
 
 **Dependencies to Add:**
+
 ```toml
 # In acb/pyproject.toml [project.dependencies]
 "jinja2-async-environment>=0.14.3"
@@ -146,7 +151,8 @@ class TemplatesBase:
 ```
 
 **Code:**
-```python
+
+````python
 # acb/adapters/templates/jinja2.py
 from __future__ import annotations
 
@@ -259,7 +265,7 @@ class Jinja2Templates(TemplatesBase):
             ```python
             html = await templates.render(
                 "user_profile.html",
-                user={"name": "Alice", "email": "alice@example.com"}
+                user={"name": "Alice", "email": "alice@example.com"},
             )
             ```
         """
@@ -285,10 +291,7 @@ class Jinja2Templates(TemplatesBase):
 
         Example:
             ```python
-            html = await templates.render_string(
-                "Hello {{ name }}!",
-                name="World"
-            )
+            html = await templates.render_string("Hello {{ name }}!", name="World")
             ```
         """
         template = self.env.from_string(template_string)
@@ -330,9 +333,9 @@ class Jinja2Templates(TemplatesBase):
 TemplatesAdapter = Jinja2Templates
 
 __all__ = ["Jinja2Templates", "TemplatesAdapter", "TemplatesBaseSettings"]
-```
+````
 
-### Task 4: Implement _filters.py (Default Filters)
+### Task 4: Implement \_filters.py (Default Filters)
 
 ```python
 # acb/adapters/templates/_filters.py
@@ -393,7 +396,9 @@ def filesize_filter(value: int | float, binary: bool = True) -> str:
         {{ file_size|filesize }}        # "1.5 KiB"
         {{ file_size|filesize(False) }} # "1.5 KB"
     """
-    units = ["B", "KiB", "MiB", "GiB", "TiB"] if binary else ["B", "KB", "MB", "GB", "TB"]
+    units = (
+        ["B", "KiB", "MiB", "GiB", "TiB"] if binary else ["B", "KB", "MB", "GB", "TB"]
+    )
     divisor = 1024 if binary else 1000
 
     size = float(value)
@@ -414,7 +419,7 @@ __all__ = [
 
 ### Task 5: Update __init__.py (Public API)
 
-```python
+````python
 # acb/adapters/templates/__init__.py
 """ACB Templates Adapter - Async Jinja2 template rendering.
 
@@ -454,15 +459,16 @@ __all__ = [
     "datetime_filter",
     "filesize_filter",
 ]
-```
+````
 
----
+______________________________________________________________________
 
 ## Integration Steps
 
 ### 1. Update ACB pyproject.toml
 
 Add dependencies:
+
 ```toml
 [project.dependencies]
 # ... existing dependencies ...
@@ -490,11 +496,12 @@ cd /Users/les/Projects/session-mgmt-mcp
 uv add --editable /Users/les/Projects/acb
 ```
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
 ### Day 1-2 (Core Implementation)
+
 - [ ] All core files created
 - [ ] TemplatesAdapter renders templates asynchronously
 - [ ] Custom filters can be registered
@@ -502,18 +509,20 @@ uv add --editable /Users/les/Projects/acb
 - [ ] Passes basic smoke tests
 
 ### Day 3 (Testing)
+
 - [ ] ≥85% test coverage
 - [ ] All async patterns tested
 - [ ] Error handling validated
 - [ ] DI override patterns demonstrated
 
 ### Day 4 (Documentation)
+
 - [ ] README with usage examples
 - [ ] Example code runs successfully
 - [ ] API documentation complete
 - [ ] Migration guide available
 
----
+______________________________________________________________________
 
 ## Risk Mitigation
 
@@ -526,25 +535,28 @@ uv add --editable /Users/les/Projects/acb
 **Risk:** Performance concerns
 **Mitigation:** Use Jinja2's built-in caching, profile if needed
 
----
+______________________________________________________________________
 
 ## Next Steps After Completion
 
 1. **Release ACB Version**
+
    - Bump version (e.g., 0.25.3 → 0.26.0)
    - Update CHANGELOG
    - Publish to PyPI
 
-2. **Integrate into Session-Mgmt-MCP**
+1. **Integrate into Session-Mgmt-MCP**
+
    - Update dependency to ACB 0.26.0
    - Begin Phase 3.1 implementation
    - Create session-mgmt-mcp templates
 
-3. **Optional: Notify FastBlocks**
+1. **Optional: Notify FastBlocks**
+
    - Document how fastblocks could use base adapter
    - Offer migration path (optional, not required)
 
----
+______________________________________________________________________
 
 *Implementation plan for ACB templates adapter*
 *Start Date: 2025-01-25*

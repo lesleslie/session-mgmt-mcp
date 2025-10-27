@@ -484,7 +484,9 @@ async def _reflection_stats_impl() -> str:
                 )
             else:
                 # Old/test format: total_reflections, projects, date_range
-                output.append(f"📈 Total reflections: {stats.get('total_reflections', 0)}")
+                output.append(
+                    f"📈 Total reflections: {stats.get('total_reflections', 0)}"
+                )
                 output.append(f"📁 Projects: {stats.get('projects', 0)}")
 
                 date_range = stats.get("date_range")

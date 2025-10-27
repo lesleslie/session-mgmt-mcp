@@ -1276,7 +1276,6 @@ def register_crackerjack_tools(mcp: Any) -> None:
         mcp: FastMCP server instance
 
     """
-
     mcp.tool()(execute_crackerjack_command)
     mcp.tool()(crackerjack_run)
     mcp.tool()(crackerjack_history)

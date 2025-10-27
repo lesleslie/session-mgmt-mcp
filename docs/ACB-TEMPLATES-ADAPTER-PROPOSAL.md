@@ -4,7 +4,7 @@
 **Status:** Proposal for ACB Framework Enhancement
 **Target:** acb/adapters/templates/
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -13,17 +13,18 @@
 This is a **high-value, cross-cutting infrastructure component** that would benefit multiple projects (session-mgmt-mcp, fastblocks, and future ACB users). The investment is justified by:
 
 1. **Pattern Reuse**: Template rendering with DI + async is needed across multiple projects
-2. **Standardization**: ACB should provide battle-tested infrastructure components
-3. **Simplified Implementation**: Much simpler than fastblocks (no cloud storage, HTMY integration, etc.)
-4. **Framework Philosophy**: Elevates repeated patterns to framework level
+1. **Standardization**: ACB should provide battle-tested infrastructure components
+1. **Simplified Implementation**: Much simpler than fastblocks (no cloud storage, HTMY integration, etc.)
+1. **Framework Philosophy**: Elevates repeated patterns to framework level
 
----
+______________________________________________________________________
 
 ## Problem Statement
 
 ### Current State
 
 **Projects independently implement template rendering:**
+
 - **fastblocks**: Complex 37KB `jinja2.py` adapter with Redis caching, cloud storage, HTMY integration
 - **session-mgmt-mcp**: About to implement template rendering for Phase 3.1 (128 formatting functions → templates)
 - **Future ACB projects**: Will all need similar template rendering capabilities
@@ -31,11 +32,11 @@ This is a **high-value, cross-cutting infrastructure component** that would bene
 ### Pain Points
 
 1. **Code Duplication**: Each project reimplements Jinja2 + async + DI patterns
-2. **Inconsistency**: Different projects use different template patterns
-3. **Maintenance Burden**: Bug fixes must be replicated across projects
-4. **Learning Curve**: New ACB users must figure out template integration themselves
+1. **Inconsistency**: Different projects use different template patterns
+1. **Maintenance Burden**: Bug fixes must be replicated across projects
+1. **Learning Curve**: New ACB users must figure out template integration themselves
 
----
+______________________________________________________________________
 
 ## Proposed Solution
 
@@ -48,6 +49,7 @@ A **lightweight, async-first Jinja2 adapter** following ACB patterns:
 from acb.depends import depends
 from jinja2_async_environment import AsyncEnvironment
 from jinja2 import FileSystemLoader, select_autoescape
+
 
 class TemplatesAdapter:
     """Async Jinja2 template rendering with ACB dependency injection."""
@@ -124,6 +126,7 @@ templates_adapter = TemplatesAdapter(
 )
 depends.set("templates", templates_adapter)
 
+
 # Use in tools
 @mcp.tool()
 async def generate_report(data: dict[str, Any]) -> str:
@@ -131,19 +134,21 @@ async def generate_report(data: dict[str, Any]) -> str:
     return await templates.render("report.html", context=data)
 ```
 
----
+______________________________________________________________________
 
 ## Design Principles
 
 ### 1. **Simplicity Over Features**
 
 **Core Focus:**
+
 - Async Jinja2 rendering ✅
 - ACB DI integration ✅
 - FileSystemLoader by default ✅
 - Custom filters/globals support ✅
 
 **Explicitly NOT Included (for v1):**
+
 - Redis bytecode caching (advanced use case)
 - Cloud storage loaders (project-specific)
 - HTMY component integration (fastblocks-specific)
@@ -176,6 +181,7 @@ from acb.depends import depends
 templates = TemplatesAdapter(template_dir=Path("templates"))
 depends.set("templates", templates)
 
+
 # Option 2: Factory function
 @depends.provider
 def create_templates() -> TemplatesAdapter:
@@ -184,6 +190,7 @@ def create_templates() -> TemplatesAdapter:
         template_dir=Path(config.templates.dir),
         cache_size=config.templates.cache_size,
     )
+
 
 # Option 3: Auto-discovery (via ACB adapter system)
 templates = import_adapter("templates")
@@ -195,6 +202,7 @@ templates = import_adapter("templates")
 # Projects can extend for advanced features
 from acb.adapters.templates import TemplatesAdapter
 
+
 class RedisTemplatesAdapter(TemplatesAdapter):
     """Extended adapter with Redis bytecode caching."""
 
@@ -203,17 +211,19 @@ class RedisTemplatesAdapter(TemplatesAdapter):
         self.bytecode_cache = AsyncRedisBytecodeCache(redis_url)
         self.env.bytecode_cache = self.bytecode_cache
 
+
 # fastblocks continues using its custom implementation
 # session-mgmt-mcp uses the simple base adapter
 ```
 
----
+______________________________________________________________________
 
 ## Implementation Plan
 
 ### Phase 1: Core Adapter (1-2 days)
 
 **Files to Create:**
+
 ```
 acb/adapters/templates/
 ├── __init__.py          # TemplatesAdapter class
@@ -223,6 +233,7 @@ acb/adapters/templates/
 ```
 
 **Core Features:**
+
 1. `TemplatesAdapter` class with async rendering
 1. FileSystemLoader configuration
 1. Filter/global registration API
@@ -230,6 +241,7 @@ acb/adapters/templates/
 1. Basic error handling
 
 **Dependencies:**
+
 - `jinja2-async-environment>=0.14.3` (handles async Environment)
 - `jinja2>=3.1.6` (standard Jinja2)
 
@@ -249,6 +261,7 @@ acb/tests/adapters/templates/
 ### Phase 3: Examples & Migration (1 day)
 
 **Create examples:**
+
 ```
 acb/examples/templates/
 ├── basic_usage.py              # Simple rendering
@@ -259,13 +272,14 @@ acb/examples/templates/
 ```
 
 **Migration Guide:**
+
 - Document how to migrate from custom Jinja2 setups
 - Show fastblocks vs simple adapter comparison
 - Provide session-mgmt-mcp integration example
 
 ### Total Effort: ~3-4 days
 
----
+______________________________________________________________________
 
 ## Comparison: Simple vs Complex
 
@@ -273,6 +287,7 @@ acb/examples/templates/
 
 **Size:** ~300-400 lines
 **Features:**
+
 - Async Jinja2 rendering
 - FileSystemLoader
 - Custom filters/globals
@@ -280,6 +295,7 @@ acb/examples/templates/
 - Basic caching (Jinja2 built-in)
 
 **Dependencies:**
+
 - `jinja2-async-environment`
 - `jinja2`
 
@@ -287,6 +303,7 @@ acb/examples/templates/
 
 **Size:** ~37,000+ lines (total template system)
 **Features:**
+
 - Everything above PLUS:
 - Redis bytecode caching
 - Cloud storage loaders
@@ -298,6 +315,7 @@ acb/examples/templates/
 - Language server integration
 
 **Dependencies:**
+
 - `starlette-async-jinja`
 - `jinja2-async-environment`
 - `redis`
@@ -314,23 +332,26 @@ acb/examples/templates/
 | **Learning Curve** | 10 minutes | 2-3 hours | 12x easier |
 | **Maintenance** | Low | High | Much easier |
 
----
+______________________________________________________________________
 
 ## Benefits Analysis
 
 ### For ACB Framework
 
 1. **Standardization** ✅
+
    - Canonical way to do templates in ACB projects
    - Consistent patterns across ecosystem
    - Reduces "how do I integrate Jinja2?" questions
 
-2. **Discoverability** ✅
+1. **Discoverability** ✅
+
    - New users find `import_adapter("templates")` immediately
    - Documentation in one place
    - Examples in ACB repo
 
-3. **Maintenance Leverage** ✅
+1. **Maintenance Leverage** ✅
+
    - Bug fixes benefit all ACB projects
    - Security updates centralized
    - Performance improvements shared
@@ -338,16 +359,19 @@ acb/examples/templates/
 ### For Session-Mgmt-MCP
 
 1. **Faster Phase 3.1 Implementation**
+
    - No need to design custom template integration
    - Skip Jinja2 + async + DI research
    - Focus on template content, not infrastructure
 
-2. **Proven Patterns**
+1. **Proven Patterns**
+
    - Based on fastblocks battle-tested approach
    - ACB-native DI integration
    - Async-first from day one
 
-3. **Future-Proof**
+1. **Future-Proof**
+
    - Upgrades come from ACB
    - Community contributions benefit us
    - Migration path if needs grow
@@ -355,17 +379,19 @@ acb/examples/templates/
 ### For Future ACB Projects
 
 1. **Zero Template Setup**
+
    - `import_adapter("templates")` → done
    - No custom integration code
    - Instant async rendering
 
-2. **Extensibility Path**
+1. **Extensibility Path**
+
    - Start simple, extend when needed
    - Redis caching? Extend the adapter
    - Cloud storage? Extend the adapter
    - Core stays clean
 
----
+______________________________________________________________________
 
 ## Risk Analysis
 
@@ -389,37 +415,42 @@ acb/examples/templates/
 
 **Overall Assessment:** Risks of building are LOW, risks of NOT building are HIGH.
 
----
+______________________________________________________________________
 
 ## Recommendation
 
 ### ✅ YES - Build `acb.adapters.templates`
 
 **Why:**
+
 1. **High ROI**: 3-4 days investment, benefits all ACB projects forever
-2. **Clear Need**: Already needed by 2+ projects (fastblocks, session-mgmt-mcp)
-3. **Low Complexity**: ~400 lines of well-understood code
-4. **Framework Fit**: Perfect match for ACB's adapter philosophy
+1. **Clear Need**: Already needed by 2+ projects (fastblocks, session-mgmt-mcp)
+1. **Low Complexity**: ~400 lines of well-understood code
+1. **Framework Fit**: Perfect match for ACB's adapter philosophy
 
 ### Implementation Strategy
 
 **Option A: Build in ACB First, Then Use** ⭐ **RECOMMENDED**
+
 1. Create `acb.adapters.templates` (3-4 days)
 1. Release ACB version with templates adapter
 1. Use in session-mgmt-mcp Phase 3.1 immediately
 1. Fastblocks can optionally migrate later (or keep custom version)
 
 **Timeline:**
+
 - Week 1: Build ACB templates adapter
 - Week 2: Use in session-mgmt-mcp Phase 3.1
 - Total: ~1 week delay to Phase 3.1, but huge long-term benefit
 
 **Option B: Build in Session-Mgmt-MCP, Extract to ACB Later**
+
 1. Implement templates in session-mgmt-mcp (Phase 3.1)
 1. Extract to ACB when pattern proven
 1. Migrate session-mgmt-mcp to use ACB adapter
 
 **Timeline:**
+
 - Week 1-2: Phase 3.1 with custom templates
 - Week 3: Extract to ACB
 - Week 4: Migrate back to ACB adapter
@@ -428,33 +459,38 @@ acb/examples/templates/
 ### Recommended: Option A
 
 **Rationale:**
+
 - We already have proven pattern (fastblocks)
 - 3-4 day investment is small
 - Immediate reuse in session-mgmt-mcp
 - Sets good precedent for ACB ecosystem
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 ### If Approved
 
 1. **Create ACB Issue/PR**
+
    - Title: "Add templates adapter with async Jinja2 support"
    - Link this proposal document
    - Assign to ACB maintainer
 
-2. **Implementation (3-4 days)**
+1. **Implementation (3-4 days)**
+
    - Day 1-2: Core adapter implementation
    - Day 3: Testing suite
    - Day 4: Documentation & examples
 
-3. **Release ACB Version**
+1. **Release ACB Version**
+
    - Bump ACB version (e.g., 0.25.3 → 0.26.0)
    - Publish to PyPI
    - Update ACB docs
 
-4. **Use in Session-Mgmt-MCP**
+1. **Use in Session-Mgmt-MCP**
+
    - Update `pyproject.toml`: `acb>=0.26.0`
    - Begin Phase 3.1 using new adapter
    - Create example templates
@@ -462,18 +498,20 @@ acb/examples/templates/
 ### If Deferred
 
 1. **Document Decision**
+
    - Why deferred (timing, priorities, etc.)
    - Revisit criteria
 
-2. **Proceed with Session-Mgmt-MCP Custom Implementation**
+1. **Proceed with Session-Mgmt-MCP Custom Implementation**
+
    - Build templates system in Phase 3.1
    - Extract to ACB later if pattern successful
 
----
+______________________________________________________________________
 
 ## Appendix A: Minimal Adapter Code Example
 
-```python
+````python
 # acb/adapters/templates/__init__.py
 from __future__ import annotations
 
@@ -564,7 +602,7 @@ class TemplatesAdapter:
             ```python
             html = await templates.render(
                 "user_profile.html",
-                user={"name": "Alice", "email": "alice@example.com"}
+                user={"name": "Alice", "email": "alice@example.com"},
             )
             ```
         """
@@ -590,10 +628,7 @@ class TemplatesAdapter:
 
         Example:
             ```python
-            html = await templates.render_string(
-                "Hello {{ name }}!",
-                name="World"
-            )
+            html = await templates.render_string("Hello {{ name }}!", name="World")
             ```
         """
         template = self.env.from_string(template_string)
@@ -640,12 +675,14 @@ class TemplatesAdapter:
 def _json_filter(value: t.Any, indent: int | None = None) -> str:
     """JSON encoding filter."""
     import json
+
     return json.dumps(value, indent=indent, default=str)
 
 
 def _datetime_filter(value: t.Any, format: str = "%Y-%m-%d %H:%M:%S") -> str:
     """Datetime formatting filter."""
     from datetime import datetime
+
     if isinstance(value, str):
         value = datetime.fromisoformat(value)
     if isinstance(value, datetime):
@@ -654,55 +691,55 @@ def _datetime_filter(value: t.Any, format: str = "%Y-%m-%d %H:%M:%S") -> str:
 
 
 __all__ = ["TemplatesAdapter"]
-```
+````
 
 **Size:** ~200 lines (with docstrings)
 **Dependencies:** `jinja2-async-environment`, `jinja2`
 **Complexity:** Low - straightforward wrapper around Jinja2
 
----
+______________________________________________________________________
 
 ## Appendix B: Comparison with FastBlocks
 
 ### What FastBlocks Has That ACB Adapter Doesn't Need
 
 1. **Redis Bytecode Caching** - Advanced performance optimization
-2. **Cloud Storage Loaders** - S3/R2 template storage
-3. **Template Synchronization** - Sync between cache/storage/filesystem
-4. **Custom Delimiters** - `[[/]]` instead of `{{/}}`
-5. **HTMY Component Integration** - Bidirectional component system
-6. **Fragment Rendering** - Partial template updates
-7. **Advanced Caching** - Multi-layer cache strategy
-8. **Language Server** - IDE support for custom syntax
-9. **Performance Optimizer** - Template compilation optimization
+1. **Cloud Storage Loaders** - S3/R2 template storage
+1. **Template Synchronization** - Sync between cache/storage/filesystem
+1. **Custom Delimiters** - `[[/]]` instead of `{{/}}`
+1. **HTMY Component Integration** - Bidirectional component system
+1. **Fragment Rendering** - Partial template updates
+1. **Advanced Caching** - Multi-layer cache strategy
+1. **Language Server** - IDE support for custom syntax
+1. **Performance Optimizer** - Template compilation optimization
 
 ### What ACB Adapter Should Have
 
 1. ✅ **Async Rendering** - via `jinja2-async-environment`
-2. ✅ **FileSystemLoader** - standard template loading
-3. ✅ **Custom Filters** - extensibility
-4. ✅ **Auto-escaping** - security by default
-5. ✅ **DI Integration** - ACB `depends` pattern
-6. ✅ **Basic Caching** - Jinja2 built-in template caching
+1. ✅ **FileSystemLoader** - standard template loading
+1. ✅ **Custom Filters** - extensibility
+1. ✅ **Auto-escaping** - security by default
+1. ✅ **DI Integration** - ACB `depends` pattern
+1. ✅ **Basic Caching** - Jinja2 built-in template caching
 
 **Principle:** ACB adapter provides **80% of use cases with 5% of complexity**.
 
----
+______________________________________________________________________
 
 ## Conclusion
 
 Building a templates adapter in ACB is a **high-value, low-risk investment** that:
 
 1. **Standardizes** template rendering across ACB projects
-2. **Simplifies** integration (400 lines vs 37,000+)
-3. **Accelerates** Phase 3.1 implementation
-4. **Benefits** the entire ACB ecosystem
+1. **Simplifies** integration (400 lines vs 37,000+)
+1. **Accelerates** Phase 3.1 implementation
+1. **Benefits** the entire ACB ecosystem
 
 **Recommendation:** Proceed with **Option A** (build in ACB first, then use).
 
 **Timeline:** 3-4 days to implement, immediate use in session-mgmt-mcp.
 
----
+______________________________________________________________________
 
 *Proposal created for ACB framework enhancement discussion*
 *Author: Claude Code with input from session-mgmt-mcp Phase 3 planning*

@@ -5,12 +5,14 @@ Quick commands and patterns for testing session-mgmt-mcp
 ## Running Tests
 
 ### Run All Tests
+
 ```bash
 pytest
 pytest --cov=session_mgmt_mcp --cov-report=term-missing
 ```
 
 ### Run New Comprehensive Tests
+
 ```bash
 # All new tests
 pytest tests/unit/test_*_comprehensive.py tests/unit/test_*_property_based.py -v
@@ -26,6 +28,7 @@ pytest tests/unit/test_utilities_property_based.py -v
 ```
 
 ### Run Specific Test
+
 ```bash
 # By class
 pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatabaseStorage -v
@@ -38,6 +41,7 @@ pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatab
 ```
 
 ### Quick Coverage Check
+
 ```bash
 pytest --cov=session_mgmt_mcp -q
 ```
@@ -45,6 +49,7 @@ pytest --cov=session_mgmt_mcp -q
 ## Test File Organization
 
 ### Database Tests (`test_reflection_database_comprehensive.py`)
+
 ```
 TestReflectionDatabaseInitialization  # Setup, connection, tables
 TestReflectionDatabaseStorage         # Storing conversations/reflections
@@ -56,6 +61,7 @@ TestReflectionDatabaseMetadata        # Metadata preservation
 ```
 
 ### Search Tests (`test_search_comprehensive.py`)
+
 ```
 TestFullTextSearch        # Basic search operations
 TestSearchFiltering       # Result limiting, pagination
@@ -66,7 +72,9 @@ TestSearchErrorHandling  # SQL injection, Unicode, special chars
 ```
 
 ### Property-Based Tests (`test_utilities_property_based.py`)
+
 Uses Hypothesis to generate 100+ test cases for each test
+
 ```
 TestSessionLoggerPropertyBased      # Logger with random inputs
 TestQualityScorePropertyBased       # Quality metrics calculations
@@ -80,6 +88,7 @@ TestUtilityEdgeCases               # Edge cases (empty, Unicode, very long)
 ## Common Patterns
 
 ### Async Database Fixture
+
 ```python
 @pytest.fixture
 async def initialized_db():
@@ -89,6 +98,7 @@ async def initialized_db():
     yield db
     db.close()
 
+
 @pytest.mark.asyncio
 async def test_something(initialized_db):
     result = await initialized_db.store_conversation("text", {})
@@ -96,6 +106,7 @@ async def test_something(initialized_db):
 ```
 
 ### Property-Based Testing
+
 ```python
 @given(st.text(min_size=1, max_size=100))
 def test_with_random_text(text: str):
@@ -105,6 +116,7 @@ def test_with_random_text(text: str):
 ```
 
 ### Search Testing with Fixture
+
 ```python
 @pytest.fixture
 async def searchable_db():
@@ -113,6 +125,7 @@ async def searchable_db():
     await db.store_conversation("content", {"key": "value"})
     yield db
     db.close()
+
 
 @pytest.mark.asyncio
 async def test_search(searchable_db):
@@ -132,6 +145,7 @@ async def test_search(searchable_db):
 ## Debugging Failed Tests
 
 ### Check Test Output
+
 ```bash
 # Verbose output
 pytest tests/unit/test_reflection_database_comprehensive.py -xvs
@@ -144,6 +158,7 @@ pytest tests/unit/test_reflection_database_comprehensive.py -x
 ```
 
 ### Database Issues
+
 ```bash
 # Test just initialization
 pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatabaseInitialization -xvs
@@ -153,6 +168,7 @@ pytest tests/unit/test_reflection_database_comprehensive.py -xvs --tb=short
 ```
 
 ### Hypothesis Issues
+
 ```bash
 # Show Hypothesis statistics
 pytest tests/unit/test_utilities_property_based.py -v --hypothesis-show-statistics
@@ -164,18 +180,21 @@ pytest tests/unit/test_utilities_property_based.py -v --hypothesis-show-statisti
 ## Next Steps for Coverage Improvement
 
 ### 1. Session Manager Tests (2 hours)
+
 ```bash
 # Complete framework ready
 pytest tests/unit/test_session_manager_comprehensive.py -v
 ```
 
 ### 2. Server Tests (3 hours)
+
 ```bash
 # New tests needed
 pytest tests/unit/test_server.py -v  # TODO
 ```
 
 ### 3. Tools Tests (4 hours)
+
 ```bash
 # New tests needed
 pytest tests/unit/test_session_tools.py -v      # TODO
@@ -186,35 +205,39 @@ pytest tests/unit/test_search_tools.py -v       # TODO
 ## Useful References
 
 - **Database API:** session_mgmt_mcp/reflection_tools.py
-- **Test Files:** tests/unit/test_*_comprehensive.py
+- **Test Files:** tests/unit/test\_\*\_comprehensive.py
 - **Progress Report:** docs/TEST-IMPROVEMENT-PROGRESS.md
 - **Final Summary:** docs/TEST-IMPROVEMENT-FINAL-SUMMARY.md
 
 ## Tips & Tricks
 
 ### Run Tests in Parallel
+
 ```bash
 pytest -n auto  # Requires pytest-xdist
 ```
 
 ### Fail Fast
+
 ```bash
 pytest -x  # Stop on first failure
 pytest --tb=short  # Shorter error messages
 ```
 
 ### Generate Coverage Report
+
 ```bash
 pytest --cov=session_mgmt_mcp --cov-report=html
 # Open htmlcov/index.html in browser
 ```
 
 ### Watch Tests (if using pytest-watch)
+
 ```bash
 ptw  # Auto-re-run on file changes
 ```
 
----
+______________________________________________________________________
 
 **Last Updated:** October 26, 2025
 **Status:** Ready for use
