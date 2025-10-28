@@ -412,7 +412,7 @@ async def initialize_new_features(
 
     # Initialize reflection database for new features
     if REFLECTION_TOOLS_AVAILABLE:
-        with suppress(Exception):
+        with suppress(ImportError, ModuleNotFoundError, RuntimeError, AttributeError, OSError, ValueError):
             from session_mgmt_mcp.reflection_tools import get_reflection_database
 
             db = await get_reflection_database()
@@ -738,7 +738,7 @@ async def _perform_git_checkpoint(
 async def _format_conversation_summary() -> list[str]:
     """Format the conversation summary section."""
     output = []
-    with suppress(Exception):
+    with suppress(ImportError, ModuleNotFoundError, RuntimeError, AttributeError, ValueError):
         from session_mgmt_mcp.quality_engine import summarize_current_conversation
 
         conversation_summary = await summarize_current_conversation()

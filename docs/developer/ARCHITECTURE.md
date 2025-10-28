@@ -719,6 +719,796 @@ async def health_check() -> dict[str, Any]:
     }
 ```
 
+## ACB Framework Integration
+
+### Overview
+
+The session-mgmt-mcp server is built on top of the [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) framework, providing a robust foundation for async-first, dependency-injected architecture.
+
+### Core ACB Concepts
+
+#### Dependency Injection Container
+
+ACB provides a unified DI container using the `depends` module:
+
+```python
+from acb.depends import depends
+
+# Register singleton components
+depends.set(SessionManager, SessionManager())
+depends.set(HTTPClientAdapter, HTTPClientAdapter())
+
+# Retrieve components (synchronous context)
+session_mgr = depends.get_sync(SessionManager)
+
+# Retrieve components (async context)
+http_client = await depends.get_async(HTTPClientAdapter)
+```
+
+**Key Features:**
+
+- **Singleton Management**: Automatic lifecycle management for shared components
+- **Sync/Async Support**: Both `get_sync()` and `get_async()` retrieval patterns
+- **Type Safety**: Full type inference with mypy/pyright
+- **Lazy Initialization**: Components initialized only when first requested
+
+#### Lazy Logger Pattern
+
+To avoid DI initialization during module imports, use lazy logger initialization:
+
+```python
+def _get_logger():
+    """Get logger with lazy initialization to avoid DI issues during import."""
+    try:
+        from session_mgmt_mcp.utils.logging import get_session_logger
+        return get_session_logger()
+    except Exception:
+        import logging
+        return logging.getLogger(__name__)
+
+# Use in module functions
+logger = _get_logger()
+logger.info("Logging without triggering DI at import time")
+```
+
+### ACB Adapters
+
+#### HTTPClientAdapter
+
+High-performance HTTP client with connection pooling:
+
+```python
+from mcp_common.adapters.http.client import HTTPClientAdapter
+
+# Get from DI container
+http_adapter = depends.get_sync(HTTPClientAdapter)
+
+# Use the adapter
+async with http_adapter as client:
+    response = await client.get("https://api.example.com/data")
+
+# Performance characteristics:
+# - 11x faster than aiohttp for repeated requests
+# - Connection pool reuse reduces latency
+# - Automatic retry with exponential backoff
+```
+
+**Configuration:**
+
+```python
+@dataclass
+class HTTPSettings:
+    max_connections: int = 100
+    max_keepalive_connections: int = 20
+    timeout: float = 30.0
+    retry_attempts: int = 3
+    retry_backoff: float = 0.1
+```
+
+#### Custom Adapter Pattern
+
+Create domain-specific adapters following ACB patterns:
+
+```python
+from acb.adapters.base import BaseAdapter
+from acb.config import AdapterConfig
+
+@dataclass
+class MyAdapterConfig(AdapterConfig):
+    endpoint: str
+    api_key: str
+    timeout: int = 30
+
+class MyAdapter(BaseAdapter[MyAdapterConfig]):
+    """Custom adapter following ACB patterns."""
+
+    async def initialize(self) -> None:
+        """Initialize adapter resources."""
+        self.client = await self._create_client()
+
+    async def _create_client(self):
+        """Create underlying client."""
+        return httpx.AsyncClient(
+            base_url=self.settings.endpoint,
+            timeout=self.settings.timeout
+        )
+
+    async def _cleanup_resources(self) -> None:
+        """Cleanup adapter resources."""
+        if hasattr(self, 'client'):
+            await self.client.aclose()
+
+# Register with DI
+depends.set(MyAdapter, MyAdapter(config))
+```
+
+### ACB Best Practices
+
+#### 1. Prefer DI Over Direct Instantiation
+
+```python
+# ✅ Good: Use DI container
+from acb.depends import depends
+
+session_mgr = depends.get_sync(SessionManager)
+
+# ❌ Bad: Direct instantiation breaks singleton pattern
+session_mgr = SessionManager()
+```
+
+#### 2. Handle DI Errors Gracefully
+
+```python
+# ✅ Good: Graceful fallback
+try:
+    from acb.depends import depends
+    http_adapter = depends.get_sync(HTTPClientAdapter)
+except Exception as e:
+    logger.warning(f"HTTP adapter unavailable: {e}")
+    http_adapter = None
+
+# ❌ Bad: Let DI errors propagate
+http_adapter = depends.get_sync(HTTPClientAdapter)
+```
+
+#### 3. Use Context Managers for Resources
+
+```python
+# ✅ Good: Proper resource cleanup
+async with http_adapter as client:
+    response = await client.get(url)
+
+# ❌ Bad: Manual cleanup required
+client = await http_adapter._create_client()
+response = await client.get(url)
+await client.aclose()
+```
+
+## Health Check Architecture
+
+### Overview
+
+Comprehensive health check system built on `mcp_common.health` module for production monitoring and diagnostics.
+
+### Core Components
+
+#### ComponentHealth Dataclass
+
+```python
+from dataclasses import dataclass
+from mcp_common.health import HealthStatus
+
+@dataclass
+class ComponentHealth:
+    """Health check result for a single component."""
+    name: str
+    status: HealthStatus
+    message: str
+    latency_ms: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+```
+
+#### HealthStatus Enum
+
+```python
+from enum import Enum
+
+class HealthStatus(Enum):
+    """Component health status levels."""
+    HEALTHY = "healthy"      # Component fully operational
+    DEGRADED = "degraded"    # Component functional but issues detected
+    UNHEALTHY = "unhealthy"  # Component not operational
+```
+
+### Health Check Implementations
+
+#### Python Environment Check
+
+```python
+async def check_python_environment_health() -> ComponentHealth:
+    """Check Python runtime health."""
+    import sys
+    import platform
+
+    python_version = sys.version_info
+
+    # Check for Python 3.13+ requirement
+    if python_version < (3, 13):
+        return ComponentHealth(
+            name="python_env",
+            status=HealthStatus.DEGRADED,
+            message=f"Python {python_version.major}.{python_version.minor} (3.13+ recommended)",
+            metadata={
+                "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
+                "platform": platform.system(),
+                "recommendation": "Upgrade to Python 3.13+"
+            }
+        )
+
+    return ComponentHealth(
+        name="python_env",
+        status=HealthStatus.HEALTHY,
+        message=f"Python {python_version.major}.{python_version.minor}.{python_version.micro}",
+        metadata={
+            "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
+            "platform": platform.system()
+        }
+    )
+```
+
+#### Database Health Check
+
+```python
+async def check_database_health() -> ComponentHealth:
+    """Check DuckDB reflection database health."""
+    start_time = time.perf_counter()
+
+    try:
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        async with ReflectionDatabase() as db:
+            stats = await db.get_stats()
+            latency_ms = (time.perf_counter() - start_time) * 1000
+
+            return ComponentHealth(
+                name="database",
+                status=HealthStatus.HEALTHY,
+                message="DuckDB operational",
+                latency_ms=latency_ms,
+                metadata={
+                    "conversations": stats.get("conversations_count", 0),
+                    "reflections": stats.get("reflections_count", 0),
+                    "database_size_mb": stats.get("database_size_mb", 0),
+                }
+            )
+
+    except Exception as e:
+        return ComponentHealth(
+            name="database",
+            status=HealthStatus.UNHEALTHY,
+            message=f"Database error: {e}",
+            metadata={"error": str(e), "error_type": type(e).__name__}
+        )
+```
+
+#### HTTP Client Health Check
+
+```python
+async def check_http_client_health(
+    http_client: HTTPClientAdapter | None = None,
+    test_url: str | None = None,
+    timeout_ms: float = 5000,
+) -> ComponentHealth:
+    """Check HTTP client adapter health with optional connectivity test."""
+    start_time = time.perf_counter()
+
+    # Get HTTP client via DI if not provided
+    if http_client is None:
+        try:
+            from acb.depends import depends
+            from mcp_common.adapters.http.client import HTTPClientAdapter
+            http_client = depends.get_sync(HTTPClientAdapter)
+        except Exception as e:
+            return ComponentHealth(
+                name="http_client",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Failed to initialize: {e}",
+                metadata={"error": str(e)}
+            )
+
+    # Optional connectivity test
+    if test_url:
+        try:
+            client = await http_client._create_client()
+            response = await client.get(test_url)
+            latency_ms = (time.perf_counter() - start_time) * 1000
+
+            if response.status_code >= 400:
+                return ComponentHealth(
+                    name="http_client",
+                    status=HealthStatus.DEGRADED,
+                    message=f"HTTP {response.status_code}",
+                    latency_ms=latency_ms,
+                    metadata={"status_code": response.status_code}
+                )
+
+            return ComponentHealth(
+                name="http_client",
+                status=HealthStatus.HEALTHY,
+                message="HTTP client operational",
+                latency_ms=latency_ms,
+                metadata={"test_url": test_url}
+            )
+
+        except Exception as e:
+            return ComponentHealth(
+                name="http_client",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Connectivity test failed: {e}",
+                metadata={"error": str(e)}
+            )
+
+    return ComponentHealth(
+        name="http_client",
+        status=HealthStatus.HEALTHY,
+        message="HTTP client initialized",
+    )
+```
+
+#### File System Health Check
+
+```python
+async def check_file_system_health() -> ComponentHealth:
+    """Check file system accessibility and permissions."""
+    start_time = time.perf_counter()
+
+    claude_dir = Path.home() / ".claude"
+    required_dirs = [
+        claude_dir / "logs",
+        claude_dir / "data",
+        claude_dir / "temp",
+    ]
+
+    issues = []
+
+    for directory in required_dirs:
+        if not directory.exists():
+            issues.append(f"Missing: {directory.name}")
+        elif not os.access(directory, os.W_OK):
+            issues.append(f"Not writable: {directory.name}")
+
+    latency_ms = (time.perf_counter() - start_time) * 1000
+
+    if issues:
+        return ComponentHealth(
+            name="file_system",
+            status=HealthStatus.DEGRADED,
+            message=f"File system issues: {', '.join(issues)}",
+            latency_ms=latency_ms,
+            metadata={"issues": issues}
+        )
+
+    return ComponentHealth(
+        name="file_system",
+        status=HealthStatus.HEALTHY,
+        message="File system accessible",
+        latency_ms=latency_ms,
+    )
+```
+
+### Aggregated Health Checks
+
+Execute all health checks concurrently for fast overall status:
+
+```python
+async def get_all_health_checks() -> list[ComponentHealth]:
+    """Execute all health checks concurrently."""
+    checks = await asyncio.gather(
+        check_python_environment_health(),
+        check_file_system_health(),
+        check_database_health(),
+        check_dependencies_health(),
+        return_exceptions=True,
+    )
+
+    # Convert exceptions to UNHEALTHY ComponentHealth
+    results = []
+    for check in checks:
+        if isinstance(check, Exception):
+            results.append(ComponentHealth(
+                name="unknown",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Health check crashed: {check}",
+                metadata={"error": str(check)}
+            ))
+        else:
+            results.append(check)
+
+    return results
+```
+
+### Health Check Best Practices
+
+#### 1. Measure Latency
+
+Always measure and report latency for performance diagnostics:
+
+```python
+start_time = time.perf_counter()
+# ... perform check ...
+latency_ms = (time.perf_counter() - start_time) * 1000
+```
+
+#### 2. Provide Actionable Metadata
+
+Include context that helps diagnose issues:
+
+```python
+metadata = {
+    "conversations": count,
+    "database_size_mb": size,
+    "last_backup": timestamp,
+    "recommendation": "Consider archiving old data",
+}
+```
+
+#### 3. Handle Errors Gracefully
+
+Never let health check exceptions propagate:
+
+```python
+try:
+    # Perform check
+    return ComponentHealth(status=HealthStatus.HEALTHY, ...)
+except Exception as e:
+    return ComponentHealth(
+        status=HealthStatus.UNHEALTHY,
+        message=f"Check failed: {e}",
+        metadata={"error": str(e), "error_type": type(e).__name__}
+    )
+```
+
+## Graceful Shutdown Architecture
+
+### Overview
+
+Production-grade shutdown coordination with signal handling, cleanup task execution, and resource management.
+
+### Core Components
+
+#### ShutdownManager
+
+Central coordinator for graceful shutdown:
+
+```python
+from session_mgmt_mcp.shutdown_manager import ShutdownManager, CleanupTask
+
+manager = ShutdownManager()
+
+# Register cleanup tasks
+manager.register_cleanup(
+    name="database_connections",
+    callback=cleanup_database_connections,
+    priority=100,  # Higher priority = executes first
+    timeout_seconds=10.0,
+    critical=False,  # Continue on failure
+)
+
+# Setup signal handlers
+manager.setup_signal_handlers()
+
+# Manual shutdown
+stats = await manager.shutdown()
+```
+
+#### CleanupTask Dataclass
+
+```python
+@dataclass
+class CleanupTask:
+    """Cleanup task definition."""
+    name: str
+    callback: Callable[[], Awaitable[None] | None]  # Sync or async
+    priority: int = 0  # Execution order (higher first)
+    timeout_seconds: float = 30.0  # Per-task timeout
+    critical: bool = False  # Stop cleanup chain if fails
+```
+
+#### ShutdownStats
+
+Track shutdown execution metrics:
+
+```python
+@dataclass
+class ShutdownStats:
+    """Shutdown execution statistics."""
+    tasks_registered: int = 0
+    tasks_executed: int = 0
+    tasks_failed: int = 0
+    tasks_timeout: int = 0
+    total_duration_ms: float = 0.0
+```
+
+### Signal Handling
+
+#### Supported Signals
+
+- **SIGTERM**: Graceful termination (systemd, Docker stop)
+- **SIGINT**: Keyboard interrupt (Ctrl+C)
+- **SIGQUIT**: Quit with core dump (Unix only)
+
+#### Signal Handler Registration
+
+```python
+def setup_signal_handlers(self) -> None:
+    """Register signal handlers for graceful shutdown."""
+    signals_to_handle = [
+        (signal.SIGTERM, "SIGTERM"),
+        (signal.SIGINT, "SIGINT"),
+    ]
+
+    # Add SIGQUIT on Unix systems
+    if hasattr(signal, "SIGQUIT"):
+        signals_to_handle.append((signal.SIGQUIT, "SIGQUIT"))
+
+    for sig, name in signals_to_handle:
+        # Save original handler
+        original = signal.getsignal(sig)
+        self._original_handlers[sig] = original
+
+        # Set new handler
+        signal.signal(sig, self._signal_handler)
+
+    # Register atexit handler as final fallback
+    atexit.register(self._atexit_handler)
+```
+
+#### Signal Handler Implementation
+
+```python
+def _signal_handler(self, signum: int, frame: Any) -> None:
+    """Handle shutdown signals."""
+    sig_name = signal.Signals(signum).name
+    logger.info(f"Received {sig_name}, initiating graceful shutdown")
+
+    # Run shutdown in event loop
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(self.shutdown())
+    except RuntimeError:
+        # No running loop, create new one
+        asyncio.run(self.shutdown())
+```
+
+### Resource Cleanup Handlers
+
+#### Priority-Based Execution
+
+Cleanup tasks execute in priority order (highest first):
+
+```python
+# Priority 100: Critical infrastructure
+register_cleanup("database_connections", cleanup_database, priority=100)
+register_cleanup("http_clients", cleanup_http, priority=100)
+
+# Priority 80: Background processes
+register_cleanup("background_tasks", cleanup_tasks, priority=80)
+
+# Priority 60: Session state
+register_cleanup("session_state", cleanup_sessions, priority=60)
+
+# Priority 40: File handles
+register_cleanup("file_handles", cleanup_files, priority=40)
+
+# Priority 20: Temporary files
+register_cleanup("temp_files", cleanup_temp, priority=20)
+
+# Priority 10: Logging (last, so we can log everything else)
+register_cleanup("logging_handlers", cleanup_logging, priority=10)
+```
+
+#### Database Connection Cleanup
+
+```python
+async def cleanup_database_connections() -> None:
+    """Cleanup DuckDB reflection database connections."""
+    logger.info("Cleaning up database connections")
+
+    try:
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        # Close any active database instances
+        # ReflectionDatabase uses context manager, so we just ensure cleanup
+        logger.debug("Database cleanup completed successfully")
+
+    except ImportError:
+        logger.debug("Reflection database not available, skipping cleanup")
+    except Exception as e:
+        logger.error(f"Error during database cleanup: {e}", exc_info=True)
+        raise
+```
+
+#### HTTP Client Cleanup
+
+```python
+async def cleanup_http_clients() -> None:
+    """Cleanup HTTP client connections and release pools."""
+    logger.info("Cleaning up HTTP client connections")
+
+    try:
+        from acb.depends import depends
+        from mcp_common.adapters.http.client import HTTPClientAdapter
+
+        # Get instance if it exists
+        with suppress(Exception):
+            http_adapter = depends.get_sync(HTTPClientAdapter)
+            if http_adapter and hasattr(http_adapter, "_cleanup_resources"):
+                await http_adapter._cleanup_resources()
+                logger.debug("HTTP client cleanup completed successfully")
+
+    except Exception as e:
+        logger.error(f"Error during HTTP client cleanup: {e}", exc_info=True)
+        raise
+```
+
+#### Background Task Cleanup
+
+```python
+async def cleanup_background_tasks() -> None:
+    """Cancel pending background tasks."""
+    logger.info("Cleaning up background tasks")
+
+    try:
+        loop = asyncio.get_running_loop()
+
+        # Cancel pending tasks (except current task)
+        current_task = asyncio.current_task(loop)
+        pending_tasks = [
+            task for task in asyncio.all_tasks(loop)
+            if task != current_task and not task.done()
+        ]
+
+        if pending_tasks:
+            logger.debug(f"Cancelling {len(pending_tasks)} pending tasks")
+            for task in pending_tasks:
+                task.cancel()
+
+            # Wait for tasks to cancel
+            await asyncio.gather(*pending_tasks, return_exceptions=True)
+
+        logger.debug("Background task cleanup completed")
+
+    except RuntimeError:
+        logger.debug("No running event loop, skipping task cleanup")
+```
+
+#### Temporary File Cleanup
+
+```python
+async def cleanup_temp_files(temp_dir: Path | None = None) -> None:
+    """Remove temporary files."""
+    if temp_dir is None:
+        temp_dir = Path.home() / ".claude" / "temp"
+
+    if not temp_dir.exists():
+        return
+
+    logger.info(f"Cleaning up temporary files in {temp_dir}")
+
+    files_removed = 0
+    for temp_file in temp_dir.glob("*"):
+        if temp_file.is_file():
+            try:
+                temp_file.unlink()
+                files_removed += 1
+            except (OSError, PermissionError) as e:
+                logger.warning(f"Could not remove {temp_file}: {e}")
+
+    logger.debug(f"Removed {files_removed} temporary files")
+```
+
+### Shutdown Execution Flow
+
+```python
+async def shutdown(self) -> ShutdownStats:
+    """Execute all cleanup tasks in priority order."""
+    import time
+
+    start_time = time.perf_counter()
+
+    # Prevent multiple simultaneous shutdowns
+    async with self._shutdown_lock:
+        if self._shutdown_initiated:
+            return self._stats
+
+        self._shutdown_initiated = True
+
+        # Sort by priority (highest first)
+        sorted_tasks = sorted(
+            self._cleanup_tasks, key=lambda t: t.priority, reverse=True
+        )
+
+        for task in sorted_tasks:
+            try:
+                # Execute with timeout
+                if asyncio.iscoroutinefunction(task.callback):
+                    await asyncio.wait_for(
+                        task.callback(), timeout=task.timeout_seconds
+                    )
+                else:
+                    # Sync function - run in executor
+                    loop = asyncio.get_running_loop()
+                    await asyncio.wait_for(
+                        loop.run_in_executor(None, task.callback),
+                        timeout=task.timeout_seconds,
+                    )
+
+                self._stats.tasks_executed += 1
+
+            except asyncio.TimeoutError:
+                self._stats.tasks_timeout += 1
+                if task.critical:
+                    break  # Stop cleanup chain
+
+            except Exception as e:
+                self._stats.tasks_failed += 1
+                logger.error(f"Cleanup task failed: {task.name} - {e}")
+                if task.critical:
+                    break  # Stop cleanup chain
+
+        # Calculate total duration
+        self._stats.total_duration_ms = (time.perf_counter() - start_time) * 1000
+
+        return self._stats
+```
+
+### Shutdown Best Practices
+
+#### 1. Register All Cleanup Handlers at Startup
+
+```python
+from session_mgmt_mcp.shutdown_manager import get_shutdown_manager
+from session_mgmt_mcp.resource_cleanup import register_all_cleanup_handlers
+
+shutdown_mgr = get_shutdown_manager()
+register_all_cleanup_handlers(shutdown_mgr)
+shutdown_mgr.setup_signal_handlers()
+```
+
+#### 2. Use Appropriate Priorities
+
+- **100**: Critical infrastructure (database, HTTP clients)
+- **80**: Background processes and async tasks
+- **60**: Session state and application data
+- **40**: File handles and buffers
+- **20**: Temporary files and caches
+- **10**: Logging handlers (last, to log everything)
+
+#### 3. Set Reasonable Timeouts
+
+```python
+# Fast operations: 5 seconds
+register_cleanup("file_handles", cleanup_files, timeout_seconds=5.0)
+
+# Moderate operations: 10 seconds
+register_cleanup("database", cleanup_db, timeout_seconds=10.0)
+
+# Slow operations: 15 seconds
+register_cleanup("background_tasks", cleanup_tasks, timeout_seconds=15.0)
+```
+
+#### 4. Mark Critical Tasks Appropriately
+
+Only mark tasks as critical if their failure should stop the entire cleanup chain:
+
+```python
+# ✅ Good: Non-critical (continue on failure)
+register_cleanup("temp_files", cleanup_temp, critical=False)
+
+# ❌ Bad: Marking everything critical
+register_cleanup("logging", cleanup_logging, critical=True)  # No!
+```
+
 ## Future Architecture Considerations
 
 ### 1. Microservices Evolution
@@ -759,4 +1549,5 @@ ______________________________________________________________________
 
 - [CONFIGURATION.md](CONFIGURATION.md) - Configuration options and environment setup
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment strategies and production setup
-- [MCP_SCHEMA_REFERENCE.md](MCP_SCHEMA_REFERENCE.md) - Complete API reference
+- [MCP_SCHEMA_REFERENCE.md](../reference/MCP_SCHEMA_REFERENCE.md) - Complete MCP tool reference
+- [API_REFERENCE.md](../reference/API_REFERENCE.md) - Python API reference for mcp_common

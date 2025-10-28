@@ -68,7 +68,7 @@ class SessionSetupResults:
 
 # Global session manager
 def _get_session_manager() -> SessionLifecycleManager:
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         manager = depends.get_sync(SessionLifecycleManager)
         if isinstance(manager, SessionLifecycleManager):
             return manager
@@ -289,7 +289,7 @@ def _check_working_dir_file() -> str | None:
 
     working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
     if working_dir_file.exists():
-        with suppress(Exception):
+        with suppress(OSError, PermissionError, ValueError, UnicodeDecodeError):
             stored_dir = working_dir_file.read_text().strip()
             # Only use if it's NOT the session-mgmt-mcp server directory
             if (

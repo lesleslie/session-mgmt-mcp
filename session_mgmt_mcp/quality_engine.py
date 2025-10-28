@@ -65,7 +65,7 @@ def _get_fallback_compaction_reason() -> str:
 def _count_significant_files(current_dir: Path) -> int:
     """Count significant files in project as a complexity indicator."""
     file_count = 0
-    with suppress(Exception):
+    with suppress(OSError, PermissionError, FileNotFoundError, ValueError):
         for file_path in current_dir.rglob("*"):
             if (
                 file_path.is_file()
@@ -345,7 +345,7 @@ async def _analyze_context_compaction() -> list[str]:
 
 async def _store_context_summary(conversation_summary: dict[str, Any]) -> None:
     """Store conversation summary for future context retrieval."""
-    try:
+    with suppress(ImportError, RuntimeError, OSError, ValueError, AttributeError):
         from session_mgmt_mcp.reflection_tools import get_reflection_database
 
         db = await get_reflection_database()
@@ -356,9 +356,6 @@ async def _store_context_summary(conversation_summary: dict[str, Any]) -> None:
             )
 
         await db.store_reflection(summary_text, ["context-summary", "compaction"])
-
-    except (ImportError, Exception):
-        pass  # Silently fail if reflection tools unavailable
 
 
 async def perform_strategic_compaction() -> list[str]:
@@ -645,15 +642,12 @@ async def _get_conversation_statistics() -> dict[str, int]:
         "recent_activity": 0,
     }
 
-    try:
+    with suppress(ImportError, RuntimeError, OSError, ValueError, AttributeError):
         from session_mgmt_mcp.reflection_tools import get_reflection_database
 
-        with suppress(Exception):
-            db = await get_reflection_database()
-            stats = await db.get_stats()
-            conv_stats["total_conversations"] = stats.get("conversations_count", 0)
-    except ImportError:
-        pass
+        db = await get_reflection_database()
+        stats = await db.get_stats()
+        conv_stats["total_conversations"] = stats.get("conversations_count", 0)
 
     return conv_stats
 

@@ -24,7 +24,21 @@ except ImportError:
 
 from .logging import get_session_logger
 
-logger = get_session_logger()
+# Lazy-load logger to avoid DI initialization issues during imports
+_logger: t.Any = None
+
+
+def _get_logger() -> t.Any:
+    """Get logger instance, initializing on first use."""
+    global _logger
+    if _logger is None:
+        try:
+            _logger = get_session_logger()
+        except Exception:
+            # Fallback to basic logging if DI not initialized
+            import logging
+            _logger = logging.getLogger(__name__)
+    return _logger
 
 
 class DatabaseConnectionPool:
@@ -60,7 +74,7 @@ class DatabaseConnectionPool:
                 conn.execute("PRAGMA temp_directory='/tmp'")
             return conn
         except Exception as e:
-            logger.exception(f"Failed to create database connection: {e}")
+            _get_logger().exception(f"Failed to create database connection: {e}")
             raise
 
     def get_connection(self) -> Any:
@@ -98,7 +112,7 @@ class DatabaseConnectionPool:
                     try:
                         conn.close()
                     except Exception as e:
-                        logger.warning(f"Error closing excess connection: {e}")
+                        _get_logger().warning(f"Error closing excess connection: {e}")
 
     @asynccontextmanager
     async def get_async_connection(self) -> AsyncIterator[Any]:
@@ -110,7 +124,7 @@ class DatabaseConnectionPool:
             conn = await loop.run_in_executor(self._get_executor(), self.get_connection)
             yield conn
         except Exception as e:
-            logger.exception(f"Database connection error: {e}")
+            _get_logger().exception(f"Database connection error: {e}")
             raise
         finally:
             if conn:
@@ -141,7 +155,7 @@ class DatabaseConnectionPool:
                         return conn.execute(query, parameters).fetchall()
                     return conn.execute(query).fetchall()
                 except Exception as e:
-                    logger.exception(f"Query execution failed: {e}")
+                    _get_logger().exception(f"Query execution failed: {e}")
                     raise
 
             return await loop.run_in_executor(self._get_executor(), _execute)
@@ -159,7 +173,7 @@ class DatabaseConnectionPool:
                         results.append(result)
                     return results
                 except Exception as e:
-                    logger.exception(f"Batch query execution error: {e}")
+                    _get_logger().exception(f"Batch query execution error: {e}")
                     raise
 
             return await loop.run_in_executor(self._get_executor(), _execute_many)
@@ -190,14 +204,14 @@ class DatabaseConnectionPool:
                 try:
                     conn.close()
                 except Exception as e:
-                    logger.warning(f"Error closing pooled connection: {e}")
+                    _get_logger().warning(f"Error closing pooled connection: {e}")
 
             # Close active connections
             for conn in self._active_connections.values():
                 try:
                     conn.close()
                 except Exception as e:
-                    logger.warning(f"Error closing active connection: {e}")
+                    _get_logger().warning(f"Error closing active connection: {e}")
 
             self._pool.clear()
             self._active_connections.clear()
@@ -207,7 +221,7 @@ class DatabaseConnectionPool:
             self._executor.shutdown(wait=True)
             self._executor = None
 
-        logger.info("Database connection pool closed")
+        _get_logger().info("Database connection pool closed")
 
 
 # Global connection pool instance

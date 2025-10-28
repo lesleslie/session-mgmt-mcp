@@ -280,7 +280,7 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
 def _count_significant_files(current_dir: Path) -> int:
     """Count significant files in project as a complexity indicator."""
     file_count = 0
-    with suppress(Exception):
+    with suppress(OSError, PermissionError, FileNotFoundError, ValueError):
         for file_path in current_dir.rglob("*"):
             if (
                 file_path.is_file()

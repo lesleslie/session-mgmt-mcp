@@ -12,6 +12,7 @@ and /session-end slash commands.
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import os
 import sys
 import warnings
@@ -55,17 +56,20 @@ try:
 except Exception:
     session_logger = get_session_logger()
 
-try:
+# Check token optimizer availability (Phase 3.3 M2: improved pattern)
+TOKEN_OPTIMIZER_AVAILABLE = (
+    importlib.util.find_spec("session_mgmt_mcp.token_optimizer") is not None
+)
+
+if TOKEN_OPTIMIZER_AVAILABLE:
     from session_mgmt_mcp.token_optimizer import (
         get_cached_chunk,
         get_token_usage_stats,
-        optimize_memory_usage,
         optimize_search_response,
         track_token_usage,
     )
-
-    TOKEN_OPTIMIZER_AVAILABLE = True
-except ImportError:
+else:
+    # Fallback implementations when token optimizer unavailable
     TOKEN_OPTIMIZER_AVAILABLE = False
 
     async def optimize_search_response(
@@ -111,8 +115,16 @@ except ImportError:
         FastMCP = MockFastMCP  # type: ignore[no-redef,misc]
         MCP_AVAILABLE = False
     else:
-        print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
-        sys.exit(1)
+        if EXCEPTIONS_AVAILABLE:
+            raise DependencyMissingError(
+                message="FastMCP is required but not installed",
+                dependency="fastmcp",
+                install_command="uv add fastmcp",
+            )
+        else:
+            # Fallback to sys.exit if exceptions unavailable
+            print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
+            sys.exit(1)
 
 # Phase 2.6: Get all feature flags from centralized detector
 _features = get_feature_flags()
@@ -148,13 +160,26 @@ except Exception:
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.reflection_tools import get_reflection_database
 
-# Import mcp-common ServerPanels for beautiful terminal UI
-try:
-    from mcp_common.ui import ServerPanels
+# Check mcp-common ServerPanels availability (Phase 3.3 M2: improved pattern)
+SERVERPANELS_AVAILABLE = (
+    importlib.util.find_spec("mcp_common.ui") is not None
+)
 
-    SERVERPANELS_AVAILABLE = True
-except ImportError:
-    SERVERPANELS_AVAILABLE = False
+# Check mcp-common security availability (Phase 3.3 M2: improved pattern)
+SECURITY_AVAILABLE = (
+    importlib.util.find_spec("mcp_common.security") is not None
+)
+
+# Check FastMCP rate limiting middleware availability (Phase 3.3 M2: improved pattern)
+RATE_LIMITING_AVAILABLE = (
+    importlib.util.find_spec("fastmcp.server.middleware.rate_limiting") is not None
+)
+
+# Check mcp-common exceptions availability (Phase 3.3 M3: custom exceptions)
+EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
+
+if EXCEPTIONS_AVAILABLE:
+    from mcp_common.exceptions import DependencyMissingError
 
 # Phase 2.2: Import utility and formatting functions from server_helpers
 
@@ -180,6 +205,19 @@ _mcp_config = _load_mcp_config()
 # Initialize MCP server with lifespan
 mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
 
+# Add rate limiting middleware (Phase 3 Security Hardening)
+if RATE_LIMITING_AVAILABLE:
+    from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
+
+    rate_limiter = RateLimitingMiddleware(
+        max_requests_per_second=10.0,  # Sustainable rate for session management operations
+        burst_capacity=30,  # Allow bursts for checkpoint/status operations
+        global_limit=True,  # Protect the session management server globally
+    )
+    # Use public API (Phase 3.1 C1 fix: standardize middleware access)
+    mcp.add_middleware(rate_limiter)
+    session_logger.info("Rate limiting enabled: 10 req/sec, burst 30")
+
 # Register extracted tool modules following crackerjack architecture patterns
 from .tools import (
     register_crackerjack_tools,
@@ -198,6 +236,9 @@ from .utils import (
     _format_search_results,
     validate_claude_directory,
 )
+
+# Import LLM provider validation (Phase 3 Security Hardening)
+from .llm_providers import validate_llm_api_keys_at_startup
 
 # Register all extracted tool modules
 register_search_tools(mcp)
@@ -400,9 +441,24 @@ mcp.tool()(session_welcome)
 
 def main(http_mode: bool = False, http_port: int | None = None) -> None:
     """Main entry point for the MCP server."""
+    # Validate LLM API keys at startup (Phase 3 Security Hardening)
+    # Phase 3.2 H3 fix: Replace broad exception suppression with specific handling
+    if LLM_PROVIDERS_AVAILABLE:
+        try:
+            validate_llm_api_keys_at_startup()
+        except (ImportError, ValueError) as e:
+            logger.warning(f"LLM API key validation skipped (optional feature): {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during LLM validation: {e}", exc_info=True)
+
     # Initialize new features on startup
-    with suppress(Exception):
+    # Phase 3.2 H3 fix: Replace broad exception suppression with specific handling
+    try:
         asyncio.run(initialize_new_features())
+    except (ImportError, RuntimeError) as e:
+        logger.warning(f"Feature initialization skipped (optional): {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error during feature init: {e}", exc_info=True)
 
     # Get host and port from config
     host = _mcp_config.get("http_host", "127.0.0.1")
@@ -415,16 +471,25 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     if use_http:
         # Use ServerPanels for beautiful startup UI
         if SERVERPANELS_AVAILABLE:
+            from mcp_common.ui import ServerPanels
+
+            # Build features list with optional security and rate limiting features
+            features = [
+                "Session Lifecycle Management",
+                "Memory & Reflection System",
+                "Crackerjack Quality Integration",
+                "Knowledge Graph (DuckPGQ)",
+                "LLM Provider Management",
+            ]
+            if SECURITY_AVAILABLE:
+                features.append("🔒 API Key Validation (OpenAI/Gemini)")
+            if RATE_LIMITING_AVAILABLE:
+                features.append("⚡ Rate Limiting (10 req/sec, burst 30)")
+
             ServerPanels.startup_success(
                 server_name="Session Management MCP",
                 version="2.0.0",
-                features=[
-                    "Session Lifecycle Management",
-                    "Memory & Reflection System",
-                    "Crackerjack Quality Integration",
-                    "Knowledge Graph (DuckPGQ)",
-                    "LLM Provider Management",
-                ],
+                features=features,
                 endpoint=f"http://{host}:{port}/mcp",
                 websocket_monitor=str(_mcp_config.get("websocket_monitor_port", 8677)),
                 transport="HTTP (streamable)",
@@ -450,16 +515,25 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     else:
         # Use ServerPanels for STDIO mode
         if SERVERPANELS_AVAILABLE:
+            from mcp_common.ui import ServerPanels
+
+            # Build features list with optional security and rate limiting features
+            features = [
+                "Session Lifecycle Management",
+                "Memory & Reflection System",
+                "Crackerjack Quality Integration",
+                "Knowledge Graph (DuckPGQ)",
+                "LLM Provider Management",
+            ]
+            if SECURITY_AVAILABLE:
+                features.append("🔒 API Key Validation (OpenAI/Gemini)")
+            if RATE_LIMITING_AVAILABLE:
+                features.append("⚡ Rate Limiting (10 req/sec, burst 30)")
+
             ServerPanels.startup_success(
                 server_name="Session Management MCP",
                 version="2.0.0",
-                features=[
-                    "Session Lifecycle Management",
-                    "Memory & Reflection System",
-                    "Crackerjack Quality Integration",
-                    "Knowledge Graph (DuckPGQ)",
-                    "LLM Provider Management",
-                ],
+                features=features,
                 transport="STDIO",
                 mode="Claude Desktop",
             )

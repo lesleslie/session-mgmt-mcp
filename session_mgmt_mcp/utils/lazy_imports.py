@@ -12,7 +12,21 @@ from typing import Any, Never
 
 from .logging import get_session_logger
 
-logger = get_session_logger()
+# Lazy-load logger to avoid DI initialization issues during imports
+_logger: Any = None
+
+
+def _get_logger() -> Any:
+    """Get logger instance, initializing on first use."""
+    global _logger
+    if _logger is None:
+        try:
+            _logger = get_session_logger()
+        except Exception:
+            # Fallback to basic logging if DI not initialized
+            import logging
+            _logger = logging.getLogger(__name__)
+    return _logger
 
 
 class LazyImport:
@@ -49,10 +63,10 @@ class LazyImport:
         self._import_attempted = True
         try:
             self._module = importlib.import_module(self.module_name)
-            logger.debug(f"Successfully imported {self.module_name}")
+            _get_logger().debug(f"Successfully imported {self.module_name}")
         except ImportError as e:
             self._import_failed = True
-            logger.warning(f"Failed to import {self.module_name}: {e}")
+            _get_logger().warning(f"Failed to import {self.module_name}: {e}")
 
     @property
     def available(self) -> bool:
@@ -160,7 +174,7 @@ def optional_dependency(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             loader = lazy_loader.get_import(dependency_name)
             if not loader or not loader.available:
-                logger.info(
+                _get_logger().info(
                     f"Function {func.__name__} skipped - {dependency_name} not available",
                 )
                 return fallback_result
@@ -258,7 +272,7 @@ def log_dependency_status() -> None:
     status = get_dependency_status()
     summary = status["_summary"]
 
-    logger.info(
+    _get_logger().info(
         "Dependency status check completed",
         core_functionality=summary["core_functionality"],
         embedding_functionality=summary["embedding_functionality"],
@@ -274,10 +288,10 @@ def log_dependency_status() -> None:
     ]
 
     if missing_core:
-        logger.warning("Missing core dependencies", missing=missing_core)
+        _get_logger().warning("Missing core dependencies", missing=missing_core)
 
     if missing_optional:
-        logger.info(
+        _get_logger().info(
             "Missing optional dependencies",
             missing=missing_optional,
             install_hint="uv sync --extra embeddings",

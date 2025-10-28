@@ -32,7 +32,7 @@ async def get_app_monitor() -> ApplicationMonitor | None:
     except ImportError:
         return None
 
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         monitor = await depends.get(ApplicationMonitor)
         if isinstance(monitor, ApplicationMonitor):
             return monitor
@@ -53,7 +53,7 @@ async def get_llm_manager() -> LLMManager | None:
     except ImportError:
         return None
 
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         manager = await depends.get(LLMManager)
         if isinstance(manager, LLMManager):
             return manager
@@ -74,7 +74,7 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
     except ImportError:
         return None
 
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         manager = await depends.get(ServerlessSessionManager)
         if isinstance(manager, ServerlessSessionManager):
             return manager
@@ -102,7 +102,7 @@ async def get_reflection_database() -> ReflectionDatabase | None:
     except ImportError:
         return None
 
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         db = await depends.get(ReflectionDatabase)
         if isinstance(db, ReflectionDatabase):
             return db
@@ -119,7 +119,7 @@ async def get_interruption_manager() -> InterruptionManager | None:
     except ImportError:
         return None
 
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         manager = await depends.get(InterruptionManager)
         if isinstance(manager, InterruptionManager):
             return manager
@@ -133,12 +133,12 @@ def reset_instances() -> None:
     """Reset registered instances in the DI container."""
     container = get_container()
     for dependency in _iter_dependencies():
-        with suppress(Exception):
+        with suppress(KeyError):
             container.instances.pop(dependency, None)
 
 
 def _resolve_claude_dir() -> Path:
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
         if isinstance(claude_dir, Path):
             claude_dir.mkdir(parents=True, exist_ok=True)

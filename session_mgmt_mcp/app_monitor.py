@@ -299,7 +299,7 @@ class BrowserDocumentationMonitor:
 
         from contextlib import suppress
 
-        with suppress(Exception):
+        with suppress(ValueError, AttributeError):
             from urllib.parse import urlparse
 
             parsed = urlparse(url)

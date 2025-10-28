@@ -47,7 +47,7 @@ def reset() -> None:
 def _register_path(key: str, path: Path, force: bool) -> None:
     """Register path dependency with optional override."""
     if not force:
-        with suppress(Exception):
+        with suppress(KeyError, AttributeError):
             existing = depends.get_sync(key)
             if isinstance(existing, Path):
                 return
@@ -56,7 +56,7 @@ def _register_path(key: str, path: Path, force: bool) -> None:
 
 
 def _resolve_path(key: str, default: Path) -> Path:
-    with suppress(Exception):
+    with suppress(KeyError, AttributeError):
         resolved = depends.get_sync(key)
         if isinstance(resolved, Path):
             return resolved
@@ -67,7 +67,7 @@ def _register_logger(force: bool) -> None:
     from session_mgmt_mcp.utils.logging import SessionLogger
 
     if not force:
-        with suppress(Exception):
+        with suppress(KeyError, AttributeError):
             depends.get_sync(SessionLogger)
             return
     logs_dir = _resolve_path(LOGS_DIR_KEY, Path.home() / ".claude" / "logs")
@@ -79,7 +79,7 @@ def _register_permissions_manager(force: bool) -> None:
     from session_mgmt_mcp.server_core import SessionPermissionsManager
 
     if not force:
-        with suppress(Exception):
+        with suppress(KeyError, AttributeError):
             depends.get_sync(SessionPermissionsManager)
             return
     claude_dir = _resolve_path(CLAUDE_DIR_KEY, Path.home() / ".claude")
@@ -91,7 +91,7 @@ def _register_lifecycle_manager(force: bool) -> None:
     from session_mgmt_mcp.core import SessionLifecycleManager
 
     if not force:
-        with suppress(Exception):
+        with suppress(KeyError, AttributeError):
             depends.get_sync(SessionLifecycleManager)
             return
     manager = SessionLifecycleManager()

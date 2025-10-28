@@ -247,7 +247,7 @@ def _score_version_control(project_dir: Path) -> tuple[float, dict[str, str]]:
     if not git_dir.exists():
         return 0, {"version_control": "none"}
 
-    with suppress(Exception):
+    with suppress(subprocess.SubprocessError, subprocess.TimeoutExpired, OSError, FileNotFoundError):
         result = subprocess.run(
             ["git", "log", "--oneline", "-n", "10"],
             check=False,
@@ -272,7 +272,7 @@ def _score_dependency_management(project_dir: Path) -> tuple[float, dict[str, st
     if not lockfile.exists():
         return 0, {"dependency_mgmt": "none"}
 
-    with suppress(Exception):
+    with suppress(OSError, PermissionError, FileNotFoundError, ValueError):
         lockfile_age_days = (
             datetime.now() - datetime.fromtimestamp(lockfile.stat().st_mtime)
         ).days
@@ -600,7 +600,7 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
         details["gitignore"] = "missing"
 
     # Check for hardcoded secrets (basic patterns)
-    with suppress(Exception):
+    with suppress(OSError, PermissionError, FileNotFoundError, UnicodeDecodeError, ValueError):
         py_files = list(project_dir.rglob("*.py"))[:50]  # Limit to 50 files
         secret_patterns = [
             r"password\s*=\s*['\"][^'\"]+['\"]",
@@ -699,7 +699,7 @@ def _read_coverage_json(project_dir: Path) -> float:
     if not coverage_json.exists():
         return 0
 
-    with suppress(Exception):
+    with suppress(OSError, PermissionError, FileNotFoundError, json.JSONDecodeError, ValueError, KeyError):
         import json
 
         coverage_data = json.loads(coverage_json.read_text())
@@ -730,7 +730,7 @@ async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
     if not CRACKERJACK_AVAILABLE:
         return {}
 
-    with suppress(Exception):
+    with suppress(ImportError, RuntimeError, ValueError, AttributeError, OSError):
         # Get recent metrics from Crackerjack history
         metrics_history = await get_quality_metrics_history(
             str(project_dir), None, days=1

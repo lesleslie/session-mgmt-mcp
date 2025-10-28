@@ -175,7 +175,7 @@ class NaturalLanguageParser:
 
     def _process_pattern_handler(self, handler: Any, match: Match[str]) -> Any:
         """Process a pattern handler with exception handling."""
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(TypeError, ValueError, RuntimeError, AttributeError):
             if callable(handler):
                 return handler(match)  # type: ignore[no-untyped-call]
         return None
