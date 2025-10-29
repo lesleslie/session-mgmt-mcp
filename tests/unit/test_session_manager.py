@@ -731,7 +731,8 @@ class TestSessionLifecycleManagerHandoffDocumentation:
 
             assert result == legacy_file
 
-    def test_read_previous_session_info(self):
+    @pytest.mark.asyncio
+    async def test_read_previous_session_info(self):
         """Test _read_previous_session_info method."""
         manager = SessionLifecycleManager()
 
@@ -759,7 +760,7 @@ class TestSessionLifecycleManagerHandoffDocumentation:
             with open(handoff_file, "w") as f:
                 f.write(content)
 
-            result = manager._read_previous_session_info(handoff_file)
+            result = await manager._read_previous_session_info(handoff_file)
 
             assert result is not None
             assert result["ended_at"] == "2024-01-01T12:00:00Z"

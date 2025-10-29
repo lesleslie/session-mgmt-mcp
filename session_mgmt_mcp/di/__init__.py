@@ -41,6 +41,12 @@ def configure(*, force: bool = False) -> None:
 
 def reset() -> None:
     """Reset dependencies to defaults."""
+    # Reset singleton instances that have class-level state
+    with suppress(ImportError, AttributeError):
+        from session_mgmt_mcp.server_core import SessionPermissionsManager
+
+        SessionPermissionsManager.reset_singleton()
+
     configure(force=True)
 
 

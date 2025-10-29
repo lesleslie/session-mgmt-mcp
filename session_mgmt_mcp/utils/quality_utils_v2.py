@@ -247,7 +247,12 @@ def _score_version_control(project_dir: Path) -> tuple[float, dict[str, str]]:
     if not git_dir.exists():
         return 0, {"version_control": "none"}
 
-    with suppress(subprocess.SubprocessError, subprocess.TimeoutExpired, OSError, FileNotFoundError):
+    with suppress(
+        subprocess.SubprocessError,
+        subprocess.TimeoutExpired,
+        OSError,
+        FileNotFoundError,
+    ):
         result = subprocess.run(
             ["git", "log", "--oneline", "-n", "10"],
             check=False,
@@ -600,7 +605,9 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
         details["gitignore"] = "missing"
 
     # Check for hardcoded secrets (basic patterns)
-    with suppress(OSError, PermissionError, FileNotFoundError, UnicodeDecodeError, ValueError):
+    with suppress(
+        OSError, PermissionError, FileNotFoundError, UnicodeDecodeError, ValueError
+    ):
         py_files = list(project_dir.rglob("*.py"))[:50]  # Limit to 50 files
         secret_patterns = [
             r"password\s*=\s*['\"][^'\"]+['\"]",
@@ -695,13 +702,20 @@ def _parse_metrics_history(metrics_history: list[dict[str, Any]]) -> dict[str, A
 
 def _read_coverage_json(project_dir: Path) -> float:
     """Read coverage percentage from coverage.json."""
+    import json
+
     coverage_json = project_dir / "coverage.json"
     if not coverage_json.exists():
         return 0
 
-    with suppress(OSError, PermissionError, FileNotFoundError, json.JSONDecodeError, ValueError, KeyError):
-        import json
-
+    with suppress(
+        OSError,
+        PermissionError,
+        FileNotFoundError,
+        json.JSONDecodeError,
+        ValueError,
+        KeyError,
+    ):
         coverage_data = json.loads(coverage_json.read_text())
         return float(coverage_data.get("totals", {}).get("percent_covered", 0))
 

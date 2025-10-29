@@ -135,6 +135,13 @@ class SessionPermissionsManager:
         if self.permissions_file.exists():
             self.permissions_file.unlink()
 
+    @classmethod
+    def reset_singleton(cls) -> None:
+        """Reset the singleton instance (for testing)."""
+        cls._instance = None
+        cls._session_id = None
+        cls._initialized = False
+
     # Common trusted operations
     TRUSTED_UV_OPERATIONS = "uv_package_management"
     TRUSTED_GIT_OPERATIONS = "git_repository_access"
@@ -412,7 +419,14 @@ async def initialize_new_features(
 
     # Initialize reflection database for new features
     if REFLECTION_TOOLS_AVAILABLE:
-        with suppress(ImportError, ModuleNotFoundError, RuntimeError, AttributeError, OSError, ValueError):
+        with suppress(
+            ImportError,
+            ModuleNotFoundError,
+            RuntimeError,
+            AttributeError,
+            OSError,
+            ValueError,
+        ):
             from session_mgmt_mcp.reflection_tools import get_reflection_database
 
             db = await get_reflection_database()
@@ -738,7 +752,9 @@ async def _perform_git_checkpoint(
 async def _format_conversation_summary() -> list[str]:
     """Format the conversation summary section."""
     output = []
-    with suppress(ImportError, ModuleNotFoundError, RuntimeError, AttributeError, ValueError):
+    with suppress(
+        ImportError, ModuleNotFoundError, RuntimeError, AttributeError, ValueError
+    ):
         from session_mgmt_mcp.quality_engine import summarize_current_conversation
 
         conversation_summary = await summarize_current_conversation()
