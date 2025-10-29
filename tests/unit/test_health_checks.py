@@ -217,6 +217,7 @@ class TestDependenciesHealthCheck:
                 patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
                 patch.dict("sys.modules", {"session_mgmt_mcp.server": mock_server}),
                 patch("builtins.__import__", side_effect=mock_import),
+                patch("importlib.util.find_spec", return_value=None),  # Mock multi_project check
             ):
                 result = await check_dependencies_health()
 
