@@ -13,8 +13,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from mcp_common.health import HealthStatus
 from session_mgmt_mcp.health_checks import (
+    ComponentHealth,
+    HealthStatus,
     check_database_health,
     check_dependencies_health,
     check_file_system_health,

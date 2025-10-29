@@ -15,6 +15,19 @@ import pytest
 from fastmcp import FastMCP
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
+# Configure DI container BEFORE any other imports
+# This ensures SessionLogger and other dependencies are available
+from session_mgmt_mcp.di import configure as configure_di
+from acb.depends import depends
+
+# Initialize DI container for tests - force registration to bypass async checks
+try:
+    configure_di(force=True)
+except Exception as e:
+    # If DI configuration fails during import, we'll retry in the fixture
+    import warnings
+    warnings.warn(f"DI configuration failed during conftest import: {e}")
+
 
 # =====================================
 # MockFastMCP for Testing (Phase 2.6)
@@ -106,6 +119,28 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop]:
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
 
         loop.close()
+
+
+@pytest.fixture(autouse=True)
+def reset_di_container():
+    """Reset DI container between tests to ensure clean state.
+
+    This fixture runs automatically for every test to prevent DI state
+    leakage between tests. It ensures SessionLogger and other dependencies
+    are properly registered.
+    """
+    # Don't reset during test - only after
+    # This prevents creating new event loops during async test setup
+    yield
+
+    # Clean up after test
+    # Wrapped in try-except to handle cases where reset might fail
+    try:
+        from session_mgmt_mcp.di import reset as reset_di
+        reset_di()
+    except Exception:
+        # If reset fails, we'll try again on next test
+        pass
 
 
 @pytest.fixture

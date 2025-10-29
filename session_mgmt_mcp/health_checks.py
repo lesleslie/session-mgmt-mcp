@@ -11,7 +11,25 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from mcp_common.health import ComponentHealth, HealthStatus
+# Health status types (mcp_common.health doesn't exist in 2.0.0)
+from dataclasses import dataclass, field
+from enum import Enum
+
+class HealthStatus(str, Enum):
+    """Health status levels."""
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+
+
+@dataclass
+class ComponentHealth:
+    """Component health check result."""
+    name: str
+    status: HealthStatus
+    message: str
+    latency_ms: float | None = None
+    metadata: dict[str, t.Any] = field(default_factory=dict)
 
 # Try to import optional dependencies
 try:
@@ -32,6 +50,7 @@ async def check_database_health() -> ComponentHealth:
         - Database connection
         - Basic query execution
         - Response latency
+
     """
     if not REFLECTION_AVAILABLE:
         return ComponentHealth(
@@ -88,6 +107,7 @@ async def check_file_system_health() -> ComponentHealth:
         - ~/.claude directory exists and writable
         - Data directories accessible
         - Sufficient disk space (basic check)
+
     """
     start_time = time.perf_counter()
 
@@ -161,6 +181,7 @@ async def check_dependencies_health() -> ComponentHealth:
         - Crackerjack integration availability
         - ONNX runtime for embeddings
         - Other optional features
+
     """
     start_time = time.perf_counter()
 
@@ -236,6 +257,7 @@ async def check_python_environment_health() -> ComponentHealth:
         - Python version compatibility
         - Critical imports available
         - Memory usage reasonable
+
     """
     import sys
 
@@ -298,6 +320,7 @@ async def get_all_health_checks() -> list[ComponentHealth]:
         List of ComponentHealth results for all checks
 
     This is the main entry point for the health endpoint.
+
     """
     import asyncio
 
@@ -331,8 +354,8 @@ async def get_all_health_checks() -> list[ComponentHealth]:
 
 __all__ = [
     "check_database_health",
-    "check_file_system_health",
     "check_dependencies_health",
+    "check_file_system_health",
     "check_python_environment_health",
     "get_all_health_checks",
 ]

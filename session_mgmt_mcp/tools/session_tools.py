@@ -68,7 +68,9 @@ class SessionSetupResults:
 
 # Global session manager
 def _get_session_manager() -> SessionLifecycleManager:
-    with suppress(KeyError, AttributeError):
+    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+        # RuntimeError: when adapter requires async
+        # TypeError: when bevy has DI confusion between string keys and classes
         manager = depends.get_sync(SessionLifecycleManager)
         if isinstance(manager, SessionLifecycleManager):
             return manager

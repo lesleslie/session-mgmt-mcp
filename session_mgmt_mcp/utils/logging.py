@@ -82,7 +82,9 @@ class SessionLogger:
 
 def get_session_logger() -> SessionLogger:
     """Get the global session logger instance managed by the DI container."""
-    with suppress(KeyError, AttributeError):
+    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+        # RuntimeError: when adapter requires async
+        # TypeError: when bevy has DI confusion between string keys and classes
         logger = depends.get_sync(SessionLogger)
         if isinstance(logger, SessionLogger):
             return logger
@@ -93,7 +95,9 @@ def get_session_logger() -> SessionLogger:
 
 
 def _resolve_logs_dir() -> Path:
-    with suppress(KeyError, AttributeError):
+    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+        # RuntimeError: when adapter requires async
+        # TypeError: when bevy has DI confusion between string keys and classes
         configured = depends.get_sync(LOGS_DIR_KEY)
         if isinstance(configured, Path):
             configured.mkdir(parents=True, exist_ok=True)

@@ -138,7 +138,9 @@ def reset_instances() -> None:
 
 
 def _resolve_claude_dir() -> Path:
-    with suppress(KeyError, AttributeError):
+    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+        # RuntimeError: when adapter requires async
+        # TypeError: when bevy has DI confusion between string keys and classes
         claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
         if isinstance(claude_dir, Path):
             claude_dir.mkdir(parents=True, exist_ok=True)
