@@ -45,8 +45,11 @@ async def test_get_app_monitor_registers_singleton(
     module.ApplicationMonitor = DummyMonitor  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "session_mgmt_mcp.app_monitor", module)
 
+    # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
     os.chdir(tmp_path)
+    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    SessionPermissionsManager.reset_singleton()
     configure(force=True)
     monitor = await instance_managers.get_app_monitor()
     assert isinstance(monitor, DummyMonitor)
@@ -69,7 +72,10 @@ async def test_get_llm_manager_uses_di_cache(
     module.LLMManager = DummyLLMManager  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "session_mgmt_mcp.llm_providers", module)
 
+    # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
+    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    SessionPermissionsManager.reset_singleton()
     configure(force=True)
 
     first = await instance_managers.get_llm_manager()
@@ -115,7 +121,10 @@ async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, t
     module.ServerlessSessionManager = DummyServerlessManager  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "session_mgmt_mcp.serverless_mode", module)
 
+    # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
+    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    SessionPermissionsManager.reset_singleton()
     configure(force=True)
 
     manager = await instance_managers.get_serverless_manager()

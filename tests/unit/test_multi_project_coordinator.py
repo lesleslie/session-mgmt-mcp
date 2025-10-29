@@ -242,23 +242,29 @@ class TestCachingBehavior:
         # Implementation populates active_project_groups dict
 
     @pytest.mark.asyncio
-    async def test_cache_invalidation_on_create(self) -> None:
-        """Should invalidate cache when creating new group."""
+    async def test_cache_population_on_create(self) -> None:
+        """Should populate cache when creating new group."""
         from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
         mock_db.conn.execute = MagicMock()
+        mock_db.conn.commit = MagicMock()
 
         coordinator = MultiProjectCoordinator(mock_db)
 
-        # Create group should invalidate cache
-        await coordinator.create_project_group(
+        # Verify cache is initially empty
+        assert len(coordinator.active_project_groups) == 0
+
+        # Create group should populate cache
+        group = await coordinator.create_project_group(
             name="New Group", projects=["proj-a"], description="Test"
         )
 
-        # Cache should be cleared (implementation dependent)
-        assert True  # Placeholder for cache invalidation verification
+        # Cache should contain the new group
+        assert len(coordinator.active_project_groups) == 1
+        assert group.id in coordinator.active_project_groups
+        assert coordinator.active_project_groups[group.id] is group
 
 
 class TestCrossProjectSearch:

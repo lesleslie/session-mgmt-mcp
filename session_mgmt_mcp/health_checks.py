@@ -9,14 +9,16 @@ Phase 10.1: Production Hardening - Session Management Health Checks
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
 # Health status types (mcp_common.health doesn't exist in 2.0.0)
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
+
 
 class HealthStatus(str, Enum):
     """Health status levels."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -25,11 +27,13 @@ class HealthStatus(str, Enum):
 @dataclass
 class ComponentHealth:
     """Component health check result."""
+
     name: str
     status: HealthStatus
     message: str
     latency_ms: float | None = None
     metadata: dict[str, t.Any] = field(default_factory=dict)
+
 
 # Try to import optional dependencies
 try:

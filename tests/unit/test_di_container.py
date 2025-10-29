@@ -17,7 +17,10 @@ from session_mgmt_mcp.utils.logging import SessionLogger
 def test_configure_registers_singletons(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """configure() should register shared instances for core services."""
     original_home = Path.home()
+
+    # Monkeypatch HOME first, then reset singleton
     monkeypatch.setenv("HOME", str(tmp_path))
+    SessionPermissionsManager.reset_singleton()
 
     configure(force=True)
 
@@ -48,7 +51,11 @@ def test_configure_registers_singletons(tmp_path: Path, monkeypatch: pytest.Monk
 def test_reset_restores_default_instances(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """reset() should replace overrides with freshly configured defaults."""
     original_home = Path.home()
+
+    # Monkeypatch HOME first, then reset singleton
     monkeypatch.setenv("HOME", str(tmp_path))
+    SessionPermissionsManager.reset_singleton()
+
     configure(force=True)
 
     custom_logs = tmp_path / "custom" / "logs"

@@ -5,7 +5,7 @@
 **Focus:** Knowledge Graph Database + LLM Provider System
 **Status:** ✅ Complete
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -20,12 +20,13 @@ Successfully completed Week 4 Days 3-4 objectives with exceptional results:
 - ✅ **Comprehensive documentation** with lessons learned
 
 **Cumulative Progress:**
+
 - Week 3 baseline: 191 tests, 20.26% coverage
 - Week 4 Days 1-2: 239 tests, 21.50% coverage (+1.24%)
 - Week 4 Days 3-4: 291 tests (~25-30% estimated coverage)
 - **Total growth: +100 tests (+52% increase)**
 
----
+______________________________________________________________________
 
 ## Day 3: Knowledge Graph Database Tests
 
@@ -34,6 +35,7 @@ Successfully completed Week 4 Days 3-4 objectives with exceptional results:
 Created comprehensive test suite for the knowledge graph semantic memory system that complements episodic memory in ReflectionDatabase.
 
 **Achievement Metrics:**
+
 - Test suite: 360 lines, 20 tests
 - Coverage: 0% → 82.89% (155 statements)
 - Success rate: 100% (20/20 passing)
@@ -80,6 +82,7 @@ TestKnowledgeGraphErrorHandling:       # 4 tests - Robustness
 **File:** `session_mgmt_mcp/knowledge_graph_db.py` (lines 182-184)
 
 **Problem:**
+
 ```sql
 FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
 -- Parser Error: FOREIGN KEY constraints cannot use CASCADE, SET NULL or SET DEFAULT
@@ -89,6 +92,7 @@ FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
 DuckDB SQL/PGQ extension doesn't support CASCADE, SET NULL, or SET DEFAULT clauses in foreign key constraints.
 
 **Fix:**
+
 ```python
 # Before:
 FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE,
@@ -101,6 +105,7 @@ FOREIGN KEY (to_entity) REFERENCES kg_entities(id)
 ```
 
 **Impact:**
+
 - Fixed 15 test failures caused by schema creation error
 - Knowledge graph now initializes correctly
 - Maintains referential integrity (manual cleanup required when deleting entities)
@@ -110,6 +115,7 @@ FOREIGN KEY (to_entity) REFERENCES kg_entities(id)
 **File:** `session_mgmt_mcp/utils/logging.py` (lines 82-86)
 
 **Problem:**
+
 ```python
 AttributeError: 'SessionLogger' object has no attribute 'critical'
 ```
@@ -118,6 +124,7 @@ AttributeError: 'SessionLogger' object has no attribute 'critical'
 SessionLogger had methods for info/warning/error/debug/exception but was missing critical() from standard Python logging hierarchy (DEBUG < INFO < WARNING < ERROR < CRITICAL).
 
 **Fix:**
+
 ```python
 def critical(self, message: str, **context: t.Any) -> None:
     """Log critical with optional context."""
@@ -127,6 +134,7 @@ def critical(self, message: str, **context: t.Any) -> None:
 ```
 
 **Impact:**
+
 - Maintains API consistency with standard logging levels
 - Supports structured logging for critical errors
 - Enables proper error handling in shutdown scenarios
@@ -134,6 +142,7 @@ def critical(self, message: str, **context: t.Any) -> None:
 ### Day 3 Coverage Analysis
 
 **knowledge_graph_db.py Coverage:**
+
 ```
 Before:  0.00% (155 statements, 155 missed)
 After:  82.89% (155 statements, 20 missed)
@@ -141,6 +150,7 @@ Change: +82.89% coverage gain
 ```
 
 **Uncovered Lines (20):**
+
 - Line 90: Exception handler in close()
 - Lines 114, 125-127: DuckPGQ extension detection fallback
 - Lines 143-144: Property graph error handling
@@ -150,14 +160,15 @@ Change: +82.89% coverage gain
 - Lines 561, 601, 624: Relationship query optimizations
 
 **High-Value Test Coverage:**
+
 - ✅ Entity CRUD operations (100%)
 - ✅ Relationship creation (100%)
 - ✅ Search functionality (100%)
 - ✅ Statistics retrieval (100%)
-- ⚠️  Advanced path finding (partial)
-- ⚠️  DuckPGQ extension fallback (partial)
+- ⚠️ Advanced path finding (partial)
+- ⚠️ DuckPGQ extension fallback (partial)
 
----
+______________________________________________________________________
 
 ## Day 4: LLM Provider System Tests
 
@@ -166,6 +177,7 @@ Change: +82.89% coverage gain
 Created comprehensive test suite for cross-LLM compatibility layer supporting OpenAI, Gemini, and Ollama providers with fallback strategies.
 
 **Achievement Metrics:**
+
 - Test suite: 425 lines, 32 tests
 - Coverage: 14.45% → 30.33% (+15.88%)
 - Success rate: 100% (32/32 passing)
@@ -231,6 +243,7 @@ TestErrorHandling:                    # 3 tests - Error scenarios
 LLMManager doesn't accept config dict directly - it takes a config_path string or None.
 
 **Incorrect Approach:**
+
 ```python
 # ❌ TypeError: argument should be str or PathLike, not 'dict'
 config = {"openai": {"api_key": "test"}}
@@ -238,6 +251,7 @@ manager = LLMManager(config)
 ```
 
 **Correct Approach:**
+
 ```python
 # ✅ Loads from environment variables or defaults
 manager = LLMManager(config_path=None)
@@ -254,19 +268,19 @@ Updated all 6 LLMManager tests to use correct initialization pattern, ensuring t
 Each provider converts messages to its own format:
 
 **OpenAI Format:**
+
 ```python
-[
-    {"role": "system", "content": "You are helpful"},
-    {"role": "user", "content": "Hello"}
-]
+[{"role": "system", "content": "You are helpful"}, {"role": "user", "content": "Hello"}]
 ```
 
 **Gemini Format:**
+
 ```python
 # Similar structure but with provider-specific fields
 ```
 
 **Ollama Format:**
+
 ```python
 # Local server format with model specification
 ```
@@ -276,6 +290,7 @@ Tests validate that each provider correctly transforms LLMMessage dataclasses in
 ### Day 4 Coverage Analysis
 
 **llm_providers.py Coverage:**
+
 ```
 Before: 14.45% (519 statements)
 After:  30.33% (519 statements)
@@ -283,16 +298,17 @@ Change: +15.88% coverage gain
 ```
 
 **Test Coverage Breakdown:**
+
 - ✅ Data classes (100% - all 8 tests passing)
 - ✅ Provider initialization (100% - all providers tested)
 - ✅ Message format conversion (100% - OpenAI, Gemini, Ollama)
 - ✅ Model listing (100% - all providers)
 - ✅ Availability checking (100% - with/without API keys)
 - ✅ Manager coordination (100% - fallback, defaults)
-- ⚠️  Actual API calls (mocked - integration tests needed)
-- ⚠️  Streaming responses (partial coverage)
+- ⚠️ Actual API calls (mocked - integration tests needed)
+- ⚠️ Streaming responses (partial coverage)
 
----
+______________________________________________________________________
 
 ## Combined Metrics Summary
 
@@ -324,7 +340,7 @@ Combined New Tests:   52/52 (100%)
 Production Bugs:      3/3 fixed (100%)
 ```
 
----
+______________________________________________________________________
 
 ## Test Patterns & Best Practices Established
 
@@ -344,6 +360,7 @@ async def test_context_manager_async(self, tmp_path: Path) -> None:
 ```
 
 **Pattern Benefits:**
+
 - Tests both `__aenter__` and `__aexit__` methods
 - Validates connection lifecycle management
 - Ensures cleanup happens automatically
@@ -357,15 +374,14 @@ async def test_create_entity_basic(self, tmp_path: Path) -> None:
 
     async with KnowledgeGraphDatabase(db_path=db_path) as kg:
         entity = await kg.create_entity(
-            name="test-project",
-            entity_type="project",
-            observations=["Test project"]
+            name="test-project", entity_type="project", observations=["Test project"]
         )
 
         assert entity["name"] == "test-project"
 ```
 
 **Pattern Benefits:**
+
 - Isolated test databases (no cross-contamination)
 - Automatic cleanup via pytest tmp_path fixture
 - Fast test execution (in-memory possible)
@@ -384,6 +400,7 @@ def test_stream_generation_options_immutable(self) -> None:
 ```
 
 **Pattern Benefits:**
+
 - Validates frozen dataclass behavior
 - Ensures thread-safe usage
 - Prevents accidental mutation bugs
@@ -408,11 +425,12 @@ async def test_is_available_with_api_key(self) -> None:
 ```
 
 **Pattern Benefits:**
+
 - Tests both success and failure paths
 - Validates graceful degradation
 - No external API calls needed
 
----
+______________________________________________________________________
 
 ## Lessons Learned
 
@@ -421,15 +439,18 @@ async def test_is_available_with_api_key(self) -> None:
 **Lesson:** Not all SQL features are universally supported across database engines.
 
 **Evidence:**
+
 - DuckDB SQL/PGQ doesn't support CASCADE constraints
 - Standard PostgreSQL/MySQL constraint syntax failed
 
 **Application:**
+
 - Always check database-specific documentation for constraint support
 - Consider fallback strategies for missing features
 - Document database-specific limitations in code comments
 
 **Code Example:**
+
 ```python
 # WRONG: Assuming CASCADE works everywhere
 FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
@@ -445,15 +466,18 @@ FOREIGN KEY (from_entity) REFERENCES kg_entities(id)
 **Lesson:** Missing standard API methods cause unexpected failures in production.
 
 **Evidence:**
+
 - SessionLogger missing `critical()` method
 - Standard Python logging has 5 levels, but implementation only had 4
 
 **Application:**
+
 - Implement complete API surface when wrapping standard libraries
 - Use standard library hierarchies as checklists
 - Write tests for all standard API methods
 
 **Standard Logging Levels Checklist:**
+
 ```python
 ✅ debug()
 ✅ info()
@@ -468,16 +492,19 @@ FOREIGN KEY (from_entity) REFERENCES kg_entities(id)
 **Lesson:** Writing tests reveals production bugs before they reach users.
 
 **Evidence:**
+
 - Knowledge graph tests immediately caught CASCADE bug
 - 15/20 tests failing revealed schema initialization issue
 - LLM tests revealed API misunderstanding
 
 **Application:**
+
 - Write tests early, even for "working" code
 - Test failures often reveal production bugs, not test bugs
 - 100% test pass rate validates both test and production code
 
 **Impact Timeline:**
+
 ```
 Day 3: Write knowledge graph tests → Discover CASCADE bug → Fix before production
 Day 4: Write LLM tests → Discover API pattern → Update usage throughout codebase
@@ -488,16 +515,19 @@ Day 4: Write LLM tests → Discover API pattern → Update usage throughout code
 **Lesson:** Study actual API behavior before writing tests to avoid false assumptions.
 
 **Evidence:**
+
 - LLMManager takes config_path (string), not config dict
 - Initial tests failed because of incorrect API assumptions
 - Retrying with correct understanding led to 100% pass rate
 
 **Application:**
+
 - Read source code before writing tests
 - Check initialization patterns in production usage
 - Test actual API behavior, not assumed behavior
 
 **API Study Checklist:**
+
 ```python
 1. Read __init__ signature and docstring
 2. Check production usage examples
@@ -510,26 +540,31 @@ Day 4: Write LLM tests → Discover API pattern → Update usage throughout code
 **Lesson:** Tests should validate fallback behavior, not just happy path.
 
 **Evidence:**
+
 - DuckDB unavailable handling tested
 - Missing API key scenarios validated
 - Network failure paths covered
 
 **Application:**
+
 - Test both success and failure modes
 - Validate error messages and types
 - Ensure graceful degradation works as expected
 
 **Test Pattern:**
+
 ```python
 # Test success path
 async def test_with_api_key(self) -> None:
     provider = Provider({"api_key": "valid"})
     assert await provider.is_available() is True
 
+
 # Test failure path
 async def test_without_api_key(self) -> None:
     provider = Provider({})
     assert await provider.is_available() is False
+
 
 # Test error handling
 async def test_network_failure(self) -> None:
@@ -538,7 +573,7 @@ async def test_network_failure(self) -> None:
         await provider.generate("test")
 ```
 
----
+______________________________________________________________________
 
 ## Technical Insights
 
@@ -548,15 +583,17 @@ async def test_network_failure(self) -> None:
 DuckDB's SQL/PGQ extension has stricter constraints than traditional SQL databases:
 
 1. **No CASCADE support** - Foreign keys cannot auto-delete related records
-2. **No SET NULL** - Foreign keys cannot auto-null references
-3. **No SET DEFAULT** - Foreign keys cannot set default values
+1. **No SET NULL** - Foreign keys cannot auto-null references
+1. **No SET DEFAULT** - Foreign keys cannot set default values
 
 **Impact:**
+
 - Manual cascade deletion required for maintaining referential integrity
 - Application-level cleanup logic needed when deleting entities with relationships
 - Trade-off: Explicit control vs. automatic cleanup
 
 **Recommendation:**
+
 ```python
 async def delete_entity_cascade(entity_id: str) -> bool:
     """Delete entity and all its relationships manually."""
@@ -575,11 +612,12 @@ async def delete_entity_cascade(entity_id: str) -> bool:
 The LLM provider system uses a sophisticated fallback and configuration pattern:
 
 1. **LLMManager loads from files or environment**, not direct config dicts
-2. **Provider availability checked before use** (async health checks)
-3. **Fallback order configurable** (openai → gemini → ollama)
-4. **Message format conversion** handled per-provider
+1. **Provider availability checked before use** (async health checks)
+1. **Fallback order configurable** (openai → gemini → ollama)
+1. **Message format conversion** handled per-provider
 
 **Architecture Pattern:**
+
 ```python
 # Manager coordinates multiple providers
 manager = LLMManager(config_path=None)  # Loads from env
@@ -603,20 +641,19 @@ for provider in manager.fallback_order:
 SessionLogger supports structured logging with context:
 
 ```python
-logger.critical("Database connection lost",
-    database="postgres",
-    retry_count=3,
-    error_code=1234
+logger.critical(
+    "Database connection lost", database="postgres", retry_count=3, error_code=1234
 )
 # Outputs: "Database connection lost | Context: {'database': 'postgres', ...}"
 ```
 
 **Benefits:**
+
 - Machine-readable log entries
 - Contextual debugging information
 - Consistent formatting across log levels
 
----
+______________________________________________________________________
 
 ## Commands Reference
 
@@ -667,34 +704,39 @@ git diff HEAD~1
 git show a4199637
 ```
 
----
+______________________________________________________________________
 
 ## Files Modified
 
 ### Production Code Changes
 
 1. **session_mgmt_mcp/utils/logging.py** (lines 82-86 added)
+
    - Added: `critical()` method for SessionLogger
    - Impact: Fixed shutdown manager critical logging
    - Pattern: Structured logging with context support
 
-2. **session_mgmt_mcp/knowledge_graph_db.py** (lines 182-184 modified)
+1. **session_mgmt_mcp/knowledge_graph_db.py** (lines 182-184 modified)
+
    - Removed: `ON DELETE CASCADE` clauses from foreign keys
    - Added: Comment explaining DuckDB limitation
    - Impact: Fixed schema creation, maintains referential integrity
 
-3. **tests/unit/test_resource_cleanup.py** (lines 201-204 modified)
+1. **tests/unit/test_resource_cleanup.py** (lines 201-204 modified)
+
    - Added: `.level` attribute to mock logging handlers
    - Impact: Fixed logging handler test TypeError
 
 ### Test Code Created
 
 4. **tests/unit/test_knowledge_graph_db.py** (360 lines, 20 tests)
+
    - Created: Comprehensive knowledge graph test suite
    - Coverage: 0% → 82.89%
    - Categories: Initialization, CRUD, Relations, Stats, Error Handling
 
-5. **tests/unit/test_llm_providers.py** (425 lines, 32 tests)
+1. **tests/unit/test_llm_providers.py** (425 lines, 32 tests)
+
    - Created: Comprehensive LLM provider test suite
    - Coverage: 14.45% → 30.33%
    - Categories: Data classes, Providers (OpenAI/Gemini/Ollama), Manager, Error Handling
@@ -702,31 +744,36 @@ git show a4199637
 ### Documentation Created
 
 6. **docs/WEEK-4-DAY-3-PROGRESS.md** (450+ lines)
+
    - Created: Comprehensive Day 3 report
    - Sections: Achievements, coverage analysis, technical insights, lessons learned
 
-7. **docs/WEEK-4-DAYS-3-4-COMBINED-REPORT.md** (this document)
+1. **docs/WEEK-4-DAYS-3-4-COMBINED-REPORT.md** (this document)
+
    - Created: Combined Days 3-4 final report
    - Sections: Executive summary, detailed achievements, patterns, lessons learned
 
----
+______________________________________________________________________
 
 ## Next Steps (Week 4 Day 5)
 
 ### Immediate Priorities
 
 1. **Investigate Test Hang Issue**
+
    - Full unit test suite hanging after ~10 minutes at 107% CPU
    - Likely infinite loop or deadlock in async code
    - Profile test execution to find bottleneck
 
-2. **Update Overall Coverage Baseline**
+1. **Update Overall Coverage Baseline**
+
    - Run full test suite successfully (after hang fix)
    - Calculate new overall coverage percentage
    - Update pyproject.toml coverage thresholds
    - Document new baseline for Week 5
 
-3. **Test Remaining High-Value Modules** (if time permits)
+1. **Test Remaining High-Value Modules** (if time permits)
+
    - context_manager.py (261 statements, 0% coverage)
    - multi_project_coordinator.py (235 statements, 0% coverage)
    - memory_optimizer.py (294 statements, 0% coverage)
@@ -734,16 +781,19 @@ git show a4199637
 ### Medium-Term Goals (Week 5)
 
 4. **Advanced Feature Tests**
+
    - natural_scheduler.py (420 statements, 0% coverage)
    - interruption_manager.py (198 statements, 0% coverage)
    - serverless_mode.py (370 statements, 0% coverage)
 
-5. **Integration Test Expansion**
+1. **Integration Test Expansion**
+
    - End-to-end MCP tool workflows
    - Cross-component integration validation
    - Performance benchmarking under load
 
-6. **Documentation Enhancement**
+1. **Documentation Enhancement**
+
    - API reference generation from docstrings
    - Architecture decision records (ADRs)
    - Testing patterns guide
@@ -751,53 +801,59 @@ git show a4199637
 ### Quality Gates
 
 - ✅ **Week 4 Days 3-4 Success Criteria**
+
   - Knowledge graph tests: 20/20 passing (100%)
   - LLM provider tests: 32/32 passing (100%)
   - Production bugs fixed: 3/3 (100%)
   - Combined test count: +52 tests (+52% growth)
 
 - 🎯 **Week 4 Overall Target**
+
   - Total tests: 300+ tests
   - Coverage: 30%+ (realistic target)
   - Zero test failures
   - All production bugs documented and fixed
 
 - 🎯 **Week 5 Target**
+
   - Total tests: 350+ tests
   - Coverage: 35-40% (realistic target)
   - Advanced feature coverage
   - Integration test expansion
 
----
+______________________________________________________________________
 
 ## Conclusion
 
 Week 4 Days 3-4 achieved exceptional progress:
 
 **Quantitative Achievements:**
+
 - **52 new tests created** (20 knowledge graph + 32 LLM providers)
 - **100% test success rate** across all new tests
 - **Major coverage gains**: Knowledge graph +82.89%, LLM providers +15.88%
 - **52% test count growth** from Week 3 baseline (191 → 291 tests)
 
 **Qualitative Achievements:**
+
 - **3 production bugs discovered and fixed** through test-driven development
 - **Comprehensive test patterns established** for async operations, data classes, providers
 - **Deep technical insights gained** about DuckDB limitations and LLM provider patterns
 - **Documentation excellence** with detailed reports and lessons learned
 
 **Key Takeaways:**
+
 1. Test-driven development reveals production bugs early
-2. Understanding actual APIs prevents false assumptions
-3. Database portability requires careful constraint checking
-4. Complete API coverage includes all standard methods
-5. Graceful degradation must be explicitly tested
+1. Understanding actual APIs prevents false assumptions
+1. Database portability requires careful constraint checking
+1. Complete API coverage includes all standard methods
+1. Graceful degradation must be explicitly tested
 
 The knowledge graph and LLM provider test suites demonstrate high-quality testing patterns that can be replicated for other untested modules. The work maintains momentum from Week 4 Days 1-2 while significantly advancing coverage goals and code quality.
 
 **Status:** Week 4 Days 3-4 Complete ✅
 
----
+______________________________________________________________________
 
 **Git Checkpoint:** `9cb8f877` - Week 4 Days 3-4 - Knowledge graph + LLM provider tests complete
 **Previous Checkpoint:** `a4199637` - Week 4 Day 3 - Knowledge graph tests + resource cleanup fixes

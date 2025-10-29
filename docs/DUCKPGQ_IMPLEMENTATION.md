@@ -3,17 +3,18 @@
 **Date**: 2025-10-26
 **Status**: In Progress
 
----
+______________________________________________________________________
 
 ## Overview
 
 Adding semantic memory (knowledge graph) to session-mgmt-mcp using:
+
 - **DuckDB + DuckPGQ** extension (no external database required!)
 - **Separate database file**: `~/.claude/data/knowledge_graph.duckdb`
 - **SQL/PGQ standard** (Property Graph Queries - SQL:2023)
 - **Auto entity extraction** from conversations
 
----
+______________________________________________________________________
 
 ## Architecture
 
@@ -35,17 +36,18 @@ session-mgmt-mcp Memory System
 ### Why Separate Databases?
 
 1. **Clean separation of concerns** - Conversations vs structured knowledge
-2. **Independent scaling** - Can optimize each database separately
-3. **Easier backup/restore** - Can backup knowledge graph independently
-4. **Follows single responsibility principle**
+1. **Independent scaling** - Can optimize each database separately
+1. **Easier backup/restore** - Can backup knowledge graph independently
+1. **Follows single responsibility principle**
 
----
+______________________________________________________________________
 
 ## DuckPGQ Extension
 
 ### What is DuckPGQ?
 
 DuckPGQ is a **community extension** for DuckDB that adds:
+
 - SQL/PGQ support (Property Graph Queries - official SQL:2023 standard)
 - Graph pattern matching with Cypher-like syntax
 - Property graphs with nodes and edges
@@ -85,7 +87,7 @@ FROM GRAPH_TABLE (knowledge_graph
 );
 ```
 
----
+______________________________________________________________________
 
 ## Implementation Components
 
@@ -94,6 +96,7 @@ FROM GRAPH_TABLE (knowledge_graph
 **File**: `session_mgmt_mcp/knowledge_graph_db.py`
 
 **Key Methods**:
+
 - `create_entity(name, entity_type, observations)` - Add node
 - `create_relation(from, to, relation_type)` - Add edge
 - `search_entities(query)` - Find nodes
@@ -105,26 +108,27 @@ FROM GRAPH_TABLE (knowledge_graph
 **File**: `session_mgmt_mcp/tools/knowledge_graph_tools.py`
 
 1. `create_entity` - Create node
-2. `create_relation` - Create edge
-3. `add_observation` - Add fact to entity
-4. `search_entities` - Find entities
-5. `find_relationships` - Get connections
-6. `find_path` - Path between entities
-7. `get_entity_details` - Full entity info
-8. `list_entity_types` - Show all types
-9. `list_relation_types` - Show all relations
-10. `knowledge_graph_stats` - Statistics
+1. `create_relation` - Create edge
+1. `add_observation` - Add fact to entity
+1. `search_entities` - Find entities
+1. `find_relationships` - Get connections
+1. `find_path` - Path between entities
+1. `get_entity_details` - Full entity info
+1. `list_entity_types` - Show all types
+1. `list_relation_types` - Show all relations
+1. `knowledge_graph_stats` - Statistics
 
 ### 3. Auto Entity Extraction
 
 **File**: `session_mgmt_mcp/extractors/entity_extractor.py`
 
 Automatically extracts entities from conversations using:
+
 - Regex patterns for projects, libraries, technologies
 - Confidence scoring
 - Integration with conversation storage
 
----
+______________________________________________________________________
 
 ## Design Decisions
 
@@ -133,7 +137,7 @@ Automatically extracts entities from conversations using:
 ✅ **Auto entity extraction** - Knowledge graph builds automatically
 ✅ **Full testing** - Unit tests + integration tests
 
----
+______________________________________________________________________
 
 ## Timeline
 
@@ -145,18 +149,18 @@ Automatically extracts entities from conversations using:
 
 **Total**: ~14 hours over 4 days
 
----
+______________________________________________________________________
 
 ## Benefits
 
 1. ✅ **Zero installation** - DuckDB already in dependencies
-2. ✅ **No external processes** - Everything embedded
-3. ✅ **SQL standard** - SQL/PGQ is official SQL:2023
-4. ✅ **Active development** - DuckDB blog post Oct 2025
-5. ✅ **Perfect for local development**
-6. ✅ **Auto-builds from conversations**
+1. ✅ **No external processes** - Everything embedded
+1. ✅ **SQL standard** - SQL/PGQ is official SQL:2023
+1. ✅ **Active development** - DuckDB blog post Oct 2025
+1. ✅ **Perfect for local development**
+1. ✅ **Auto-builds from conversations**
 
----
+______________________________________________________________________
 
 ## References
 

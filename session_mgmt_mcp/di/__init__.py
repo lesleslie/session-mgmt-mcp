@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from contextlib import suppress
 from pathlib import Path
@@ -28,7 +29,8 @@ def configure(*, force: bool = False) -> None:
     if _configured and not force:
         return
 
-    claude_dir = Path.home() / ".claude"
+    # Use os.path.expanduser to respect HOME environment variable
+    claude_dir = Path(os.path.expanduser("~")) / ".claude"
     _register_path(CLAUDE_DIR_KEY, claude_dir, force)
     _register_path(LOGS_DIR_KEY, claude_dir / "logs", force)
     _register_path(COMMANDS_DIR_KEY, claude_dir / "commands", force)
@@ -79,7 +81,7 @@ def _register_logger(force: bool) -> None:
             # RuntimeError: when adapter requires async (re-register)
             depends.get_sync(SessionLogger)
             return
-    logs_dir = _resolve_path(LOGS_DIR_KEY, Path.home() / ".claude" / "logs")
+    logs_dir = _resolve_path(LOGS_DIR_KEY, Path(os.path.expanduser("~")) / ".claude" / "logs")
     logger = SessionLogger(logs_dir)
     depends.set(SessionLogger, logger)
 
@@ -92,7 +94,7 @@ def _register_permissions_manager(force: bool) -> None:
             # RuntimeError: when adapter requires async (re-register)
             depends.get_sync(SessionPermissionsManager)
             return
-    claude_dir = _resolve_path(CLAUDE_DIR_KEY, Path.home() / ".claude")
+    claude_dir = _resolve_path(CLAUDE_DIR_KEY, Path(os.path.expanduser("~")) / ".claude")
     manager = SessionPermissionsManager(claude_dir)
     depends.set(SessionPermissionsManager, manager)
 
