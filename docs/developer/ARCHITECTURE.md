@@ -890,6 +890,158 @@ response = await client.get(url)
 await client.aclose()
 ```
 
+### Type-Safe DI Configuration (Week 7 Update)
+
+**Updated:** 2025-10-29 | **Version:** 2.0
+
+#### SessionPaths Configuration
+
+The project uses a type-safe frozen dataclass for path configuration, replacing legacy string-based DI keys:
+
+```python
+from dataclasses import dataclass
+from pathlib import Path
+import os
+
+@dataclass(frozen=True)
+class SessionPaths:
+    """Type-safe path configuration for session management."""
+    claude_dir: Path
+    logs_dir: Path
+    commands_dir: Path
+
+    @classmethod
+    def from_home(cls, home: Path | None = None) -> SessionPaths:
+        """Create from home directory with environment variable support."""
+        if home is None:
+            # Respects HOME env var for test-friendliness
+            home = Path(os.path.expanduser("~"))
+
+        claude_dir = home / ".claude"
+        return cls(
+            claude_dir=claude_dir,
+            logs_dir=claude_dir / "logs",
+            commands_dir=claude_dir / "commands",
+        )
+
+    def ensure_directories(self) -> None:
+        """Create all directories if they don't exist."""
+        self.claude_dir.mkdir(parents=True, exist_ok=True)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+        self.commands_dir.mkdir(parents=True, exist_ok=True)
+```
+
+**Usage in DI Configuration:**
+
+```python
+from acb.depends import depends
+from session_mgmt_mcp.di import SessionPaths
+
+def configure(*, force: bool = False) -> None:
+    """Register default dependencies."""
+    # Register type-safe configuration
+    paths = SessionPaths.from_home()
+    paths.ensure_directories()
+    depends.set(SessionPaths, paths)  # Type-based key
+
+    # Use configuration in service registration
+    _register_logger(paths.logs_dir, force)
+    _register_permissions(paths.claude_dir, force)
+```
+
+**Benefits:**
+- **Type Safety:** Compile-time checking and IDE autocomplete
+- **Immutability:** Frozen dataclass prevents accidental modification
+- **Test-Friendly:** Respects HOME environment variable for test isolation
+- **Single Source:** All related paths in one configuration object
+
+#### Direct Container Access Pattern
+
+For singleton services accessed from async contexts or module level, use direct bevy container access to avoid event loop issues:
+
+```python
+from bevy import get_container
+from acb.depends import depends
+
+def get_session_manager() -> SessionLifecycleManager:
+    """Get or create SessionLifecycleManager instance.
+
+    Note:
+        Uses direct container access to avoid bevy's async event loop
+        limitation when called from async contexts or module imports.
+    """
+    from session_mgmt_mcp.core import SessionLifecycleManager
+
+    # Check container directly (no async issues)
+    container = get_container()
+    if SessionLifecycleManager in container.instances:
+        manager = container.instances[SessionLifecycleManager]
+        if isinstance(manager, SessionLifecycleManager):
+            return manager
+
+    # Create and register if not found
+    manager = SessionLifecycleManager()
+    depends.set(SessionLifecycleManager, manager)
+    return manager
+```
+
+**Why Direct Access:**
+- Bevy's `depends.get_sync()` internally calls `asyncio.run()`, which fails in:
+  - Async functions (already-running event loop)
+  - Module-level code (during pytest collection)
+- Direct container access is faster (simple dictionary lookup)
+- More reliable and predictable behavior
+
+**When to Use:**
+- ✅ Singleton services accessed from async functions
+- ✅ Module-level initialization
+- ✅ Hot paths where performance matters
+- ❌ Complex dependency resolution with multiple dependencies
+
+#### Updated DI Best Practices
+
+**1. Use Type-Based Keys (Not Strings)**
+
+```python
+# ✅ CORRECT: Type-based key
+@dataclass(frozen=True)
+class MyConfig:
+    setting: str
+
+depends.set(MyConfig, MyConfig(setting="value"))
+
+# ❌ WRONG: String-based key
+CONFIG_KEY = "my.config.setting"
+depends.set(CONFIG_KEY, "value")  # TypeError in bevy!
+```
+
+**2. Direct Container Access for Singletons**
+
+```python
+# ✅ CORRECT: Direct container access
+from bevy import get_container
+
+container = get_container()
+if SomeService in container.instances:
+    service = container.instances[SomeService]
+
+# ❌ WRONG: depends.get_sync() from async
+async def my_function():
+    service = depends.get_sync(SomeService)  # RuntimeError!
+```
+
+**3. Environment-Aware Path Resolution**
+
+```python
+# ✅ CORRECT: Use os.path.expanduser("~")
+home = Path(os.path.expanduser("~"))  # Respects HOME env var
+
+# ❌ WRONG: Path.home() ignores environment
+home = Path.home()  # Uses system APIs, not test-friendly
+```
+
+**See Also:** Comprehensive DI patterns guide at `docs/developer/ACB_DI_PATTERNS.md`
+
 ## Health Check Architecture
 
 ### Overview

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from acb.depends import depends
 from bevy import get_container
-from session_mgmt_mcp.di.constants import CLAUDE_DIR_KEY
+from session_mgmt_mcp.di import SessionPaths
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.app_monitor import ApplicationMonitor
@@ -26,14 +26,22 @@ if TYPE_CHECKING:
 
 
 async def get_app_monitor() -> ApplicationMonitor | None:
-    """Resolve application monitor via DI, creating it on demand."""
+    """Resolve application monitor via DI, creating it on demand.
+
+    Note:
+        Does not call depends.get_sync() to avoid bevy's async event loop
+        limitation. Instead relies on depends.set() for singleton registration
+        and checks the bevy container directly.
+    """
     try:
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
     except ImportError:
         return None
 
-    with suppress(KeyError, AttributeError):
-        monitor = await depends.get(ApplicationMonitor)
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if ApplicationMonitor in container.instances:
+        monitor = container.instances[ApplicationMonitor]
         if isinstance(monitor, ApplicationMonitor):
             return monitor
 
@@ -47,14 +55,22 @@ async def get_app_monitor() -> ApplicationMonitor | None:
 
 
 async def get_llm_manager() -> LLMManager | None:
-    """Resolve LLM manager via DI, creating it on demand."""
+    """Resolve LLM manager via DI, creating it on demand.
+
+    Note:
+        Does not call depends.get_sync() to avoid bevy's async event loop
+        limitation. Instead relies on depends.set() for singleton registration
+        and checks the bevy container directly.
+    """
     try:
         from session_mgmt_mcp.llm_providers import LLMManager
     except ImportError:
         return None
 
-    with suppress(KeyError, AttributeError):
-        manager = await depends.get(LLMManager)
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if LLMManager in container.instances:
+        manager = container.instances[LLMManager]
         if isinstance(manager, LLMManager):
             return manager
 
@@ -65,7 +81,13 @@ async def get_llm_manager() -> LLMManager | None:
 
 
 async def get_serverless_manager() -> ServerlessSessionManager | None:
-    """Resolve serverless session manager via DI, creating it on demand."""
+    """Resolve serverless session manager via DI, creating it on demand.
+
+    Note:
+        Does not call depends.get_sync() to avoid bevy's async event loop
+        limitation. Instead relies on depends.set() for singleton registration
+        and checks the bevy container directly.
+    """
     try:
         from session_mgmt_mcp.serverless_mode import (
             ServerlessConfigManager,
@@ -74,8 +96,10 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
     except ImportError:
         return None
 
-    with suppress(KeyError, AttributeError):
-        manager = await depends.get(ServerlessSessionManager)
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if ServerlessSessionManager in container.instances:
+        manager = container.instances[ServerlessSessionManager]
         if isinstance(manager, ServerlessSessionManager):
             return manager
 
@@ -91,7 +115,13 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
 
 
 async def get_reflection_database() -> ReflectionDatabase | None:
-    """Resolve reflection database via DI, creating it on demand."""
+    """Resolve reflection database via DI, creating it on demand.
+
+    Note:
+        Does not call depends.get_sync() to avoid bevy's async event loop
+        limitation. Instead relies on depends.set() for singleton registration
+        and checks the bevy container directly.
+    """
     try:
         from session_mgmt_mcp.reflection_tools import (
             ReflectionDatabase,
@@ -102,8 +132,10 @@ async def get_reflection_database() -> ReflectionDatabase | None:
     except ImportError:
         return None
 
-    with suppress(KeyError, AttributeError):
-        db = await depends.get(ReflectionDatabase)
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if ReflectionDatabase in container.instances:
+        db = container.instances[ReflectionDatabase]
         if isinstance(db, ReflectionDatabase):
             return db
 
@@ -113,14 +145,22 @@ async def get_reflection_database() -> ReflectionDatabase | None:
 
 
 async def get_interruption_manager() -> InterruptionManager | None:
-    """Resolve interruption manager via DI, creating it on demand."""
+    """Resolve interruption manager via DI, creating it on demand.
+
+    Note:
+        Does not call depends.get_sync() to avoid bevy's async event loop
+        limitation. Instead relies on depends.set() for singleton registration
+        and checks the bevy container directly.
+    """
     try:
         from session_mgmt_mcp.interruption_manager import InterruptionManager
     except ImportError:
         return None
 
-    with suppress(KeyError, AttributeError):
-        manager = await depends.get(InterruptionManager)
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if InterruptionManager in container.instances:
+        manager = container.instances[InterruptionManager]
         if isinstance(manager, InterruptionManager):
             return manager
 
@@ -138,17 +178,26 @@ def reset_instances() -> None:
 
 
 def _resolve_claude_dir() -> Path:
-    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
-        # RuntimeError: when adapter requires async
-        # TypeError: when bevy has DI confusion between string keys and classes
-        claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
-        if isinstance(claude_dir, Path):
-            claude_dir.mkdir(parents=True, exist_ok=True)
-            return claude_dir
+    """Resolve claude directory via type-safe DI.
 
-    default_dir = Path.home() / ".claude"
+    Returns:
+        Path to .claude directory, using SessionPaths from DI container
+        or falling back to default home directory.
+
+    Note:
+        Uses SessionPaths type for DI resolution instead of string keys,
+        eliminating bevy type confusion errors.
+    """
+    with suppress(KeyError, AttributeError, RuntimeError):
+        # RuntimeError: when adapter requires async
+        paths = depends.get_sync(SessionPaths)
+        if isinstance(paths, SessionPaths):
+            paths.claude_dir.mkdir(parents=True, exist_ok=True)
+            return paths.claude_dir
+
+    # Fallback: create default paths if not registered
+    default_dir = Path(os.path.expanduser("~")) / ".claude"
     default_dir.mkdir(parents=True, exist_ok=True)
-    depends.set(CLAUDE_DIR_KEY, default_dir)
     return default_dir
 
 

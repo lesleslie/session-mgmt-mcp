@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from acb.depends import depends
+from bevy import get_container
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -68,12 +69,19 @@ class SessionSetupResults:
 
 # Global session manager
 def _get_session_manager() -> SessionLifecycleManager:
-    with suppress(KeyError, AttributeError, RuntimeError, TypeError):
-        # RuntimeError: when adapter requires async
-        # TypeError: when bevy has DI confusion between string keys and classes
-        manager = depends.get_sync(SessionLifecycleManager)
+    """Get or create SessionLifecycleManager instance.
+
+    Note:
+        Checks bevy container directly instead of using depends.get_sync()
+        to avoid async event loop issues during module import.
+    """
+    # Check if already registered without triggering async machinery
+    container = get_container()
+    if SessionLifecycleManager in container.instances:
+        manager = container.instances[SessionLifecycleManager]
         if isinstance(manager, SessionLifecycleManager):
             return manager
+
     manager = SessionLifecycleManager()
     depends.set(SessionLifecycleManager, manager)
     return manager

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 from contextlib import suppress
 from pathlib import Path
@@ -18,24 +17,40 @@ if t.TYPE_CHECKING:
         SessionLogger as SessionLoggerT,  # noqa: F401
     )
 
+from .config import SessionPaths
 from .constants import CLAUDE_DIR_KEY, COMMANDS_DIR_KEY, LOGS_DIR_KEY
 
 _configured = False
 
 
 def configure(*, force: bool = False) -> None:
-    """Register default dependencies for the session-mgmt MCP stack."""
+    """Register default dependencies for the session-mgmt MCP stack.
+
+    This function sets up the dependency injection container with type-safe
+    configuration and singleton instances for the session management system.
+
+    Args:
+        force: If True, re-registers all dependencies even if already configured.
+               Used primarily for testing to reset singleton state.
+
+    Example:
+        >>> from session_mgmt_mcp.di import configure
+        >>> configure()  # First call registers dependencies
+        >>> configure()  # Subsequent calls are no-ops unless force=True
+        >>> configure(force=True)  # Re-registers all dependencies
+    """
     global _configured
     if _configured and not force:
         return
 
-    # Use os.path.expanduser to respect HOME environment variable
-    claude_dir = Path(os.path.expanduser("~")) / ".claude"
-    _register_path(CLAUDE_DIR_KEY, claude_dir, force)
-    _register_path(LOGS_DIR_KEY, claude_dir / "logs", force)
-    _register_path(COMMANDS_DIR_KEY, claude_dir / "commands", force)
-    _register_logger(force)
-    _register_permissions_manager(force)
+    # Register type-safe path configuration
+    paths = SessionPaths.from_home()
+    paths.ensure_directories()
+    depends.set(SessionPaths, paths)
+
+    # Register services with type-safe path access
+    _register_logger(paths.logs_dir, force)
+    _register_permissions_manager(paths.claude_dir, force)
     _register_lifecycle_manager(force)
 
     _configured = True
@@ -52,28 +67,17 @@ def reset() -> None:
     configure(force=True)
 
 
-def _register_path(key: str, path: Path, force: bool) -> None:
-    """Register path dependency with optional override."""
-    if not force:
-        with suppress(KeyError, AttributeError, RuntimeError):
-            # RuntimeError: when adapter requires async (ignore and continue)
-            existing = depends.get_sync(key)
-            if isinstance(existing, Path):
-                return
-    path.mkdir(parents=True, exist_ok=True)
-    depends.set(key, path)
+def _register_logger(logs_dir: Path, force: bool) -> None:
+    """Register SessionLogger with the given logs directory.
 
+    Args:
+        logs_dir: Directory for session log files
+        force: If True, re-registers even if already registered
 
-def _resolve_path(key: str, default: Path) -> Path:
-    with suppress(KeyError, AttributeError, RuntimeError):
-        # RuntimeError: when adapter requires async (use default)
-        resolved = depends.get_sync(key)
-        if isinstance(resolved, Path):
-            return resolved
-    return default
-
-
-def _register_logger(force: bool) -> None:
+    Note:
+        Accepts Path directly instead of resolving from string keys,
+        following ACB's type-based dependency injection pattern.
+    """
     from session_mgmt_mcp.utils.logging import SessionLogger
 
     if not force:
@@ -81,12 +85,22 @@ def _register_logger(force: bool) -> None:
             # RuntimeError: when adapter requires async (re-register)
             depends.get_sync(SessionLogger)
             return
-    logs_dir = _resolve_path(LOGS_DIR_KEY, Path(os.path.expanduser("~")) / ".claude" / "logs")
+
     logger = SessionLogger(logs_dir)
     depends.set(SessionLogger, logger)
 
 
-def _register_permissions_manager(force: bool) -> None:
+def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
+    """Register SessionPermissionsManager with the given Claude directory.
+
+    Args:
+        claude_dir: Root Claude directory for session data
+        force: If True, re-registers even if already registered
+
+    Note:
+        Accepts Path directly instead of resolving from string keys,
+        following ACB's type-based dependency injection pattern.
+    """
     from session_mgmt_mcp.server_core import SessionPermissionsManager
 
     if not force:
@@ -94,7 +108,7 @@ def _register_permissions_manager(force: bool) -> None:
             # RuntimeError: when adapter requires async (re-register)
             depends.get_sync(SessionPermissionsManager)
             return
-    claude_dir = _resolve_path(CLAUDE_DIR_KEY, Path(os.path.expanduser("~")) / ".claude")
+
     manager = SessionPermissionsManager(claude_dir)
     depends.set(SessionPermissionsManager, manager)
 
@@ -112,9 +126,11 @@ def _register_lifecycle_manager(force: bool) -> None:
 
 
 __all__ = [
+    "SessionPaths",
+    "configure",
+    "reset",
+    # Legacy string keys (deprecated - use SessionPaths instead)
     "CLAUDE_DIR_KEY",
     "COMMANDS_DIR_KEY",
     "LOGS_DIR_KEY",
-    "configure",
-    "reset",
 ]
