@@ -761,10 +761,13 @@ def _get_logger():
     """Get logger with lazy initialization to avoid DI issues during import."""
     try:
         from session_mgmt_mcp.utils.logging import get_session_logger
+
         return get_session_logger()
     except Exception:
         import logging
+
         return logging.getLogger(__name__)
+
 
 # Use in module functions
 logger = _get_logger()
@@ -813,11 +816,13 @@ Create domain-specific adapters following ACB patterns:
 from acb.adapters.base import BaseAdapter
 from acb.config import AdapterConfig
 
+
 @dataclass
 class MyAdapterConfig(AdapterConfig):
     endpoint: str
     api_key: str
     timeout: int = 30
+
 
 class MyAdapter(BaseAdapter[MyAdapterConfig]):
     """Custom adapter following ACB patterns."""
@@ -829,14 +834,14 @@ class MyAdapter(BaseAdapter[MyAdapterConfig]):
     async def _create_client(self):
         """Create underlying client."""
         return httpx.AsyncClient(
-            base_url=self.settings.endpoint,
-            timeout=self.settings.timeout
+            base_url=self.settings.endpoint, timeout=self.settings.timeout
         )
 
     async def _cleanup_resources(self) -> None:
         """Cleanup adapter resources."""
-        if hasattr(self, 'client'):
+        if hasattr(self, "client"):
             await self.client.aclose()
+
 
 # Register with DI
 depends.set(MyAdapter, MyAdapter(config))
@@ -862,6 +867,7 @@ session_mgr = SessionManager()
 # ✅ Good: Graceful fallback
 try:
     from acb.depends import depends
+
     http_adapter = depends.get_sync(HTTPClientAdapter)
 except Exception as e:
     logger.warning(f"HTTP adapter unavailable: {e}")
@@ -898,9 +904,11 @@ Comprehensive health check system built on `mcp_common.health` module for produc
 from dataclasses import dataclass
 from mcp_common.health import HealthStatus
 
+
 @dataclass
 class ComponentHealth:
     """Health check result for a single component."""
+
     name: str
     status: HealthStatus
     message: str
@@ -913,10 +921,12 @@ class ComponentHealth:
 ```python
 from enum import Enum
 
+
 class HealthStatus(Enum):
     """Component health status levels."""
-    HEALTHY = "healthy"      # Component fully operational
-    DEGRADED = "degraded"    # Component functional but issues detected
+
+    HEALTHY = "healthy"  # Component fully operational
+    DEGRADED = "degraded"  # Component functional but issues detected
     UNHEALTHY = "unhealthy"  # Component not operational
 ```
 
@@ -941,8 +951,8 @@ async def check_python_environment_health() -> ComponentHealth:
             metadata={
                 "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
                 "platform": platform.system(),
-                "recommendation": "Upgrade to Python 3.13+"
-            }
+                "recommendation": "Upgrade to Python 3.13+",
+            },
         )
 
     return ComponentHealth(
@@ -951,8 +961,8 @@ async def check_python_environment_health() -> ComponentHealth:
         message=f"Python {python_version.major}.{python_version.minor}.{python_version.micro}",
         metadata={
             "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
-            "platform": platform.system()
-        }
+            "platform": platform.system(),
+        },
     )
 ```
 
@@ -979,7 +989,7 @@ async def check_database_health() -> ComponentHealth:
                     "conversations": stats.get("conversations_count", 0),
                     "reflections": stats.get("reflections_count", 0),
                     "database_size_mb": stats.get("database_size_mb", 0),
-                }
+                },
             )
 
     except Exception as e:
@@ -987,7 +997,7 @@ async def check_database_health() -> ComponentHealth:
             name="database",
             status=HealthStatus.UNHEALTHY,
             message=f"Database error: {e}",
-            metadata={"error": str(e), "error_type": type(e).__name__}
+            metadata={"error": str(e), "error_type": type(e).__name__},
         )
 ```
 
@@ -1007,13 +1017,14 @@ async def check_http_client_health(
         try:
             from acb.depends import depends
             from mcp_common.adapters.http.client import HTTPClientAdapter
+
             http_client = depends.get_sync(HTTPClientAdapter)
         except Exception as e:
             return ComponentHealth(
                 name="http_client",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Failed to initialize: {e}",
-                metadata={"error": str(e)}
+                metadata={"error": str(e)},
             )
 
     # Optional connectivity test
@@ -1029,7 +1040,7 @@ async def check_http_client_health(
                     status=HealthStatus.DEGRADED,
                     message=f"HTTP {response.status_code}",
                     latency_ms=latency_ms,
-                    metadata={"status_code": response.status_code}
+                    metadata={"status_code": response.status_code},
                 )
 
             return ComponentHealth(
@@ -1037,7 +1048,7 @@ async def check_http_client_health(
                 status=HealthStatus.HEALTHY,
                 message="HTTP client operational",
                 latency_ms=latency_ms,
-                metadata={"test_url": test_url}
+                metadata={"test_url": test_url},
             )
 
         except Exception as e:
@@ -1045,7 +1056,7 @@ async def check_http_client_health(
                 name="http_client",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Connectivity test failed: {e}",
-                metadata={"error": str(e)}
+                metadata={"error": str(e)},
             )
 
     return ComponentHealth(
@@ -1085,7 +1096,7 @@ async def check_file_system_health() -> ComponentHealth:
             status=HealthStatus.DEGRADED,
             message=f"File system issues: {', '.join(issues)}",
             latency_ms=latency_ms,
-            metadata={"issues": issues}
+            metadata={"issues": issues},
         )
 
     return ComponentHealth(
@@ -1115,12 +1126,14 @@ async def get_all_health_checks() -> list[ComponentHealth]:
     results = []
     for check in checks:
         if isinstance(check, Exception):
-            results.append(ComponentHealth(
-                name="unknown",
-                status=HealthStatus.UNHEALTHY,
-                message=f"Health check crashed: {check}",
-                metadata={"error": str(check)}
-            ))
+            results.append(
+                ComponentHealth(
+                    name="unknown",
+                    status=HealthStatus.UNHEALTHY,
+                    message=f"Health check crashed: {check}",
+                    metadata={"error": str(check)},
+                )
+            )
         else:
             results.append(check)
 
@@ -1207,6 +1220,7 @@ stats = await manager.shutdown()
 @dataclass
 class CleanupTask:
     """Cleanup task definition."""
+
     name: str
     callback: Callable[[], Awaitable[None] | None]  # Sync or async
     priority: int = 0  # Execution order (higher first)
@@ -1222,6 +1236,7 @@ Track shutdown execution metrics:
 @dataclass
 class ShutdownStats:
     """Shutdown execution statistics."""
+
     tasks_registered: int = 0
     tasks_executed: int = 0
     tasks_failed: int = 0
@@ -1364,7 +1379,8 @@ async def cleanup_background_tasks() -> None:
         # Cancel pending tasks (except current task)
         current_task = asyncio.current_task(loop)
         pending_tasks = [
-            task for task in asyncio.all_tasks(loop)
+            task
+            for task in asyncio.all_tasks(loop)
             if task != current_task and not task.done()
         ]
 

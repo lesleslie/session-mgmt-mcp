@@ -10,6 +10,7 @@
 This review assesses the **code quality** of Phase 3 Security Hardening implementation across 9 MCP servers and the mcp-common security module. While the architecture has been previously reviewed (8.5/10), this review focuses on implementation quality, consistency, maintainability, and code smells.
 
 ### Key Findings
+
 - ⚠️ **CRITICAL**: Inconsistent middleware access patterns (3 different methods)
 - ⚠️ **HIGH**: Missing respx test dependency affecting HTTP mocking
 - ✅ **STRENGTH**: Security module design is excellent with comprehensive validation
@@ -17,17 +18,19 @@ This review assesses the **code quality** of Phase 3 Security Hardening implemen
 - ⚠️ **MODERATE**: Configuration validation has minor inconsistencies
 - ⚠️ **MODERATE**: Magic numbers for rate limits need centralization
 
----
+______________________________________________________________________
 
 ## 1. Code Consistency Analysis
 
 ### 1.1 Import Patterns - EXCELLENT (9/10)
 
 **✅ Consistent Pattern Across All Servers**:
+
 ```python
 # Rate limiting import (consistent across all 9 servers)
 try:
     from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
+
     RATE_LIMITING_AVAILABLE = True
 except ImportError:
     RATE_LIMITING_AVAILABLE = False
@@ -35,6 +38,7 @@ except ImportError:
 # ServerPanels import (consistent across all 9 servers)
 try:
     from mcp_common.ui import ServerPanels
+
     SERVERPANELS_AVAILABLE = True
 except ImportError:
     SERVERPANELS_AVAILABLE = False
@@ -42,45 +46,52 @@ except ImportError:
 # Security import (consistent across all 9 servers)
 try:
     from mcp_common.security import APIKeyValidator
+
     SECURITY_AVAILABLE = True
 except ImportError:
     SECURITY_AVAILABLE = False
 ```
 
 **Strengths**:
+
 - Try-except import pattern used universally
 - Boolean flags clearly named with `_AVAILABLE` suffix
 - No duplicate imports or redundant exception handlers
 - Graceful degradation built into every import
 
 **Minor Issue**:
+
 - Excalidraw imports `SECURITY_AVAILABLE` from `.config` instead of directly (inconsistent pattern)
 
----
+______________________________________________________________________
 
 ### 1.2 Middleware Access Patterns - CRITICAL ISSUE (4/10)
 
 **❌ CRITICAL: Three Different Middleware Access Methods**
 
 #### Pattern 1: Direct `add_middleware()` (CORRECT - 4 servers)
+
 ```python
 # ✅ mailgun-mcp, unifi-mcp, session-mgmt-mcp (main), fastblocks (via ACB)
 mcp.add_middleware(rate_limiter)
 ```
 
 #### Pattern 2: `._mcp_server.add_middleware()` (INCONSISTENT - 3 servers)
+
 ```python
 # ⚠️ raindropio-mcp, opera-cloud-mcp, crackerjack
 app._mcp_server.add_middleware(rate_limiter)
 ```
 
 #### Pattern 3: `._mcp_server.fastmcp.add_middleware()` (WRONG - 1 server)
+
 ```python
 # ❌ ACB (uses deeply nested private attribute)
 mcp._mcp_server.fastmcp.add_middleware(rate_limiter)
 ```
 
 **Analysis**:
+
 - **mailgun-mcp**: Uses `mcp.add_middleware()` directly (CORRECT)
 - **unifi-mcp**: Uses `server.add_middleware()` directly (CORRECT)
 - **session-mgmt-mcp**: Uses `mcp._mcp_server.add_middleware()` (accessing private attribute)
@@ -92,18 +103,20 @@ mcp._mcp_server.fastmcp.add_middleware(rate_limiter)
 - **fastblocks**: Uses ACB's server (inherits ACB's issue)
 
 **Impact**:
+
 - Using `_mcp_server` (private attribute) violates Python encapsulation
 - Breaking changes in FastMCP could fail silently
 - ACB's double-nesting is especially fragile
 - Maintainability nightmare when FastMCP refactors internals
 
 **Recommendation**:
-1. Verify FastMCP's public API for middleware registration
-2. If `mcp.add_middleware()` is correct, update all servers to use it
-3. If `_mcp_server.add_middleware()` is required, add comment explaining why
-4. ACB's `._mcp_server.fastmcp.add_middleware()` MUST be fixed (high priority)
 
----
+1. Verify FastMCP's public API for middleware registration
+1. If `mcp.add_middleware()` is correct, update all servers to use it
+1. If `_mcp_server.add_middleware()` is required, add comment explaining why
+1. ACB's `._mcp_server.fastmcp.add_middleware()` MUST be fixed (high priority)
+
+______________________________________________________________________
 
 ### 1.3 Rate Limiting Configuration - MODERATE ISSUE (6/10)
 
@@ -120,27 +133,31 @@ mcp._mcp_server.fastmcp.add_middleware(rate_limiter)
 | crackerjack | 12.0 | 35 | "Allow bursts for test/lint operations" ✅ |
 
 **Issues**:
+
 1. **Magic Numbers**: No centralized constants or configuration
-2. **Inconsistent Documentation**: Some have clear justification, others don't
-3. **No Testing**: No verification that these limits are appropriate
-4. **Hardcoded**: No way to configure limits via environment variables
+1. **Inconsistent Documentation**: Some have clear justification, others don't
+1. **No Testing**: No verification that these limits are appropriate
+1. **Hardcoded**: No way to configure limits via environment variables
 
 **Good Examples**:
+
 - **mailgun-mcp** (line 37-42): Clear comment about Mailgun's free tier limits
 - **unifi-mcp** (line 54-59): Explains UniFi controller capacity
 - **ACB** (line 39-40): Explains burst capacity reasoning
 
 **Poor Examples**:
+
 - **session-mgmt-mcp** (line 202): Generic "session management operations"
 - **opera-cloud-mcp** (line 46): Just says "sustainable rate" without basis
 
 **Recommendation**:
-1. Create `mcp_common.rate_limits` module with provider-specific presets
-2. Document benchmarking methodology for each rate limit
-3. Add environment variable overrides (e.g., `MAILGUN_RATE_LIMIT=5.0`)
-4. Include comments referencing API documentation or SLAs
 
----
+1. Create `mcp_common.rate_limits` module with provider-specific presets
+1. Document benchmarking methodology for each rate limit
+1. Add environment variable overrides (e.g., `MAILGUN_RATE_LIMIT=5.0`)
+1. Include comments referencing API documentation or SLAs
+
+______________________________________________________________________
 
 ### 1.4 ServerPanels Integration - EXCELLENT (9/10)
 
@@ -171,16 +188,18 @@ ServerPanels.startup_success(
 ```
 
 **Strengths**:
+
 - Emoji usage is consistent and meaningful
 - Feature descriptions are concise and informative
 - Conditional features properly filtered (no `None` values)
 - Fallback to plain text when ServerPanels unavailable
 
 **Minor Issues**:
+
 - Version numbers not always accurate (some use "1.0.0" placeholder)
 - Endpoint format varies (some use full URL, others use "ASGI app")
 
----
+______________________________________________________________________
 
 ## 2. Security Code Quality
 
@@ -218,25 +237,28 @@ class APIKeyValidator:
 ```
 
 **Strengths**:
+
 1. **Type Safety**: Full type hints, proper optional handling
-2. **Error Messages**: Include expected format and examples
-3. **Flexibility**: Supports provider presets AND custom patterns
-4. **Encapsulation**: Static method for mask_key (no instance needed)
-5. **Documentation**: Excellent docstrings with usage examples
+1. **Error Messages**: Include expected format and examples
+1. **Flexibility**: Supports provider presets AND custom patterns
+1. **Encapsulation**: Static method for mask_key (no instance needed)
+1. **Documentation**: Excellent docstrings with usage examples
 
 **Minor Issues**:
+
 1. **Line 176-182**: `mask_key()` prefix detection is hardcoded (not extensible)
    - Improvement: Could extract prefixes from `APIKeyPattern` metadata
-2. **No Validation Caching**: Repeated validation of same key re-runs regex
+1. **No Validation Caching**: Repeated validation of same key re-runs regex
    - Improvement: Add LRU cache for validated keys (security vs performance tradeoff)
 
----
+______________________________________________________________________
 
 ### 2.2 API Key Patterns - GOOD (8/10)
 
 **File**: `/Users/les/Projects/mcp-common/mcp_common/security/api_keys.py` (lines 48-79)
 
 **✅ Comprehensive Pattern Coverage**:
+
 ```python
 API_KEY_PATTERNS: dict[str, APIKeyPattern] = {
     "openai": APIKeyPattern(
@@ -273,27 +295,32 @@ API_KEY_PATTERNS: dict[str, APIKeyPattern] = {
 ```
 
 **Strengths**:
+
 1. **Regex Anchoring**: All patterns use `^...$` (prevents partial matches)
-2. **Character Classes**: Precise character sets (not overly permissive `.*`)
-3. **Variable Length**: Anthropic and GitHub use `{95,}` / `{36,255}` correctly
-4. **Documentation**: Clear descriptions of expected formats
+1. **Character Classes**: Precise character sets (not overly permissive `.*`)
+1. **Variable Length**: Anthropic and GitHub use `{95,}` / `{36,255}` correctly
+1. **Documentation**: Clear descriptions of expected formats
 
 **Issues**:
+
 1. **❌ CRITICAL: Gemini API Key Missing** (as noted in Architecture-Council review)
+
    - session-mgmt-mcp uses Gemini but has no specific pattern
    - Currently falls back to generic 16-char minimum
    - **Impact**: Could accept invalid Gemini keys (weak validation)
 
-2. **⚠️ Generic Pattern Too Permissive** (line 74-78)
+1. **⚠️ Generic Pattern Too Permissive** (line 74-78)
+
    - Pattern `^.{16,}$` accepts ANY 16+ characters (even whitespace)
    - Should at least require alphanumeric: `^[A-Za-z0-9\-_]{16,}$`
 
-3. **No ReDoS Protection Audit**
+1. **No ReDoS Protection Audit**
+
    - Patterns look safe (no nested quantifiers)
    - But no explicit security audit documented
    - Recommendation: Add comment confirming ReDoS analysis
 
----
+______________________________________________________________________
 
 ### 2.3 Sanitization Module - EXCELLENT (9/10)
 
@@ -302,6 +329,7 @@ API_KEY_PATTERNS: dict[str, APIKeyPattern] = {
 **✅ Well-Implemented Sanitization Functions**:
 
 #### Pattern Detection (lines 18-29)
+
 ```python
 # ✅ Comprehensive regex patterns for sensitive data
 API_KEY_PATTERN = re.compile(
@@ -312,18 +340,24 @@ SENSITIVE_PATTERNS = {
     "openai": re.compile(r"sk-[A-Za-z0-9]{48}"),  # ✅ Matches validation pattern
     "anthropic": re.compile(r"sk-ant-[A-Za-z0-9\-_]{95,}"),
     "github": re.compile(r"gh[ps]_[A-Za-z0-9]{36,255}"),
-    "jwt": re.compile(r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"),  # ✅ JWT detection!
-    "generic_hex": re.compile(r"\b[0-9a-f]{32,}\b"),  # ✅ Word boundary prevents over-matching
+    "jwt": re.compile(
+        r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"
+    ),  # ✅ JWT detection!
+    "generic_hex": re.compile(
+        r"\b[0-9a-f]{32,}\b"
+    ),  # ✅ Word boundary prevents over-matching
 }
 ```
 
 **Strengths**:
+
 1. **Consistency**: Patterns match those in `api_keys.py`
-2. **JWT Detection**: Excellent addition for token sanitization
-3. **Word Boundaries**: `\b` prevents false positives on generic_hex
-4. **Case-Insensitive**: API_KEY_PATTERN uses `(?i)` flag
+1. **JWT Detection**: Excellent addition for token sanitization
+1. **Word Boundaries**: `\b` prevents false positives on generic_hex
+1. **Case-Insensitive**: API_KEY_PATTERN uses `(?i)` flag
 
 #### Path Sanitization (lines 143-201)
+
 ```python
 def sanitize_path(
     path: str | Path,
@@ -356,32 +390,39 @@ def sanitize_path(
             resolved = (base / path_obj).resolve()
             resolved.relative_to(base)  # Raises ValueError if escapes
         except ValueError as e:
-            raise ValueError(f"Path '{path}' escapes base directory '{base_dir}'") from e
+            raise ValueError(
+                f"Path '{path}' escapes base directory '{base_dir}'"
+            ) from e
     ...
 ```
 
 **Strengths**:
+
 1. **Defense in Depth**: Multiple layers (traversal check, absolute check, system dir check, base_dir verification)
-2. **Resolve + Relative**: Properly uses `resolve()` then `relative_to()` to prevent symlink escapes
-3. **Clear Error Messages**: Each validation failure has specific error
-4. **Type Safety**: Accepts both `str` and `Path`, returns `Path`
+1. **Resolve + Relative**: Properly uses `resolve()` then `relative_to()` to prevent symlink escapes
+1. **Clear Error Messages**: Each validation failure has specific error
+1. **Type Safety**: Accepts both `str` and `Path`, returns `Path`
 
 **Issues**:
+
 1. **System Directories Hardcoded** (line 184)
+
    - Only checks Unix paths (`/etc`, `/sys`, etc.)
    - Windows system paths not covered (`C:\Windows`, `C:\Program Files`)
    - Recommendation: Add OS detection or platform-specific lists
 
-2. **No Validation of Resolved Path Existence** (line 193-196)
+1. **No Validation of Resolved Path Existence** (line 193-196)
+
    - Resolves path but doesn't check if it exists or is accessible
    - Could lead to confusing errors later in code
    - Recommendation: Add optional `must_exist` parameter
 
----
+______________________________________________________________________
 
 ### 2.4 Server Configuration Validation - MODERATE ISSUES (6/10)
 
 #### UniFi MCP - GOOD Pattern (8/10)
+
 **File**: `/Users/les/Projects/unifi-mcp/unifi_mcp/config.py`
 
 ```python
@@ -412,11 +453,13 @@ def validate_credentials_at_startup(self) -> None:
 ```
 
 **Strengths**:
+
 - Fail-fast: exits if no controllers configured
 - Clear naming: `controller_name` passed to validator
 - Comprehensive: validates all configured controllers
 
 #### Mailgun MCP - EXCELLENT Pattern (9/10)
+
 **File**: `/Users/les/Projects/mailgun-mcp/mailgun_mcp/main.py`
 
 ```python
@@ -436,7 +479,9 @@ def validate_api_key_at_startup() -> None:
         validator = APIKeyValidator(provider="mailgun")
         try:
             validator.validate(api_key, raise_on_invalid=True)
-            print(f"✅ Mailgun API Key validated: {get_masked_api_key()}", file=sys.stderr)
+            print(
+                f"✅ Mailgun API Key validated: {get_masked_api_key()}", file=sys.stderr
+            )
         except ValueError as e:
             print("\n❌ Mailgun API Key Validation Failed", file=sys.stderr)
             print(f"   {e}", file=sys.stderr)
@@ -450,18 +495,23 @@ def validate_api_key_at_startup() -> None:
 ```
 
 **Strengths**:
+
 - **Excellent Error Messages**: Clear instructions for fixing
 - **Graceful Degradation**: Works without security module
 - **Logging**: Prints masked key on success (audit trail)
 - **Fail-Fast**: Exits immediately on validation failure
 
 #### Raindropio MCP - MISSING VALIDATION (5/10)
+
 **File**: `/Users/les/Projects/raindropio-mcp/raindropio_mcp/config/settings.py`
 
 **❌ NO STARTUP VALIDATION**:
+
 ```python
 class RaindropSettings(BaseSettings):
-    token: str = Field("", description="Raindrop.io personal access token")  # ⚠️ Defaults to empty string
+    token: str = Field(
+        "", description="Raindrop.io personal access token"
+    )  # ⚠️ Defaults to empty string
 
     def get_masked_token(self) -> str:
         """Get masked API token for safe logging."""
@@ -474,19 +524,22 @@ class RaindropSettings(BaseSettings):
 ```
 
 **Issues**:
+
 1. **No Startup Validation**: Token not validated at server initialization
-2. **Empty Default**: `token: str = Field("")` allows server to start without credentials
-3. **Runtime Failures**: Will fail on first API call instead of startup
-4. **No Format Validation**: No pattern for Raindrop.io tokens
+1. **Empty Default**: `token: str = Field("")` allows server to start without credentials
+1. **Runtime Failures**: Will fail on first API call instead of startup
+1. **No Format Validation**: No pattern for Raindrop.io tokens
 
 **Impact**: Server starts successfully but all API calls will fail with authentication errors.
 
 **Recommendation**: Add `validate_token_at_startup()` method similar to mailgun-mcp.
 
 #### Opera Cloud MCP - PARTIAL VALIDATION (6/10)
+
 **File**: `/Users/les/Projects/opera-cloud-mcp/opera_cloud_mcp/config/settings.py`
 
 **⚠️ HAS VALIDATION METHOD BUT NOT CALLED**:
+
 ```python
 def validate_credentials_at_startup(self) -> None:
     """Validate OPERA Cloud OAuth credentials at server startup."""
@@ -501,7 +554,9 @@ def validate_credentials_at_startup(self) -> None:
 
     # ✅ Uses security module if available
     if SECURITY_AVAILABLE:
-        validator = APIKeyValidator(min_length=32)  # ⚠️ Generic validation, not OAuth-specific
+        validator = APIKeyValidator(
+            min_length=32
+        )  # ⚠️ Generic validation, not OAuth-specific
         try:
             validator.validate(self.opera_client_secret, raise_on_invalid=True)
         except ValueError as e:
@@ -510,17 +565,20 @@ def validate_credentials_at_startup(self) -> None:
 ```
 
 **Issues**:
+
 1. **Not Invoked**: Method exists but never called in `server.py`
-2. **Generic Validation**: Uses generic `min_length=32` instead of OAuth2 pattern
-3. **No Client ID Format**: Only checks existence, not format
-4. **Incomplete**: Should validate token_url format (valid URL)
+1. **Generic Validation**: Uses generic `min_length=32` instead of OAuth2 pattern
+1. **No Client ID Format**: Only checks existence, not format
+1. **Incomplete**: Should validate token_url format (valid URL)
 
 **Recommendation**:
+
 1. Call `validate_credentials_at_startup()` in `main()` function
-2. Add OAuth2-specific patterns to `API_KEY_PATTERNS`
-3. Validate `opera_token_url` is a valid HTTPS URL
+1. Add OAuth2-specific patterns to `API_KEY_PATTERNS`
+1. Validate `opera_token_url` is a valid HTTPS URL
 
 #### Excalidraw MCP - GOOD PATTERN (8/10)
+
 **File**: `/Users/les/Projects/excalidraw-mcp/excalidraw_mcp/config.py`
 
 ```python
@@ -544,13 +602,14 @@ def validate_jwt_secret_at_startup(self) -> None:
 ```
 
 **Strengths**:
+
 - **Conditional Validation**: Only validates when auth enabled
 - **Minimum Length**: 32-char minimum is security best practice
 - **Clear Messages**: Explains why validation failed
 
 **Minor Issue**: Not invoked in `main.py` (validation method exists but not called)
 
----
+______________________________________________________________________
 
 ## 3. Error Handling & Graceful Degradation
 
@@ -562,6 +621,7 @@ def validate_jwt_secret_at_startup(self) -> None:
 # Every server follows this pattern
 try:
     from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
+
     RATE_LIMITING_AVAILABLE = True
 except ImportError:
     RATE_LIMITING_AVAILABLE = False
@@ -575,16 +635,18 @@ if RATE_LIMITING_AVAILABLE:
 ```
 
 **Strengths**:
+
 1. **Universal Pattern**: All 9 servers use identical pattern
-2. **Silent Failure**: No warnings if middleware unavailable (correct for optional features)
-3. **Boolean Flags**: Clear state management with `_AVAILABLE` flags
-4. **Logging**: Success path logs when feature is enabled
+1. **Silent Failure**: No warnings if middleware unavailable (correct for optional features)
+1. **Boolean Flags**: Clear state management with `_AVAILABLE` flags
+1. **Logging**: Success path logs when feature is enabled
 
 **Minor Improvement**:
+
 - Could add `logger.debug("Rate limiting not available")` for troubleshooting
 - But current silent approach is better for production (no noise)
 
----
+______________________________________________________________________
 
 ### 3.2 Validation Error Messages - GOOD (7.5/10)
 
@@ -595,32 +657,40 @@ if RATE_LIMITING_AVAILABLE:
 if not api_key or not api_key.strip():
     print("\n❌ Mailgun API Key Validation Failed", file=sys.stderr)
     print("   MAILGUN_API_KEY environment variable is not set", file=sys.stderr)
-    print("   Set it with: export MAILGUN_API_KEY='your-key-here'", file=sys.stderr)  # ✅ Shows fix
+    print(
+        "   Set it with: export MAILGUN_API_KEY='your-key-here'", file=sys.stderr
+    )  # ✅ Shows fix
     sys.exit(1)
 
 # ✅ GOOD: UniFi validation
 if not controllers_to_validate:
     print("\n⚠️  No UniFi controllers configured", file=sys.stderr)
-    print("   At least one controller (network/access/local) is required", file=sys.stderr)
+    print(
+        "   At least one controller (network/access/local) is required", file=sys.stderr
+    )
     sys.exit(1)
 
 # ⚠️ MODERATE: Opera Cloud (missing examples)
 if not self.opera_client_id or not self.opera_client_id.strip():
-    print("\n❌ OPERA Client ID Validation Failed", file=sys.stderr)  # ⚠️ No example of how to set it
+    print(
+        "\n❌ OPERA Client ID Validation Failed", file=sys.stderr
+    )  # ⚠️ No example of how to set it
     sys.exit(1)
 ```
 
 **Strengths**:
+
 - **Structured Output**: Consistent `\n❌ Title` followed by `   Details` pattern
 - **Actionable**: Best messages show exact commands to fix (mailgun example)
 - **Context**: Explains what's wrong and why it matters
 
 **Issues**:
-1. **Inconsistent Detail Level**: Some errors give examples, others don't
-2. **No Link to Docs**: Could include URL to configuration guide
-3. **Exit Code Always 1**: Could use different codes for different failure types (not critical)
 
----
+1. **Inconsistent Detail Level**: Some errors give examples, others don't
+1. **No Link to Docs**: Could include URL to configuration guide
+1. **Exit Code Always 1**: Could use different codes for different failure types (not critical)
+
+______________________________________________________________________
 
 ## 4. Test Quality Assessment
 
@@ -631,11 +701,13 @@ if not self.opera_client_id or not self.opera_client_id.strip():
 **File**: Tests reviewed from grep output
 
 **Strengths**:
+
 1. **Comprehensive Coverage**: 96%+ is excellent for security module
-2. **Test Organization**: Separate files for api_keys and sanitization
-3. **Passing Tests**: 123/123 green (no flaky tests)
+1. **Test Organization**: Separate files for api_keys and sanitization
+1. **Passing Tests**: 123/123 green (no flaky tests)
 
 **❌ CRITICAL MISSING DEPENDENCY**:
+
 ```python
 # Architecture-Council review identified:
 # tests/test_config_security.py likely uses respx for HTTP mocking
@@ -643,60 +715,68 @@ if not self.opera_client_id or not self.opera_client_id.strip():
 ```
 
 **Impact**:
+
 - Tests may fail in fresh environment or CI
 - HTTP client tests cannot properly mock responses
 - False sense of security if tests are being skipped
 
 **Recommendation**: Add `respx` to test dependencies immediately
 
----
+______________________________________________________________________
 
 ### 4.2 Server Integration Tests - NOT REVIEWED
 
 **Scope Limitation**: This review focused on server implementations, not test suites.
 
 **Observations**:
+
 - No integration tests for rate limiting behavior
 - No tests verifying middleware access patterns
 - No end-to-end validation tests
 
 **Recommendation**:
+
 - Add integration tests for Phase 3 security features
 - Test graceful degradation (with/without security module)
 - Verify rate limiting actually blocks excessive requests
 
----
+______________________________________________________________________
 
 ## 5. Code Smells & Maintainability
 
 ### 5.1 Magic Numbers - MODERATE ISSUE (6/10)
 
 **❌ Rate Limits Hardcoded Everywhere**:
+
 ```python
 # Every server has magic numbers
 rate_limiter = RateLimitingMiddleware(
     max_requests_per_second=10.0,  # ⚠️ Why 10?
-    burst_capacity=20,              # ⚠️ Why 20?
+    burst_capacity=20,  # ⚠️ Why 20?
     global_limit=True,
 )
 ```
 
 **Issues**:
+
 1. **No Constants**: Values repeated across servers
-2. **No Configuration**: Cannot adjust without code changes
-3. **No Justification**: Some comments explain, others don't
-4. **Testing Difficulty**: Hard to test different rate limits
+1. **No Configuration**: Cannot adjust without code changes
+1. **No Justification**: Some comments explain, others don't
+1. **Testing Difficulty**: Hard to test different rate limits
 
 **Recommendation**:
+
 ```python
 # mcp_common/rate_limits.py (PROPOSED)
 from dataclasses import dataclass
+
 
 @dataclass
 class RateLimitPreset:
     max_requests_per_second: float
     burst_capacity: int
     description: str
+
 
 RATE_LIMIT_PRESETS = {
     "conservative": RateLimitPreset(5.0, 15, "Low-volume APIs (Mailgun)"),
@@ -714,16 +794,18 @@ rate_limiter = RateLimitingMiddleware(
 )
 ```
 
----
+______________________________________________________________________
 
 ### 5.2 Duplicated Code - MINOR ISSUE (7/10)
 
 **✅ Validation Logic Well-Abstracted**:
+
 - Security validation centralized in `mcp_common.security`
 - Masking logic in `APIKeyValidator.mask_key()`
 - Sanitization in `mcp_common.security.sanitization`
 
 **⚠️ Startup Validation Code Duplicated**:
+
 ```python
 # Pattern repeated in mailgun, unifi, excalidraw, opera (slightly different each time)
 if not api_key or not api_key.strip():
@@ -733,6 +815,7 @@ if not api_key or not api_key.strip():
 ```
 
 **Recommendation**:
+
 ```python
 # mcp_common/config/validation.py (PROPOSED)
 def validate_env_var_at_startup(
@@ -761,6 +844,7 @@ def validate_env_var_at_startup(
 
     return value.strip()
 
+
 # Usage in servers:
 api_key = validate_env_var_at_startup(
     "MAILGUN_API_KEY",
@@ -770,25 +854,28 @@ api_key = validate_env_var_at_startup(
 )
 ```
 
----
+______________________________________________________________________
 
 ### 5.3 Type Hints - EXCELLENT (9/10)
 
 **✅ Comprehensive Type Safety**:
+
 - All functions in security module have return type hints
 - Parameters properly typed with `str | None` patterns
 - Dataclasses used for structured data (APIKeyPattern, LLMMessage)
 - Modern Python 3.13+ syntax (`|` instead of `Union`)
 
 **Minor Issues**:
+
 - Some server files have incomplete type hints (not in scope)
 - No `typing.Protocol` usage for duck typing (could improve abstractions)
 
----
+______________________________________________________________________
 
 ### 5.4 Documentation Quality - GOOD (7.5/10)
 
 **✅ Security Module Well-Documented**:
+
 ```python
 def validate_api_key_format(
     key: str | None,
@@ -812,119 +899,136 @@ def validate_api_key_format(
         ValueError: If key is invalid
 
     Example:
-        >>> key = validate_api_key_format(os.getenv("OPENAI_API_KEY"), provider="openai")
+        >>> key = validate_api_key_format(
+        ...     os.getenv("OPENAI_API_KEY"), provider="openai"
+        ... )
         >>> # Raises ValueError if key format is wrong
     """
 ```
 
 **Strengths**:
+
 - **Complete Docstrings**: Args, Returns, Raises, Example sections
 - **Usage Guidance**: Examples show how to use functions
 - **Module Docstrings**: Every module has purpose statement
 
 **Issues**:
-1. **Server Validation Functions**: Lack detailed docstrings (just one-liners)
-2. **No Architecture Docs**: Missing high-level design documentation
-3. **Pattern Rationale**: API key patterns lack references to API docs
 
----
+1. **Server Validation Functions**: Lack detailed docstrings (just one-liners)
+1. **No Architecture Docs**: Missing high-level design documentation
+1. **Pattern Rationale**: API key patterns lack references to API docs
+
+______________________________________________________________________
 
 ## 6. Critical Issues Summary
 
 ### 6.1 CRITICAL (Fix Immediately)
 
 1. **❌ Inconsistent Middleware Access** (4/10)
+
    - **Issue**: Three different patterns for `add_middleware()`
    - **Impact**: Breaks with FastMCP updates, fragile code
    - **Files**: ACB (double private), raindropio/opera/crackerjack (single private), mailgun/unifi (public)
    - **Fix**: Standardize on FastMCP's public API
    - **Severity**: HIGH - Breaking changes inevitable
 
-2. **❌ Missing respx Dependency** (reported by Architecture-Council)
+1. **❌ Missing respx Dependency** (reported by Architecture-Council)
+
    - **Issue**: HTTP mocking library missing from test deps
    - **Impact**: Tests may fail or be skipped
    - **Files**: `mcp-common/pyproject.toml`
    - **Fix**: Add `respx` to `[tool.poetry.group.dev.dependencies]`
    - **Severity**: HIGH - False test pass/fail
 
-3. **❌ Missing Gemini API Key Pattern** (reported by Architecture-Council)
+1. **❌ Missing Gemini API Key Pattern** (reported by Architecture-Council)
+
    - **Issue**: session-mgmt-mcp uses Gemini but no validation pattern
    - **Impact**: Weak validation, accepts invalid keys
    - **Files**: `mcp-common/mcp_common/security/api_keys.py`
    - **Fix**: Add Gemini pattern to `API_KEY_PATTERNS`
    - **Severity**: MEDIUM - Security risk
 
----
+______________________________________________________________________
 
 ### 6.2 HIGH PRIORITY (Fix Before Production)
 
 4. **⚠️ Raindropio Missing Startup Validation** (5/10)
+
    - **Issue**: Token not validated at server start
    - **Impact**: Runtime failures instead of fail-fast
    - **Files**: `raindropio_mcp/config/settings.py`, `raindropio_mcp/server.py`
    - **Fix**: Add `validate_token_at_startup()` call in `create_app()`
    - **Severity**: MEDIUM - Poor user experience
 
-5. **⚠️ Opera Cloud Validation Not Called** (6/10)
+1. **⚠️ Opera Cloud Validation Not Called** (6/10)
+
    - **Issue**: `validate_credentials_at_startup()` exists but never invoked
    - **Impact**: Validation logic unused, server starts with bad credentials
    - **Files**: `opera_cloud_mcp/server.py`
    - **Fix**: Call method in `main()` before `app.run()`
    - **Severity**: MEDIUM - Validation bypassed
 
-6. **⚠️ Excalidraw Validation Not Called** (8/10)
+1. **⚠️ Excalidraw Validation Not Called** (8/10)
+
    - **Issue**: `validate_jwt_secret_at_startup()` exists but not invoked
    - **Impact**: JWT secret validation bypassed
    - **Files**: `excalidraw_mcp/server.py`
    - **Fix**: Call method in `main()` when `SECURITY_AVAILABLE`
    - **Severity**: LOW - Auth disabled by default
 
----
+______________________________________________________________________
 
 ### 6.3 MODERATE (Improve Maintainability)
 
 7. **⚠️ Magic Numbers for Rate Limits** (6/10)
+
    - **Issue**: Hardcoded values, no justification
    - **Impact**: Hard to adjust, test, or document
    - **Files**: All server files
    - **Fix**: Create `mcp_common.rate_limits` preset module
    - **Severity**: LOW - Maintainability issue
 
-8. **⚠️ Generic Validation Too Permissive** (8/10)
+1. **⚠️ Generic Validation Too Permissive** (8/10)
+
    - **Issue**: `pattern=r"^.{16,}$"` accepts any 16+ chars
    - **Impact**: Weak validation fallback
    - **Files**: `mcp-common/mcp_common/security/api_keys.py` line 74
    - **Fix**: Change to `r"^[A-Za-z0-9\-_]{16,}$"`
    - **Severity**: LOW - Only affects generic fallback
 
-9. **⚠️ Duplicated Validation Code** (7/10)
+1. **⚠️ Duplicated Validation Code** (7/10)
+
    - **Issue**: Startup validation pattern repeated
    - **Impact**: Inconsistent error messages, harder to maintain
    - **Files**: mailgun, unifi, excalidraw, opera config files
    - **Fix**: Extract to `mcp_common.config.validation` helper
    - **Severity**: LOW - DRY violation
 
----
+______________________________________________________________________
 
 ## 7. Recommendations by Priority
 
 ### Immediate (Before Next Release)
 
 1. **Fix Middleware Access Pattern** (1-2 hours)
+
    - Verify FastMCP's public API documentation
    - Update ACB, raindropio, opera, crackerjack, session-mgmt to use public API
    - Add comment if private access is required (with ticket to fix later)
 
-2. **Add respx Dependency** (5 minutes)
+1. **Add respx Dependency** (5 minutes)
+
    - Add `respx = "^0.21.0"` to mcp-common test deps
    - Re-run tests to verify HTTP mocking works
 
-3. **Add Gemini API Key Pattern** (30 minutes)
+1. **Add Gemini API Key Pattern** (30 minutes)
+
    - Research Gemini API key format (Google AI Studio docs)
    - Add pattern to `API_KEY_PATTERNS`
    - Update session-mgmt-mcp to use Gemini-specific validation
 
-4. **Fix Missing Validation Calls** (1 hour)
+1. **Fix Missing Validation Calls** (1 hour)
+
    - raindropio: Add `settings.validate_token_at_startup()` in `create_app()`
    - opera-cloud: Add `settings.validate_credentials_at_startup()` in `main()`
    - excalidraw: Add `security_config.validate_jwt_secret_at_startup()` in `main()`
@@ -932,18 +1036,21 @@ def validate_api_key_format(
 ### Short-Term (Next Sprint)
 
 5. **Centralize Rate Limit Configuration** (3-4 hours)
+
    - Create `mcp_common/rate_limits.py` with presets
    - Update all servers to use presets
    - Add environment variable overrides
    - Document benchmarking methodology
 
-6. **Extract Validation Helper** (2-3 hours)
+1. **Extract Validation Helper** (2-3 hours)
+
    - Create `mcp_common/config/validation.py`
    - Implement `validate_env_var_at_startup()` helper
    - Update all servers to use helper
    - Ensure consistent error messages
 
-7. **Strengthen Generic Validation** (30 minutes)
+1. **Strengthen Generic Validation** (30 minutes)
+
    - Update generic pattern from `^.{16,}$` to `^[A-Za-z0-9\-_]{16,}$`
    - Test with various invalid inputs
    - Update docstring to explain new constraints
@@ -951,24 +1058,27 @@ def validate_api_key_format(
 ### Long-Term (Next Quarter)
 
 8. **Add Integration Tests** (1-2 weeks)
+
    - Test rate limiting behavior (verify requests blocked)
    - Test graceful degradation (with/without security module)
    - Test validation at startup (invalid credentials)
    - Test middleware registration patterns
 
-9. **Improve Documentation** (3-5 days)
+1. **Improve Documentation** (3-5 days)
+
    - Add architecture diagram for Phase 3 security
    - Document rate limit justification per server
    - Add configuration guide with examples
    - Link error messages to docs
 
-10. **ReDoS Security Audit** (1-2 days)
-    - Audit all regex patterns for nested quantifiers
-    - Test with malicious inputs (long strings, special chars)
-    - Document ReDoS analysis in code comments
-    - Add automated ReDoS detection to CI
+1. **ReDoS Security Audit** (1-2 days)
 
----
+   - Audit all regex patterns for nested quantifiers
+   - Test with malicious inputs (long strings, special chars)
+   - Document ReDoS analysis in code comments
+   - Add automated ReDoS detection to CI
+
+______________________________________________________________________
 
 ## 8. Overall Code Quality Scoring
 
@@ -989,7 +1099,7 @@ def validate_api_key_format(
 
 ### Rounded Score: 7.5/10
 
----
+______________________________________________________________________
 
 ## 9. Comparison with Architecture Reviews
 
@@ -1000,17 +1110,19 @@ def validate_api_key_format(
 | **Code Quality (This)** | 7.5/10 | Implementation, consistency, maintainability |
 
 **Analysis**:
+
 - Architecture is sound (8.5) but implementation has issues (7.5)
 - Gap suggests good design but rushed implementation
 - Fixing critical issues (middleware access, missing validations) would raise score to 8.5/10
 
----
+______________________________________________________________________
 
 ## 10. Final Verdict
 
 **Overall Assessment**: **GOOD with CRITICAL ISSUES**
 
 ### Strengths
+
 - ✅ Security module design is excellent (9.5/10)
 - ✅ Import patterns highly consistent (9/10)
 - ✅ Error messages clear and actionable (8/10)
@@ -1018,18 +1130,21 @@ def validate_api_key_format(
 - ✅ Test coverage strong where it exists (96%+)
 
 ### Critical Blockers
+
 - ❌ Middleware access inconsistency (3 different patterns)
 - ❌ Missing respx dependency breaks tests
 - ❌ Missing Gemini validation pattern (security risk)
 
 ### Must-Fix Before Production
+
 - ⚠️ Raindropio and Opera Cloud missing validation calls
 - ⚠️ Rate limits hardcoded (maintainability issue)
 - ⚠️ Generic validation too permissive
 
 ### Recommendation
+
 **Phase 3 is 85% complete**. Fix critical issues (8-10 hours work) before considering it production-ready. Current state is suitable for development/testing but not production deployment.
 
----
+______________________________________________________________________
 
 **End of Review**

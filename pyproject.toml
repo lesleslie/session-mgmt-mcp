@@ -477,9 +477,12 @@ keyring-provider = "subprocess"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 
-[tool.uv.sources]
-acb = { path = "../acb", editable = true }
-mcp-common = { path = "../mcp-common" }
+[tool.uv.sources.acb]
+path = "../acb"
+editable = true
+
+[tool.uv.sources.mcp-common]
+path = "../mcp-common"
 
 [dependency-groups]
 test = [

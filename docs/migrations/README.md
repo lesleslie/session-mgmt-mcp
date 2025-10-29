@@ -7,15 +7,15 @@ Step-by-step guides for migrating between versions and adopting new patterns in 
 ### Core Migrations
 
 1. **[External Memory to Local Memory](external-memory-to-local.md)** - Migrate from external memory services to local ONNX-based embeddings
-2. **[HTTP Client Adapter](http-client-adapter.md)** - Migrate from aiohttp to mcp_common HTTPClientAdapter (11x performance improvement)
-3. **[Health Check Implementation](health-check-implementation.md)** - Add production-ready health checks to your server
-4. **[Graceful Shutdown](graceful-shutdown.md)** - Implement signal handling and resource cleanup
+1. **[HTTP Client Adapter](http-client-adapter.md)** - Migrate from aiohttp to mcp_common HTTPClientAdapter (11x performance improvement)
+1. **[Health Check Implementation](health-check-implementation.md)** - Add production-ready health checks to your server
+1. **[Graceful Shutdown](graceful-shutdown.md)** - Implement signal handling and resource cleanup
 
 ### Pattern Migrations
 
 5. **[ACB Dependency Injection](acb-dependency-injection.md)** - Migrate to ACB DI patterns for better testability
-6. **[Lazy Logger Initialization](lazy-logger-pattern.md)** - Fix DI initialization issues during module imports
-7. **[Quality Scoring V2](quality-scoring-v2.md)** - Upgrade from V1 to V2 quality assessment algorithm
+1. **[Lazy Logger Initialization](lazy-logger-pattern.md)** - Fix DI initialization issues during module imports
+1. **[Quality Scoring V2](quality-scoring-v2.md)** - Upgrade from V1 to V2 quality assessment algorithm
 
 ## Migration Strategy
 
@@ -34,10 +34,10 @@ python -c "from session_mgmt_mcp.health_checks import get_all_health_checks; imp
 ### 2. Plan Migration
 
 1. **Read the relevant migration guide(s)**
-2. **Identify affected code** in your project
-3. **Create a backup** or feature branch
-4. **Follow the step-by-step instructions**
-5. **Test thoroughly** before deploying
+1. **Identify affected code** in your project
+1. **Create a backup** or feature branch
+1. **Follow the step-by-step instructions**
+1. **Test thoroughly** before deploying
 
 ### 3. Testing After Migration
 
@@ -101,18 +101,18 @@ Each migration guide includes:
 If you encounter issues during migration:
 
 1. **Check the troubleshooting section** in the specific migration guide
-2. **Review the ARCHITECTURE.md** for detailed implementation patterns
-3. **Check API_REFERENCE.md** for updated API signatures
-4. **Open an issue** on GitHub with migration details
+1. **Review the ARCHITECTURE.md** for detailed implementation patterns
+1. **Check API_REFERENCE.md** for updated API signatures
+1. **Open an issue** on GitHub with migration details
 
 ## Contributing Migration Guides
 
 To add a new migration guide:
 
 1. Create `docs/migrations/your-migration-name.md`
-2. Follow the [migration guide template](#migration-guide-template)
-3. Add entry to this README
-4. Submit pull request
+1. Follow the [migration guide template](#migration-guide-template)
+1. Add entry to this README
+1. Submit pull request
 
 ### Migration Guide Template
 

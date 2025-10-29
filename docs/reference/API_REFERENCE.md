@@ -182,6 +182,7 @@ from mcp_common.health import HealthStatus
 ```python
 from mcp_common.health import HealthStatus, ComponentHealth
 
+
 def check_service() -> ComponentHealth:
     try:
         # Check service health
@@ -189,13 +190,13 @@ def check_service() -> ComponentHealth:
             return ComponentHealth(
                 name="my_service",
                 status=HealthStatus.HEALTHY,
-                message="Service operational"
+                message="Service operational",
             )
     except Exception as e:
         return ComponentHealth(
             name="my_service",
             status=HealthStatus.UNHEALTHY,
-            message=f"Service failed: {e}"
+            message=f"Service failed: {e}",
         )
 ```
 
@@ -240,6 +241,7 @@ ComponentHealth(
 import time
 from mcp_common.health import ComponentHealth, HealthStatus
 
+
 async def check_database_health() -> ComponentHealth:
     """Check database connection health."""
     start_time = time.perf_counter()
@@ -258,7 +260,7 @@ async def check_database_health() -> ComponentHealth:
                 "connections": result["active_connections"],
                 "version": result["version"],
                 "uptime_hours": result["uptime"] / 3600,
-            }
+            },
         )
 
     except DatabaseError as e:
@@ -266,7 +268,7 @@ async def check_database_health() -> ComponentHealth:
             name="database",
             status=HealthStatus.UNHEALTHY,
             message=f"Database error: {e}",
-            metadata={"error": str(e), "error_type": type(e).__name__}
+            metadata={"error": str(e), "error_type": type(e).__name__},
         )
 ```
 
@@ -274,6 +276,7 @@ async def check_database_health() -> ComponentHealth:
 
 ```python
 from mcp_common.health import ComponentHealth, HealthStatus
+
 
 async def check_http_health(test_url: str = None) -> ComponentHealth:
     """Check HTTP client health with optional connectivity test."""
@@ -297,7 +300,10 @@ async def check_http_health(test_url: str = None) -> ComponentHealth:
                         status=HealthStatus.DEGRADED,
                         message=f"HTTP {response.status_code}",
                         latency_ms=latency_ms,
-                        metadata={"status_code": response.status_code, "test_url": test_url}
+                        metadata={
+                            "status_code": response.status_code,
+                            "test_url": test_url,
+                        },
                     )
 
                 return ComponentHealth(
@@ -305,13 +311,13 @@ async def check_http_health(test_url: str = None) -> ComponentHealth:
                     status=HealthStatus.HEALTHY,
                     message="HTTP client operational",
                     latency_ms=latency_ms,
-                    metadata={"test_url": test_url}
+                    metadata={"test_url": test_url},
                 )
 
         return ComponentHealth(
             name="http_client",
             status=HealthStatus.HEALTHY,
-            message="HTTP client initialized"
+            message="HTTP client initialized",
         )
 
     except Exception as e:
@@ -319,7 +325,7 @@ async def check_http_health(test_url: str = None) -> ComponentHealth:
             name="http_client",
             status=HealthStatus.UNHEALTHY,
             message=f"Failed to initialize: {e}",
-            metadata={"error": str(e)}
+            metadata={"error": str(e)},
         )
 ```
 
@@ -359,6 +365,7 @@ HealthCheckResponse(
 from datetime import datetime
 from mcp_common.health import HealthCheckResponse, HealthStatus, ComponentHealth
 
+
 async def system_health_check() -> HealthCheckResponse:
     """Perform system-wide health check."""
 
@@ -375,12 +382,14 @@ async def system_health_check() -> HealthCheckResponse:
     components = []
     for check in component_checks:
         if isinstance(check, Exception):
-            components.append(ComponentHealth(
-                name="unknown",
-                status=HealthStatus.UNHEALTHY,
-                message=f"Health check crashed: {check}",
-                metadata={"error": str(check)}
-            ))
+            components.append(
+                ComponentHealth(
+                    name="unknown",
+                    status=HealthStatus.UNHEALTHY,
+                    message=f"Health check crashed: {check}",
+                    metadata={"error": str(check)},
+                )
+            )
         else:
             components.append(check)
 
@@ -394,9 +403,7 @@ async def system_health_check() -> HealthCheckResponse:
         overall_status = HealthStatus.HEALTHY
 
     return HealthCheckResponse(
-        status=overall_status,
-        components=components,
-        timestamp=datetime.now()
+        status=overall_status, components=components, timestamp=datetime.now()
     )
 ```
 
@@ -453,8 +460,7 @@ print(f"HTTP Client: {result.status.value}")  # HEALTHY
 
 ```python
 result = await check_http_client_health(
-    test_url="https://api.example.com/health",
-    timeout_ms=3000
+    test_url="https://api.example.com/health", timeout_ms=3000
 )
 
 if result.status == HealthStatus.HEALTHY:
@@ -534,8 +540,7 @@ if result.status == HealthStatus.HEALTHY:
 ```python
 # Test connectivity to specific service
 result = await check_http_connectivity(
-    test_url="https://api.myservice.com/health",
-    timeout_ms=2000
+    test_url="https://api.myservice.com/health", timeout_ms=2000
 )
 
 print(f"Service connectivity: {result.status.value}")
@@ -552,6 +557,7 @@ async def full_network_health() -> list[ComponentHealth]:
         check_http_client_health(),
         check_http_connectivity(test_url="https://api.example.com"),
     )
+
 
 checks = await full_network_health()
 for check in checks:
@@ -587,6 +593,7 @@ from mcp_common.config import MCPBaseSettings
 from mcp_common.config import MCPBaseSettings
 from pydantic import Field
 
+
 class MyServerSettings(MCPBaseSettings):
     """Custom MCP server settings."""
 
@@ -605,6 +612,7 @@ class MyServerSettings(MCPBaseSettings):
     class Config:
         env_prefix = "MY_SERVER_"  # Environment variable prefix
 
+
 # Usage
 settings = MyServerSettings()
 print(f"Server: {settings.server_name}")
@@ -615,8 +623,8 @@ print(f"API Key: {'*' * 8}")  # Never log API keys!
 #### Configuration Priority
 
 1. **Environment Variables** (highest priority): `MY_SERVER_API_KEY=xyz`
-2. **YAML Files**: `config.yaml` or `config.yml`
-3. **Default Values** (lowest priority): Field defaults
+1. **YAML Files**: `config.yaml` or `config.yml`
+1. **Default Values** (lowest priority): Field defaults
 
 #### Example YAML Configuration
 
@@ -666,6 +674,7 @@ Validate API key format and length.
 from mcp_common.config import MCPBaseSettings, ValidationMixin
 from pydantic import Field, field_validator
 
+
 class MyServerSettings(MCPBaseSettings, ValidationMixin):
     """Server settings with API key validation."""
 
@@ -676,6 +685,7 @@ class MyServerSettings(MCPBaseSettings, ValidationMixin):
     def validate_api_key_field(cls, v: str) -> str:
         """Validate API key format and length."""
         return cls.validate_api_key(v, name="API_KEY")
+
 
 # Usage
 try:
@@ -723,7 +733,7 @@ ServerPanels.welcome(
         "🔄 Session Management",
         "🔍 Semantic Search",
         "🔐 Secure Authentication",
-    ]
+    ],
 )
 ```
 
@@ -756,9 +766,15 @@ from mcp_common.ui import ServerPanels
 from mcp_common.health import ComponentHealth, HealthStatus
 
 components = [
-    ComponentHealth("database", HealthStatus.HEALTHY, "DuckDB operational", latency_ms=5.2),
-    ComponentHealth("http_client", HealthStatus.HEALTHY, "HTTP client ready", latency_ms=12.1),
-    ComponentHealth("cache", HealthStatus.DEGRADED, "High memory usage", metadata={"usage": "85%"}),
+    ComponentHealth(
+        "database", HealthStatus.HEALTHY, "DuckDB operational", latency_ms=5.2
+    ),
+    ComponentHealth(
+        "http_client", HealthStatus.HEALTHY, "HTTP client ready", latency_ms=12.1
+    ),
+    ComponentHealth(
+        "cache", HealthStatus.DEGRADED, "High memory usage", metadata={"usage": "85%"}
+    ),
 ]
 
 ServerPanels.status(components)
@@ -829,6 +845,7 @@ from mcp_common.exceptions import ServerConfigurationError
 ```python
 from mcp_common.exceptions import ServerConfigurationError
 
+
 def validate_config(config: dict) -> None:
     if "api_key" not in config:
         raise ServerConfigurationError("Missing required 'api_key' in configuration")
@@ -853,6 +870,7 @@ from mcp_common.exceptions import ServerInitializationError
 
 ```python
 from mcp_common.exceptions import ServerInitializationError
+
 
 async def initialize_server():
     try:
@@ -910,6 +928,7 @@ from mcp_common.exceptions import CredentialValidationError
 ```python
 from mcp_common.exceptions import CredentialValidationError
 
+
 def validate_credentials(username: str, password: str) -> None:
     if not username or not password:
         raise CredentialValidationError("Username and password are required")
@@ -934,6 +953,7 @@ from mcp_common.exceptions import APIKeyMissingError
 
 ```python
 from mcp_common.exceptions import APIKeyMissingError
+
 
 def get_api_key(key_name: str) -> str:
     key = os.environ.get(key_name)
@@ -960,9 +980,10 @@ from mcp_common.exceptions import APIKeyFormatError
 from mcp_common.exceptions import APIKeyFormatError
 import re
 
+
 def validate_api_key_format(key: str, key_name: str = "API_KEY") -> str:
     # Check for invalid characters
-    if not re.match(r'^[A-Za-z0-9_-]+$', key):
+    if not re.match(r"^[A-Za-z0-9_-]+$", key):
         raise APIKeyFormatError(
             f"{key_name} contains invalid characters. "
             f"Only alphanumeric, underscore, and dash allowed."
@@ -986,6 +1007,7 @@ from mcp_common.exceptions import APIKeyLengthError
 
 ```python
 from mcp_common.exceptions import APIKeyLengthError
+
 
 def validate_api_key_length(key: str, key_name: str = "API_KEY") -> str:
     if len(key) < 16:
@@ -1081,14 +1103,14 @@ async def check_external_api_health() -> ComponentHealth:
                     name="external_api",
                     status=HealthStatus.HEALTHY,
                     message="API operational",
-                    metadata={"endpoint": settings.api_endpoint}
+                    metadata={"endpoint": settings.api_endpoint},
                 )
             else:
                 return ComponentHealth(
                     name="external_api",
                     status=HealthStatus.DEGRADED,
                     message=f"HTTP {response.status_code}",
-                    metadata={"status_code": response.status_code}
+                    metadata={"status_code": response.status_code},
                 )
 
     except Exception as e:
@@ -1096,7 +1118,7 @@ async def check_external_api_health() -> ComponentHealth:
             name="external_api",
             status=HealthStatus.UNHEALTHY,
             message=f"API unreachable: {e}",
-            metadata={"error": str(e)}
+            metadata={"error": str(e)},
         )
 
 
@@ -1106,7 +1128,10 @@ async def health_check() -> dict[str, t.Any]:
     """System health check."""
 
     if not settings.enable_health_checks:
-        return {"status": "disabled", "message": "Health checks disabled in configuration"}
+        return {
+            "status": "disabled",
+            "message": "Health checks disabled in configuration",
+        }
 
     # Run all health checks concurrently
     checks = await asyncio.gather(
@@ -1120,11 +1145,13 @@ async def health_check() -> dict[str, t.Any]:
     components = []
     for check in checks:
         if isinstance(check, Exception):
-            components.append(ComponentHealth(
-                name="unknown",
-                status=HealthStatus.UNHEALTHY,
-                message=f"Check failed: {check}",
-            ))
+            components.append(
+                ComponentHealth(
+                    name="unknown",
+                    status=HealthStatus.UNHEALTHY,
+                    message=f"Check failed: {check}",
+                )
+            )
         else:
             components.append(check)
 
@@ -1164,7 +1191,7 @@ async def fetch_data(query: str) -> dict[str, t.Any]:
             response = await client.get(
                 f"{settings.api_endpoint}/data",
                 params={"q": query},
-                headers={"Authorization": f"Bearer {settings.api_key}"}
+                headers={"Authorization": f"Bearer {settings.api_key}"},
             )
             response.raise_for_status()
 
@@ -1193,7 +1220,7 @@ async def startup():
                 "🏥 Production Health Checks",
                 "🔐 Secure API Authentication",
                 "⚙️  Type-Safe Configuration",
-            ]
+            ],
         )
 
         # Initialize components
@@ -1218,6 +1245,7 @@ ______________________________________________________________________
 ```python
 # ✅ Good: Use DI container
 from acb.depends import depends
+
 http_adapter = depends.get_sync(HTTPClientAdapter)
 
 # ❌ Bad: Direct instantiation
@@ -1236,7 +1264,7 @@ return ComponentHealth(
     name="service",
     status=HealthStatus.HEALTHY,
     message="Operational",
-    latency_ms=latency_ms
+    latency_ms=latency_ms,
 )
 ```
 
@@ -1251,8 +1279,8 @@ return ComponentHealth(
     metadata={
         "active_connections": 95,
         "max_connections": 100,
-        "recommendation": "Consider scaling database or optimizing queries"
-    }
+        "recommendation": "Consider scaling database or optimizing queries",
+    },
 )
 ```
 

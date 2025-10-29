@@ -5,7 +5,7 @@
 **Scope**: ACB MCP Server & FastBlocks Plugin Integration
 **Phase**: Phase 3 - Local Framework Servers Integration
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -16,6 +16,7 @@ The ACB MCP server integration demonstrates strong adherence to ACB framework pa
 ### Key Findings
 
 ✅ **Strengths:**
+
 - Excellent dependency injection integration using `depends.get()`
 - Proper lazy initialization patterns throughout
 - Clean component registry architecture
@@ -23,18 +24,20 @@ The ACB MCP server integration demonstrates strong adherence to ACB framework pa
 - Appropriate rate limiting values (15 req/sec, burst 40)
 
 ⚠️ **Critical Issues:**
+
 - **INCORRECT middleware access pattern**: `mcp._mcp_server.fastmcp.add_middleware()` is wrong
 - Missing `register_tools()` function that FastBlocks expects
 - Undocumented plugin architecture pattern
 - No formal plugin extension guide
 
----
+______________________________________________________________________
 
 ## 1. ACB Framework Adherence Assessment
 
 ### 1.1 Dependency Injection ✅ EXCELLENT (9/10)
 
 **Current Implementation:**
+
 ```python
 # acb/mcp/server.py (Lines 348-357)
 class ACBMCPServer:
@@ -51,6 +54,7 @@ class ACBMCPServer:
 ```
 
 **Assessment:**
+
 - ✅ Proper use of `depends.get()` for lazy initialization
 - ✅ Follows ACB's lazy loading patterns exactly
 - ✅ No premature dependency resolution
@@ -61,6 +65,7 @@ class ACBMCPServer:
 ### 1.2 Component Registry ✅ EXCELLENT (9/10)
 
 **Current Implementation:**
+
 ```python
 # acb/mcp/registry.py
 class ComponentRegistry:
@@ -72,6 +77,7 @@ class ComponentRegistry:
 ```
 
 **Assessment:**
+
 - ✅ Proper lazy property pattern
 - ✅ Centralizes component discovery
 - ✅ Follows ACB's registry pattern for actions/adapters
@@ -82,6 +88,7 @@ class ComponentRegistry:
 ### 1.3 Service Wrapper Pattern ✅ GOOD (8/10)
 
 **Current Implementation:**
+
 ```python
 # acb/mcp/server.py (Lines 344-420)
 class ACBMCPServer:
@@ -93,12 +100,14 @@ class ACBMCPServer:
 ```
 
 **Assessment:**
+
 - ✅ Provides clean lifecycle management
 - ✅ Wraps FastMCP appropriately
 - ✅ Supports multiple transports (STDIO, HTTP, SSE)
 - ⚠️ No service registration via `depends.set()` - breaks pattern
 
 **Recommendation**: Register the server service:
+
 ```python
 def create_mcp_server() -> ACBMCPServer:
     server = ACBMCPServer()
@@ -106,7 +115,7 @@ def create_mcp_server() -> ACBMCPServer:
     return server
 ```
 
----
+______________________________________________________________________
 
 ## 2. FastBlocks Plugin Architecture Evaluation
 
@@ -128,11 +137,12 @@ FastBlocks (Plugin/Extension)
 ```
 
 **Why This Works:**
+
 1. **Single Source of Truth**: ACB owns the MCP infrastructure
-2. **Automatic Protection**: Plugins inherit rate limiting without configuration
-3. **Clean Separation**: Plugins focus on domain logic, not infrastructure
-4. **Scalability**: Can add more plugins (e.g., session-mgmt, crackerjack) easily
-5. **Consistent Behavior**: All plugins get same security/performance characteristics
+1. **Automatic Protection**: Plugins inherit rate limiting without configuration
+1. **Clean Separation**: Plugins focus on domain logic, not infrastructure
+1. **Scalability**: Can add more plugins (e.g., session-mgmt, crackerjack) easily
+1. **Consistent Behavior**: All plugins get same security/performance characteristics
 
 ### 2.2 Plugin Inheritance Model ✅ PREFERRED APPROACH (9/10)
 
@@ -143,12 +153,14 @@ FastBlocks (Plugin/Extension)
 **Rationale:**
 
 ✅ **Inheritance is appropriate when:**
+
 - Plugin extends parent functionality (✓)
 - Plugin needs all parent capabilities (✓)
 - Plugin is a specialized version of parent (✓)
 - "Is-A" relationship exists (✓ "FastBlocks IS-A ACB MCP extension")
 
 ❌ **Composition would be wrong because:**
+
 - Creates duplicate MCP instances (redundant)
 - Requires manual forwarding of all methods (boilerplate)
 - Loses automatic middleware inheritance (dangerous)
@@ -159,6 +171,7 @@ FastBlocks (Plugin/Extension)
 ### 2.3 Tool Registration Pattern ❌ BROKEN (3/10)
 
 **Current FastBlocks Implementation:**
+
 ```python
 # fastblocks/mcp/tools.py (Line 551)
 from acb.mcp import register_tools  # ❌ DOES NOT EXIST
@@ -173,6 +186,7 @@ await register_tools(server, tools)  # ❌ FUNCTION MISSING
 ```
 
 **The Problem:**
+
 - FastBlocks expects `acb.mcp.register_tools()` function
 - This function does not exist in ACB's codebase
 - FastBlocks tools will fail to register
@@ -191,9 +205,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def register_tools(
     server: Any,  # ACBMCPServer instance
-    tools: Dict[str, Callable]
+    tools: Dict[str, Callable],
 ) -> None:
     """Register multiple MCP tools with the server.
 
@@ -202,10 +217,7 @@ async def register_tools(
         tools: Dictionary mapping tool names to async callables
 
     Example:
-        >>> tools = {
-        ...     "my_tool": my_tool_function,
-        ...     "other_tool": other_tool_function
-        ... }
+        >>> tools = {"my_tool": my_tool_function, "other_tool": other_tool_function}
         >>> await register_tools(server, tools)
     """
     from .server import mcp  # Access global FastMCP instance
@@ -219,10 +231,8 @@ async def register_tools(
             logger.error(f"Failed to register tool {tool_name}: {e}")
             raise
 
-async def register_resources(
-    server: Any,
-    resources: Dict[str, Callable]
-) -> None:
+
+async def register_resources(server: Any, resources: Dict[str, Callable]) -> None:
     """Register multiple MCP resources with the server.
 
     Args:
@@ -241,36 +251,40 @@ async def register_resources(
 ```
 
 **Update ACB's __init__.py:**
+
 ```python
 # acb/mcp/__init__.py (Line 31)
 from .utils import register_tools, register_resources
 
 __all__ = [
     # ... existing exports ...
-    "register_tools",      # ADD
+    "register_tools",  # ADD
     "register_resources",  # ADD
 ]
 ```
 
----
+______________________________________________________________________
 
 ## 3. Middleware Integration Review ❌ CRITICAL ISSUE (2/10)
 
 ### 3.1 Incorrect Access Pattern
 
 **Current Implementation:**
+
 ```python
 # acb/mcp/server.py (Line 44)
 mcp._mcp_server.fastmcp.add_middleware(rate_limiter)  # ❌ WRONG
 ```
 
 **The Problem:**
+
 - `mcp` is already a `FastMCP` instance (not a wrapper)
 - `_mcp_server` and `fastmcp` are internal attributes
 - Direct access to private attributes violates encapsulation
 - May break in future FastMCP versions
 
 **Proof from FastMCP Inspection:**
+
 ```python
 >>> from fastmcp import FastMCP
 >>> mcp = FastMCP('test')
@@ -279,29 +293,33 @@ True  # Method exists directly on mcp
 ```
 
 **Correct Implementation:**
+
 ```python
 # acb/mcp/server.py (Line 44)
 mcp.add_middleware(rate_limiter)  # ✅ CORRECT
 ```
 
 **Why This Matters:**
+
 1. **API Stability**: Public API is stable, private attributes aren't
-2. **Type Safety**: Public method has proper type hints
-3. **Future-Proofing**: Won't break with FastMCP updates
-4. **Best Practice**: Never access private attributes (`_mcp_server`)
+1. **Type Safety**: Public method has proper type hints
+1. **Future-Proofing**: Won't break with FastMCP updates
+1. **Best Practice**: Never access private attributes (`_mcp_server`)
 
 ### 3.2 Middleware Configuration ✅ APPROPRIATE (9/10)
 
 **Current Settings:**
+
 ```python
 RateLimitingMiddleware(
-    max_requests_per_second=15.0,   # Sustainable rate
-    burst_capacity=40,               # Allow bursts
-    global_limit=True,               # Protect server globally
+    max_requests_per_second=15.0,  # Sustainable rate
+    burst_capacity=40,  # Allow bursts
+    global_limit=True,  # Protect server globally
 )
 ```
 
 **Assessment:**
+
 - ✅ Values match Architecture-Council findings
 - ✅ Conservative enough for framework operations
 - ✅ Burst capacity handles workflow execution
@@ -310,18 +328,20 @@ RateLimitingMiddleware(
 
 **Recommendation**: Keep these values. They're well-reasoned.
 
----
+______________________________________________________________________
 
 ## 4. Transport Support Evaluation ✅ EXCELLENT (9/10)
 
 ### 4.1 Multi-Transport Architecture
 
 **Supported Transports:**
+
 - **STDIO**: Claude Desktop integration
 - **HTTP**: Web-based clients
 - **SSE**: Server-sent events for streaming
 
 **Implementation:**
+
 ```python
 def run(self, transport: str = "stdio", **kwargs: Any) -> None:
     if transport in ("http", "sse"):
@@ -335,6 +355,7 @@ def run(self, transport: str = "stdio", **kwargs: Any) -> None:
 ```
 
 **Assessment:**
+
 - ✅ Clean transport abstraction
 - ✅ Appropriate defaults (STDIO for desktop)
 - ✅ Proper fallback handling with ServerPanels
@@ -343,6 +364,7 @@ def run(self, transport: str = "stdio", **kwargs: Any) -> None:
 ### 4.2 ServerPanels Integration ✅ EXCELLENT (10/10)
 
 **Current Implementation:**
+
 ```python
 if SERVERPANELS_AVAILABLE:
     features = [
@@ -359,6 +381,7 @@ if SERVERPANELS_AVAILABLE:
 ```
 
 **Assessment:**
+
 - ✅ Graceful degradation when ServerPanels unavailable
 - ✅ Beautiful UI for all transports
 - ✅ Dynamic feature list based on availability
@@ -367,15 +390,17 @@ if SERVERPANELS_AVAILABLE:
 
 **This is exemplary code** - should be used as reference for other servers.
 
----
+______________________________________________________________________
 
 ## 5. Dependency Injection Deep Dive ✅ GOOD (8/10)
 
 ### 5.1 Current Patterns
 
 **Registry Pattern:**
+
 ```python
 _registry: ComponentRegistry | None = None
+
 
 def get_registry() -> ComponentRegistry:
     global _registry
@@ -385,11 +410,13 @@ def get_registry() -> ComponentRegistry:
 ```
 
 **Assessment:**
+
 - ✅ Lazy initialization
 - ✅ Singleton pattern appropriate for registry
 - ⚠️ Not using `depends.set()` - inconsistent with ACB patterns
 
 **Recommendation:**
+
 ```python
 def get_registry() -> ComponentRegistry:
     """Get or create the component registry via DI."""
@@ -404,11 +431,13 @@ def get_registry() -> ComponentRegistry:
 ### 5.2 Service Registration ⚠️ MISSING (5/10)
 
 **Current Gap:**
+
 - `ACBMCPServer` is created but never registered in DI container
 - Plugins can't easily access the server instance
 - Breaks ACB's "everything through DI" principle
 
 **Required Addition:**
+
 ```python
 def create_mcp_server() -> ACBMCPServer:
     server = ACBMCPServer()
@@ -417,11 +446,12 @@ def create_mcp_server() -> ACBMCPServer:
 ```
 
 **Benefits:**
+
 - Plugins can inject server via `depends.get(ACBMCPServer)`
 - Consistent with ACB's dependency injection philosophy
 - Enables advanced plugin patterns (decorators, middleware extensions)
 
----
+______________________________________________________________________
 
 ## 6. Inheritance vs. Composition Recommendation ✅ INHERITANCE (9/10)
 
@@ -451,56 +481,66 @@ def create_mcp_server() -> ACBMCPServer:
 **Answer**: YES, with proper documentation.
 
 **Scalability Path**:
+
 1. **Current State** (2 plugins):
+
    - ACB MCP Server (parent)
    - FastBlocks (plugin)
 
-2. **Near Future** (4-5 plugins):
+1. **Near Future** (4-5 plugins):
+
    - ACB MCP Server
    - FastBlocks
    - Crackerjack (code quality)
    - Session Management (context)
    - Custom app plugins
 
-3. **Growth Path**:
+1. **Growth Path**:
+
    - All inherit from ACB's `create_mcp_server()`
    - All get rate limiting automatically
    - All use same tool registration pattern
    - Consistent behavior across ecosystem
 
 **Requirements for Sustainability**:
-1. ✅ Formal plugin architecture documentation
-2. ✅ Clear registration pattern (`register_tools()`)
-3. ✅ Example plugin template
-4. ✅ Plugin discovery mechanism (optional)
-5. ✅ Version compatibility guidelines
 
----
+1. ✅ Formal plugin architecture documentation
+1. ✅ Clear registration pattern (`register_tools()`)
+1. ✅ Example plugin template
+1. ✅ Plugin discovery mechanism (optional)
+1. ✅ Version compatibility guidelines
+
+______________________________________________________________________
 
 ## 7. Documentation Needs ⚠️ CRITICAL GAP (3/10)
 
 ### 7.1 Missing Documentation
 
 **What's Missing**:
+
 1. **Plugin Architecture Guide**
+
    - How to create ACB MCP plugins
    - Inheritance pattern explanation
    - Registration process
    - Best practices
 
-2. **API Documentation**
+1. **API Documentation**
+
    - `register_tools()` function (doesn't exist yet)
    - `register_resources()` function (doesn't exist yet)
    - `create_mcp_server()` plugin usage
    - Middleware extension points
 
-3. **Plugin Examples**
+1. **Plugin Examples**
+
    - Simple "Hello World" plugin
    - Complex multi-tool plugin
    - Resource provider plugin
    - Middleware extension example
 
-4. **Version Compatibility**
+1. **Version Compatibility**
+
    - ACB version requirements
    - FastMCP version requirements
    - Breaking change policy
@@ -511,7 +551,7 @@ def create_mcp_server() -> ACBMCPServer:
 
 Create: `acb/docs/PLUGIN_ARCHITECTURE.md`
 
-```markdown
+````markdown
 # ACB MCP Plugin Architecture
 
 ## Overview
@@ -561,7 +601,7 @@ class YourPluginMCPServer:
             f"{self.name} initialized (using ACB infrastructure "
             f"with rate limiting: 15 req/sec, burst 40)"
         )
-```
+````
 
 ### 2. Tool Registration
 
@@ -570,9 +610,11 @@ class YourPluginMCPServer:
 from typing import Any
 from acb.mcp import register_tools
 
+
 async def your_tool(param: str) -> dict[str, Any]:
     """Your tool implementation."""
     return {"success": True, "data": param}
+
 
 async def register_your_tools(server: Any) -> None:
     """Register plugin tools with ACB MCP server."""
@@ -595,17 +637,18 @@ async def register_your_tools(server: Any) -> None:
 ## Best Practices
 
 1. **Always check `HAS_MCP`** before importing ACB MCP
-2. **Use graceful degradation** for missing dependencies
-3. **Document rate limit expectations** in your plugin
-4. **Follow ACB's async patterns** for all tools
-5. **Register tools/resources separately** for clarity
+1. **Use graceful degradation** for missing dependencies
+1. **Document rate limit expectations** in your plugin
+1. **Follow ACB's async patterns** for all tools
+1. **Register tools/resources separately** for clarity
 
 ## Example Plugins
 
 - **FastBlocks**: Template and component management
 - **Crackerjack**: Code quality integration
 - **Session-Mgmt**: Context and memory management
-```
+
+````
 
 **Priority 2: API Reference**
 
@@ -627,23 +670,28 @@ from acb import create_mcp_server
 
 server = create_mcp_server()
 # Server has rate limiting: 15 req/sec, burst 40
-```
+````
 
 ## Tool Registration
 
 ### `register_tools(server: Any, tools: dict[str, Callable]) -> None`
+
 Register multiple MCP tools with the server.
 
 **Parameters**:
+
 - `server`: ACBMCPServer instance from `create_mcp_server()`
 - `tools`: Dictionary mapping tool names to async callables
 
 **Example**:
+
 ```python
 from acb.mcp import register_tools
 
+
 async def my_tool(param: str) -> dict:
     return {"result": param}
+
 
 tools = {"my_tool": my_tool}
 await register_tools(server, tools)
@@ -652,23 +700,29 @@ await register_tools(server, tools)
 ## Resource Registration
 
 ### `register_resources(server: Any, resources: dict[str, Callable]) -> None`
+
 Register multiple MCP resources with the server.
 
 **Parameters**:
+
 - `server`: ACBMCPServer instance
 - `resources`: Dictionary mapping URIs to async callables
 
 **Example**:
+
 ```python
 from acb.mcp import register_resources
+
 
 async def my_resource() -> str:
     return "resource data"
 
+
 resources = {"resource://my_data": my_resource}
 await register_resources(server, resources)
 ```
-```
+
+````
 
 ---
 
@@ -686,26 +740,23 @@ mcp._mcp_server.fastmcp.add_middleware(rate_limiter)
 
 # AFTER (CORRECT):
 mcp.add_middleware(rate_limiter)
-```
+````
 
 **2. Create `register_tools()` Function** 🔴 CRITICAL
+
 ```python
 # File: acb/mcp/utils.py (NEW or add to existing)
 
-async def register_tools(
-    server: Any,
-    tools: dict[str, Callable]
-) -> None:
+
+async def register_tools(server: Any, tools: dict[str, Callable]) -> None:
     """Register multiple MCP tools."""
     from .server import mcp
 
     for name, func in tools.items():
         mcp.tool(name=name)(func)
 
-async def register_resources(
-    server: Any,
-    resources: dict[str, Callable]
-) -> None:
+
+async def register_resources(server: Any, resources: dict[str, Callable]) -> None:
     """Register multiple MCP resources."""
     from .server import mcp
 
@@ -714,6 +765,7 @@ async def register_resources(
 ```
 
 **3. Export Registration Functions** 🔴 CRITICAL
+
 ```python
 # File: acb/mcp/__init__.py
 # Add to __all__:
@@ -730,9 +782,11 @@ __all__ = [
 ### 8.2 Recommended Improvements (Should Do)
 
 **4. Register Server in DI** 🟡 RECOMMENDED
+
 ```python
 # File: acb/mcp/server.py
 # Function: create_mcp_server
+
 
 def create_mcp_server() -> ACBMCPServer:
     server = ACBMCPServer()
@@ -741,9 +795,11 @@ def create_mcp_server() -> ACBMCPServer:
 ```
 
 **5. Improve Registry DI Pattern** 🟡 RECOMMENDED
+
 ```python
 # File: acb/mcp/server.py
 # Function: get_registry
+
 
 def get_registry() -> ComponentRegistry:
     """Get or create the component registry via DI."""
@@ -758,16 +814,19 @@ def get_registry() -> ComponentRegistry:
 ### 8.3 Documentation (Must Do)
 
 **6. Create Plugin Architecture Guide** 🔴 CRITICAL
+
 - File: `acb/docs/PLUGIN_ARCHITECTURE.md`
 - Content: See Section 7.2 above
 - Purpose: Enable community plugin development
 
 **7. Create MCP API Reference** 🟡 RECOMMENDED
+
 - File: `acb/docs/MCP_API.md`
 - Content: See Section 7.2 above
 - Purpose: Clear API documentation
 
 **8. Add Plugin Example** 🟡 RECOMMENDED
+
 - File: `acb/examples/plugins/minimal_plugin/`
 - Content: Working minimal plugin example
 - Purpose: Learning reference
@@ -775,6 +834,7 @@ def get_registry() -> ComponentRegistry:
 ### 8.4 FastBlocks Updates (Must Do)
 
 **9. Update FastBlocks Tools Import** 🔴 CRITICAL
+
 ```python
 # File: fastblocks/mcp/tools.py
 # Line: 551
@@ -787,50 +847,53 @@ from acb.mcp import register_tools  # Now available
 ```
 
 **10. Add FastBlocks Plugin Documentation** 🟡 RECOMMENDED
+
 ```python
 # File: fastblocks/docs/MCP_INTEGRATION.md
 # Content: Document FastBlocks as ACB plugin example
 ```
 
----
+______________________________________________________________________
 
 ## 9. Risk Assessment for ACB Ecosystem
 
 ### 9.1 Current Risks
 
 **High Risk** 🔴:
+
 1. **Broken Tool Registration**: FastBlocks tools won't register (blocks functionality)
-2. **Middleware Fragility**: Private attribute access may break with FastMCP updates
-3. **Undocumented Pattern**: Community can't create plugins (blocks adoption)
+1. **Middleware Fragility**: Private attribute access may break with FastMCP updates
+1. **Undocumented Pattern**: Community can't create plugins (blocks adoption)
 
 **Medium Risk** 🟡:
-4. **DI Inconsistency**: Mixed patterns may confuse developers
-5. **Version Coupling**: No documented version requirements
-6. **Missing Examples**: High barrier to plugin creation
+4\. **DI Inconsistency**: Mixed patterns may confuse developers
+5\. **Version Coupling**: No documented version requirements
+6\. **Missing Examples**: High barrier to plugin creation
 
 **Low Risk** 🟢:
-7. **Transport Limitations**: Current transports sufficient for now
-8. **Performance**: Rate limiting values conservative but effective
+7\. **Transport Limitations**: Current transports sufficient for now
+8\. **Performance**: Rate limiting values conservative but effective
 
 ### 9.2 Risk Mitigation
 
 **Immediate Actions** (This Sprint):
+
 1. Fix middleware access pattern (1 hour)
-2. Create `register_tools()` function (2 hours)
-3. Update FastBlocks imports (30 minutes)
-4. Write Plugin Architecture Guide (4 hours)
+1. Create `register_tools()` function (2 hours)
+1. Update FastBlocks imports (30 minutes)
+1. Write Plugin Architecture Guide (4 hours)
 
 **Short-Term Actions** (Next Sprint):
-5. Register server in DI (1 hour)
-6. Create plugin example (3 hours)
-7. Add API reference docs (2 hours)
+5\. Register server in DI (1 hour)
+6\. Create plugin example (3 hours)
+7\. Add API reference docs (2 hours)
 
 **Long-Term Actions** (Next Quarter):
-8. Formal plugin discovery mechanism
-9. Plugin marketplace/registry
-10. Plugin versioning system
+8\. Formal plugin discovery mechanism
+9\. Plugin marketplace/registry
+10\. Plugin versioning system
 
----
+______________________________________________________________________
 
 ## 10. ACB-Specific Architecture Score (Detailed)
 
@@ -850,6 +913,7 @@ from acb.mcp import register_tools  # Now available
 | **Rate Limiting Config** | 9/10 | Appropriate values, consistent with ecosystem |
 
 ### Overall Calculation:
+
 ```
 Weighted Average:
 - Core Architecture (40%): (9+9+8)/3 * 0.40 = 3.47
@@ -876,7 +940,7 @@ Final Adjusted Score: 6.0 + 2.5 = 8.5/10
 
 **Final Score: 8.5/10**
 
----
+______________________________________________________________________
 
 ## 11. Conclusions and Recommendations
 
@@ -887,17 +951,18 @@ Final Adjusted Score: 6.0 + 2.5 = 8.5/10
 The ACB MCP server demonstrates excellent architectural thinking with a sustainable plugin pattern. The inheritance model is the correct choice and will scale well. However, critical implementation details need immediate attention:
 
 1. ✅ **Plugin architecture is sound and scalable**
-2. ✅ **Dependency injection patterns mostly correct**
-3. ✅ **Transport support is exemplary**
-4. ❌ **Tool registration function missing (blocks plugins)**
-5. ❌ **Middleware access pattern incorrect (future risk)**
-6. ❌ **Documentation insufficient for ecosystem growth**
+1. ✅ **Dependency injection patterns mostly correct**
+1. ✅ **Transport support is exemplary**
+1. ❌ **Tool registration function missing (blocks plugins)**
+1. ❌ **Middleware access pattern incorrect (future risk)**
+1. ❌ **Documentation insufficient for ecosystem growth**
 
 ### 11.2 Should FastBlocks Use Its Own Rate Limiter?
 
 **Answer**: NO - Inheritance is architecturally superior.
 
 **Rationale**:
+
 - **Single Point of Control**: ACB owns all rate limiting policy
 - **Consistent Protection**: All plugins have same limits
 - **Lower Maintenance**: One rate limiter to tune/update
@@ -905,6 +970,7 @@ The ACB MCP server demonstrates excellent architectural thinking with a sustaina
 - **Better Security**: Can't accidentally misconfigure plugin rate limiting
 
 If FastBlocks had its own rate limiter, you'd need:
+
 - Separate configuration management
 - Coordination between ACB and FastBlocks limits
 - Risk of conflicting policies
@@ -915,53 +981,58 @@ If FastBlocks had its own rate limiter, you'd need:
 **Decision**: **INHERITANCE is correct** for this plugin system.
 
 This is NOT a case of "composition over inheritance" because:
+
 1. Plugins truly ARE extensions of ACB MCP (IS-A relationship)
-2. Plugins need ALL parent capabilities (middleware, rate limiting, transport)
-3. Composition would create unnecessary duplication
-4. Inheritance naturally models the domain
+1. Plugins need ALL parent capabilities (middleware, rate limiting, transport)
+1. Composition would create unnecessary duplication
+1. Inheritance naturally models the domain
 
 ### 11.4 Critical Path Forward
 
 **Phase 1 (This Week)** - Unblock FastBlocks:
+
 1. Fix middleware access pattern in ACB
-2. Create `register_tools()` and `register_resources()` functions
-3. Export new functions from `acb.mcp`
-4. Verify FastBlocks tools register successfully
+1. Create `register_tools()` and `register_resources()` functions
+1. Export new functions from `acb.mcp`
+1. Verify FastBlocks tools register successfully
 
 **Phase 2 (Next Week)** - Improve Patterns:
-5. Register ACBMCPServer in DI container
-6. Update ComponentRegistry to use DI consistently
-7. Add plugin architecture documentation
-8. Create minimal plugin example
+5\. Register ACBMCPServer in DI container
+6\. Update ComponentRegistry to use DI consistently
+7\. Add plugin architecture documentation
+8\. Create minimal plugin example
 
 **Phase 3 (Next Month)** - Ecosystem Growth:
-9. Write comprehensive API reference
-10. Create plugin template repository
-11. Add plugin discovery mechanism
-12. Document version compatibility matrix
+9\. Write comprehensive API reference
+10\. Create plugin template repository
+11\. Add plugin discovery mechanism
+12\. Document version compatibility matrix
 
 ### 11.5 Final Recommendations
 
 **For ACB Team**:
+
 1. **IMMEDIATE**: Fix middleware pattern (breaking change risk)
-2. **IMMEDIATE**: Create tool registration functions (blocks functionality)
-3. **THIS SPRINT**: Write plugin architecture guide (blocks adoption)
-4. **NEXT SPRINT**: Add plugin example (learning curve)
-5. **ONGOING**: Maintain plugin architecture as first-class feature
+1. **IMMEDIATE**: Create tool registration functions (blocks functionality)
+1. **THIS SPRINT**: Write plugin architecture guide (blocks adoption)
+1. **NEXT SPRINT**: Add plugin example (learning curve)
+1. **ONGOING**: Maintain plugin architecture as first-class feature
 
 **For FastBlocks Team**:
+
 1. **IMMEDIATE**: Wait for ACB registration functions (blocked)
-2. **AFTER ACB FIX**: Test tool registration works
-3. **THIS SPRINT**: Document FastBlocks as plugin example
-4. **OPTIONAL**: Add FastBlocks-specific MCP docs
+1. **AFTER ACB FIX**: Test tool registration works
+1. **THIS SPRINT**: Document FastBlocks as plugin example
+1. **OPTIONAL**: Add FastBlocks-specific MCP docs
 
 **For Other Plugin Authors**:
-1. **WAIT**: For ACB plugin documentation before starting
-2. **FOLLOW**: FastBlocks as reference implementation
-3. **EXPECT**: Rate limiting inheritance from ACB
-4. **CONTRIBUTE**: Feedback on plugin API design
 
----
+1. **WAIT**: For ACB plugin documentation before starting
+1. **FOLLOW**: FastBlocks as reference implementation
+1. **EXPECT**: Rate limiting inheritance from ACB
+1. **CONTRIBUTE**: Feedback on plugin API design
+
+______________________________________________________________________
 
 ## Appendix A: Code Checklist
 
@@ -992,7 +1063,7 @@ This is NOT a case of "composition over inheritance" because:
 - [ ] Test multi-transport support with plugins
 - [ ] Integration test: ACB + FastBlocks + client
 
----
+______________________________________________________________________
 
 ## Appendix B: Architecture Decision Record (ADR)
 
@@ -1005,6 +1076,7 @@ This is NOT a case of "composition over inheritance" because:
 **Decision**: Use inheritance-based plugin system where plugins call `create_mcp_server()` and register tools/resources.
 
 **Consequences**:
+
 - ✅ Plugins automatically inherit rate limiting
 - ✅ Single source of truth for infrastructure
 - ✅ Consistent behavior across ecosystem
@@ -1013,11 +1085,12 @@ This is NOT a case of "composition over inheritance" because:
 - ⚠️ Breaking changes to ACB affect all plugins
 
 **Alternatives Considered**:
-1. **Composition** - Rejected (creates duplication, harder to maintain)
-2. **Plugin Registry** - Rejected (too complex for current needs)
-3. **Separate Servers** - Rejected (inconsistent behavior, maintenance burden)
 
----
+1. **Composition** - Rejected (creates duplication, harder to maintain)
+1. **Plugin Registry** - Rejected (too complex for current needs)
+1. **Separate Servers** - Rejected (inconsistent behavior, maintenance burden)
+
+______________________________________________________________________
 
 **Review Complete**
 

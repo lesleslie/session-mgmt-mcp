@@ -13,9 +13,6 @@ import typing as t
 
 from mcp_common.health import HealthCheckResponse
 
-if t.TYPE_CHECKING:
-    pass
-
 # Server start time for uptime calculation
 _SERVER_START_TIME = time.time()
 
@@ -56,6 +53,7 @@ async def get_health_status(ready: bool = False) -> dict[str, t.Any]:
 
         # Docker health check
         await get_health_status()
+
     """
     from session_mgmt_mcp.health_checks import get_all_health_checks
 

@@ -94,6 +94,7 @@ The server automatically detects git repositories and provides seamless session 
 - **`get_knowledge_graph_stats`** - Knowledge graph statistics and health
 
 **Powered by:**
+
 - **DuckDB + DuckPGQ Extension** - SQL:2023 property graph queries
 - **SQL/PGQ** - Standard graph pattern matching
 - **Semantic Memory** - Complements episodic memory (conversations) with entity-relationship knowledge

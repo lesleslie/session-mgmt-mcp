@@ -13,7 +13,7 @@ import atexit
 import signal
 import typing as t
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from session_mgmt_mcp.utils.logging import get_session_logger
 
@@ -87,15 +87,14 @@ class ShutdownManager:
         ...     await db.close()
         >>>
         >>> shutdown_mgr.register_cleanup(
-        ...     "database_cleanup",
-        ...     cleanup_database,
-        ...     priority=100
+        ...     "database_cleanup", cleanup_database, priority=100
         ... )
         >>>
         >>> # Setup signal handlers
         >>> shutdown_mgr.setup_signal_handlers()
         >>>
         >>> # Cleanup happens automatically on shutdown
+
     """
 
     def __init__(self) -> None:
@@ -130,6 +129,7 @@ class ShutdownManager:
             >>> shutdown_mgr.register_cleanup(
             ...     "database", close_database, priority=100, critical=True
             ... )
+
         """
         task = CleanupTask(
             name=name,
@@ -152,6 +152,7 @@ class ShutdownManager:
 
         Note:
             Previous handlers are saved and can be restored.
+
         """
         signals_to_handle = [
             (signal.SIGTERM, "SIGTERM"),
@@ -198,6 +199,7 @@ class ShutdownManager:
         Args:
             signum: Signal number
             frame: Current stack frame (unused)
+
         """
         sig_name = signal.Signals(signum).name
         _get_logger().info(f"Received signal {sig_name}, initiating graceful shutdown")
@@ -233,6 +235,7 @@ class ShutdownManager:
             - Handles both async and sync cleanup functions
             - Continues on non-critical failures
             - Tracks comprehensive statistics
+
         """
         import time
 
@@ -277,7 +280,7 @@ class ShutdownManager:
                     self._stats.tasks_executed += 1
                     _get_logger().debug(f"Cleanup task completed: {task.name}")
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     self._stats.tasks_timeout += 1
                     _get_logger().error(
                         f"Cleanup task timed out after {task.timeout_seconds}s: {task.name}"
@@ -320,6 +323,7 @@ class ShutdownManager:
 
         Returns:
             ShutdownStats with current state
+
         """
         return self._stats
 
@@ -328,6 +332,7 @@ class ShutdownManager:
 
         Returns:
             True if shutdown is in progress or complete
+
         """
         return self._shutdown_initiated
 
@@ -347,6 +352,7 @@ def get_shutdown_manager() -> ShutdownManager:
         >>>
         >>> shutdown_mgr = get_shutdown_manager()
         >>> shutdown_mgr.register_cleanup("my_cleanup", cleanup_func)
+
     """
     global _global_shutdown_manager
 
@@ -357,8 +363,8 @@ def get_shutdown_manager() -> ShutdownManager:
 
 
 __all__ = [
-    "ShutdownManager",
     "CleanupTask",
+    "ShutdownManager",
     "ShutdownStats",
     "get_shutdown_manager",
 ]

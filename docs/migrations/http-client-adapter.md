@@ -33,6 +33,7 @@ Migrate from aiohttp or httpx direct usage to mcp_common's HTTPClientAdapter for
 ```python
 import aiohttp
 
+
 async def fetch_data(url: str) -> dict:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -44,6 +45,7 @@ async def fetch_data(url: str) -> dict:
 ```python
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
+
 
 async def fetch_data(url: str) -> dict:
     http_adapter = depends.get_sync(HTTPClientAdapter)
@@ -96,6 +98,7 @@ depends.set(HTTPClientAdapter, http_adapter)
 ```python
 import aiohttp
 
+
 async def get_data(url: str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -108,6 +111,7 @@ async def get_data(url: str):
 ```python
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
+
 
 async def get_data(url: str):
     http_adapter = depends.get_sync(HTTPClientAdapter)
@@ -124,6 +128,7 @@ async def get_data(url: str):
 ```python
 import aiohttp
 
+
 async def post_data(url: str, data: dict, api_key: str):
     headers = {"Authorization": f"Bearer {api_key}"}
     async with aiohttp.ClientSession() as session:
@@ -136,6 +141,7 @@ async def post_data(url: str, data: dict, api_key: str):
 ```python
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
+
 
 async def post_data(url: str, data: dict, api_key: str):
     http_adapter = depends.get_sync(HTTPClientAdapter)
@@ -152,6 +158,7 @@ async def post_data(url: str, data: dict, api_key: str):
 ```python
 import aiohttp
 
+
 async def fetch_with_timeout(url: str, timeout_seconds: int):
     timeout = aiohttp.ClientTimeout(total=timeout_seconds)
     async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -164,6 +171,7 @@ async def fetch_with_timeout(url: str, timeout_seconds: int):
 ```python
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter, HTTPClientSettings
+
 
 async def fetch_with_timeout(url: str, timeout_seconds: float):
     # Option 1: Use global settings with custom timeout
@@ -188,6 +196,7 @@ async def fetch_with_timeout(url: str, timeout_seconds: float):
 ```python
 import aiohttp
 
+
 class APIClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
@@ -204,6 +213,7 @@ class APIClient:
 ```python
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
+
 
 class APIClient:
     def __init__(self, base_url: str):
@@ -228,6 +238,7 @@ from mcp_common.adapters.http.client import HTTPClientAdapter
 
 shutdown_mgr = get_shutdown_manager()
 
+
 async def cleanup_http_clients():
     """Cleanup HTTP client connections."""
     try:
@@ -236,6 +247,7 @@ async def cleanup_http_clients():
             await http_adapter._cleanup_resources()
     except Exception as e:
         print(f"HTTP client cleanup error: {e}")
+
 
 # Register cleanup
 shutdown_mgr.register_cleanup(
@@ -252,6 +264,7 @@ Integrate HTTP client health monitoring:
 
 ```python
 from mcp_common.http_health import check_http_client_health, check_http_connectivity
+
 
 async def health_check():
     """System health check including HTTP client."""
@@ -301,6 +314,7 @@ import asyncio
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
+
 async def test_basic_request():
     http_adapter = depends.get_sync(HTTPClientAdapter)
     async with http_adapter as client:
@@ -308,6 +322,7 @@ async def test_basic_request():
         assert response.status_code == 200
         data = response.json()
         print(f"✅ Basic request succeeded: {data}")
+
 
 asyncio.run(test_basic_request())
 ```
@@ -317,6 +332,7 @@ asyncio.run(test_basic_request())
 ```python
 import asyncio
 import time
+
 
 async def test_performance():
     """Test connection pool performance improvement."""
@@ -330,8 +346,11 @@ async def test_performance():
         await asyncio.gather(*tasks)
 
     duration = time.perf_counter() - start
-    print(f"✅ 10 requests completed in {duration:.2f}s (avg {duration/10:.3f}s each)")
+    print(
+        f"✅ 10 requests completed in {duration:.2f}s (avg {duration / 10:.3f}s each)"
+    )
     print(f"   Connection pool reuse enabled - expect 11x speedup over aiohttp")
+
 
 asyncio.run(test_performance())
 ```
@@ -341,6 +360,7 @@ asyncio.run(test_performance())
 ```python
 from mcp_common.http_health import check_http_client_health
 
+
 async def test_health_check():
     result = await check_http_client_health(test_url="https://httpbin.org/status/200")
 
@@ -349,6 +369,7 @@ async def test_health_check():
     assert result.latency_ms < 5000  # Should be fast
 
     print(f"✅ Health check passed: {result.message} ({result.latency_ms:.0f}ms)")
+
 
 asyncio.run(test_health_check())
 ```
@@ -556,11 +577,7 @@ async def health_check():
 
 ```python
 # ✅ Good: Graceful shutdown
-shutdown_mgr.register_cleanup(
-    "http_clients",
-    cleanup_http_clients,
-    priority=100
-)
+shutdown_mgr.register_cleanup("http_clients", cleanup_http_clients, priority=100)
 ```
 
 ## Additional Resources

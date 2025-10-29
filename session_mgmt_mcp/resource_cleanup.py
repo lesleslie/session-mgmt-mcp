@@ -87,6 +87,7 @@ async def cleanup_temp_files(temp_dir: Path | None = None) -> None:
         temp_dir: Optional temporary directory to clean (defaults to .claude/temp)
 
     Removes temporary files but preserves important session data.
+
     """
     logger = _get_logger()
 
@@ -194,7 +195,9 @@ async def cleanup_background_tasks() -> None:
             ]
 
             if pending_tasks:
-                logger.debug(f"Cancelling {len(pending_tasks)} pending background tasks")
+                logger.debug(
+                    f"Cancelling {len(pending_tasks)} pending background tasks"
+                )
                 for task in pending_tasks:
                     task.cancel()
 
@@ -257,6 +260,7 @@ def register_all_cleanup_handlers(
         >>> shutdown_mgr = get_shutdown_manager()
         >>> register_all_cleanup_handlers(shutdown_mgr)
         >>> shutdown_mgr.setup_signal_handlers()
+
     """
     logger = _get_logger()
     logger.info("Registering all resource cleanup handlers")
@@ -331,12 +335,12 @@ def register_all_cleanup_handlers(
 
 
 __all__ = [
-    "cleanup_database_connections",
-    "cleanup_http_clients",
-    "cleanup_temp_files",
-    "cleanup_file_handles",
-    "cleanup_session_state",
     "cleanup_background_tasks",
+    "cleanup_database_connections",
+    "cleanup_file_handles",
+    "cleanup_http_clients",
     "cleanup_logging_handlers",
+    "cleanup_session_state",
+    "cleanup_temp_files",
     "register_all_cleanup_handlers",
 ]

@@ -500,7 +500,7 @@ class OllamaProvider(LLMProvider):
                 response = await self.http_adapter.post(url, json=data)
                 return response.json()  # type: ignore[no-any-return]
             except Exception as e:
-                self.logger.error(f"HTTP request failed: {e}")
+                self.logger.exception(f"HTTP request failed: {e}")
                 raise
         else:
             # Fallback to aiohttp (legacy)
@@ -1091,6 +1091,7 @@ def get_masked_api_key(provider: str = "openai") -> str:
 
     Returns:
         Masked API key string (e.g., "sk-...abc1") for safe display in logs
+
     """
     api_key = None
 
@@ -1125,6 +1126,7 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
 
     Raises:
         SystemExit: If required API keys are invalid or missing
+
     """
     import sys
 
@@ -1161,9 +1163,7 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
         elif provider == "gemini":
             api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
             env_var_name = (
-                "GEMINI_API_KEY"
-                if os.getenv("GEMINI_API_KEY")
-                else "GOOGLE_API_KEY"
+                "GEMINI_API_KEY" if os.getenv("GEMINI_API_KEY") else "GOOGLE_API_KEY"
             )
 
         if not api_key or not api_key.strip():

@@ -37,6 +37,7 @@ def _get_logger() -> t.Any:
         except Exception:
             # Fallback to basic logging if DI not initialized
             import logging
+
             _logger = logging.getLogger(__name__)
     return _logger
 

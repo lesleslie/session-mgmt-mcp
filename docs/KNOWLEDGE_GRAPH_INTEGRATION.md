@@ -4,7 +4,7 @@
 **Status:** Complete (Week 2 Days 1-2)
 **Database:** DuckDB + DuckPGQ Extension
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -13,6 +13,7 @@ The session-mgmt-mcp server now includes a **semantic memory system** powered by
 ### What is DuckPGQ?
 
 DuckPGQ is a DuckDB extension that adds SQL/PGQ capabilities:
+
 - **Property Graph Model**: Store nodes (entities) and edges (relationships)
 - **SQL:2023 Standard**: Use standard SQL syntax for graph queries
 - **High Performance**: In-process analytics with no external dependencies
@@ -29,26 +30,30 @@ DuckPGQ is a DuckDB extension that adds SQL/PGQ capabilities:
 | **Example** | Find past debugging sessions | Map project dependencies |
 
 **They complement each other:**
+
 - Episodic memory stores *what happened*
 - Semantic memory stores *what exists and how it relates*
 
----
+______________________________________________________________________
 
 ## Architecture
 
 ### Core Components
 
 1. **KnowledgeGraphDatabase Class** (`knowledge_graph_db.py`)
+
    - 668 lines of production-ready code
    - Async/await support with context managers
    - DuckPGQ property graph creation and management
 
-2. **9 MCP Tools** (`tools/knowledge_graph_tools.py`)
+1. **9 MCP Tools** (`tools/knowledge_graph_tools.py`)
+
    - Full CRUD operations for entities and relationships
    - Auto-extraction from conversation context
    - Graph statistics and path finding
 
-3. **Database Schema**:
+1. **Database Schema**:
+
    ```sql
    -- Entities (nodes/vertices)
    CREATE TABLE kg_entities (
@@ -85,7 +90,7 @@ DuckPGQ is a DuckDB extension that adds SQL/PGQ capabilities:
        );
    ```
 
----
+______________________________________________________________________
 
 ## Available MCP Tools
 
@@ -94,12 +99,14 @@ DuckPGQ is a DuckDB extension that adds SQL/PGQ capabilities:
 Create a new entity (node) in the knowledge graph.
 
 **Parameters:**
+
 - `name` (str): Entity name (e.g., "session-mgmt-mcp", "Python 3.13")
 - `entity_type` (str): Type (e.g., "project", "language", "library", "concept")
 - `observations` (list[str], optional): Facts about this entity
 - `properties` (dict, optional): Additional structured properties
 
 **Example:**
+
 ```python
 create_entity(
     name="session-mgmt-mcp",
@@ -107,13 +114,14 @@ create_entity(
     observations=[
         "Claude session management MCP server",
         "Built with FastMCP and ACB",
-        "Uses DuckDB for storage"
+        "Uses DuckDB for storage",
     ],
-    properties={"language": "Python", "version": "2.0"}
+    properties={"language": "Python", "version": "2.0"},
 )
 ```
 
 **Returns:**
+
 ```
 ✅ Entity 'session-mgmt-mcp' created successfully!
 📊 Type: project
@@ -122,37 +130,40 @@ create_entity(
 ⚙️ Properties: language, version
 ```
 
----
+______________________________________________________________________
 
 ### 2. `add_observation`
 
 Add a fact/observation to an existing entity.
 
 **Parameters:**
+
 - `entity_name` (str): Name of the entity
 - `observation` (str): Fact to add
 
 **Example:**
+
 ```python
 add_observation(
-    entity_name="session-mgmt-mcp",
-    observation="Supports automatic context compaction"
+    entity_name="session-mgmt-mcp", observation="Supports automatic context compaction"
 )
 ```
 
----
+______________________________________________________________________
 
 ### 3. `create_relation`
 
 Create a relationship between two entities.
 
 **Parameters:**
+
 - `from_entity` (str): Source entity name
 - `to_entity` (str): Target entity name
 - `relation_type` (str): Relationship type (e.g., "uses", "depends_on", "developed_by")
 - `properties` (dict, optional): Relationship properties
 
 **Common Relationship Types:**
+
 - `uses` - Project uses library/technology
 - `depends_on` - Project depends on another project
 - `developed_by` - Project developed by person/team
@@ -160,43 +171,44 @@ Create a relationship between two entities.
 - `extends` - Library extends another library
 
 **Example:**
+
 ```python
 create_relation(
     from_entity="session-mgmt-mcp",
     to_entity="ACB",
     relation_type="uses",
-    properties={"since_version": "1.0"}
+    properties={"since_version": "1.0"},
 )
 ```
 
 **Returns:**
+
 ```
 ✅ Relationship created: session-mgmt-mcp --[uses]--> ACB
 🆔 Relation ID: 01947e12-1234-5678-9abc-def012345678
 ⚙️ Properties: since_version
 ```
 
----
+______________________________________________________________________
 
 ### 4. `search_entities`
 
 Search for entities by name or observations.
 
 **Parameters:**
+
 - `query` (str): Search query (matches name and observations)
 - `entity_type` (str, optional): Filter by type
 - `limit` (int, default=10): Maximum results
 
 **Example:**
+
 ```python
-search_entities(
-    query="session management",
-    entity_type="project",
-    limit=5
-)
+search_entities(query="session management", entity_type="project", limit=5)
 ```
 
 **Returns:**
+
 ```
 🔍 Found 2 entities matching 'session management':
 
@@ -209,26 +221,26 @@ search_entities(
    └─ Includes session management features
 ```
 
----
+______________________________________________________________________
 
 ### 5. `get_entity_relationships`
 
 Get all relationships for a specific entity.
 
 **Parameters:**
+
 - `entity_name` (str): Entity to find relationships for
 - `relation_type` (str, optional): Filter by relationship type
 - `direction` (str, default="both"): "outgoing", "incoming", or "both"
 
 **Example:**
+
 ```python
-get_entity_relationships(
-    entity_name="session-mgmt-mcp",
-    direction="outgoing"
-)
+get_entity_relationships(entity_name="session-mgmt-mcp", direction="outgoing")
 ```
 
 **Returns:**
+
 ```
 🔗 Found 5 relationships for 'session-mgmt-mcp':
 
@@ -239,27 +251,26 @@ get_entity_relationships(
   session-mgmt-mcp --[implements]--> Model Context Protocol
 ```
 
----
+______________________________________________________________________
 
 ### 6. `find_path`
 
 Find paths between two entities using SQL/PGQ graph queries.
 
 **Parameters:**
+
 - `from_entity` (str): Starting entity name
 - `to_entity` (str): Target entity name
 - `max_depth` (int, default=5): Maximum path length
 
 **Example:**
+
 ```python
-find_path(
-    from_entity="session-mgmt-mcp",
-    to_entity="Claude",
-    max_depth=5
-)
+find_path(from_entity="session-mgmt-mcp", to_entity="Claude", max_depth=5)
 ```
 
 **Returns:**
+
 ```
 🛤️ Found 2 path(s) from 'session-mgmt-mcp' to 'Claude':
 
@@ -271,6 +282,7 @@ find_path(
 ```
 
 **Behind the scenes (SQL/PGQ query):**
+
 ```sql
 SELECT *
 FROM GRAPH_TABLE (knowledge_graph
@@ -285,13 +297,14 @@ FROM GRAPH_TABLE (knowledge_graph
 )
 ```
 
----
+______________________________________________________________________
 
 ### 7. `get_knowledge_graph_stats`
 
 Get statistics about the knowledge graph.
 
 **Returns:**
+
 ```
 📊 Knowledge Graph Statistics
 
@@ -314,31 +327,35 @@ Get statistics about the knowledge graph.
 🔧 DuckPGQ: ✅ Installed
 ```
 
----
+______________________________________________________________________
 
 ### 8. `extract_entities_from_context`
 
 Auto-extract entities from conversation context using pattern matching.
 
 **Parameters:**
+
 - `context` (str): Text to extract entities from
 - `auto_create` (bool, default=False): Automatically create detected entities
 
 **Detection Patterns:**
+
 - **Projects**: Kebab-case names (e.g., "session-mgmt-mcp", "mcp-common")
 - **Libraries**: Known names (ACB, FastMCP, DuckDB, pytest, pydantic, etc.)
 - **Technologies**: Python, JavaScript, TypeScript, Docker, Kubernetes
 - **Concepts**: "dependency injection", "semantic memory", "property graph", etc.
 
 **Example:**
+
 ```python
 extract_entities_from_context(
     context="The session-mgmt-mcp project uses ACB for dependency injection and DuckDB for semantic memory.",
-    auto_create=True
+    auto_create=True,
 )
 ```
 
 **Returns:**
+
 ```
 🔍 Extracted Entities from Context:
 
@@ -357,13 +374,14 @@ extract_entities_from_context(
 ✅ Auto-created: 3 new entities
 ```
 
----
+______________________________________________________________________
 
 ### 9. `batch_create_entities`
 
 Bulk create multiple entities in one operation.
 
 **Parameters:**
+
 - `entities` (list[dict]): List of entity dictionaries with keys:
   - `name` (str, required)
   - `entity_type` (str, required)
@@ -371,27 +389,31 @@ Bulk create multiple entities in one operation.
   - `properties` (dict, optional)
 
 **Example:**
+
 ```python
-batch_create_entities([
-    {
-        "name": "FastMCP",
-        "entity_type": "library",
-        "observations": ["MCP server framework", "Built by Jlowin"]
-    },
-    {
-        "name": "ACB",
-        "entity_type": "library",
-        "observations": ["Asynchronous Component Base framework"]
-    },
-    {
-        "name": "DuckDB",
-        "entity_type": "database",
-        "observations": ["In-process analytics database"]
-    }
-])
+batch_create_entities(
+    [
+        {
+            "name": "FastMCP",
+            "entity_type": "library",
+            "observations": ["MCP server framework", "Built by Jlowin"],
+        },
+        {
+            "name": "ACB",
+            "entity_type": "library",
+            "observations": ["Asynchronous Component Base framework"],
+        },
+        {
+            "name": "DuckDB",
+            "entity_type": "database",
+            "observations": ["In-process analytics database"],
+        },
+    ]
+)
 ```
 
 **Returns:**
+
 ```
 📦 Batch Entity Creation Results:
 
@@ -403,7 +425,7 @@ batch_create_entities([
 ❌ Failed: 0
 ```
 
----
+______________________________________________________________________
 
 ## Usage Patterns
 
@@ -416,13 +438,13 @@ Build a knowledge graph of your project dependencies:
 create_entity(
     name="session-mgmt-mcp",
     entity_type="project",
-    observations=["Claude session management server"]
+    observations=["Claude session management server"],
 )
 
 create_entity(
     name="mcp-common",
     entity_type="library",
-    observations=["ACB-native foundation library for MCP servers"]
+    observations=["ACB-native foundation library for MCP servers"],
 )
 
 # 2. Create relationships
@@ -430,17 +452,14 @@ create_relation(
     from_entity="session-mgmt-mcp",
     to_entity="mcp-common",
     relation_type="depends_on",
-    properties={"version": "2.0.0"}
+    properties={"version": "2.0.0"},
 )
 
 # 3. Query dependencies
-get_entity_relationships(
-    entity_name="session-mgmt-mcp",
-    direction="outgoing"
-)
+get_entity_relationships(entity_name="session-mgmt-mcp", direction="outgoing")
 ```
 
----
+______________________________________________________________________
 
 ### Pattern 2: Technology Stack Mapping
 
@@ -453,18 +472,14 @@ extract_entities_from_context(
     Our stack uses Python 3.13 with FastMCP for the MCP server.
     We use DuckDB for storage and ACB for dependency injection.
     """,
-    auto_create=True
+    auto_create=True,
 )
 
 # Find how technologies connect
-find_path(
-    from_entity="Python 3.13",
-    to_entity="DuckDB",
-    max_depth=3
-)
+find_path(from_entity="Python 3.13", to_entity="DuckDB", max_depth=3)
 ```
 
----
+______________________________________________________________________
 
 ### Pattern 3: Concept Relationship Exploration
 
@@ -477,40 +492,34 @@ create_entity(
     entity_type="concept",
     observations=[
         "Design pattern for loose coupling",
-        "Implemented via ACB in session-mgmt-mcp"
-    ]
+        "Implemented via ACB in session-mgmt-mcp",
+    ],
 )
 
 create_entity(
     name="semantic memory",
     entity_type="concept",
-    observations=[
-        "Knowledge graph storage",
-        "Implemented via DuckPGQ"
-    ]
+    observations=["Knowledge graph storage", "Implemented via DuckPGQ"],
 )
 
 # Link concepts to implementations
 create_relation(
     from_entity="session-mgmt-mcp",
     to_entity="dependency injection",
-    relation_type="implements"
+    relation_type="implements",
 )
 
 create_relation(
     from_entity="session-mgmt-mcp",
     to_entity="semantic memory",
-    relation_type="implements"
+    relation_type="implements",
 )
 
 # Search for related concepts
-search_entities(
-    query="memory",
-    entity_type="concept"
-)
+search_entities(query="memory", entity_type="concept")
 ```
 
----
+______________________________________________________________________
 
 ## Performance & Scalability
 
@@ -525,17 +534,18 @@ search_entities(
 
 | Operation | Complexity | Performance |
 |-----------|-----------|-------------|
-| Create entity | O(1) | <1ms |
-| Search entities | O(n) | <10ms for 1K entities |
-| Get relationships | O(r) | <5ms for 100 rels |
-| Find path (depth 5) | O(b^d) | <50ms in typical graphs |
+| Create entity | O(1) | \<1ms |
+| Search entities | O(n) | \<10ms for 1K entities |
+| Get relationships | O(r) | \<5ms for 100 rels |
+| Find path (depth 5) | O(b^d) | \<50ms in typical graphs |
 
 **Optimizations:**
+
 - Indexes on `entity_type`, `name`, `relation_type`
 - DuckDB's columnar storage for analytics
 - Lazy initialization (database opened on first use)
 
----
+______________________________________________________________________
 
 ## Integration with Existing Systems
 
@@ -545,13 +555,12 @@ search_entities(
 # Store conversation in episodic memory
 store_reflection(
     content="Discussed ACB integration patterns for session-mgmt-mcp",
-    tags=["acb", "architecture"]
+    tags=["acb", "architecture"],
 )
 
 # Extract entities and store in knowledge graph
 extract_entities_from_context(
-    context="Discussed ACB integration patterns for session-mgmt-mcp",
-    auto_create=True
+    context="Discussed ACB integration patterns for session-mgmt-mcp", auto_create=True
 )
 
 # Link conversation to entities
@@ -567,12 +576,12 @@ create_entity(
     entity_type="release",
     observations=[
         f"Test coverage: {coverage_percent}%",
-        f"Quality score: {quality_score}/100"
-    ]
+        f"Quality score: {quality_score}/100",
+    ],
 )
 ```
 
----
+______________________________________________________________________
 
 ## Development Guidelines
 
@@ -586,6 +595,7 @@ create_entity(
 ### Relationship Types
 
 **Standard Types** (use these for consistency):
+
 - `uses` - Direct usage relationship
 - `depends_on` - Dependency relationship
 - `implements` - Implementation of concept/interface
@@ -598,16 +608,18 @@ create_entity(
 ### Observations Best Practices
 
 ✅ **Good Observations:**
+
 - "Built with FastMCP 2.0 framework"
 - "Test coverage: 94.57%"
 - "Implements SQL:2023 property graph queries"
 
 ❌ **Avoid:**
+
 - "Good" (too vague)
 - "Created on 2025-10-26" (use metadata instead)
 - Duplicate information already in properties
 
----
+______________________________________________________________________
 
 ## Testing
 
@@ -622,21 +634,22 @@ See `tests/unit/test_knowledge_graph_tools.py` for comprehensive test coverage:
 - ✅ Error handling
 
 **Run tests:**
+
 ```bash
 pytest tests/unit/test_knowledge_graph_tools.py -v
 ```
 
----
+______________________________________________________________________
 
 ## Future Enhancements
 
 ### Planned Features (Week 3+)
 
 1. **Auto-linking**: Automatically link conversations to mentioned entities
-2. **Semantic Search**: Combine vector embeddings with graph queries
-3. **Visualization**: Export to graph visualization formats (Graphviz, Mermaid)
-4. **Import/Export**: JSON/CSV import/export for bulk operations
-5. **Graph Analytics**: Centrality, clustering, community detection
+1. **Semantic Search**: Combine vector embeddings with graph queries
+1. **Visualization**: Export to graph visualization formats (Graphviz, Mermaid)
+1. **Import/Export**: JSON/CSV import/export for bulk operations
+1. **Graph Analytics**: Centrality, clustering, community detection
 
 ### Integration Opportunities
 
@@ -644,7 +657,7 @@ pytest tests/unit/test_knowledge_graph_tools.py -v
 - **Documentation**: Link API docs to entity observations
 - **Metrics Tracking**: Store quality metrics as time-series observations
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -653,6 +666,7 @@ pytest tests/unit/test_knowledge_graph_tools.py -v
 **Error:** `Failed to install DuckPGQ extension`
 
 **Solution:**
+
 ```bash
 # DuckPGQ requires DuckDB ≥0.9.0
 uv sync  # Ensures correct DuckDB version
@@ -674,11 +688,12 @@ print('✅ DuckPGQ installed successfully')
 **Cause**: Multiple processes accessing the same database file.
 
 **Solution**:
+
 - Knowledge graph uses async context managers for proper cleanup
 - Ensure tools complete before running concurrent operations
 - Database automatically closes on context manager exit
 
----
+______________________________________________________________________
 
 ## References
 
@@ -687,7 +702,7 @@ print('✅ DuckPGQ installed successfully')
 - **DuckDB Documentation**: https://duckdb.org/
 - **Implementation**: `session_mgmt_mcp/knowledge_graph_db.py`
 
----
+______________________________________________________________________
 
 **Last Updated:** Week 2 Day 2 (2025-10-26)
 **Status:** ✅ Production Ready

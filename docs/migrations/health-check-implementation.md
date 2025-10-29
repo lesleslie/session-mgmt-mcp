@@ -33,6 +33,7 @@ Add production-ready health checks to your MCP server using mcp_common's health 
 ```python
 # No health monitoring - issues discovered through failures
 
+
 @mcp.tool()
 async def status():
     return {"status": "running"}  # Not very useful!
@@ -43,6 +44,7 @@ async def status():
 ```python
 from mcp_common.health import ComponentHealth, HealthStatus
 from mcp_common.http_health import check_http_client_health
+
 
 @mcp.tool()
 async def health_check():
@@ -56,7 +58,9 @@ async def health_check():
     )
 
     return {
-        "status": "healthy" if all(c.status == HealthStatus.HEALTHY for c in components) else "degraded",
+        "status": "healthy"
+        if all(c.status == HealthStatus.HEALTHY for c in components)
+        else "degraded",
         "components": [
             {
                 "name": c.name,
@@ -66,7 +70,7 @@ async def health_check():
                 "metadata": c.metadata,
             }
             for c in components
-        ]
+        ],
     }
 ```
 
@@ -111,7 +115,7 @@ async def check_python_environment_health() -> ComponentHealth:
             metadata={
                 "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
                 "platform": platform.system(),
-            }
+            },
         )
 
     return ComponentHealth(
@@ -121,7 +125,7 @@ async def check_python_environment_health() -> ComponentHealth:
         metadata={
             "python_version": f"{python_version.major}.{python_version.minor}.{python_version.micro}",
             "platform": platform.system(),
-        }
+        },
     )
 
 
@@ -144,7 +148,7 @@ async def check_database_health() -> ComponentHealth:
             metadata={
                 "connections": result.get("connections", 0),
                 "version": result.get("version", "unknown"),
-            }
+            },
         )
 
     except Exception as e:
@@ -152,7 +156,7 @@ async def check_database_health() -> ComponentHealth:
             name="database",
             status=HealthStatus.UNHEALTHY,
             message=f"Database error: {e}",
-            metadata={"error": str(e), "error_type": type(e).__name__}
+            metadata={"error": str(e), "error_type": type(e).__name__},
         )
 
 
@@ -185,7 +189,7 @@ async def check_file_system_health() -> ComponentHealth:
             status=HealthStatus.DEGRADED,
             message=f"File system issues: {', '.join(issues)}",
             latency_ms=latency_ms,
-            metadata={"issues": issues}
+            metadata={"issues": issues},
         )
 
     return ComponentHealth(
@@ -211,12 +215,14 @@ async def get_all_health_checks() -> list[ComponentHealth]:
     results = []
     for check in checks:
         if isinstance(check, Exception):
-            results.append(ComponentHealth(
-                name="unknown",
-                status=HealthStatus.UNHEALTHY,
-                message=f"Health check crashed: {check}",
-                metadata={"error": str(check)}
-            ))
+            results.append(
+                ComponentHealth(
+                    name="unknown",
+                    status=HealthStatus.UNHEALTHY,
+                    message=f"Health check crashed: {check}",
+                    metadata={"error": str(check)},
+                )
+            )
         else:
             results.append(check)
 
@@ -230,6 +236,7 @@ If using HTTPClientAdapter:
 ```python
 # In health_checks.py, add:
 from mcp_common.http_health import check_http_client_health, check_http_connectivity
+
 
 async def check_http_health() -> list[ComponentHealth]:
     """Check HTTP client and connectivity."""
@@ -247,6 +254,7 @@ from fastmcp import FastMCP
 from my_server.health_checks import get_all_health_checks
 
 mcp = FastMCP("my-server")
+
 
 @mcp.tool()
 async def health_check() -> dict[str, t.Any]:
@@ -295,6 +303,7 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+
 async def http_health_check(request):
     """HTTP health check endpoint."""
     components = await get_all_health_checks()
@@ -323,6 +332,7 @@ async def http_health_check(request):
         status_code=status_code,
     )
 
+
 app = Starlette(
     routes=[
         Route("/health", http_health_check),
@@ -338,10 +348,12 @@ Use ServerPanels for terminal UI:
 from mcp_common.ui import ServerPanels
 from my_server.health_checks import get_all_health_checks
 
+
 async def display_health_status():
     """Display health status with Rich UI."""
     components = await get_all_health_checks()
     ServerPanels.status(components)
+
 
 # Call at startup or on demand
 asyncio.run(display_health_status())
@@ -355,8 +367,11 @@ Export metrics for Prometheus:
 from prometheus_client import Gauge, generate_latest
 
 # Create Prometheus metrics
-health_status = Gauge('server_health_status', 'Component health status', ['component'])
-health_latency = Gauge('server_health_latency_ms', 'Health check latency', ['component'])
+health_status = Gauge("server_health_status", "Component health status", ["component"])
+health_latency = Gauge(
+    "server_health_latency_ms", "Health check latency", ["component"]
+)
+
 
 async def export_health_metrics():
     """Export health metrics for Prometheus."""
@@ -375,6 +390,7 @@ async def export_health_metrics():
         if component.latency_ms is not None:
             health_latency.labels(component=component.name).set(component.latency_ms)
 
+
 # Expose metrics endpoint
 @app.route("/metrics")
 async def metrics_endpoint(request):
@@ -388,6 +404,7 @@ async def metrics_endpoint(request):
 ```python
 import asyncio
 from my_server.health_checks import get_all_health_checks
+
 
 async def test_health_check():
     components = await get_all_health_checks()
@@ -405,6 +422,7 @@ async def test_health_check():
             print(f"   Latency: {component.latency_ms:.2f}ms")
         if component.metadata:
             print(f"   Metadata: {component.metadata}")
+
 
 asyncio.run(test_health_check())
 ```
@@ -514,7 +532,7 @@ async def check_with_timeout(check_func, timeout_seconds=5.0):
         return ComponentHealth(
             name=check_func.__name__,
             status=HealthStatus.UNHEALTHY,
-            message=f"Health check timed out after {timeout_seconds}s"
+            message=f"Health check timed out after {timeout_seconds}s",
         )
 ```
 
@@ -538,7 +556,7 @@ async def safe_health_check(check_func):
             name=check_func.__name__,
             status=HealthStatus.UNHEALTHY,
             message=f"Health check crashed: {e}",
-            metadata={"error": str(e), "error_type": type(e).__name__}
+            metadata={"error": str(e), "error_type": type(e).__name__},
         )
 ```
 
@@ -590,8 +608,8 @@ return ComponentHealth(
     metadata={
         "active_connections": 95,
         "max_connections": 100,
-        "recommendation": "Scale database or optimize queries"
-    }
+        "recommendation": "Scale database or optimize queries",
+    },
 )
 ```
 
@@ -638,6 +656,7 @@ from datetime import datetime, timedelta
 _health_cache = None
 _health_cache_time = None
 
+
 async def get_cached_health_checks(ttl_seconds=30):
     """Get health checks with caching."""
     global _health_cache, _health_cache_time
@@ -666,15 +685,13 @@ async def check_service_health() -> ComponentHealth:
     try:
         await service.ping()
         return ComponentHealth(
-            name="service",
-            status=HealthStatus.HEALTHY,
-            message="Service responding"
+            name="service", status=HealthStatus.HEALTHY, message="Service responding"
         )
     except Exception as e:
         return ComponentHealth(
             name="service",
             status=HealthStatus.UNHEALTHY,
-            message=f"Service not responding: {e}"
+            message=f"Service not responding: {e}",
         )
 ```
 
@@ -706,7 +723,7 @@ async def check_memory_health() -> ComponentHealth:
             "usage_percent": usage_percent,
             "available_mb": memory.available / 1024 / 1024,
             "total_mb": memory.total / 1024 / 1024,
-        }
+        },
     )
 ```
 
@@ -718,8 +735,7 @@ async def check_api_connectivity() -> ComponentHealth:
     from mcp_common.http_health import check_http_connectivity
 
     return await check_http_connectivity(
-        test_url="https://api.example.com/health",
-        timeout_ms=3000
+        test_url="https://api.example.com/health", timeout_ms=3000
     )
 ```
 

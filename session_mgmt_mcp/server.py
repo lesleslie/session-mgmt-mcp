@@ -16,7 +16,7 @@ import importlib.util
 import os
 import sys
 import warnings
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -114,17 +114,16 @@ except ImportError:
 
         FastMCP = MockFastMCP  # type: ignore[no-redef,misc]
         MCP_AVAILABLE = False
+    elif EXCEPTIONS_AVAILABLE:
+        raise DependencyMissingError(
+            message="FastMCP is required but not installed",
+            dependency="fastmcp",
+            install_command="uv add fastmcp",
+        )
     else:
-        if EXCEPTIONS_AVAILABLE:
-            raise DependencyMissingError(
-                message="FastMCP is required but not installed",
-                dependency="fastmcp",
-                install_command="uv add fastmcp",
-            )
-        else:
-            # Fallback to sys.exit if exceptions unavailable
-            print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
-            sys.exit(1)
+        # Fallback to sys.exit if exceptions unavailable
+        print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
+        sys.exit(1)
 
 # Phase 2.6: Get all feature flags from centralized detector
 _features = get_feature_flags()
@@ -161,14 +160,10 @@ from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.reflection_tools import get_reflection_database
 
 # Check mcp-common ServerPanels availability (Phase 3.3 M2: improved pattern)
-SERVERPANELS_AVAILABLE = (
-    importlib.util.find_spec("mcp_common.ui") is not None
-)
+SERVERPANELS_AVAILABLE = importlib.util.find_spec("mcp_common.ui") is not None
 
 # Check mcp-common security availability (Phase 3.3 M2: improved pattern)
-SECURITY_AVAILABLE = (
-    importlib.util.find_spec("mcp_common.security") is not None
-)
+SECURITY_AVAILABLE = importlib.util.find_spec("mcp_common.security") is not None
 
 # Check FastMCP rate limiting middleware availability (Phase 3.3 M2: improved pattern)
 RATE_LIMITING_AVAILABLE = (
@@ -179,7 +174,7 @@ RATE_LIMITING_AVAILABLE = (
 EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
 
 if EXCEPTIONS_AVAILABLE:
-    from mcp_common.exceptions import DependencyMissingError
+    pass
 
 # Phase 2.2: Import utility and formatting functions from server_helpers
 
@@ -219,6 +214,8 @@ if RATE_LIMITING_AVAILABLE:
     session_logger.info("Rate limiting enabled: 10 req/sec, burst 30")
 
 # Register extracted tool modules following crackerjack architecture patterns
+# Import LLM provider validation (Phase 3 Security Hardening)
+from .llm_providers import validate_llm_api_keys_at_startup
 from .tools import (
     register_crackerjack_tools,
     register_knowledge_graph_tools,
@@ -236,9 +233,6 @@ from .utils import (
     _format_search_results,
     validate_claude_directory,
 )
-
-# Import LLM provider validation (Phase 3 Security Hardening)
-from .llm_providers import validate_llm_api_keys_at_startup
 
 # Register all extracted tool modules
 register_search_tools(mcp)

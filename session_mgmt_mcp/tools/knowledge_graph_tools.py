@@ -305,12 +305,8 @@ async def _find_path_impl(
             output.append("")
 
             for i, path in enumerate(paths, 1):
-                output.append(
-                    f"{i}. Path length: {path['path_length']} hop(s)"
-                )
-                output.append(
-                    f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}"
-                )
+                output.append(f"{i}. Path length: {path['path_length']} hop(s)")
+                output.append(f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}")
                 output.append("")
 
             logger.info(
@@ -410,9 +406,7 @@ async def _extract_entities_from_context_impl(
                             await kg.create_entity(
                                 name=entity_name,
                                 entity_type=entity_type,
-                                observations=[
-                                    f"Extracted from conversation context"
-                                ],
+                                observations=["Extracted from conversation context"],
                             )
                             created_count += 1
             output.append("")
