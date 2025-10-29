@@ -79,6 +79,12 @@ class SessionLogger:
             message = f"{message} | Context: {_safe_json_serialize(context)}"
         self.logger.exception(message)
 
+    def critical(self, message: str, **context: t.Any) -> None:
+        """Log critical with optional context."""
+        if context:
+            message = f"{message} | Context: {_safe_json_serialize(context)}"
+        self.logger.critical(message)
+
 
 def get_session_logger() -> SessionLogger:
     """Get the global session logger instance managed by the DI container."""

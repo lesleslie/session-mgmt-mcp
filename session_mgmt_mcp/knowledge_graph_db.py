@@ -46,6 +46,7 @@ class KnowledgeGraphDatabase:
         >>>         to_entity="ACB",
         >>>         relation_type="uses"
         >>>     )
+
     """
 
     def __init__(self, db_path: str | None = None) -> None:
@@ -54,6 +55,7 @@ class KnowledgeGraphDatabase:
         Args:
             db_path: Path to DuckDB database file.
                     Defaults to ~/.claude/data/knowledge_graph.duckdb
+
         """
         self.db_path = db_path or os.path.expanduser(
             "~/.claude/data/knowledge_graph.duckdb"
@@ -106,6 +108,7 @@ class KnowledgeGraphDatabase:
         Raises:
             ImportError: If DuckDB is not available
             RuntimeError: If DuckPGQ installation fails
+
         """
         if not DUCKDB_AVAILABLE:
             msg = "DuckDB not available. Install with: uv add duckdb"
@@ -134,6 +137,7 @@ class KnowledgeGraphDatabase:
 
         Raises:
             RuntimeError: If connection not initialized
+
         """
         if self.conn is None:
             msg = "Database connection not initialized. Call initialize() first."
@@ -166,6 +170,7 @@ class KnowledgeGraphDatabase:
         """)
 
         # Create relationships table (edges)
+        # Note: DuckDB doesn't support CASCADE constraints, so we omit ON DELETE CASCADE
         conn.execute("""
             CREATE TABLE IF NOT EXISTS kg_relationships (
                 id VARCHAR PRIMARY KEY,
@@ -175,8 +180,8 @@ class KnowledgeGraphDatabase:
                 properties JSON,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata JSON,
-                FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE,
-                FOREIGN KEY (to_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
+                FOREIGN KEY (from_entity) REFERENCES kg_entities(id),
+                FOREIGN KEY (to_entity) REFERENCES kg_entities(id)
             )
         """)
 
@@ -240,6 +245,7 @@ class KnowledgeGraphDatabase:
             >>>     entity_type="framework",
             >>>     observations=["Web framework", "Built on ACB"]
             >>> )
+
         """
         conn = self._get_conn()
         entity_id = str(uuid.uuid4())
@@ -283,6 +289,7 @@ class KnowledgeGraphDatabase:
 
         Returns:
             Entity dict or None if not found
+
         """
         conn = self._get_conn()
 
@@ -315,6 +322,7 @@ class KnowledgeGraphDatabase:
 
         Returns:
             First matching entity or None
+
         """
         conn = self._get_conn()
 
@@ -369,6 +377,7 @@ class KnowledgeGraphDatabase:
             >>>     to_entity="Python 3.13",
             >>>     relation_type="uses"
             >>> )
+
         """
         # Find source and target entities
         from_node = await self.find_entity_by_name(from_entity)
@@ -418,6 +427,7 @@ class KnowledgeGraphDatabase:
 
         Returns:
             True if successful, False if entity not found
+
         """
         entity = await self.find_entity_by_name(entity_name)
         if not entity:
@@ -454,6 +464,7 @@ class KnowledgeGraphDatabase:
 
         Returns:
             List of matching entities
+
         """
         conn = self._get_conn()
 
@@ -506,6 +517,7 @@ class KnowledgeGraphDatabase:
 
         Returns:
             List of relationships
+
         """
         entity = await self.find_entity_by_name(entity_name)
         if not entity:
@@ -546,9 +558,7 @@ class KnowledgeGraphDatabase:
                 else (entity["id"], entity["id"])
             )
         else:
-            params = (
-                (entity["id"], relation_type) if relation_type else (entity["id"],)
-            )
+            params = (entity["id"], relation_type) if relation_type else (entity["id"],)
 
         results = conn.execute(sql, params).fetchall()
 
@@ -582,6 +592,7 @@ class KnowledgeGraphDatabase:
 
         Note:
             This uses DuckPGQ's SQL/PGQ syntax for graph pattern matching.
+
         """
         from_node = await self.find_entity_by_name(from_entity)
         to_node = await self.find_entity_by_name(to_entity)
@@ -628,13 +639,12 @@ class KnowledgeGraphDatabase:
 
         Returns:
             Stats including entity count, relationship count, types
+
         """
         conn = self._get_conn()
 
         # Count entities
-        entity_count = conn.execute(
-            "SELECT COUNT(*) FROM kg_entities"
-        ).fetchone()[0]
+        entity_count = conn.execute("SELECT COUNT(*) FROM kg_entities").fetchone()[0]
 
         # Count relationships
         relationship_count = conn.execute(
@@ -660,8 +670,8 @@ class KnowledgeGraphDatabase:
         return {
             "total_entities": entity_count,
             "total_relationships": relationship_count,
-            "entity_types": {etype: count for etype, count in entity_types},
-            "relationship_types": {rtype: count for rtype, count in relationship_types},
+            "entity_types": dict(entity_types),
+            "relationship_types": dict(relationship_types),
             "database_path": self.db_path,
             "duckpgq_installed": self._duckpgq_installed,
         }

@@ -197,9 +197,11 @@ class TestLoggingHandlerCleanup:
         """Should flush and close all logging handlers."""
         import logging
 
-        # Create mock handlers
+        # Create mock handlers with required .level attribute
         mock_handler1 = MagicMock()
+        mock_handler1.level = logging.INFO
         mock_handler2 = MagicMock()
+        mock_handler2.level = logging.INFO
 
         original_handlers = logging.root.handlers.copy()
 
