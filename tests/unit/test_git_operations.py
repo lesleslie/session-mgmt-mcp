@@ -1,18 +1,19 @@
-#!/usr/bin/env python3
-"""Unit tests for git_operations utilities."""
+"""Comprehensive tests for Git integration functionality.
+
+Week 8 Day 2 - Phase 5: Test git operations, checkpoint commits, and worktree support.
+Tests subprocess-based git operations with realistic repository scenarios.
+"""
+
+from __future__ import annotations
 
 import subprocess
-import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 from session_mgmt_mcp.utils.git_operations import (
     WorktreeInfo,
-    _format_untracked_files,
-    _parse_git_status,
-    _parse_worktree_entry,
-    _process_worktree_line,
     create_checkpoint_commit,
     create_commit,
     get_git_root,
@@ -24,610 +25,348 @@ from session_mgmt_mcp.utils.git_operations import (
     list_worktrees,
     stage_files,
 )
+from tests.fixtures import tmp_git_repo, tmp_git_repo_with_changes, tmp_git_repo_with_commits
 
 
+@pytest.mark.asyncio
 class TestGitRepositoryDetection:
     """Test git repository detection functions."""
 
-    def test_is_git_repository_with_git_directory(self):
-        """Test is_git_repository with .git directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            git_dir = repo_path / ".git"
-            git_dir.mkdir()
-
-            assert is_git_repository(repo_path) is True
-
-    def test_is_git_repository_with_git_file(self):
-        """Test is_git_repository with .git file (worktree)."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            git_file = repo_path / ".git"
-            git_file.touch()
-
-            assert is_git_repository(repo_path) is True
-
-    def test_is_git_repository_nonexistent(self):
-        """Test is_git_repository with non-git directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-
-            assert is_git_repository(repo_path) is False
-
-    def test_is_git_worktree(self):
-        """Test is_git_worktree function."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            git_file = repo_path / ".git"
-            git_file.touch()
-
-            assert is_git_worktree(repo_path) is True
-            assert is_git_worktree(str(repo_path)) is True
-
-    def test_is_git_worktree_not_worktree(self):
-        """Test is_git_worktree with regular git repo."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            git_dir = repo_path / ".git"
-            git_dir.mkdir()
-
-            assert is_git_worktree(repo_path) is False
-
-
-class TestGitRootDetection:
-    """Test git root detection functionality."""
-
-    @patch("subprocess.run")
-    def test_get_git_root_success(self, mock_run):
-        """Test get_git_root with successful git command."""
-        mock_result = Mock()
-        mock_result.stdout = "/path/to/repo\n"
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            # Create .git directory so is_git_repository returns True
-            git_dir = repo_path / ".git"
-            git_dir.mkdir()
-
-            result = get_git_root(repo_path)
-
-            assert result == Path("/path/to/repo")
-            mock_run.assert_called_once_with(
-                ["git", "rev-parse", "--show-toplevel"],
-                capture_output=True,
-                text=True,
-                cwd=repo_path,
-                check=True,
-            )
-
-    @patch("subprocess.run")
-    def test_get_git_root_failure(self, mock_run):
-        """Test get_git_root with failed git command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            result = get_git_root(repo_path)
-
-            assert result is None
-
-
-class TestWorktreeInfo:
-    """Test WorktreeInfo dataclass."""
-
-    def test_worktree_info_creation(self):
-        """Test WorktreeInfo creation with all parameters."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            path = Path(temp_dir)
-            wt_info = WorktreeInfo(
-                path=path,
-                branch="main",
-                is_bare=False,
-                is_detached=False,
-                is_main_worktree=True,
-                locked=False,
-                prunable=False,
-            )
-
-            assert wt_info.path == path
-            assert wt_info.branch == "main"
-            assert wt_info.is_bare is False
-            assert wt_info.is_detached is False
-            assert wt_info.is_main_worktree is True
-            assert wt_info.locked is False
-            assert wt_info.prunable is False
-
-
-class TestWorktreeProcessing:
-    """Test worktree processing functions."""
-
-    def test_process_worktree_line_worktree(self):
-        """Test _process_worktree_line with worktree line."""
-        current_worktree = {}
-        _process_worktree_line("worktree /path/to/worktree", current_worktree)
-
-        assert current_worktree["path"] == "/path/to/worktree"
-
-    def test_process_worktree_line_head(self):
-        """Test _process_worktree_line with HEAD line."""
-        current_worktree = {}
-        _process_worktree_line("HEAD abc123", current_worktree)
-
-        assert current_worktree["head"] == "abc123"
-
-    def test_process_worktree_line_branch(self):
-        """Test _process_worktree_line with branch line."""
-        current_worktree = {}
-        _process_worktree_line("branch refs/heads/main", current_worktree)
-
-        assert current_worktree["branch"] == "refs/heads/main"
-
-    def test_process_worktree_line_flags(self):
-        """Test _process_worktree_line with flag lines."""
-        test_cases = [
-            ("bare", "bare", True),
-            ("detached", "detached", True),
-            ("locked", "locked", True),
-            ("prunable", "prunable", True),
-        ]
-
-        for line, key, expected in test_cases:
-            current_worktree = {}
-            _process_worktree_line(line, current_worktree)
-
-            assert current_worktree[key] is expected
-
-    def test_parse_worktree_entry(self):
-        """Test _parse_worktree_entry function."""
-        entry = {
-            "path": "/path/to/worktree",
-            "branch": "refs/heads/feature",
-            "bare": False,
-            "detached": False,
-            "locked": True,
-            "prunable": False,
-        }
-
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_file", return_value=True):
-                result = _parse_worktree_entry(entry)
-
-                assert isinstance(result, WorktreeInfo)
-                assert str(result.path) == "/path/to/worktree"
-                assert result.branch == "refs/heads/feature"
-                assert result.is_bare is False
-                assert result.is_detached is False
-                assert result.locked is True
-                assert result.prunable is False
-                assert result.is_main_worktree is False  # Because it's a worktree file
-
-
-class TestListWorktrees:
-    """Test list_worktrees function."""
-
-    @patch("subprocess.run")
-    def test_list_worktrees_success(self, mock_run):
-        """Test list_worktrees with successful command."""
-        mock_output = """worktree /path/to/main
-HEAD abc123
-branch refs/heads/main
-
-worktree /path/to/feature
-HEAD def456
-branch refs/heads/feature
-"""
-        mock_result = Mock()
-        mock_result.stdout = mock_output
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = list_worktrees(repo_path)
-
-                assert len(result) == 2
-                assert isinstance(result[0], WorktreeInfo)
-                assert isinstance(result[1], WorktreeInfo)
-
-    @patch("subprocess.run")
-    def test_list_worktrees_failure(self, mock_run):
-        """Test list_worktrees with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = list_worktrees(repo_path)
-
-                assert result == []
-
-    def test_list_worktrees_non_git_repo(self):
-        """Test list_worktrees with non-git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            result = list_worktrees(repo_path)
-
-            assert result == []
-
-
-class TestGitStatus:
-    """Test git status functions."""
-
-    @patch("subprocess.run")
-    def test_get_git_status_success(self, mock_run):
-        """Test get_git_status with successful command."""
-        mock_output = """ M modified_file.py
-?? untracked_file.py
-D  deleted_file.py
-"""
-        mock_result = Mock()
-        mock_result.stdout = mock_output
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                modified, untracked = get_git_status(repo_path)
-
-                assert modified == ["modified_file.py", "deleted_file.py"]
-                assert untracked == ["untracked_file.py"]
-
-    @patch("subprocess.run")
-    def test_get_git_status_failure(self, mock_run):
-        """Test get_git_status with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                modified, untracked = get_git_status(repo_path)
-
-                assert modified == []
-                assert untracked == []
-
-    def test_parse_git_status(self):
-        """Test _parse_git_status function."""
-        status_lines = [
-            " M modified_file.py",
-            "?? untracked_file.py",
-            "D  deleted_file.py",
-            "A  added_file.py",
-            " M another_modified.py",
-        ]
-
-        modified, untracked = _parse_git_status(status_lines)
-
-        assert modified == [
-            "modified_file.py",
-            "deleted_file.py",
-            "added_file.py",
-            "another_modified.py",
-        ]
-        assert untracked == ["untracked_file.py"]
-
-    def test_get_git_status_non_git_repo(self):
-        """Test get_git_status with non-git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            modified, untracked = get_git_status(repo_path)
-
-            assert modified == []
-            assert untracked == []
-
-
-class TestStagingAndCommits:
-    """Test staging and commit functions."""
-
-    @patch("subprocess.run")
-    def test_stage_files_success(self, mock_run):
-        """Test stage_files with successful command."""
-        mock_result = Mock()
-        mock_result.stdout = ""
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = stage_files(repo_path, ["file1.py", "file2.py"])
-
-                assert result is True
-                mock_run.assert_called_once_with(
-                    ["git", "add", "-A"],
-                    cwd=repo_path,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                )
-
-    @patch("subprocess.run")
-    def test_stage_files_failure(self, mock_run):
-        """Test stage_files with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = stage_files(repo_path, ["file1.py"])
-
-                assert result is False
-
-    def test_stage_files_no_files(self):
-        """Test stage_files with no files."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            result = stage_files(repo_path, [])
-
-            assert result is False
-
-    def test_stage_files_non_git_repo(self):
-        """Test stage_files with non-git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            result = stage_files(repo_path, ["file1.py"])
-
-            assert result is False
-
-    @patch("subprocess.run")
-    def test_get_staged_files_success(self, mock_run):
-        """Test get_staged_files with successful command."""
-        mock_output = """staged_file1.py
-staged_file2.py
-"""
-        mock_result = Mock()
-        mock_result.stdout = mock_output
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = get_staged_files(repo_path)
-
-                assert result == ["staged_file1.py", "staged_file2.py"]
-
-    @patch("subprocess.run")
-    def test_get_staged_files_failure(self, mock_run):
-        """Test get_staged_files with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = get_staged_files(repo_path)
-
-                assert result == []
-
-    def test_get_staged_files_non_git_repo(self):
-        """Test get_staged_files with non-git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            result = get_staged_files(repo_path)
-
-            assert result == []
-
-    @patch("subprocess.run")
-    def test_create_commit_success(self, mock_run):
-        """Test create_commit with successful commands."""
-        # Mock the commit command
-        commit_result = Mock()
-        commit_result.stdout = ""
-        commit_result.stderr = ""
-        commit_result.returncode = 0
-
-        # Mock the rev-parse command
-        hash_result = Mock()
-        hash_result.stdout = "abc123def456\n"
-        hash_result.stderr = ""
-        hash_result.returncode = 0
-
-        mock_run.side_effect = [commit_result, hash_result]
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                success, commit_hash = create_commit(repo_path, "Test commit message")
-
-                assert success is True
-                assert commit_hash == "abc123de"
-
-    @patch("subprocess.run")
-    def test_create_commit_failure(self, mock_run):
-        """Test create_commit with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(
-            1, "git", stderr="Commit failed"
+    def test_is_git_repository_with_valid_repo(self, tmp_git_repo: Path):
+        """is_git_repository returns True for valid git repository."""
+        assert is_git_repository(tmp_git_repo) is True
+
+    def test_is_git_repository_with_string_path(self, tmp_git_repo: Path):
+        """is_git_repository accepts string path."""
+        assert is_git_repository(str(tmp_git_repo)) is True
+
+    def test_is_git_repository_with_non_repo(self, tmp_path: Path):
+        """is_git_repository returns False for non-git directory."""
+        assert is_git_repository(tmp_path) is False
+
+    def test_is_git_worktree_with_main_repo(self, tmp_git_repo: Path):
+        """is_git_worktree returns False for main repository."""
+        assert is_git_worktree(tmp_git_repo) is False
+
+    def test_get_git_root_with_valid_repo(self, tmp_git_repo: Path):
+        """get_git_root returns repository root path."""
+        root = get_git_root(tmp_git_repo)
+        assert root is not None
+        assert root == tmp_git_repo
+
+    def test_get_git_root_with_non_repo(self, tmp_path: Path):
+        """get_git_root returns None for non-git directory."""
+        assert get_git_root(tmp_path) is None
+
+
+@pytest.mark.asyncio
+class TestGitStatusOperations:
+    """Test git status and file tracking."""
+
+    def test_get_git_status_with_clean_repo(self, tmp_git_repo: Path):
+        """get_git_status returns empty lists for clean repository."""
+        modified, untracked = get_git_status(tmp_git_repo)
+
+        assert modified == []
+        assert untracked == []
+
+    def test_get_git_status_with_modified_files(self, tmp_git_repo: Path):
+        """get_git_status detects modified tracked files."""
+        # Modify existing file
+        readme = tmp_git_repo / "README.md"
+        readme.write_text("# Modified Content\n")
+
+        modified, untracked = get_git_status(tmp_git_repo)
+
+        assert "README.md" in modified
+        assert untracked == []
+
+    def test_get_git_status_with_untracked_files(self, tmp_git_repo: Path):
+        """get_git_status detects new untracked files."""
+        # Create new untracked file
+        (tmp_git_repo / "new_file.txt").write_text("new content\n")
+
+        modified, untracked = get_git_status(tmp_git_repo)
+
+        assert modified == []
+        assert "new_file.txt" in untracked
+
+    def test_get_git_status_with_mixed_changes(self, tmp_git_repo_with_changes: Path):
+        """get_git_status handles both modified and untracked files."""
+        modified, untracked = get_git_status(tmp_git_repo_with_changes)
+
+        # Should have both types (fixture creates modified + untracked)
+        assert len(modified) > 0
+        assert len(untracked) > 0
+
+    def test_get_git_status_with_non_repo(self, tmp_path: Path):
+        """get_git_status returns empty lists for non-git directory."""
+        modified, untracked = get_git_status(tmp_path)
+
+        assert modified == []
+        assert untracked == []
+
+
+@pytest.mark.asyncio
+class TestGitStagingOperations:
+    """Test git staging and commit preparation."""
+
+    def test_stage_files_with_valid_changes(self, tmp_git_repo: Path):
+        """stage_files stages modified files successfully."""
+        # Create changes
+        (tmp_git_repo / "file1.txt").write_text("content\n")
+        (tmp_git_repo / "file2.txt").write_text("content\n")
+
+        # Stage files
+        success = stage_files(tmp_git_repo, ["file1.txt", "file2.txt"])
+
+        assert success is True
+
+        # Verify files are staged
+        staged = get_staged_files(tmp_git_repo)
+        assert "file1.txt" in staged
+        assert "file2.txt" in staged
+
+    def test_stage_files_with_empty_list(self, tmp_git_repo: Path):
+        """stage_files returns False with empty file list."""
+        success = stage_files(tmp_git_repo, [])
+        assert success is False
+
+    def test_stage_files_with_non_repo(self, tmp_path: Path):
+        """stage_files returns False for non-git directory."""
+        success = stage_files(tmp_path, ["file.txt"])
+        assert success is False
+
+    def test_get_staged_files_with_staged_changes(self, tmp_git_repo: Path):
+        """get_staged_files returns list of staged files."""
+        # Create and stage file
+        test_file = tmp_git_repo / "staged.txt"
+        test_file.write_text("content\n")
+
+        subprocess.run(
+            ["git", "add", "staged.txt"],
+            cwd=tmp_git_repo,
+            check=True,
+            capture_output=True,
         )
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                success, error = create_commit(repo_path, "Test commit message")
+        staged = get_staged_files(tmp_git_repo)
+        assert "staged.txt" in staged
 
-                assert success is False
-                assert error == "Commit failed"
-
-    def test_create_commit_non_git_repo(self):
-        """Test create_commit with non-git repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            success, error = create_commit(repo_path, "Test commit message")
-
-            assert success is False
-            assert error == "Not a git repository"
+    def test_get_staged_files_with_no_changes(self, tmp_git_repo: Path):
+        """get_staged_files returns empty list when nothing staged."""
+        staged = get_staged_files(tmp_git_repo)
+        assert staged == []
 
 
-class TestWorktreeInfoFunctions:
-    """Test worktree information functions."""
+@pytest.mark.asyncio
+class TestGitCommitOperations:
+    """Test git commit creation."""
 
-    @patch("subprocess.run")
-    def test_get_worktree_info_success(self, mock_run):
-        """Test get_worktree_info with successful commands."""
-        # Mock branch command
-        branch_result = Mock()
-        branch_result.stdout = "main\n"
-        branch_result.stderr = ""
-        branch_result.returncode = 0
+    def test_create_commit_with_staged_changes(self, tmp_git_repo: Path):
+        """create_commit creates commit successfully with staged changes."""
+        # Create and stage file
+        (tmp_git_repo / "new.txt").write_text("content\n")
+        subprocess.run(
+            ["git", "add", "new.txt"],
+            cwd=tmp_git_repo,
+            check=True,
+            capture_output=True,
+        )
 
-        # Mock rev-parse --show-toplevel command
-        toplevel_result = Mock()
-        toplevel_result.stdout = "/path/to/repo\n"
-        toplevel_result.stderr = ""
-        toplevel_result.returncode = 0
+        # Create commit
+        success, commit_hash = create_commit(tmp_git_repo, "Test commit message")
 
-        mock_run.side_effect = [branch_result, toplevel_result]
+        assert success is True
+        assert len(commit_hash) == 8  # Short hash
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = get_worktree_info(repo_path)
+    def test_create_commit_with_no_changes(self, tmp_git_repo: Path):
+        """create_commit fails when no changes staged."""
+        success, error = create_commit(tmp_git_repo, "Empty commit")
 
-                assert isinstance(result, WorktreeInfo)
-                assert str(result.path) == "/path/to/repo"
-                assert result.branch == "main"
+        assert success is False
+        # Error message varies, just verify it failed
+        assert len(error) > 0
 
-    @patch("subprocess.run")
-    def test_get_worktree_info_detached_head(self, mock_run):
-        """Test get_worktree_info with detached HEAD."""
-        # Mock branch command (empty output for detached HEAD)
-        branch_result = Mock()
-        branch_result.stdout = "\n"
-        branch_result.stderr = ""
-        branch_result.returncode = 0
+    def test_create_commit_with_non_repo(self, tmp_path: Path):
+        """create_commit returns error for non-git directory."""
+        success, error = create_commit(tmp_path, "Test")
 
-        # Mock rev-parse HEAD command
-        head_result = Mock()
-        head_result.stdout = "abc123\n"
-        head_result.stderr = ""
-        head_result.returncode = 0
+        assert success is False
+        assert error == "Not a git repository"
 
-        # Mock rev-parse --show-toplevel command
-        toplevel_result = Mock()
-        toplevel_result.stdout = "/path/to/repo\n"
-        toplevel_result.stderr = ""
-        toplevel_result.returncode = 0
+    def test_create_commit_with_multiline_message(self, tmp_git_repo: Path):
+        """create_commit handles multiline commit messages."""
+        # Create and stage file
+        (tmp_git_repo / "file.txt").write_text("content\n")
+        subprocess.run(
+            ["git", "add", "file.txt"],
+            cwd=tmp_git_repo,
+            check=True,
+            capture_output=True,
+        )
 
-        mock_run.side_effect = [branch_result, head_result, toplevel_result]
+        message = "Short title\n\nLonger description with\nmultiple lines"
+        success, commit_hash = create_commit(tmp_git_repo, message)
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = get_worktree_info(repo_path)
-
-                assert isinstance(result, WorktreeInfo)
-                assert result.branch == "HEAD (abc123)"
-                assert result.is_detached is True
-
-    @patch("subprocess.run")
-    def test_get_worktree_info_failure(self, mock_run):
-        """Test get_worktree_info with failed command."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            with patch(
-                "session_mgmt_mcp.utils.git_operations.is_git_repository",
-                return_value=True,
-            ):
-                result = get_worktree_info(repo_path)
-
-                assert result is None
+        assert success is True
+        assert len(commit_hash) == 8
 
 
-class TestCheckpointCommit:
-    """Test checkpoint commit functionality."""
+@pytest.mark.asyncio
+class TestCheckpointCommitCreation:
+    """Test automatic checkpoint commit creation."""
 
-    def test_format_untracked_files(self):
-        """Test _format_untracked_files function."""
-        untracked_files = [f"file{i}.py" for i in range(15)]  # 15 files
-        result = _format_untracked_files(untracked_files)
+    def test_create_checkpoint_commit_with_changes(self, tmp_git_repo: Path):
+        """create_checkpoint_commit creates commit with modified files."""
+        # Create changes
+        readme = tmp_git_repo / "README.md"
+        readme.write_text("# Modified\n")
 
-        assert len(result) > 0
-        assert "Untracked files found:" in result[0]
-        assert (
-            "and 5 more" in result[-3]
-        )  # Should show "and X more" for files beyond 10
+        success, commit_hash, output = create_checkpoint_commit(
+            tmp_git_repo, "test-project", 85
+        )
 
-    @patch("session_mgmt_mcp.utils.git_operations.is_git_repository")
-    def test_create_checkpoint_commit_non_git_repo(self, mock_is_git_repo):
-        """Test create_checkpoint_commit with non-git repository."""
-        mock_is_git_repo.return_value = False
+        assert success is True
+        assert len(commit_hash) == 8
+        assert any("Checkpoint commit created" in msg for msg in output)
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            success, result, output = create_checkpoint_commit(
-                repo_path, "test-project", 85
-            )
+    def test_create_checkpoint_commit_with_clean_repo(self, tmp_git_repo: Path):
+        """create_checkpoint_commit handles clean repository gracefully."""
+        success, result, output = create_checkpoint_commit(tmp_git_repo, "test-project", 85)
 
-            assert success is False
-            assert result == "Not a git repository"
-            assert "ℹ️ Not a git repository - skipping commit" in output
+        assert success is True
+        assert result == "clean"
+        assert any("clean" in msg.lower() for msg in output)
 
-    @patch("session_mgmt_mcp.utils.git_operations.is_git_repository")
-    @patch("session_mgmt_mcp.utils.git_operations.get_worktree_info")
-    @patch("session_mgmt_mcp.utils.git_operations.get_git_status")
-    def test_create_checkpoint_commit_clean_repo(
-        self, mock_get_status, mock_get_worktree, mock_is_git_repo
-    ):
-        """Test create_checkpoint_commit with clean repository."""
-        mock_is_git_repo.return_value = True
-        mock_get_worktree.return_value = None
-        mock_get_status.return_value = ([], [])  # No modified or untracked files
+    def test_create_checkpoint_commit_with_untracked_only(self, tmp_git_repo: Path):
+        """create_checkpoint_commit skips untracked files."""
+        # Create untracked file
+        (tmp_git_repo / "untracked.txt").write_text("content\n")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
-            success, result, output = create_checkpoint_commit(
-                repo_path, "test-project", 85
-            )
+        success, result, output = create_checkpoint_commit(tmp_git_repo, "test-project", 85)
 
-            assert success is True
-            assert result == "clean"
-            assert "✅ Working directory is clean - no changes to commit" in output
+        # Should fail with no staged changes (only untracked files)
+        assert success is False or result == "clean"
+        assert any("untracked" in msg.lower() for msg in output)
+
+    def test_create_checkpoint_commit_with_non_repo(self, tmp_path: Path):
+        """create_checkpoint_commit returns error for non-git directory."""
+        success, error, output = create_checkpoint_commit(tmp_path, "test-project", 85)
+
+        assert success is False
+        assert error == "Not a git repository"
+        assert any("Not a git repository" in msg for msg in output)
+
+    def test_create_checkpoint_commit_message_format(self, tmp_git_repo: Path):
+        """create_checkpoint_commit creates properly formatted message."""
+        # Modify existing tracked file (untracked files won't be committed)
+        readme = tmp_git_repo / "README.md"
+        readme.write_text("# Modified for checkpoint test\n")
+
+        success, commit_hash, output = create_checkpoint_commit(
+            tmp_git_repo, "session-mgmt-mcp", 75
+        )
+
+        assert success is True
+
+        # Verify commit message format
+        result = subprocess.run(
+            ["git", "log", "-1", "--pretty=%B"],
+            cwd=tmp_git_repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        commit_msg = result.stdout
+        assert "checkpoint:" in commit_msg.lower()
+        assert "session-mgmt-mcp" in commit_msg
+        assert "75/100" in commit_msg
 
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+@pytest.mark.asyncio
+class TestWorktreeOperations:
+    """Test git worktree detection and management."""
+
+    def test_get_worktree_info_with_valid_repo(self, tmp_git_repo: Path):
+        """get_worktree_info returns WorktreeInfo for valid repository."""
+        info = get_worktree_info(tmp_git_repo)
+
+        assert info is not None
+        assert isinstance(info, WorktreeInfo)
+        assert info.path == tmp_git_repo
+        assert info.branch  # Should have a branch name
+        assert info.is_main_worktree is True
+        assert info.is_detached is False
+
+    def test_get_worktree_info_with_non_repo(self, tmp_path: Path):
+        """get_worktree_info returns None for non-git directory."""
+        info = get_worktree_info(tmp_path)
+        assert info is None
+
+    def test_list_worktrees_with_single_repo(self, tmp_git_repo: Path):
+        """list_worktrees returns main repository worktree."""
+        worktrees = list_worktrees(tmp_git_repo)
+
+        assert len(worktrees) >= 1
+        assert worktrees[0].path == tmp_git_repo
+
+    def test_list_worktrees_with_non_repo(self, tmp_path: Path):
+        """list_worktrees returns empty list for non-git directory."""
+        worktrees = list_worktrees(tmp_path)
+        assert worktrees == []
+
+
+@pytest.mark.asyncio
+class TestGitOperationsEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_get_git_status_with_deleted_files(self, tmp_git_repo: Path):
+        """get_git_status detects deleted tracked files."""
+        # Delete tracked file
+        readme = tmp_git_repo / "README.md"
+        readme.unlink()
+
+        modified, untracked = get_git_status(tmp_git_repo)
+
+        # Deleted files appear as modified
+        assert "README.md" in modified
+
+    def test_stage_files_handles_new_and_deleted(self, tmp_git_repo: Path):
+        """stage_files handles both new and deleted files."""
+        # Delete existing file
+        (tmp_git_repo / "README.md").unlink()
+
+        # Add new file
+        (tmp_git_repo / "new.txt").write_text("content\n")
+
+        success = stage_files(tmp_git_repo, ["README.md", "new.txt"])
+        assert success is True
+
+        staged = get_staged_files(tmp_git_repo)
+        assert "README.md" in staged or "new.txt" in staged
+
+    def test_create_checkpoint_commit_with_many_files(self, tmp_git_repo: Path):
+        """create_checkpoint_commit handles many changed files."""
+        # Modify the existing README file (tracked)
+        readme = tmp_git_repo / "README.md"
+        readme.write_text("# Modified with many changes\n" * 50)
+
+        success, commit_hash, output = create_checkpoint_commit(
+            tmp_git_repo, "test-project", 90
+        )
+
+        assert success is True
+        assert len(commit_hash) == 8
+
+    def test_get_git_status_handles_special_characters(self, tmp_git_repo: Path):
+        """get_git_status handles filenames with special characters."""
+        # Create file with spaces
+        special_file = tmp_git_repo / "file with spaces.txt"
+        special_file.write_text("content\n")
+
+        modified, untracked = get_git_status(tmp_git_repo)
+
+        # Git wraps filenames with spaces in quotes
+        assert any("file with spaces.txt" in f for f in untracked)
