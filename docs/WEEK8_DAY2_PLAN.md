@@ -5,45 +5,50 @@
 **Estimated Effort:** 6-8 hours
 **Status:** Planning
 
----
+______________________________________________________________________
 
 ## Current State
 
 **server.py Coverage:**
+
 - Current: 50.83% (89 lines missing out of 204 statements)
 - Target: ≥70% (reduce missing to ~60 lines)
 - Gap: Need to test ~30 additional lines
 
 **server_core.py Coverage:**
+
 - Current: 40.34% (199 lines missing out of 382 statements)
 - Target: ≥70% (reduce missing to ~115 lines)
 - Gap: Need to test ~85 additional lines
 
 **Combined Effort:** ~115 lines to test across both modules
 
----
+______________________________________________________________________
 
 ## Implementation Strategy
 
 ### Phase 1: Analyze Untested Areas (1 hour)
 
 **Tasks:**
+
 1. Generate fresh coverage report with line numbers
-2. Identify specific untested functions/methods
-3. Categorize by difficulty (easy/medium/hard)
-4. Prioritize high-value areas
+1. Identify specific untested functions/methods
+1. Categorize by difficulty (easy/medium/hard)
+1. Prioritize high-value areas
 
 **Deliverable:** Detailed gap analysis with test plan
 
 ### Phase 2: Create Test Infrastructure (1-2 hours)
 
 **Tasks:**
+
 1. Create MockMCP server fixture
-2. Create mock git repository fixture
-3. Create mock crackerjack integration fixtures
-4. Create test data factories for server operations
+1. Create mock git repository fixture
+1. Create mock crackerjack integration fixtures
+1. Create test data factories for server operations
 
 **Test Files to Create/Update:**
+
 - `tests/fixtures/server_fixtures.py` - MCP server mocking
 - `tests/fixtures/git_fixtures.py` - Git operations mocking
 - `tests/unit/test_server_tools.py` - MCP tool testing
@@ -51,12 +56,14 @@
 ### Phase 3: Test MCP Tool Registration (2 hours)
 
 **Focus Areas:**
+
 - Tool registration mechanics
 - Tool parameter validation
 - Tool error handling
 - Tool response formatting
 
 **Target Functions (server.py):**
+
 - MCP tool decorator registration
 - Parameter parsing and validation
 - Response structure validation
@@ -67,12 +74,14 @@
 ### Phase 4: Test Quality Scoring (1-2 hours)
 
 **Focus Areas:**
+
 - Quality score calculation algorithms
 - Project health assessment
 - Permissions impact on scoring
 - Tool availability impact
 
 **Target Functions:**
+
 - Quality scoring V2 algorithm
 - Project maturity assessment
 - Health check integration
@@ -82,12 +91,14 @@
 ### Phase 5: Test Git Integration (1-2 hours)
 
 **Focus Areas:**
+
 - Git commit creation
 - Checkpoint metadata
 - Branch detection
 - Repository validation
 
 **Target Functions:**
+
 - Git commit workflow
 - Checkpoint commit formatting
 - Git status integration
@@ -97,19 +108,21 @@
 ### Phase 6: Test Session Lifecycle (1 hour)
 
 **Focus Areas:**
+
 - Session initialization
 - Session cleanup
 - Session state transitions
 - Session handoff documentation
 
 **Target Functions:**
+
 - Session start logic
 - Session end logic
 - Status reporting
 
 **Expected Coverage Gain:** +5-10%
 
----
+______________________________________________________________________
 
 ## Test Structure Plan
 
@@ -117,6 +130,7 @@
 
 ```python
 # tests/unit/test_server_tools.py
+
 
 class TestMCPToolRegistration:
     """Test MCP tool registration and execution."""
@@ -182,7 +196,7 @@ class TestSessionLifecycle:
         pass
 ```
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
@@ -192,44 +206,49 @@ class TestSessionLifecycle:
 | server_core.py coverage | ≥70% | `coverage report session_mgmt_mcp/server_core.py` |
 | New tests passing | 100% | All new tests pass |
 | No regressions | ≥980 passing | Full suite test count maintained |
-| Test execution time | <5min | New tests complete quickly |
+| Test execution time | \<5min | New tests complete quickly |
 
----
+______________________________________________________________________
 
 ## Risk Mitigation
 
 ### Risk 1: Mock Complexity
+
 **Issue:** MCP server mocking may be complex
 **Mitigation:** Start with simple mock, add features incrementally
 
 ### Risk 2: Async Testing Challenges
+
 **Issue:** Async tool testing can be tricky
 **Mitigation:** Use existing async test patterns from test_server.py
 
 ### Risk 3: Git Repository Setup
+
 **Issue:** Creating test git repos can be slow
 **Mitigation:** Use tmp_path fixtures, cache where possible
 
 ### Risk 4: Time Overrun
+
 **Issue:** May take longer than 6-8 hours
 **Mitigation:** Focus on high-value tests first, defer edge cases
 
----
+______________________________________________________________________
 
 ## Implementation Order
 
 1. **Hour 1**: Analyze untested areas, create test plan
-2. **Hour 2-3**: Create test infrastructure (fixtures, mocks)
-3. **Hour 4-5**: Implement MCP tool registration tests
-4. **Hour 6**: Implement quality scoring tests
-5. **Hour 7**: Implement Git integration tests
-6. **Hour 8**: Implement session lifecycle tests, documentation
+1. **Hour 2-3**: Create test infrastructure (fixtures, mocks)
+1. **Hour 4-5**: Implement MCP tool registration tests
+1. **Hour 6**: Implement quality scoring tests
+1. **Hour 7**: Implement Git integration tests
+1. **Hour 8**: Implement session lifecycle tests, documentation
 
----
+______________________________________________________________________
 
 ## Deliverables
 
 ### Code Artifacts
+
 - [ ] `tests/fixtures/server_fixtures.py` - MCP server mocking
 - [ ] `tests/fixtures/git_fixtures.py` - Git operation mocking
 - [ ] `tests/unit/test_server_tools.py` - MCP tool tests (new/updated)
@@ -238,21 +257,23 @@ class TestSessionLifecycle:
 - [ ] `tests/unit/test_server_lifecycle.py` - Session lifecycle tests (new)
 
 ### Documentation
+
 - [ ] `docs/WEEK8_DAY2_PROGRESS.md` - Day 2 completion summary
 - [ ] Update `docs/WEEK8_COVERAGE_BASELINE.md` with Day 2 results
 - [ ] Update test best practices if new patterns emerge
 
----
+______________________________________________________________________
 
 ## Next Steps After Day 2
 
 **Day 3 Focus:** reflection_tools.py coverage (44.66% → 75%+)
+
 - DuckDB database operations
 - Embedding generation
 - Search functionality
 - Vector similarity
 
----
+______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les

@@ -4,19 +4,20 @@
 **Overall Coverage:** 13.99% (13,873 statements, 11,540 missing)
 **Target:** 80%+ (60%+ for each critical module)
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
 **Critical Gap:** Only 13.99% of production code is covered by tests, despite having 978 unit tests (97.5% passing). This indicates that most tests focus on a narrow subset of functionality.
 
 **Key Findings:**
+
 - **27 modules with 0% coverage** (no tests at all)
 - **Core modules under-tested:** server.py (50.8%), reflection_tools.py (44.7%), crackerjack_integration.py (26.4%)
 - **Well-tested modules:** DI infrastructure (78.6% - 95.2%), settings.py (85.9%)
 - **Estimated effort:** 200-300 new tests needed to reach 80%+ coverage
 
----
+______________________________________________________________________
 
 ## Coverage by Priority Tier
 
@@ -94,7 +95,7 @@
 
 **Total Tier 5:** 4,345 statements, 4,345 missing (0% coverage)
 
----
+______________________________________________________________________
 
 ## Well-Tested Modules (≥70% coverage)
 
@@ -124,7 +125,7 @@
 | **utils/__init__.py** | **100.00%** | ✅ Perfect |
 | **utils/regex_patterns.py** | **100.00%** | ✅ Perfect |
 
----
+______________________________________________________________________
 
 ## Detailed Gap Analysis
 
@@ -133,6 +134,7 @@
 **Coverage:** 204 statements, 89 missing (50.83%)
 
 **Untested Areas:**
+
 - Lines 73-103: MCP tool registration logic
 - Lines 153-156: Tool error handling
 - Lines 290-334: Session lifecycle coordination
@@ -142,6 +144,7 @@
 **Estimated Tests Needed:** 15-20 comprehensive tests
 
 **Testing Strategy:**
+
 ```python
 class TestServerMCPTools:
     """Test MCP tool registration and execution."""
@@ -158,13 +161,14 @@ class TestServerQualityScoring:
         # Test empty project, missing files, etc.
 ```
 
----
+______________________________________________________________________
 
 ### Priority 2: reflection_tools.py (44.66% → Target: 75%+)
 
 **Coverage:** 216 statements, 110 missing (44.66%)
 
 **Untested Areas:**
+
 - Lines 253-255: Database initialization edge cases
 - Lines 300-338: Embedding generation fallback
 - Lines 346-380: Search result ranking
@@ -174,6 +178,7 @@ class TestServerQualityScoring:
 **Estimated Tests Needed:** 20-25 comprehensive tests
 
 **Testing Strategy:**
+
 ```python
 class TestReflectionDatabaseEmbeddings:
     """Test embedding generation and fallback."""
@@ -187,13 +192,14 @@ class TestReflectionDatabaseSearch:
     async def test_search_result_ranking(self):
 ```
 
----
+______________________________________________________________________
 
 ### Priority 3: crackerjack_integration.py (26.41% → Target: 70%+)
 
 **Coverage:** 617 statements, 418 missing (26.41%)
 
 **Untested Areas:**
+
 - Lines 232-269: Command parsing and validation
 - Lines 279-428: Quality metric aggregation
 - Lines 432-569: Test result analysis
@@ -203,6 +209,7 @@ class TestReflectionDatabaseSearch:
 **Estimated Tests Needed:** 30-40 comprehensive tests
 
 **Testing Strategy:**
+
 ```python
 class TestCrackerjackCommandParsing:
     """Test command output parsing."""
@@ -217,13 +224,14 @@ class TestCrackerjackMetricAggregation:
     def test_coverage_trend_analysis(self):
 ```
 
----
+______________________________________________________________________
 
 ### Priority 4: core/session_manager.py (15.84% → Target: 70%+)
 
 **Coverage:** 386 statements, 309 missing (15.84%)
 
 **Untested Areas:**
+
 - Lines 77-123: Session initialization
 - Lines 165-199: Session state transitions
 - Lines 250-320: Checkpoint creation
@@ -233,6 +241,7 @@ class TestCrackerjackMetricAggregation:
 **Estimated Tests Needed:** 25-30 comprehensive tests
 
 **Testing Strategy:**
+
 ```python
 class TestSessionLifecycleManager:
     """Test complete session lifecycle."""
@@ -242,13 +251,14 @@ class TestSessionLifecycleManager:
     async def test_session_end_cleanup(self):
 ```
 
----
+______________________________________________________________________
 
 ### Priority 5: tools/session_tools.py (16.46% → Target: 70%+)
 
 **Coverage:** 390 statements, 310 missing (16.46%)
 
 **Untested Areas:**
+
 - Lines 104-180: Start tool implementation
 - Lines 229-275: Checkpoint tool logic
 - Lines 296-333: End tool cleanup
@@ -257,11 +267,12 @@ class TestSessionLifecycleManager:
 
 **Estimated Tests Needed:** 20-25 comprehensive tests
 
----
+______________________________________________________________________
 
 ## Test Implementation Roadmap
 
 ### Phase 1: Critical Modules (Days 1-3)
+
 **Target:** Tier 1 modules to ≥70% coverage
 
 | Day | Module | Target | Tests |
@@ -271,32 +282,36 @@ class TestSessionLifecycleManager:
 | Day 3 | reflection_tools.py | 75%+ | 20-25 tests |
 
 ### Phase 2: Core Tools (Days 4-5)
+
 **Target:** Tier 2 modules to ≥60% coverage
 
 | Day | Modules | Target | Tests |
 |-----|---------|--------|-------|
 | Day 4 | crackerjack_integration.py | 70%+ | 30-40 tests |
-| Day 5 | tools/* (8 modules) | 60%+ | 50-60 tests |
+| Day 5 | tools/\* (8 modules) | 60%+ | 50-60 tests |
 
 ### Phase 3: Utilities & Session Manager (Day 6)
+
 **Target:** Tier 3 modules to ≥50% coverage
 
 | Day | Modules | Target | Tests |
 |-----|---------|--------|-------|
-| Day 6 | session_manager.py + utils/* | 60%+ | 30-40 tests |
+| Day 6 | session_manager.py + utils/\* | 60%+ | 30-40 tests |
 
 ### Phase 4: Documentation & Stretch Goals (Day 7)
+
 **Target:** Final verification and documentation
 
 | Day | Focus | Target | Deliverables |
 |-----|-------|--------|--------------|
 | Day 7 | Final verification + docs | 80%+ overall | Completion docs |
 
----
+______________________________________________________________________
 
 ## Coverage Improvement Projections
 
 ### Current State (Day 0)
+
 ```
 Total Coverage: 13.99%
 Core Modules: ~25% average
@@ -305,6 +320,7 @@ Utils: ~41% average
 ```
 
 ### After Phase 1 (Days 1-3)
+
 ```
 Total Coverage: ~35-40%
 Tier 1 Modules: ~65% average
@@ -312,6 +328,7 @@ Test Pass Rate: 100%
 ```
 
 ### After Phase 2 (Days 4-5)
+
 ```
 Total Coverage: ~55-60%
 Tier 1: ~70% average
@@ -319,6 +336,7 @@ Tier 2: ~60% average
 ```
 
 ### After Phase 3 (Day 6)
+
 ```
 Total Coverage: ~70-75%
 Tier 1: ~75% average
@@ -327,6 +345,7 @@ Tier 3: ~55% average
 ```
 
 ### Target (Day 7)
+
 ```
 Total Coverage: ≥80%
 All Critical Modules: ≥70%
@@ -334,7 +353,7 @@ All Core Tools: ≥60%
 All Utils: ≥50%
 ```
 
----
+______________________________________________________________________
 
 ## Testing Effort Estimates
 
@@ -362,31 +381,36 @@ All Utils: ≥50%
 | Day 7 | Docs + verify | 0 | 3-4h | 37-46h |
 | **Total** | | **154-198** | **37-46h** | **~5-7 days** |
 
----
+______________________________________________________________________
 
 ## Risk Assessment
 
 ### High Risk Items
 
 1. **Test Isolation Issues** (4-8 failing tests)
+
    - **Risk:** May be more complex than estimated
    - **Mitigation:** Start Day 1, allocate extra time if needed
 
-2. **Crackerjack Integration Complexity** (617 statements, 26% coverage)
+1. **Crackerjack Integration Complexity** (617 statements, 26% coverage)
+
    - **Risk:** Complex parsing logic, many edge cases
    - **Mitigation:** Focus on critical paths, mock extensively
 
-3. **Time Overrun**
+1. **Time Overrun**
+
    - **Risk:** 174-228 tests is substantial work
    - **Mitigation:** Prioritize critical modules, defer Tier 4-5 if needed
 
 ### Medium Risk Items
 
 4. **Mock Complexity** (DuckDB, ONNX, git, filesystem)
+
    - **Risk:** Complex mocking may slow test development
    - **Mitigation:** Reuse existing fixtures, document patterns
 
-5. **Test Brittleness**
+1. **Test Brittleness**
+
    - **Risk:** Over-mocking leads to brittle tests
    - **Mitigation:** Test behavior, not implementation
 
@@ -396,7 +420,7 @@ All Utils: ≥50%
    - **Risk:** May not reach 80% exactly
    - **Mitigation:** 75-80% is acceptable, focus on critical paths
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
@@ -418,7 +442,7 @@ All Utils: ≥50%
 - Test isolation resolved
 - Developer confidence improved
 
----
+______________________________________________________________________
 
 ## Baseline Metrics Summary
 
@@ -440,25 +464,27 @@ Modules by Coverage:
 - 71-100%: 11 modules (1,872 statements)
 ```
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 **Immediate Actions (Day 1):**
+
 1. Review this baseline document
-2. Set up HTML coverage report (`coverage html`)
-3. Create test isolation fixture
-4. Fix 4-8 failing tests
-5. Begin Day 1 progress documentation
+1. Set up HTML coverage report (`coverage html`)
+1. Create test isolation fixture
+1. Fix 4-8 failing tests
+1. Begin Day 1 progress documentation
 
 **Daily Workflow:**
-1. Generate coverage report at start of day
-2. Implement tests for target module
-3. Run coverage to verify improvement
-4. Document progress in `docs/WEEK8_DAY{N}_PROGRESS.md`
-5. Update this baseline with actual vs. estimated progress
 
----
+1. Generate coverage report at start of day
+1. Implement tests for target module
+1. Run coverage to verify improvement
+1. Document progress in `docs/WEEK8_DAY{N}_PROGRESS.md`
+1. Update this baseline with actual vs. estimated progress
+
+______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les

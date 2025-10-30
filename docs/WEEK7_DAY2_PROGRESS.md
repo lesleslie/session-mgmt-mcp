@@ -4,7 +4,7 @@
 **Date:** 2025-10-29
 **Focus:** Update DI configuration to use type-safe SessionPaths
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -31,6 +31,7 @@ def configure(*, force: bool = False) -> None:
     _register_permissions_manager(force)
     _register_lifecycle_manager(force)
 
+
 # After (Week 7 Day 2):
 def configure(*, force: bool = False) -> None:
     # Register type-safe path configuration
@@ -45,6 +46,7 @@ def configure(*, force: bool = False) -> None:
 ```
 
 **Benefits:**
+
 - ✅ Single configuration object instead of 3 separate path registrations
 - ✅ Type-safe DI keys (class type vs strings)
 - ✅ Eliminates `TypeError` from bevy's `issubclass()` check
@@ -55,9 +57,12 @@ def configure(*, force: bool = False) -> None:
 ```python
 # Before:
 def _register_logger(force: bool) -> None:
-    logs_dir = _resolve_path(LOGS_DIR_KEY, Path(os.path.expanduser("~")) / ".claude" / "logs")
+    logs_dir = _resolve_path(
+        LOGS_DIR_KEY, Path(os.path.expanduser("~")) / ".claude" / "logs"
+    )
     logger = SessionLogger(logs_dir)
     depends.set(SessionLogger, logger)
+
 
 # After:
 def _register_logger(logs_dir: Path, force: bool) -> None:
@@ -72,6 +77,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
 ```
 
 **Benefits:**
+
 - ✅ Explicit dependencies via function parameters
 - ✅ No internal DI resolution in registration functions
 - ✅ Easier to test and reason about
@@ -114,6 +120,7 @@ def test_configure_registers_singletons(...):
 ```
 
 **Test Results:**
+
 - ✅ **2/2 DI container tests passing**
 - ✅ `test_configure_registers_singletons` - Verifies SessionPaths registration
 - ✅ `test_reset_restores_default_instances` - Verifies reset behavior
@@ -146,6 +153,7 @@ def _resolve_claude_dir() -> Path:
             claude_dir.mkdir(parents=True, exist_ok=True)
             return claude_dir
 
+
 # After:
 def _resolve_claude_dir() -> Path:
     """Resolve claude directory via type-safe DI.
@@ -170,20 +178,21 @@ Changed all `await depends.get()` calls to `depends.get_sync()` to avoid nested 
 
 ```python
 # Functions updated:
-- get_app_monitor()
-- get_llm_manager()
-- get_serverless_manager()
-- get_reflection_database()
-- get_interruption_manager()
+-get_app_monitor()
+-get_llm_manager()
+-get_serverless_manager()
+-get_reflection_database()
+-get_interruption_manager()
 ```
 
----
+______________________________________________________________________
 
 ## Technical Analysis
 
 ### Issue 1: Original TypeError (✅ FIXED)
 
 **Error Message:**
+
 ```
 TypeError: issubclass() arg 2 must be a class, a tuple of classes, or a union
 ```
@@ -193,6 +202,7 @@ TypeError: issubclass() arg 2 must be a class, a tuple of classes, or a union
 **Root Cause:** Bevy's DI container calls `issubclass()` internally to validate dependency types. When given a string key like `"paths.claude_dir"`, it fails because strings aren't classes.
 
 **Fix Applied:**
+
 ```python
 # ❌ Before: String key
 claude_dir = depends.get_sync(CLAUDE_DIR_KEY)  # CLAUDE_DIR_KEY = "paths.claude_dir"
@@ -207,6 +217,7 @@ claude_dir = paths.claude_dir
 ### Issue 2: Bevy Async Event Loop (⚠️ DISCOVERED - Different Issue)
 
 **Error Message:**
+
 ```
 RuntimeError: asyncio.run() cannot be called from a running event loop
 ```
@@ -218,11 +229,12 @@ RuntimeError: asyncio.run() cannot be called from a running event loop
 **Current Status:** This affects 3 instance manager tests but is a **separate, pre-existing issue** from the string key TypeError we set out to fix.
 
 **Evidence this is pre-existing:**
+
 - Different error message than documented in Week 7 planning
 - Different stack trace (bevy internal asyncio handling vs bevy type checking)
 - Affects only tests with async test functions calling sync-looking functions
 
----
+______________________________________________________________________
 
 ## Test Results
 
@@ -236,6 +248,7 @@ tests/unit/test_di_container.py::test_reset_restores_default_instances PASSED
 ```
 
 **Success Criteria Met:**
+
 - ✅ SessionPaths properly registered in DI container
 - ✅ Services (logger, permissions, lifecycle) use SessionPaths
 - ✅ Reset behavior works correctly with new configuration
@@ -253,30 +266,34 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
 **Error Type:** `RuntimeError: asyncio.run() cannot be called from a running event loop`
 
 **Analysis:**
+
 - This is **NOT** the `TypeError: issubclass()` we were fixing
 - This is a bevy library limitation with async/await handling
 - The root cause (string keys) has been successfully eliminated
 - These tests require a different fix (bevy async architecture refactoring)
 
----
+______________________________________________________________________
 
 ## Code Quality Impact
 
 ### Complexity Reduction
 
 **Before:**
+
 - 3 separate path registrations via string keys
 - Helper functions: `_register_path()`, `_resolve_path()`
 - String key constants: `CLAUDE_DIR_KEY`, `LOGS_DIR_KEY`, `COMMANDS_DIR_KEY`
 - Error suppression for `TypeError` in instance managers
 
 **After:**
+
 - Single `SessionPaths` registration
 - Direct path passing to registration functions
 - Type-safe configuration object
 - No TypeError suppression needed (error eliminated)
 
 **Lines of Code:**
+
 - `di/__init__.py`: 121 → 136 lines (+15 lines, but with enhanced documentation)
 - `di/config.py`: NEW 99 lines (type-safe configuration)
 - `instance_managers.py`: 178 → 178 lines (same, but clearer intent)
@@ -284,34 +301,40 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
 ### Architecture Improvements
 
 1. **Type Safety**
+
    - Before: String keys like `"paths.claude_dir"` (runtime validation only)
    - After: `SessionPaths` class (compile-time type checking)
 
-2. **Single Responsibility**
+1. **Single Responsibility**
+
    - Before: Path keys mixed with service configuration
    - After: Clear separation - SessionPaths for configuration, services for functionality
 
-3. **Testability**
+1. **Testability**
+
    - Before: Tests needed to mock string key resolution
    - After: Tests can directly provide SessionPaths instances
 
-4. **Maintainability**
+1. **Maintainability**
+
    - Before: 3 keys to keep in sync across multiple files
    - After: 1 configuration object with clear structure
 
----
+______________________________________________________________________
 
 ## Files Modified
 
 ### Production Code
 
 1. **`session_mgmt_mcp/di/__init__.py`** (restructured)
+
    - Replaced string key registration with `SessionPaths`
    - Updated `_register_logger()` and `_register_permissions_manager()` signatures
    - Removed `_register_path()` and `_resolve_path()` helpers
    - Added comprehensive docstrings
 
-2. **`session_mgmt_mcp/utils/instance_managers.py`** (updated)
+1. **`session_mgmt_mcp/utils/instance_managers.py`** (updated)
+
    - Replaced `CLAUDE_DIR_KEY` import with `SessionPaths`
    - Updated `_resolve_claude_dir()` to use type-safe DI
    - Changed async functions to use `depends.get_sync()` (event loop fix attempt)
@@ -330,7 +353,7 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
    - Test results and analysis
    - Discovered issues and next steps
 
----
+______________________________________________________________________
 
 ## Success Criteria Assessment
 
@@ -351,13 +374,14 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
 **Status:** ✅ **Root Cause Eliminated**
 
 **Evidence:**
+
 - The `TypeError: issubclass() arg 2 must be a class` no longer occurs
 - DI container tests (2/2) now pass with type-safe configuration
 - Instance manager tests (0/3) fail with a **different error** (bevy async limitation)
 
 **Clarification:** The instance manager test failures are a **separate, pre-existing issue** with bevy's async/await architecture, not the string key TypeError we set out to fix.
 
----
+______________________________________________________________________
 
 ## Discovered Issues
 
@@ -370,34 +394,39 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
 **Workaround Options:**
 
 1. **Option 1: Refactor tests to be synchronous**
+
    - Remove `@pytest.mark.asyncio` decorator
    - Make test functions synchronous
    - Use `depends.get_sync()` directly without `await`
 
-2. **Option 2: Use mock dependencies in tests**
+1. **Option 2: Use mock dependencies in tests**
+
    - Don't call real DI resolution in async tests
    - Register dummy instances before calling functions
    - Avoid triggering bevy's async machinery
 
-3. **Option 3: Refactor instance managers to be fully sync**
+1. **Option 3: Refactor instance managers to be fully sync**
+
    - Remove `async def` from manager functions
    - Make all DI resolution synchronous
    - Only use `async/await` for actual I/O operations
 
 **Recommendation:** Option 2 (use mock dependencies) is the least disruptive and follows test best practices.
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 ### Immediate (Day 3)
 
 1. **Fix instance manager tests with mock dependencies**
+
    - Update tests to pre-register dummy instances
    - Avoid triggering bevy's async resolution
    - Verify 3/3 tests pass
 
-2. **Verify no regressions**
+1. **Verify no regressions**
+
    - Run full test suite
    - Ensure 98%+ pass rate maintained
    - Check that SessionPaths works in production code
@@ -405,16 +434,18 @@ tests/unit/test_instance_managers.py::test_serverless_manager_uses_config FAILED
 ### Week 7 Remaining Days
 
 **Day 4: Deprecate String Keys**
+
 - Add deprecation warnings to `di/constants.py`
 - Update any remaining usages
 - Document migration path
 
 **Day 5: Documentation & Verification**
+
 - Update architecture documentation
 - Add ACB DI patterns guide
 - Create Week 7 completion summary
 
----
+______________________________________________________________________
 
 ## Technical Insights
 
@@ -448,6 +479,7 @@ Passing dependencies explicitly to registration functions is clearer than intern
 def _register_logger(force: bool) -> None:
     logs_dir = _resolve_path(LOGS_DIR_KEY, default)  # Hidden dependency
 
+
 # ✅ Explicit: Caller provides dependencies
 def _register_logger(logs_dir: Path, force: bool) -> None:
     logger = SessionLogger(logs_dir)  # Clear dependency
@@ -455,7 +487,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
 
 This follows the Dependency Inversion Principle and makes testing easier.
 
----
+______________________________________________________________________
 
 ## Time Spent
 
@@ -468,7 +500,7 @@ This follows the Dependency Inversion Principle and makes testing easier.
 - **Documentation:** ~0.5 hours
 - **Total:** ~4 hours (within 3-4 hour estimate)
 
----
+______________________________________________________________________
 
 ## Conclusion
 
@@ -477,6 +509,7 @@ Week 7 Day 2 successfully eliminated the root cause of the `TypeError: issubclas
 The 3 failing instance manager tests represent a **separate, pre-existing issue** with bevy's async/await handling that requires a different fix (test refactoring to use mock dependencies). This does not diminish the success of the type-safe DI migration.
 
 **Key Achievements:**
+
 - ✅ Eliminated TypeError from string keys
 - ✅ Type-safe DI configuration
 - ✅ Simplified architecture (single config object)
@@ -485,7 +518,7 @@ The 3 failing instance manager tests represent a **separate, pre-existing issue*
 
 **Recommendation:** Proceed with Day 3 to fix instance manager tests using mock dependencies, then continue with string key deprecation and documentation.
 
----
+______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les

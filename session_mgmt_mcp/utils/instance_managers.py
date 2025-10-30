@@ -32,6 +32,7 @@ async def get_app_monitor() -> ApplicationMonitor | None:
         Does not call depends.get_sync() to avoid bevy's async event loop
         limitation. Instead relies on depends.set() for singleton registration
         and checks the bevy container directly.
+
     """
     try:
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
@@ -61,6 +62,7 @@ async def get_llm_manager() -> LLMManager | None:
         Does not call depends.get_sync() to avoid bevy's async event loop
         limitation. Instead relies on depends.set() for singleton registration
         and checks the bevy container directly.
+
     """
     try:
         from session_mgmt_mcp.llm_providers import LLMManager
@@ -87,6 +89,7 @@ async def get_serverless_manager() -> ServerlessSessionManager | None:
         Does not call depends.get_sync() to avoid bevy's async event loop
         limitation. Instead relies on depends.set() for singleton registration
         and checks the bevy container directly.
+
     """
     try:
         from session_mgmt_mcp.serverless_mode import (
@@ -121,6 +124,7 @@ async def get_reflection_database() -> ReflectionDatabase | None:
         Does not call depends.get_sync() to avoid bevy's async event loop
         limitation. Instead relies on depends.set() for singleton registration
         and checks the bevy container directly.
+
     """
     try:
         from session_mgmt_mcp.reflection_tools import (
@@ -151,6 +155,7 @@ async def get_interruption_manager() -> InterruptionManager | None:
         Does not call depends.get_sync() to avoid bevy's async event loop
         limitation. Instead relies on depends.set() for singleton registration
         and checks the bevy container directly.
+
     """
     try:
         from session_mgmt_mcp.interruption_manager import InterruptionManager
@@ -187,6 +192,7 @@ def _resolve_claude_dir() -> Path:
     Note:
         Uses SessionPaths type for DI resolution instead of string keys,
         eliminating bevy type confusion errors.
+
     """
     with suppress(KeyError, AttributeError, RuntimeError):
         # RuntimeError: when adapter requires async

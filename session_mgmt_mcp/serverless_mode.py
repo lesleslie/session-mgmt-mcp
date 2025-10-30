@@ -17,6 +17,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+CONFIG_LOGGER = logging.getLogger("serverless.config")
+
 
 class SessionState(BaseModel):
     """Represents complete session state for serialization."""
@@ -769,6 +771,7 @@ class ACBCacheStorage(SessionStorage):
             cache: ACB cache adapter instance (from acb.adapters.cache)
             namespace: Namespace for multi-tenant isolation (default: "session")
             config: Optional configuration dict for compatibility
+
         """
         super().__init__(config or {})
         self.cache = cache
@@ -793,6 +796,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             True if stored successfully, False otherwise
+
         """
         try:
             key = self._get_key(session_state.session_id)
@@ -820,7 +824,9 @@ class ACBCacheStorage(SessionStorage):
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to store session {session_state.session_id}: {e}")
+            self.logger.exception(
+                f"Failed to store session {session_state.session_id}: {e}"
+            )
             return False
 
     async def retrieve_session(self, session_id: str) -> SessionState | None:
@@ -831,6 +837,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             SessionState if found, None otherwise
+
         """
         try:
             key = self._get_key(session_id)
@@ -846,7 +853,7 @@ class ACBCacheStorage(SessionStorage):
             return session_state
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve session {session_id}: {e}")
+            self.logger.exception(f"Failed to retrieve session {session_id}: {e}")
             return None
 
     async def delete_session(self, session_id: str) -> bool:
@@ -857,6 +864,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             True if deleted, False otherwise
+
         """
         try:
             key = self._get_key(session_id)
@@ -869,7 +877,7 @@ class ACBCacheStorage(SessionStorage):
             return bool(result)
 
         except Exception as e:
-            self.logger.error(f"Failed to delete session {session_id}: {e}")
+            self.logger.exception(f"Failed to delete session {session_id}: {e}")
             return False
 
     async def list_sessions(
@@ -889,6 +897,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             List of session IDs matching criteria
+
         """
         try:
             # Get index data
@@ -908,7 +917,7 @@ class ACBCacheStorage(SessionStorage):
             return session_ids
 
         except Exception as e:
-            self.logger.error(f"Failed to list sessions: {e}")
+            self.logger.exception(f"Failed to list sessions: {e}")
             return []
 
     async def cleanup_expired_sessions(self) -> int:
@@ -919,6 +928,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             Count of sessions removed from index
+
         """
         try:
             index_data = await self.cache.get(self._index_key)
@@ -943,7 +953,7 @@ class ACBCacheStorage(SessionStorage):
             return cleaned
 
         except Exception as e:
-            self.logger.error(f"Failed to cleanup expired sessions: {e}")
+            self.logger.exception(f"Failed to cleanup expired sessions: {e}")
             return 0
 
     async def is_available(self) -> bool:
@@ -951,6 +961,7 @@ class ACBCacheStorage(SessionStorage):
 
         Returns:
             True if cache is reachable, False otherwise
+
         """
         try:
             # Try a simple operation to test connectivity
@@ -1194,7 +1205,7 @@ class ServerlessConfigManager:
                             db=backend_config.get("db", 0),
                         )
                     except ImportError:
-                        logging.warning("redis not available, using memory cache")
+                        CONFIG_LOGGER.warning("redis not available, using memory cache")
                         cache = AIOCache(serializer=PickleSerializer())
                 else:
                     # Memory cache (default)
@@ -1204,7 +1215,7 @@ class ServerlessConfigManager:
                 return ACBCacheStorage(cache, namespace, backend_config)
 
             except ImportError as e:
-                logging.warning(
+                CONFIG_LOGGER.warning(
                     f"aiocache not available ({e}), falling back to local file storage. "
                     "Install with: pip install aiocache[redis]"
                 )
@@ -1213,14 +1224,14 @@ class ServerlessConfigManager:
 
         # Legacy backends (deprecated)
         if backend_type == "redis":
-            logging.warning(
+            CONFIG_LOGGER.warning(
                 "RedisStorage is deprecated. Use 'acb' backend for better "
                 "connection pooling, SSL/TLS support, and automatic compression."
             )
             return RedisStorage(backend_config)
 
         if backend_type == "s3":
-            logging.warning(
+            CONFIG_LOGGER.warning(
                 "S3Storage is deprecated. Consider using ACB cache backends "
                 "with Redis for production deployments."
             )

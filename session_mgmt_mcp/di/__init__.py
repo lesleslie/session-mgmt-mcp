@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import typing as t
 from contextlib import suppress
-from pathlib import Path
 
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
+    from pathlib import Path
+
     from session_mgmt_mcp.core import (
         SessionLifecycleManager as SessionLifecycleManagerT,  # noqa: F401
     )
@@ -38,6 +39,7 @@ def configure(*, force: bool = False) -> None:
         >>> configure()  # First call registers dependencies
         >>> configure()  # Subsequent calls are no-ops unless force=True
         >>> configure(force=True)  # Re-registers all dependencies
+
     """
     global _configured
     if _configured and not force:
@@ -77,6 +79,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
     Note:
         Accepts Path directly instead of resolving from string keys,
         following ACB's type-based dependency injection pattern.
+
     """
     from session_mgmt_mcp.utils.logging import SessionLogger
 
@@ -100,6 +103,7 @@ def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
     Note:
         Accepts Path directly instead of resolving from string keys,
         following ACB's type-based dependency injection pattern.
+
     """
     from session_mgmt_mcp.server_core import SessionPermissionsManager
 
@@ -126,11 +130,11 @@ def _register_lifecycle_manager(force: bool) -> None:
 
 
 __all__ = [
-    "SessionPaths",
-    "configure",
-    "reset",
     # Legacy string keys (deprecated - use SessionPaths instead)
     "CLAUDE_DIR_KEY",
     "COMMANDS_DIR_KEY",
     "LOGS_DIR_KEY",
+    "SessionPaths",
+    "configure",
+    "reset",
 ]

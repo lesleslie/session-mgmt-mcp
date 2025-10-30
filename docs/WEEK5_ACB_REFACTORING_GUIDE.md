@@ -4,46 +4,52 @@
 **Target Audience:** Developers implementing architectural improvements
 **Estimated Time:** 1-2 days for all 4 modules
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Module 1: multi_project_coordinator.py](#module-1-multi_project_coordinatorpy)
-3. [Module 2: app_monitor.py](#module-2-app_monitorpy)
-4. [Module 3: memory_optimizer.py](#module-3-memory_optimizerpy)
-5. [Module 4: serverless_mode.py](#module-4-serverless_modepy)
-6. [Test Updates](#test-updates)
-7. [Verification Steps](#verification-steps)
+1. [Module 1: multi_project_coordinator.py](#module-1-multi_project_coordinatorpy)
+1. [Module 2: app_monitor.py](#module-2-app_monitorpy)
+1. [Module 3: memory_optimizer.py](#module-3-memory_optimizerpy)
+1. [Module 4: serverless_mode.py](#module-4-serverless_modepy)
+1. [Test Updates](#test-updates)
+1. [Verification Steps](#verification-steps)
 
----
+______________________________________________________________________
 
 ## Overview
 
 ### What We're Changing
 
 **From:** Manual instantiation with constructor injection
+
 ```python
 class MyComponent:
     def __init__(self, db: Database):
         self.db = db
 
+
 component = MyComponent(database_instance)
 ```
 
 **To:** ACB dependency injection with adapter pattern
+
 ```python
 from acb.depends import depends
 from acb.config import AdapterBase, Settings
 
+
 class MyComponentSettings(Settings):
     config_value: str = "default"
+
 
 class MyComponent(AdapterBase):
     settings: MyComponentSettings | None = None
 
     async def init(self) -> None:
         self.db = depends.get_sync(Database)
+
 
 # Auto-injected via DI
 component = depends.get_sync(MyComponent)
@@ -52,11 +58,11 @@ component = depends.get_sync(MyComponent)
 ### Benefits of ACB Pattern
 
 1. **Testability:** Easy to swap implementations via `depends.set()`
-2. **Configuration:** Type-safe settings with Pydantic validation
-3. **Lifecycle:** Automatic initialization and cleanup via `init()`
-4. **Consistency:** Same pattern across entire codebase
+1. **Configuration:** Type-safe settings with Pydantic validation
+1. **Lifecycle:** Automatic initialization and cleanup via `init()`
+1. **Consistency:** Same pattern across entire codebase
 
----
+______________________________________________________________________
 
 ## Module 1: multi_project_coordinator.py
 
@@ -69,12 +75,15 @@ component = depends.get_sync(MyComponent)
 from pydantic import BaseModel
 from .reflection_tools import ReflectionDatabase
 
+
 class ProjectGroup(BaseModel):
     """Pydantic model - keep as is"""
+
     id: str
     name: str
     projects: list[str]
     # ... rest of model
+
 
 class MultiProjectCoordinator:
     """Manages relationships between projects."""
@@ -106,40 +115,34 @@ from acb.depends import depends
 from acb.config import AdapterBase, Settings
 from pydantic import BaseModel, Field
 
+
 # Step 1: Add Settings class
 class CoordinatorSettings(Settings):
     """Configuration for multi-project coordination."""
 
     cache_ttl: int = Field(
-        default=3600,
-        description="Cache TTL in seconds",
-        ge=60,
-        le=86400
+        default=3600, description="Cache TTL in seconds", ge=60, le=86400
     )
     max_projects: int = Field(
-        default=100,
-        description="Maximum projects per group",
-        ge=1,
-        le=1000
+        default=100, description="Maximum projects per group", ge=1, le=1000
     )
     enable_clustering: bool = Field(
-        default=True,
-        description="Enable automatic project clustering"
+        default=True, description="Enable automatic project clustering"
     )
     search_timeout: int = Field(
-        default=30,
-        description="Search timeout in seconds",
-        ge=5,
-        le=300
+        default=30, description="Search timeout in seconds", ge=5, le=300
     )
+
 
 # Keep Pydantic models unchanged
 class ProjectGroup(BaseModel):
     """Pydantic model - unchanged"""
+
     id: str
     name: str
     projects: list[str]
     # ... rest of model
+
 
 # Step 2: Convert to AdapterBase
 class MultiProjectCoordinator(AdapterBase):
@@ -173,7 +176,7 @@ class MultiProjectCoordinator(AdapterBase):
         name: str,
         projects: list[str],
         description: str = "",
-        cache: "Cache" = depends()  # Auto-injected ACB cache
+        cache: "Cache" = depends(),  # Auto-injected ACB cache
     ) -> ProjectGroup:
         """Create new project group with DI."""
         # Validate against settings
@@ -204,28 +207,33 @@ class MultiProjectCoordinator(AdapterBase):
 ### Step-by-Step Migration
 
 1. **Add imports**
+
    ```python
    from acb.depends import depends
    from acb.config import AdapterBase, Settings
    ```
 
-2. **Create Settings class**
+1. **Create Settings class**
+
    - Extract all configuration values
    - Add Pydantic Field validators
    - Document each setting
 
-3. **Convert to AdapterBase**
+1. **Convert to AdapterBase**
+
    ```python
    class MultiProjectCoordinator(AdapterBase):
        settings: CoordinatorSettings | None = None
    ```
 
-4. **Replace `__init__` with `async def init()`**
+1. **Replace `__init__` with `async def init()`**
+
    - Move all initialization logic
    - Use `depends.get_sync()` for dependencies
    - Initialize settings if not provided
 
-5. **Update method signatures (optional)**
+1. **Update method signatures (optional)**
+
    - Add `@depends.inject` decorator
    - Use `parameter: Type = depends()` for auto-injection
    - Maintains backward compatibility
@@ -242,9 +250,11 @@ from session_mgmt_mcp.multi_project_coordinator import (
     CoordinatorSettings,
 )
 
+
 @pytest.fixture
 def mock_reflection_db():
     """Mock ReflectionDatabase for testing."""
+
     class MockDB:
         async def store_project_group(self, group):
             return True
@@ -254,14 +264,16 @@ def mock_reflection_db():
 
     return MockDB()
 
+
 @pytest.fixture
 def coordinator_settings():
     """Custom settings for testing."""
     return CoordinatorSettings(
         cache_ttl=60,  # Short TTL for tests
         max_projects=10,  # Lower limit for tests
-        enable_clustering=True
+        enable_clustering=True,
     )
+
 
 @pytest.fixture
 async def coordinator(mock_reflection_db, coordinator_settings):
@@ -279,18 +291,18 @@ async def coordinator(mock_reflection_db, coordinator_settings):
     # Cleanup
     depends.clear()
 
+
 @pytest.mark.asyncio
 async def test_create_project_group(coordinator):
     """Test project group creation with DI."""
     group = await coordinator.create_project_group(
-        name="Test Group",
-        projects=["proj-a", "proj-b"],
-        description="Test description"
+        name="Test Group", projects=["proj-a", "proj-b"], description="Test description"
     )
 
     assert group.name == "Test Group"
     assert len(group.projects) == 2
     assert "proj-a" in group.projects
+
 
 @pytest.mark.asyncio
 async def test_max_projects_validation(coordinator):
@@ -298,11 +310,11 @@ async def test_max_projects_validation(coordinator):
     with pytest.raises(ValueError, match="Too many projects"):
         await coordinator.create_project_group(
             name="Too Large",
-            projects=[f"proj-{i}" for i in range(20)]  # Exceeds limit of 10
+            projects=[f"proj-{i}" for i in range(20)],  # Exceeds limit of 10
         )
 ```
 
----
+______________________________________________________________________
 
 ## Module 2: app_monitor.py
 
@@ -332,44 +344,41 @@ from acb.depends import depends
 from acb.config import AdapterBase, Settings
 from acb.actions.base import ActionBase
 
+
 # Step 1: Create Settings
 class ActivityMonitorSettings(Settings):
     """Configuration for activity monitoring."""
 
     buffer_size: int = Field(
-        default=1000,
-        description="Maximum events in buffer",
-        ge=100,
-        le=10000
+        default=1000, description="Maximum events in buffer", ge=100, le=10000
     )
     default_relevance: float = Field(
-        default=0.5,
-        description="Default relevance score",
-        ge=0.0,
-        le=1.0
+        default=0.5, description="Default relevance score", ge=0.0, le=1.0
     )
     watchdog_enabled: bool = Field(
-        default=True,
-        description="Enable file system watching"
+        default=True, description="Enable file system watching"
     )
     min_file_size: int = Field(
-        default=1,
-        description="Minimum file size to track (bytes)",
-        ge=0
+        default=1, description="Minimum file size to track (bytes)", ge=0
     )
+
 
 # Step 2: Create ACB Actions for reusable logic
 class ActivityActions(ActionBase):
     """Custom actions for activity monitoring."""
 
     @staticmethod
-    def calculate_relevance(event: ActivityEvent, settings: ActivityMonitorSettings) -> float:
+    def calculate_relevance(
+        event: ActivityEvent, settings: ActivityMonitorSettings
+    ) -> float:
         """Calculate relevance score for an event."""
         score = settings.default_relevance
 
         # Boost for code files
-        if any(event.details.get("file_path", "").endswith(ext)
-               for ext in [".py", ".js", ".ts", ".go", ".rs"]):
+        if any(
+            event.details.get("file_path", "").endswith(ext)
+            for ext in [".py", ".js", ".ts", ".go", ".rs"]
+        ):
             score += 0.3
 
         # Boost for recent events
@@ -380,8 +389,10 @@ class ActivityActions(ActionBase):
 
         return min(score, 1.0)
 
+
 # Register action globally
 activity = ActivityActions()
+
 
 # Step 3: Convert to AdapterBase
 class ProjectActivityMonitor(AdapterBase):
@@ -413,7 +424,9 @@ class ProjectActivityMonitor(AdapterBase):
 
         # Trim buffer based on settings
         if len(self.activity_buffer) > self.settings.buffer_size:
-            self.activity_buffer = self.activity_buffer[-self.settings.buffer_size // 2:]
+            self.activity_buffer = self.activity_buffer[
+                -self.settings.buffer_size // 2 :
+            ]
 
     # Rest of implementation...
 ```
@@ -426,8 +439,9 @@ def monitor_settings():
     return ActivityMonitorSettings(
         buffer_size=100,
         default_relevance=0.5,
-        watchdog_enabled=False  # Disable for testing
+        watchdog_enabled=False,  # Disable for testing
     )
+
 
 @pytest.fixture
 async def activity_monitor(monitor_settings):
@@ -435,6 +449,7 @@ async def activity_monitor(monitor_settings):
     monitor.settings = monitor_settings
     await monitor.init()
     return monitor
+
 
 def test_relevance_calculation():
     """Test ACB action for relevance scoring."""
@@ -455,7 +470,7 @@ def test_relevance_calculation():
     assert relevance > 0.5  # Should be boosted for .py file
 ```
 
----
+______________________________________________________________________
 
 ## Module 3: memory_optimizer.py
 
@@ -481,31 +496,21 @@ from acb.depends import depends
 from acb.config import AdapterBase, Settings
 from acb.actions.compress import compress  # Use ACB compression
 
+
 class OptimizerSettings(Settings):
     """Configuration for memory optimization."""
 
     compression_level: int = Field(
-        default=4,
-        description="Brotli compression level",
-        ge=1,
-        le=11
+        default=4, description="Brotli compression level", ge=1, le=11
     )
     max_age_days: int = Field(
-        default=90,
-        description="Maximum age for conversations",
-        ge=1,
-        le=365
+        default=90, description="Maximum age for conversations", ge=1, le=365
     )
     max_conversations: int = Field(
-        default=1000,
-        description="Maximum conversations to keep",
-        ge=100,
-        le=100000
+        default=1000, description="Maximum conversations to keep", ge=100, le=100000
     )
-    dry_run_default: bool = Field(
-        default=True,
-        description="Default to dry-run mode"
-    )
+    dry_run_default: bool = Field(default=True, description="Default to dry-run mode")
+
 
 class MemoryOptimizer(AdapterBase):
     """Optimizes memory usage via compression."""
@@ -554,8 +559,7 @@ class MemoryOptimizer(AdapterBase):
 
             # ACB provides optimized Brotli compression
             compressed = compress.brotli(
-                original,
-                level=self.settings.compression_level
+                original, level=self.settings.compression_level
             )
 
             total_saved += len(original) - len(compressed)
@@ -567,7 +571,8 @@ class MemoryOptimizer(AdapterBase):
             "conversations_to_keep": len(keep),
             "conversations_to_consolidate": len(consolidate),
             "space_saved_estimate": total_saved,
-            "compression_ratio": total_saved / sum(len(c["content"]) for c in conversations)
+            "compression_ratio": total_saved
+            / sum(len(c["content"]) for c in conversations),
         }
 ```
 
@@ -595,7 +600,7 @@ async def test_compression_uses_acb():
     assert len(compressed) < len(test_data)
 ```
 
----
+______________________________________________________________________
 
 ## Module 4: serverless_mode.py
 
@@ -622,26 +627,23 @@ class ACBCacheStorage(SessionStorage):
 from acb.depends import depends
 from acb.adapters import import_adapter  # ACB adapter discovery
 
+
 class ServerlessSettings(Settings):
     """Configuration for serverless sessions."""
 
     cache_backend: str = Field(
-        default="memory",
-        description="Cache backend type",
-        pattern="^(memory|redis)$"
+        default="memory", description="Cache backend type", pattern="^(memory|redis)$"
     )
     namespace: str = Field(
-        default="session",
-        description="Cache namespace",
-        min_length=1,
-        max_length=50
+        default="session", description="Cache namespace", min_length=1, max_length=50
     )
     default_ttl: int = Field(
         default=86400,
         description="Default session TTL (seconds)",
         ge=60,
-        le=604800  # 1 week max
+        le=604800,  # 1 week max
     )
+
 
 class ACBCacheStorage(SessionStorage):
     """ACB cache adapter for session storage."""
@@ -700,7 +702,7 @@ class ServerlessConfigManager:
             settings = ServerlessSettings(
                 cache_backend=backend_config.get("cache_type", "memory"),
                 namespace=backend_config.get("namespace", "session"),
-                default_ttl=backend_config.get("ttl_seconds", 86400)
+                default_ttl=backend_config.get("ttl_seconds", 86400),
             )
 
             # Create via ACB pattern
@@ -715,7 +717,7 @@ class ServerlessConfigManager:
             return _create_legacy_backend(backend, config)
 ```
 
----
+______________________________________________________________________
 
 ## Test Updates
 
@@ -728,6 +730,7 @@ import pytest
 from acb.depends import depends
 from pathlib import Path
 
+
 @pytest.fixture(autouse=True)
 def reset_di_container():
     """Reset DI container between tests."""
@@ -735,9 +738,11 @@ def reset_di_container():
     # Cleanup after each test
     depends.clear()
 
+
 @pytest.fixture
 def mock_reflection_db():
     """Mock ReflectionDatabase for all tests."""
+
     class MockDB:
         def __init__(self):
             self.data = {}
@@ -764,6 +769,7 @@ def mock_reflection_db():
     depends.set("ReflectionDatabase", db)
     return db
 
+
 @pytest.fixture
 def mock_cache():
     """Mock ACB cache adapter."""
@@ -778,6 +784,7 @@ def mock_cache():
     depends.set("Cache", cache)
     return cache
 
+
 @pytest.fixture
 def project_paths(tmp_path):
     """Create temporary project paths."""
@@ -788,7 +795,9 @@ def project_paths(tmp_path):
     depends.set("ProjectPaths", [str(p) for p in paths])
     return paths
 
+
 # Module-specific fixtures
+
 
 @pytest.fixture
 async def coordinator(mock_reflection_db):
@@ -799,6 +808,7 @@ async def coordinator(mock_reflection_db):
     await coord.init()
     return coord
 
+
 @pytest.fixture
 async def activity_monitor(project_paths):
     """ProjectActivityMonitor with DI."""
@@ -808,6 +818,7 @@ async def activity_monitor(project_paths):
     await monitor.init()
     return monitor
 
+
 @pytest.fixture
 async def memory_optimizer(mock_reflection_db):
     """MemoryOptimizer with DI."""
@@ -816,6 +827,7 @@ async def memory_optimizer(mock_reflection_db):
     optimizer = MemoryOptimizer()
     await optimizer.init()
     return optimizer
+
 
 @pytest.fixture
 def serverless_storage(mock_cache):
@@ -832,17 +844,17 @@ def serverless_storage(mock_cache):
 ```python
 # tests/unit/test_multi_project_coordinator.py
 
+
 @pytest.mark.asyncio
 async def test_create_project_group_with_di(coordinator):
     """Test with DI fixture - much cleaner!"""
     group = await coordinator.create_project_group(
-        name="Test Group",
-        projects=["proj-a", "proj-b"],
-        description="Test description"
+        name="Test Group", projects=["proj-a", "proj-b"], description="Test description"
     )
 
     assert group.name == "Test Group"
     assert len(group.projects) == 2
+
 
 @pytest.mark.asyncio
 async def test_settings_validation(coordinator):
@@ -850,12 +862,11 @@ async def test_settings_validation(coordinator):
     # Coordinator has max_projects=100 by default
     with pytest.raises(ValueError):
         await coordinator.create_project_group(
-            name="Too Large",
-            projects=[f"proj-{i}" for i in range(200)]
+            name="Too Large", projects=[f"proj-{i}" for i in range(200)]
         )
 ```
 
----
+______________________________________________________________________
 
 ## Verification Steps
 
@@ -919,7 +930,7 @@ async def test_full_acb_stack():
     depends.clear()
 ```
 
----
+______________________________________________________________________
 
 ## Common Pitfalls to Avoid
 
@@ -966,34 +977,34 @@ coordinator1 = depends.get_sync(MultiProjectCoordinator)
 coordinator2 = depends.get_sync(MultiProjectCoordinator)  # Same instance
 ```
 
----
+______________________________________________________________________
 
 ## Rollout Strategy
 
 ### Phase 1: Core Module (Day 1, 4 hours)
 
 1. Refactor `multi_project_coordinator.py` first
-2. Update its tests
-3. Verify all tests pass
-4. Document learnings
+1. Update its tests
+1. Verify all tests pass
+1. Document learnings
 
 **Rationale:** Highest coverage (86%), good reference for others
 
 ### Phase 2: Remaining Modules (Day 1-2, 8 hours)
 
 1. Refactor `app_monitor.py`
-2. Refactor `memory_optimizer.py`
-3. Refactor `serverless_mode.py`
-4. Update all tests together
+1. Refactor `memory_optimizer.py`
+1. Refactor `serverless_mode.py`
+1. Update all tests together
 
 ### Phase 3: Verification (Day 2, 2 hours)
 
 1. Run full test suite
-2. Check coverage metrics
-3. Integration testing
-4. Update documentation
+1. Check coverage metrics
+1. Integration testing
+1. Update documentation
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
@@ -1005,7 +1016,7 @@ coordinator2 = depends.get_sync(MultiProjectCoordinator)  # Same instance
 ✅ **No constructor injection** (all removed)
 ✅ **Tests use fixtures** (no manual mocking)
 
----
+______________________________________________________________________
 
 ## Questions & Answers
 
@@ -1024,7 +1035,7 @@ A: Use `async def init()` method. Call it after creating instance via DI.
 **Q: What about backward compatibility?**
 A: Keep constructor for now (deprecated), add class methods for DI creation.
 
----
+______________________________________________________________________
 
 ## Additional Resources
 
@@ -1033,7 +1044,7 @@ A: Keep constructor for now (deprecated), add class methods for DI creation.
 - **DI Configuration:** Review `session_mgmt_mcp/di/__init__.py`
 - **Settings Patterns:** Check ACB Settings documentation in agent instructions
 
----
+______________________________________________________________________
 
 **Document Version:** 1.0
 **Last Updated:** 2025-10-29

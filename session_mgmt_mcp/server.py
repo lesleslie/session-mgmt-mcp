@@ -442,8 +442,8 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
             validate_llm_api_keys_at_startup()
         except (ImportError, ValueError) as e:
             logger.warning(f"LLM API key validation skipped (optional feature): {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error during LLM validation: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Unexpected error during LLM validation")
 
     # Initialize new features on startup
     # Phase 3.2 H3 fix: Replace broad exception suppression with specific handling
@@ -451,8 +451,8 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
         asyncio.run(initialize_new_features())
     except (ImportError, RuntimeError) as e:
         logger.warning(f"Feature initialization skipped (optional): {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error during feature init: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Unexpected error during feature init")
 
     # Get host and port from config
     host = _mcp_config.get("http_host", "127.0.0.1")

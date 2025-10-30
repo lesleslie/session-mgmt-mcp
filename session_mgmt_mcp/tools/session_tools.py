@@ -74,6 +74,7 @@ def _get_session_manager() -> SessionLifecycleManager:
     Note:
         Checks bevy container directly instead of using depends.get_sync()
         to avoid async event loop issues during module import.
+
     """
     # Check if already registered without triggering async machinery
     container = get_container()
@@ -294,7 +295,6 @@ def _check_environment_variables() -> str | None:
 def _check_working_dir_file() -> str | None:
     """Check for the temporary file used by Claude's auto-start scripts."""
     import tempfile
-    from contextlib import suppress
     from pathlib import Path
 
     working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
@@ -313,7 +313,6 @@ def _check_working_dir_file() -> str | None:
 
 def _check_parent_process_cwd() -> str | None:
     """Check parent process working directory (advanced)."""
-    from contextlib import suppress
     from pathlib import Path
 
     with suppress(ImportError, Exception):

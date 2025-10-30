@@ -8,6 +8,7 @@ Phase 10.2: Production Hardening - Resource Cleanup
 
 from __future__ import annotations
 
+import importlib.util as import_util
 import typing as t
 from contextlib import suppress
 from pathlib import Path
@@ -35,17 +36,18 @@ async def cleanup_database_connections() -> None:
     logger.info("Cleaning up database connections")
 
     try:
-        # Try to import and cleanup reflection database
+        if import_util.find_spec("session_mgmt_mcp.reflection_tools") is None:
+            logger.debug("Reflection database not available, skipping cleanup")
+            return
+
         from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
-        # Close any active database instances
-        # ReflectionDatabase uses context manager, so we just need to ensure cleanup
-        logger.debug("Database cleanup completed successfully")
+        with suppress(Exception):
+            ReflectionDatabase().close()
 
-    except ImportError:
-        logger.debug("Reflection database not available, skipping cleanup")
-    except Exception as e:
-        logger.error(f"Error during database cleanup: {e}", exc_info=True)
+        logger.debug("Database cleanup completed successfully")
+    except Exception:
+        logger.exception("Error during database cleanup")
         raise
 
 
@@ -75,8 +77,8 @@ async def cleanup_http_clients() -> None:
         except ImportError:
             logger.debug("HTTP client adapter not available")
 
-    except Exception as e:
-        logger.error(f"Error during HTTP client cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during HTTP client cleanup")
         raise
 
 
@@ -113,8 +115,8 @@ async def cleanup_temp_files(temp_dir: Path | None = None) -> None:
 
         logger.debug(f"Removed {files_removed} temporary files")
 
-    except Exception as e:
-        logger.error(f"Error during temp file cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during temp file cleanup")
         raise
 
 
@@ -138,8 +140,8 @@ async def cleanup_file_handles() -> None:
 
         logger.debug("File handle cleanup completed successfully")
 
-    except Exception as e:
-        logger.error(f"Error during file handle cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during file handle cleanup")
         raise
 
 
@@ -166,8 +168,8 @@ async def cleanup_session_state() -> None:
 
     except ImportError:
         logger.debug("Session manager not available")
-    except Exception as e:
-        logger.error(f"Error during session state cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during session state cleanup")
         raise
 
 
@@ -209,8 +211,8 @@ async def cleanup_background_tasks() -> None:
         except RuntimeError:
             logger.debug("No running event loop, skipping task cleanup")
 
-    except Exception as e:
-        logger.error(f"Error during background task cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during background task cleanup")
         raise
 
 
@@ -236,8 +238,8 @@ async def cleanup_logging_handlers() -> None:
 
         logger.debug("Logging handler cleanup completed successfully")
 
-    except Exception as e:
-        logger.error(f"Error during logging handler cleanup: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error during logging handler cleanup")
         raise
 
 

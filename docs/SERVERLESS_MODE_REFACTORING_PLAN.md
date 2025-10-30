@@ -4,33 +4,37 @@
 **Status:** 🚧 In Progress
 **Goal:** Replace custom storage backends with ACB cache adapters
 
----
+______________________________________________________________________
 
 ## Problem Statement
 
 `serverless_mode.py` (945 lines) currently implements custom storage backends:
+
 - `RedisStorage` (224 lines) - Duplicate Redis implementation
 - `S3Storage` (264 lines) - Custom S3 implementation not in ACB
 - `LocalFileStorage` (141 lines) - Custom file-based storage
 
 **Issues:**
-1. **Duplicate Infrastructure**: Reimplements Redis/storage that ACB already provides
-2. **Limited Options**: Only Redis, S3, and local file - ACB offers more
-3. **Maintenance Burden**: Custom code to maintain vs ACB's battle-tested adapters
-4. **Missing Features**: No connection pooling, health checks, SSL/TLS support
 
----
+1. **Duplicate Infrastructure**: Reimplements Redis/storage that ACB already provides
+1. **Limited Options**: Only Redis, S3, and local file - ACB offers more
+1. **Maintenance Burden**: Custom code to maintain vs ACB's battle-tested adapters
+1. **Missing Features**: No connection pooling, health checks, SSL/TLS support
+
+______________________________________________________________________
 
 ## Solution: Use ACB Cache Adapters
 
 ### Why ACB Cache (Not Storage) Adapters?
 
 **ACB Storage Adapters** (`file`, `s3`, `azure`, `gcs`):
+
 - Designed for blob/file storage
 - Interface: `read_file()`, `write_file()`, `list_files()`
 - ❌ Not suitable for SessionState KV storage
 
 **ACB Cache Adapters** (`redis`, `memory`):
+
 - Designed for KV stores with TTL support
 - Interface: `get(key)`, `set(key, value, ttl)`, `delete(key)`, `exists(key)`
 - ✅ Perfect fit for serverless session management
@@ -38,13 +42,15 @@
 ### Available ACB Cache Adapters
 
 1. **Redis Cache** (`/Users/les/Projects/acb/acb/adapters/cache/redis.py`)
+
    - Uses `aiocache[redis]` + `coredis` for advanced features
    - Connection pooling, cluster support, health checks
    - SSL/TLS support with certificate validation
    - Automatic reconnection on failures
    - Tracking cache for debugging
 
-2. **Memory Cache** (`/Users/les/Projects/acb/acb/adapters/cache/memory.py`)
+1. **Memory Cache** (`/Users/les/Projects/acb/acb/adapters/cache/memory.py`)
+
    - In-memory cache for testing/development
    - Same interface as Redis for drop-in replacement
    - No external dependencies
@@ -80,13 +86,14 @@ class CacheBase(BaseCache):
 ```
 
 **Built-in Features:**
+
 - `MsgPackSerializer` with brotli compression (efficient storage)
 - `CacheBaseSettings` with SSL/TLS configuration
 - `CleanupMixin` for proper resource cleanup
 - `Inject[Config]` dependency injection integration
 - Health check monitoring (if needed)
 
----
+______________________________________________________________________
 
 ## Refactoring Architecture
 
@@ -94,6 +101,7 @@ class CacheBase(BaseCache):
 
 ```python
 # session_mgmt_mcp/serverless_mode.py
+
 
 class SessionStorage(ABC):
     """Abstract base class - CUSTOM INTERFACE."""
@@ -110,6 +118,7 @@ class SessionStorage(ABC):
     async def retrieve_session(self, session_id: str) -> SessionState | None:
         """Retrieve session state by ID."""
 
+
 # 629 lines of duplicate Redis/S3/file implementation
 ```
 
@@ -120,6 +129,7 @@ class SessionStorage(ABC):
 
 from acb.adapters.cache import CacheBase  # Import ACB base
 from acb.depends import depends
+
 
 class SessionStorage(ABC):
     """Abstract base class - UNCHANGED INTERFACE."""
@@ -202,34 +212,40 @@ def create_session_storage(
 ```
 
 **Benefits:**
+
 - 629 lines of custom code eliminated (87% reduction)
 - ACB handles Redis connection pooling, SSL, reconnection
 - Drop-in replacement: `RedisStorage` → `ACBCacheStorage(redis_cache)`
 - Same for memory: `LocalFileStorage` → `ACBCacheStorage(memory_cache)`
 
----
+______________________________________________________________________
 
 ## Migration Steps
 
 ### Phase 1: Create ACB Adapter Wrapper (Today)
 
 1. ✅ **Research ACB cache interface** (DONE)
-2. ⏳ **Create `ACBCacheStorage` class** in serverless_mode.py
+
+1. ⏳ **Create `ACBCacheStorage` class** in serverless_mode.py
+
    - Implement `store_session()`, `retrieve_session()`, `delete_session()`
    - Add proper error handling and logging
    - Handle SessionState Pydantic serialization
 
-3. ⏳ **Add factory function** for dependency injection
+1. ⏳ **Add factory function** for dependency injection
+
    - `create_session_storage()` using `@depends.inject`
    - Configure namespace for multi-tenant support
 
-4. ⏳ **Keep legacy backends temporarily** for gradual migration
+1. ⏳ **Keep legacy backends temporarily** for gradual migration
+
    - Mark `RedisStorage`, `S3Storage`, `LocalFileStorage` as deprecated
    - Add deprecation warnings
 
 ### Phase 2: Update ServerlessSessionManager (Today)
 
 1. ⏳ **Add ACB storage option** to `ServerlessSessionManager`
+
    ```python
    class ServerlessSessionManager:
        def __init__(
@@ -246,18 +262,21 @@ def create_session_storage(
            # ...
    ```
 
-2. ⏳ **Update configuration** to prefer ACB by default
+1. ⏳ **Update configuration** to prefer ACB by default
+
    - Change default `storage_type="acb"`
    - Add configuration for ACB cache settings
 
 ### Phase 3: Update Tests (Today)
 
 1. ⏳ **Update serverless_mode tests** to use ACB cache
+
    - Replace RedisStorage mocks with ACB cache mocks
    - Test both Redis and Memory cache adapters
    - Verify SessionState serialization/deserialization
 
-2. ⏳ **Add integration tests** with real ACB cache
+1. ⏳ **Add integration tests** with real ACB cache
+
    - Test Redis cache adapter integration
    - Test Memory cache adapter for testing
    - Verify TTL expiration behavior
@@ -265,14 +284,16 @@ def create_session_storage(
 ### Phase 4: Remove Legacy Backends (Later)
 
 1. ⏳ **Remove deprecated classes** (600+ lines)
+
    - Delete `RedisStorage`, `S3Storage`, `LocalFileStorage`
    - Update imports and documentation
 
-2. ⏳ **Update documentation**
+1. ⏳ **Update documentation**
+
    - Explain ACB cache configuration
    - Add examples for Redis and Memory cache
 
----
+______________________________________________________________________
 
 ## Configuration Changes
 
@@ -281,15 +302,15 @@ def create_session_storage(
 ```python
 # .mcp.json or config
 {
-  "serverless": {
-    "storage_type": "redis",
-    "storage_config": {
-      "host": "localhost",
-      "port": 6379,
-      "password": "secret",
-      "db": 0
+    "serverless": {
+        "storage_type": "redis",
+        "storage_config": {
+            "host": "localhost",
+            "port": 6379,
+            "password": "secret",
+            "db": 0,
+        },
     }
-  }
 }
 ```
 
@@ -298,34 +319,36 @@ def create_session_storage(
 ```python
 # .mcp.json or config - ACB cache configuration
 {
-  "acb": {
-    "cache": {
-      "provider": "redis",  # or "memory" for testing
-      "host": "localhost",
-      "port": 6379,
-      "password": "secret",
-      "db": 0,
-      "default_ttl": 86400,  # 24 hours
-      "ssl_enabled": true,
-      "ssl_cert_path": "/path/to/cert.pem"
+    "acb": {
+        "cache": {
+            "provider": "redis",  # or "memory" for testing
+            "host": "localhost",
+            "port": 6379,
+            "password": "secret",
+            "db": 0,
+            "default_ttl": 86400,  # 24 hours
+            "ssl_enabled": true,
+            "ssl_cert_path": "/path/to/cert.pem",
+        }
     }
-  }
 }
 ```
 
 **Advantages:**
+
 - Unified configuration across all ACB components
 - SSL/TLS support automatically available
 - Connection pooling configured centrally
 - Health checks and monitoring built-in
 
----
+______________________________________________________________________
 
 ## Testing Strategy
 
 ### Unit Tests
 
 1. **Test ACBCacheStorage adapter**
+
    ```python
    @pytest.mark.asyncio
    async def test_acb_cache_storage_store_session(mock_cache):
@@ -338,11 +361,13 @@ def create_session_storage(
        mock_cache.set.assert_called_once()
    ```
 
-2. **Test SessionState serialization**
+1. **Test SessionState serialization**
+
    - Verify Pydantic `model_dump()` works correctly
    - Test deserialization from cache data
 
-3. **Test error handling**
+1. **Test error handling**
+
    - Cache unavailable scenarios
    - Serialization failures
    - TTL edge cases
@@ -350,6 +375,7 @@ def create_session_storage(
 ### Integration Tests
 
 1. **Test with real ACB Redis cache**
+
    ```python
    @pytest.mark.integration
    @pytest.mark.asyncio
@@ -366,7 +392,8 @@ def create_session_storage(
        assert retrieved.session_id == "test-123"
    ```
 
-2. **Test with ACB Memory cache** (for CI/CD)
+1. **Test with ACB Memory cache** (for CI/CD)
+
    ```python
    @pytest.mark.asyncio
    async def test_memory_cache_integration():
@@ -377,66 +404,73 @@ def create_session_storage(
        # ... same tests as Redis
    ```
 
----
+______________________________________________________________________
 
 ## Rollout Plan
 
 ### Week 5 Day 3 (Today)
 
 1. **Morning**: Create ACB adapter wrapper and update ServerlessSessionManager
-2. **Afternoon**: Update tests and verify everything passes
+1. **Afternoon**: Update tests and verify everything passes
 
 ### Week 5 Day 4+
 
 1. Add deprecation warnings to legacy backends
-2. Update documentation with ACB cache examples
-3. Monitor for any issues
+1. Update documentation with ACB cache examples
+1. Monitor for any issues
 
 ### Week 6 (Later)
 
 1. Remove legacy backends entirely
-2. Final documentation cleanup
+1. Final documentation cleanup
 
----
+______________________________________________________________________
 
 ## Risk Mitigation
 
 ### Potential Issues
 
 1. **ACB cache dependencies not installed**
+
    - Solution: Add `aiocache[redis]` and `coredis` to pyproject.toml
    - Fallback: Memory cache works without Redis
 
-2. **SessionState serialization issues**
+1. **SessionState serialization issues**
+
    - Solution: Use Pydantic `model_dump(mode="json")` for clean JSON
    - Test: Comprehensive serialization tests
 
-3. **Configuration migration**
+1. **Configuration migration**
+
    - Solution: Support both old and new config during transition
    - Deprecation: Warn users about old config format
 
-4. **Performance differences**
+1. **Performance differences**
+
    - Solution: ACB uses msgpack + brotli compression (likely faster)
    - Monitoring: Add performance tests to verify
 
 ### Rollback Plan
 
 If issues arise:
-1. Keep legacy backends during Phase 1-3
-2. Make ACB opt-in via `storage_type="acb"`
-3. Default to Redis/S3/local if ACB fails
 
----
+1. Keep legacy backends during Phase 1-3
+1. Make ACB opt-in via `storage_type="acb"`
+1. Default to Redis/S3/local if ACB fails
+
+______________________________________________________________________
 
 ## Expected Benefits
 
 ### Code Quality
+
 - **-629 lines** of custom code eliminated (87% reduction)
 - **-300 lines** of Redis implementation (replaced by ACB)
 - **-264 lines** of S3 implementation (use ACB storage if needed later)
 - **-141 lines** of file storage (replaced by ACB memory cache)
 
 ### Features Gained
+
 - ✅ Connection pooling (automatic with ACB Redis)
 - ✅ SSL/TLS support (via ACB configuration)
 - ✅ Health checks (built into ACB adapters)
@@ -445,28 +479,29 @@ If issues arise:
 - ✅ MsgPack + Brotli compression (efficient storage)
 
 ### Maintainability
+
 - ✅ Battle-tested ACB adapters (used in production)
 - ✅ Single source of truth for cache configuration
 - ✅ Easier to add new cache backends (ACB does the work)
 - ✅ Consistent error handling and logging
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
 1. ✅ All existing serverless_mode tests pass with ACB adapter
-2. ✅ New tests cover ACB cache integration
-3. ✅ Performance equal or better than custom backends
-4. ✅ Documentation updated with ACB examples
-5. ✅ Zero regressions in serverless functionality
+1. ✅ New tests cover ACB cache integration
+1. ✅ Performance equal or better than custom backends
+1. ✅ Documentation updated with ACB examples
+1. ✅ Zero regressions in serverless functionality
 
----
+______________________________________________________________________
 
 **Status:** Ready to implement
 **Next Step:** Create `ACBCacheStorage` adapter class
 **Estimated Time:** 2-3 hours for complete Phase 1-3
 
----
+______________________________________________________________________
 
 **Created:** 2025-10-28
 **Author:** Claude Code + Les

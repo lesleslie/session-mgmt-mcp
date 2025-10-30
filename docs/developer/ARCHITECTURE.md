@@ -903,9 +903,11 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 
+
 @dataclass(frozen=True)
 class SessionPaths:
     """Type-safe path configuration for session management."""
+
     claude_dir: Path
     logs_dir: Path
     commands_dir: Path
@@ -937,6 +939,7 @@ class SessionPaths:
 from acb.depends import depends
 from session_mgmt_mcp.di import SessionPaths
 
+
 def configure(*, force: bool = False) -> None:
     """Register default dependencies."""
     # Register type-safe configuration
@@ -950,6 +953,7 @@ def configure(*, force: bool = False) -> None:
 ```
 
 **Benefits:**
+
 - **Type Safety:** Compile-time checking and IDE autocomplete
 - **Immutability:** Frozen dataclass prevents accidental modification
 - **Test-Friendly:** Respects HOME environment variable for test isolation
@@ -962,6 +966,7 @@ For singleton services accessed from async contexts or module level, use direct 
 ```python
 from bevy import get_container
 from acb.depends import depends
+
 
 def get_session_manager() -> SessionLifecycleManager:
     """Get or create SessionLifecycleManager instance.
@@ -986,6 +991,7 @@ def get_session_manager() -> SessionLifecycleManager:
 ```
 
 **Why Direct Access:**
+
 - Bevy's `depends.get_sync()` internally calls `asyncio.run()`, which fails in:
   - Async functions (already-running event loop)
   - Module-level code (during pytest collection)
@@ -993,6 +999,7 @@ def get_session_manager() -> SessionLifecycleManager:
 - More reliable and predictable behavior
 
 **When to Use:**
+
 - ✅ Singleton services accessed from async functions
 - ✅ Module-level initialization
 - ✅ Hot paths where performance matters
@@ -1007,6 +1014,7 @@ def get_session_manager() -> SessionLifecycleManager:
 @dataclass(frozen=True)
 class MyConfig:
     setting: str
+
 
 depends.set(MyConfig, MyConfig(setting="value"))
 
@@ -1024,6 +1032,7 @@ from bevy import get_container
 container = get_container()
 if SomeService in container.instances:
     service = container.instances[SomeService]
+
 
 # ❌ WRONG: depends.get_sync() from async
 async def my_function():

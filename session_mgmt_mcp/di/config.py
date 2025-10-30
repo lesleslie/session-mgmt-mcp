@@ -34,6 +34,7 @@ class SessionPaths:
         >>> # Use with DI container
         >>> depends.set(SessionPaths, paths)
         >>> resolved = depends.get_sync(SessionPaths)
+
     """
 
     claude_dir: Path
@@ -59,6 +60,7 @@ class SessionPaths:
             >>> # Use custom home (useful for testing)
             >>> test_home = Path("/tmp/test_home")
             >>> paths = SessionPaths.from_home(test_home)
+
         """
         if home is None:
             # Use os.path.expanduser to respect HOME environment variable
@@ -85,6 +87,7 @@ class SessionPaths:
             >>> paths.ensure_directories()
             >>> assert paths.claude_dir.exists()
             >>> assert paths.logs_dir.exists()
+
         """
         self.claude_dir.mkdir(parents=True, exist_ok=True)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
