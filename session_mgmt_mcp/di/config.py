@@ -25,6 +25,7 @@ class SessionPaths:
         claude_dir: Root directory for Claude session data (~/.claude)
         logs_dir: Directory for session logs (~/.claude/logs)
         commands_dir: Directory for slash commands (~/.claude/commands)
+        data_dir: Directory for database storage (~/.claude/data)
 
     Example:
         >>> paths = SessionPaths.from_home()
@@ -40,6 +41,7 @@ class SessionPaths:
     claude_dir: Path
     logs_dir: Path
     commands_dir: Path
+    data_dir: Path
 
     @classmethod
     def from_home(cls, home: Path | None = None) -> SessionPaths:
@@ -73,6 +75,7 @@ class SessionPaths:
             claude_dir=claude_dir,
             logs_dir=claude_dir / "logs",
             commands_dir=claude_dir / "commands",
+            data_dir=claude_dir / "data",
         )
 
     def ensure_directories(self) -> None:
@@ -87,8 +90,10 @@ class SessionPaths:
             >>> paths.ensure_directories()
             >>> assert paths.claude_dir.exists()
             >>> assert paths.logs_dir.exists()
+            >>> assert paths.data_dir.exists()
 
         """
         self.claude_dir.mkdir(parents=True, exist_ok=True)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.commands_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)

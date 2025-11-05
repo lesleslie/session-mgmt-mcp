@@ -2,6 +2,22 @@
 """Reflection Tools for Claude Session Management.
 
 Provides memory and conversation search capabilities using DuckDB and local embeddings.
+
+DEPRECATION NOTICE (Phase 2.7 - January 2025):
+    The ReflectionDatabase class in this module is deprecated and will be removed
+    in a future release. Please use ReflectionDatabaseAdapter from
+    session_mgmt_mcp.adapters.reflection_adapter instead.
+
+    Migration Guide:
+        # Old (deprecated):
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        # New (recommended):
+        from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+
+    The adapter provides the same API while using ACB (Asynchronous Component Base)
+    for improved connection pooling, lifecycle management, and integration with
+    the dependency injection system.
 """
 
 import asyncio
@@ -9,6 +25,7 @@ import hashlib
 import json
 import os
 import time
+import warnings
 from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
@@ -34,9 +51,28 @@ import numpy as np
 
 
 class ReflectionDatabase:
-    """Manages DuckDB database for conversation memory and reflection."""
+    """Manages DuckDB database for conversation memory and reflection.
+
+    DEPRECATED: This class is deprecated as of Phase 2.7 (January 2025).
+    Use ReflectionDatabaseAdapter from session_mgmt_mcp.adapters.reflection_adapter instead.
+
+    The adapter provides the same API with improved ACB integration:
+    - Connection pooling and lifecycle management
+    - Dependency injection support
+    - Better async/await patterns
+
+    This class will be removed in a future release.
+    """
 
     def __init__(self, db_path: str | None = None) -> None:
+        # Issue deprecation warning
+        warnings.warn(
+            "ReflectionDatabase is deprecated and will be removed in a future release. "
+            "Use ReflectionDatabaseAdapter from session_mgmt_mcp.adapters.reflection_adapter instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         self.db_path = db_path or os.path.expanduser("~/.claude/data/reflection.duckdb")
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 

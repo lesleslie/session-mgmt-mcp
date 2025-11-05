@@ -56,6 +56,10 @@ def configure(*, force: bool = False) -> None:
     _register_permissions_manager(paths.claude_dir, force)
     _register_lifecycle_manager(force)
 
+    # Register ACB adapters (Phase 2.7: DuckDB migration)
+    _register_vector_adapter(paths, force)
+    _register_graph_adapter(paths, force)  # Fixed: ACB ssl_enabled bug resolved
+
     _configured = True
 
 
@@ -110,6 +114,113 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
 
     # Register the instance
     depends.set(Logger, logger_instance)
+
+
+def _register_vector_adapter(paths: SessionPaths, force: bool) -> None:
+    """Register ACB vector adapter with DuckDB backend.
+
+    Args:
+        paths: Session paths configuration with data directory
+        force: If True, re-registers even if already registered
+
+    Note:
+        Uses ACB's vector adapter with VSS extension for semantic search.
+        Configured for 384-dimensional embeddings (all-MiniLM-L6-v2 model).
+
+    """
+    # Import ACB's Vector adapter and settings
+    from acb.adapters.vector.duckdb import Vector, VectorSettings
+    from acb.config import Config
+
+    if not force:
+        with suppress(KeyError, AttributeError, RuntimeError):
+            existing = depends.get_sync(Vector)
+            if isinstance(existing, Vector):
+                return
+
+    # Get Config singleton and ensure it's initialized
+    config = depends.get_sync(Config)
+    config.ensure_initialized()
+
+    # Create settings for vector adapter
+    settings = VectorSettings(
+        database_path=str(paths.data_dir / "reflection.duckdb"),
+        default_dimension=384,  # all-MiniLM-L6-v2 embeddings
+        default_distance_metric="cosine",
+        enable_vss=True,  # Enable DuckDB VSS extension
+        threads=4,
+        memory_limit="2GB",
+    )
+
+    # Register settings in Config object
+    config.vector = settings  # type: ignore[attr-defined]
+
+    # Create adapter instance and manually set config (ACB test pattern)
+    vector_adapter = Vector()
+    vector_adapter.config = config  # Override _DependencyMarker with actual Config
+
+    # Set logger from DI (adapters need a logger instance)
+    try:
+        from acb.adapters import import_adapter
+        Logger = import_adapter("logger")
+        logger_instance = depends.get_sync(Logger)
+        vector_adapter.logger = logger_instance
+    except Exception:
+        # If logger not available, create a minimal print-based logger
+        import logging
+        vector_adapter.logger = logging.getLogger("acb.vector")
+
+    # Initialize adapter to create vectors schema (ACB requirement)
+    # Note: Initialization is deferred - schema creation happens on first use
+    # This avoids event loop conflicts when configure() is called from async contexts
+    depends.set(Vector, vector_adapter)
+
+    # Mark that initialization is needed
+    vector_adapter._schema_initialized = False
+
+
+def _register_graph_adapter(paths: SessionPaths, force: bool) -> None:
+    """Register ACB graph adapter with DuckDB PGQ backend.
+
+    Args:
+        paths: Session paths configuration with data directory
+        force: If True, re-registers even if already registered
+
+    Note:
+        Uses ACB's graph adapter with DuckPGQ extension for property graphs.
+        Maintains compatibility with existing kg_entities/kg_relationships schema.
+
+    """
+    # Import ACB's Graph adapter and settings
+    from acb.adapters.graph.duckdb_pgq import DuckDBPGQSettings, Graph
+    from acb.config import Config
+
+    if not force:
+        with suppress(KeyError, AttributeError, RuntimeError):
+            existing = depends.get_sync(Graph)
+            if isinstance(existing, Graph):
+                return
+
+    # Get Config singleton and ensure it's initialized
+    config = depends.get_sync(Config)
+    config.ensure_initialized()
+
+    # Create settings for graph adapter
+    settings = DuckDBPGQSettings(
+        database_url=f"duckdb:///{paths.data_dir}/knowledge_graph.duckdb",
+        graph_name="session_mgmt_graph",
+        nodes_table="kg_entities",
+        edges_table="kg_relationships",
+        install_extensions=["duckpgq"],
+    )
+
+    # Register settings in Config object
+    config.graph = settings  # type: ignore[attr-defined]
+
+    # Create adapter instance and manually set config (ACB test pattern)
+    graph_adapter = Graph()
+    graph_adapter.config = config  # Override _DependencyMarker with actual Config
+    depends.set(Graph, graph_adapter)
 
 
 def _register_permissions_manager(claude_dir: Path, force: bool) -> None:

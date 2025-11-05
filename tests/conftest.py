@@ -13,7 +13,10 @@ import duckdb
 import numpy as np
 import pytest
 from fastmcp import FastMCP
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+# Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
+from session_mgmt_mcp.adapters.reflection_adapter import (
+    ReflectionDatabaseAdapter as ReflectionDatabase,
+)
 
 # Configure DI container BEFORE any other imports
 # This ensures SessionLogger and other dependencies are available
@@ -193,7 +196,10 @@ def reset_di_container():
 
                         cls = ServerlessSessionManager
                     elif cls == "ReflectionDatabase":
-                        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+                        # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
+                        from session_mgmt_mcp.adapters.reflection_adapter import (
+                            ReflectionDatabaseAdapter as ReflectionDatabase,
+                        )
 
                         cls = ReflectionDatabase
                     elif cls == "InterruptionManager":
@@ -260,7 +266,10 @@ def reset_di_container():
 
                         cls = ServerlessSessionManager
                     elif cls == "ReflectionDatabase":
-                        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+                        # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
+                        from session_mgmt_mcp.adapters.reflection_adapter import (
+                            ReflectionDatabaseAdapter as ReflectionDatabase,
+                        )
 
                         cls = ReflectionDatabase
                     elif cls == "InterruptionManager":

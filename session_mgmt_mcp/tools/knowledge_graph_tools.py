@@ -23,11 +23,18 @@ def _get_logger():
 _knowledge_graph_available: bool | None = None
 
 if TYPE_CHECKING:
-    from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
+    )
 
 
 async def _get_knowledge_graph() -> KnowledgeGraphDatabase:
-    """Get knowledge graph database instance."""
+    """Get knowledge graph database instance.
+
+    Note:
+        Migration Phase 2.7: Now returns KnowledgeGraphDatabaseAdapter which provides
+        the same API as KnowledgeGraphDatabase but uses ACB graph adapter.
+    """
     global _knowledge_graph_available
 
     if _knowledge_graph_available is False:
@@ -35,9 +42,15 @@ async def _get_knowledge_graph() -> KnowledgeGraphDatabase:
         raise ImportError(msg)
 
     try:
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+        from session_mgmt_mcp.di import configure
 
-        kg = KnowledgeGraphDatabase()
+        # Ensure DI is configured before creating adapter
+        configure()
+
+        kg = KnowledgeGraphDatabaseAdapter()
         await kg.initialize()
         _knowledge_graph_available = True
         return kg
@@ -48,12 +61,18 @@ async def _get_knowledge_graph() -> KnowledgeGraphDatabase:
 
 
 def _check_knowledge_graph_available() -> bool:
-    """Check if knowledge graph is available."""
+    """Check if knowledge graph is available.
+
+    Note:
+        Migration Phase 2.7: Checks for KnowledgeGraphDatabaseAdapter instead of old class.
+    """
     global _knowledge_graph_available
 
     if _knowledge_graph_available is None:
         try:
-            spec = importlib.util.find_spec("session_mgmt_mcp.knowledge_graph_db")
+            spec = importlib.util.find_spec(
+                "session_mgmt_mcp.adapters.knowledge_graph_adapter"
+            )
             _knowledge_graph_available = spec is not None
         except ImportError:
             _knowledge_graph_available = False

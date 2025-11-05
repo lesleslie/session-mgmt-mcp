@@ -17,7 +17,9 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 
 if TYPE_CHECKING:
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+    from session_mgmt_mcp.adapters.reflection_adapter import (
+        ReflectionDatabaseAdapter as ReflectionDatabase,
+    )
 
 def _get_logger():
     """Lazy logger resolution using ACB's logger adapter from DI container."""
@@ -28,13 +30,27 @@ def _get_logger():
 async def get_reflection_database() -> ReflectionDatabase | None:
     """Backward-compatible helper for resolving the reflection database.
 
-    Maintains legacy behaviour for callers that patch this helper in tests
-    by instantiating a fresh ReflectionDatabase.
+    Migration Phase 2.7: Now returns ReflectionDatabaseAdapter which provides
+    the same API as ReflectionDatabase but uses ACB vector adapter.
+
+    Note:
+        Uses instance_managers.get_reflection_database() which returns a
+        properly initialized singleton instance from the DI container.
     """
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_mgmt_mcp.adapters.reflection_adapter import (
+            ReflectionDatabaseAdapter,
+        )
+        from session_mgmt_mcp.di import configure
 
-        return ReflectionDatabase()
+        # Ensure DI is configured
+        configure()
+
+        # Create and initialize adapter
+        db = ReflectionDatabaseAdapter()
+        await db.initialize()
+        return db
+
     except ImportError:
         return None
     except Exception:

@@ -18,10 +18,12 @@ from bevy import get_container
 from session_mgmt_mcp.di import SessionPaths
 
 if TYPE_CHECKING:
+    from session_mgmt_mcp.adapters.reflection_adapter import (
+        ReflectionDatabaseAdapter as ReflectionDatabase,
+    )
     from session_mgmt_mcp.app_monitor import ApplicationMonitor
     from session_mgmt_mcp.interruption_manager import InterruptionManager
     from session_mgmt_mcp.llm_providers import LLMManager
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
     from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
 
 
@@ -121,30 +123,37 @@ async def get_reflection_database() -> ReflectionDatabase | None:
     """Resolve reflection database via DI, creating it on demand.
 
     Note:
-        Does not call depends.get_sync() to avoid bevy's async event loop
-        limitation. Instead relies on depends.set() for singleton registration
-        and checks the bevy container directly.
+        Returns ReflectionDatabaseAdapter which maintains API compatibility
+        with the original ReflectionDatabase while using ACB vector adapter.
+
+        Migration Phase 2.7: Using ACB-based adapter instead of direct DuckDB.
 
     """
     try:
-        from session_mgmt_mcp.reflection_tools import (
-            ReflectionDatabase,
-        )
-        from session_mgmt_mcp.reflection_tools import (
-            get_reflection_database as load_reflection_database,
+        from session_mgmt_mcp.adapters.reflection_adapter import (
+            ReflectionDatabaseAdapter,
         )
     except ImportError:
         return None
 
     # Check if already registered without triggering async machinery
+    # Note: We use ReflectionDatabaseAdapter as the key for the new implementation
     container = get_container()
-    if ReflectionDatabase in container.instances:
-        db = container.instances[ReflectionDatabase]
-        if isinstance(db, ReflectionDatabase):
+    if ReflectionDatabaseAdapter in container.instances:
+        db = container.instances[ReflectionDatabaseAdapter]
+        if isinstance(db, ReflectionDatabaseAdapter):
             return db
 
-    db = await load_reflection_database()
-    depends.set(ReflectionDatabase, db)
+    # Create new adapter instance (will be initialized via async context manager)
+    # Ensure DI is configured before creating adapter
+    from session_mgmt_mcp.di import configure
+
+    configure()  # Ensure ACB adapters are registered
+
+    db = ReflectionDatabaseAdapter()
+    await db.initialize()  # Initialize the adapter
+
+    depends.set(ReflectionDatabaseAdapter, db)
     return db
 
 
@@ -226,7 +235,9 @@ def _iter_dependencies() -> list[type[Any]]:
 
         deps.append(ServerlessSessionManager)
     with suppress(ImportError):
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_mgmt_mcp.adapters.reflection_adapter import (
+            ReflectionDatabaseAdapter,
+        )
 
-        deps.append(ReflectionDatabase)
+        deps.append(ReflectionDatabaseAdapter)
     return deps
