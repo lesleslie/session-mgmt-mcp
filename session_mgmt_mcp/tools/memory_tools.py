@@ -476,13 +476,12 @@ def _format_new_stats(stats: dict[str, t.Any]) -> list[str]:
     refl_count = stats.get("reflections_count", 0)
     provider = stats.get("embedding_provider", "unknown")
 
-    output = [
+    return [
         f"📈 Total conversations: {conv_count}",
         f"💭 Total reflections: {refl_count}",
         f"🔧 Embedding provider: {provider}",
         f"\n🏥 Database health: {'✅ Healthy' if (conv_count + refl_count) > 0 else '⚠️ Empty'}",
     ]
-    return output
 
 
 def _format_old_stats(stats: dict[str, t.Any]) -> list[str]:
@@ -530,10 +529,12 @@ async def _reflection_stats_impl() -> str:
             else:
                 output.extend(_format_old_stats(stats))
         else:
-            output.extend([
-                "📊 No statistics available",
-                "💡 Database may be empty or inaccessible",
-            ])
+            output.extend(
+                [
+                    "📊 No statistics available",
+                    "💡 Database may be empty or inaccessible",
+                ]
+            )
 
         _get_logger().info("Reflection stats retrieved")
         return "\n".join(output)

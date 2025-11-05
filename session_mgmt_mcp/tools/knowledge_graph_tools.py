@@ -374,7 +374,9 @@ def _format_relationship_types(relationship_types: dict[str, int]) -> list[str]:
         return []
 
     lines = ["🔗 Relationship Types:"]
-    lines.extend(f"   • {rtype}: {count}" for rtype, count in relationship_types.items())
+    lines.extend(
+        f"   • {rtype}: {count}" for rtype, count in relationship_types.items()
+    )
     lines.append("")
     return lines
 
@@ -397,12 +399,16 @@ async def _get_knowledge_graph_stats_impl() -> str:
             ]
 
             output.extend(_format_entity_types(stats.get("entity_types", {})))
-            output.extend(_format_relationship_types(stats.get("relationship_types", {})))
+            output.extend(
+                _format_relationship_types(stats.get("relationship_types", {}))
+            )
 
-            output.extend([
-                f"💾 Database: {stats['database_path']}",
-                f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
-            ])
+            output.extend(
+                [
+                    f"💾 Database: {stats['database_path']}",
+                    f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
+                ]
+            )
 
             _get_logger().info("Knowledge graph stats retrieved", **stats)
             return "\n".join(output)

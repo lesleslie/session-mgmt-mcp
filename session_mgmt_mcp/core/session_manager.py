@@ -45,7 +45,7 @@ class SessionInfo:
 
 
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 from session_mgmt_mcp.utils.git_operations import (
     create_checkpoint_commit,
     is_git_repository,
@@ -55,9 +55,19 @@ from session_mgmt_mcp.utils.git_operations import (
 class SessionLifecycleManager:
     """Manages session lifecycle operations."""
 
-    def __init__(self) -> None:
-        logger_class = import_adapter("logger")
-        self.logger = depends.get_sync(logger_class)
+    def __init__(self, logger: Inject[t.Any] | None = None) -> None:
+        """Initialize session lifecycle manager.
+
+        Args:
+            logger: Logger instance (injected by DI container)
+
+        """
+        if logger is None:
+            # Fallback for manual instantiation
+            logger_class = import_adapter("logger")
+            logger = depends.get_sync(logger_class)
+
+        self.logger = logger
         self.current_project: str | None = None
         self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 

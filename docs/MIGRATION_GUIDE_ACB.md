@@ -10,19 +10,21 @@
 This guide walks you through migrating both database layers to ACB (Asynchronous Component Base) adapters:
 
 1. **Vector Adapter** (Phase 2): Conversations and reflections storage
-2. **Graph Adapter** (Phase 3): Knowledge graph storage with hybrid pattern
+1. **Graph Adapter** (Phase 3): Knowledge graph storage with hybrid pattern
 
 Both migrations maintain 100% API compatibility while providing improved resource management and ACB integration.
 
 ### Why Migrate?
 
 **Benefits**:
+
 - ✅ **Better Resource Management**: Connection pooling and automatic lifecycle management
 - ✅ **Improved Testability**: Dependency injection makes testing easier
 - ✅ **Future-Proof**: Foundation for additional ACB integrations
 - ✅ **Zero Breaking Changes**: Same API, better implementation
 
 **What Changed**:
+
 - Vector database backend moved from direct DuckDB to ACB Vector adapter
 - Dependency injection integration for better modularity
 - Deferred initialization pattern to prevent event loop conflicts
@@ -32,8 +34,10 @@ Both migrations maintain 100% API compatibility while providing improved resourc
 ### Step 1: Update Your Imports
 
 **Before** (deprecated):
+
 ```python
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
 
 async def example():
     async with ReflectionDatabase() as db:
@@ -41,10 +45,12 @@ async def example():
 ```
 
 **After** (recommended):
+
 ```python
 from session_mgmt_mcp.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
+
 
 async def example():
     async with ReflectionDatabase() as db:
@@ -52,8 +58,10 @@ async def example():
 ```
 
 **Alternative** (alias for compatibility):
+
 ```python
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+
 
 async def example():
     async with ReflectionDatabaseAdapter() as db:
@@ -82,6 +90,7 @@ python scripts/migrate_vector_database.py --verbose
 ```
 
 **Migration Script Features**:
+
 - **Dry Run Mode**: Preview changes without modifying data (`--dry-run`)
 - **Automatic Backup**: Creates timestamped backup before migration (`--backup`)
 - **Validation**: Compares record counts before/after migration
@@ -89,6 +98,7 @@ python scripts/migrate_vector_database.py --verbose
 - **Verbose Logging**: Detailed progress reporting (`--verbose`)
 
 **Migration Output Example**:
+
 ```
 Migration Summary:
   Conversations: 42 migrated
@@ -107,6 +117,7 @@ After migration, verify your data is accessible:
 import asyncio
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
+
 async def verify_migration():
     async with ReflectionDatabaseAdapter() as db:
         # Check conversation count
@@ -116,6 +127,7 @@ async def verify_migration():
         # Verify search works
         for result in results:
             print(f"  - {result['content'][:50]}... (score: {result['score']:.2f})")
+
 
 # Run verification
 asyncio.run(verify_migration())
@@ -128,41 +140,39 @@ The new `ReflectionDatabaseAdapter` maintains **100% API compatibility** with th
 ### Core Methods (Unchanged API)
 
 **Conversation Storage**:
+
 ```python
 async with ReflectionDatabaseAdapter() as db:
     # Store conversation (same API)
     conv_id = await db.store_conversation(
         content="User asked about ACB adapters",
-        metadata={"project": "session-mgmt-mcp", "session_id": "abc123"}
+        metadata={"project": "session-mgmt-mcp", "session_id": "abc123"},
     )
 
     # Search conversations (same API)
     results = await db.search_conversations(
-        query="ACB adapters",
-        limit=10,
-        min_score=0.7,
-        project="session-mgmt-mcp"
+        query="ACB adapters", limit=10, min_score=0.7, project="session-mgmt-mcp"
     )
 ```
 
 **Reflection Storage**:
+
 ```python
 async with ReflectionDatabaseAdapter() as db:
     # Store reflection (same API)
     refl_id = await db.store_reflection(
         content="ACB adapters improve resource management",
-        tags=["architecture", "performance"]
+        tags=["architecture", "performance"],
     )
 
     # Search reflections (same API)
     results = await db.search_reflections(
-        query="resource management",
-        limit=5,
-        min_score=0.75
+        query="resource management", limit=5, min_score=0.75
     )
 ```
 
 **Statistics & Utilities**:
+
 ```python
 async with ReflectionDatabaseAdapter() as db:
     # Get statistics (same API)
@@ -180,27 +190,25 @@ async with ReflectionDatabaseAdapter() as db:
 ### Example 1: Basic Conversation Storage
 
 **Before** (deprecated):
+
 ```python
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
+
 async def store_user_query(query: str, project: str):
     async with ReflectionDatabase() as db:
-        return await db.store_conversation(
-            content=query,
-            metadata={"project": project}
-        )
+        return await db.store_conversation(content=query, metadata={"project": project})
 ```
 
 **After** (recommended):
+
 ```python
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
+
 async def store_user_query(query: str, project: str):
     async with ReflectionDatabaseAdapter() as db:
-        return await db.store_conversation(
-            content=query,
-            metadata={"project": project}
-        )
+        return await db.store_conversation(content=query, metadata={"project": project})
 ```
 
 **Change**: Only the import statement changed - function logic identical.
@@ -208,31 +216,29 @@ async def store_user_query(query: str, project: str):
 ### Example 2: Semantic Search with Filtering
 
 **Before** (deprecated):
+
 ```python
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
 
 async def find_related_conversations(topic: str, project_name: str):
     async with ReflectionDatabase() as db:
         results = await db.search_conversations(
-            query=topic,
-            limit=20,
-            min_score=0.8,
-            project=project_name
+            query=topic, limit=20, min_score=0.8, project=project_name
         )
         return [r for r in results if r["score"] > 0.85]
 ```
 
 **After** (recommended):
+
 ```python
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+
 
 async def find_related_conversations(topic: str, project_name: str):
     async with ReflectionDatabaseAdapter() as db:
         results = await db.search_conversations(
-            query=topic,
-            limit=20,
-            min_score=0.8,
-            project=project_name
+            query=topic, limit=20, min_score=0.8, project=project_name
         )
         return [r for r in results if r["score"] > 0.85]
 ```
@@ -242,9 +248,11 @@ async def find_related_conversations(topic: str, project_name: str):
 ### Example 3: Test Fixtures (pytest)
 
 **Before** (deprecated):
+
 ```python
 import pytest
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
 
 @pytest.fixture
 async def reflection_db():
@@ -253,9 +261,11 @@ async def reflection_db():
 ```
 
 **After** (recommended):
+
 ```python
 import pytest
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+
 
 @pytest.fixture
 async def reflection_db():
@@ -270,12 +280,14 @@ async def reflection_db():
 ### Issue 1: DeprecationWarning Messages
 
 **Symptom**:
+
 ```
 DeprecationWarning: ReflectionDatabase is deprecated and will be removed in a future release.
 Use ReflectionDatabaseAdapter from session_mgmt_mcp.adapters.reflection_adapter instead.
 ```
 
 **Solution**: Update your import to use `ReflectionDatabaseAdapter`:
+
 ```python
 # Change this:
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
@@ -285,25 +297,30 @@ from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapt
 ```
 
 **Temporary Workaround** (if you need time to migrate):
+
 ```python
 import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 ```
 
 ### Issue 2: Import Error - Module Not Found
 
 **Symptom**:
+
 ```
 ImportError: cannot import name 'ReflectionDatabaseAdapter' from 'session_mgmt_mcp.adapters.reflection_adapter'
 ```
 
 **Solution**: Ensure you have the latest version of session-mgmt-mcp:
+
 ```bash
 cd /path/to/session-mgmt-mcp
 uv sync --group dev
 ```
 
 **Check Installation**:
+
 ```python
 python -c "from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter; print('✅ Migration available')"
 ```
@@ -311,11 +328,13 @@ python -c "from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDa
 ### Issue 3: Database Connection Issues
 
 **Symptom**:
+
 ```
 RuntimeError: Connection not initialized. Call initialize() first.
 ```
 
 **Solution**: Ensure you're using the async context manager pattern:
+
 ```python
 # ✅ Correct (async context manager)
 async with ReflectionDatabaseAdapter() as db:
@@ -331,10 +350,12 @@ await db.store_conversation(...)  # Error!
 **Symptom**: Search queries return empty results or low similarity scores after migration.
 
 **Possible Causes**:
+
 1. **Embeddings not migrated**: Run migration script with `--verbose` to check
-2. **ACB vector search bug**: Ensure you're using ACB with the vector search fix
+1. **ACB vector search bug**: Ensure you're using ACB with the vector search fix
 
 **Solution**:
+
 ```bash
 # Re-run migration with verbose output
 python scripts/migrate_vector_database.py --backup --verbose
@@ -361,10 +382,12 @@ asyncio.run(check())
 **Symptom**: Slower query performance after migrating to ACB adapter.
 
 **Investigation**:
+
 ```python
 import time
 import asyncio
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+
 
 async def benchmark_search():
     async with ReflectionDatabaseAdapter() as db:
@@ -373,13 +396,15 @@ async def benchmark_search():
         elapsed = time.perf_counter() - start
         print(f"Search completed in {elapsed:.3f}s ({len(results)} results)")
 
+
 asyncio.run(benchmark_search())
 ```
 
 **Solution**: ACB adapter includes connection pooling which should improve performance. If you see degradation:
+
 1. Check DuckDB configuration in `session_mgmt_mcp/di/__init__.py`
-2. Verify `threads=4` and `memory_limit="2GB"` settings
-3. Ensure proper async/await usage (no blocking calls)
+1. Verify `threads=4` and `memory_limit="2GB"` settings
+1. Ensure proper async/await usage (no blocking calls)
 
 ## Advanced Topics
 
@@ -422,6 +447,7 @@ import pytest
 from unittest.mock import AsyncMock
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
+
 @pytest.fixture
 async def mock_reflection_db(monkeypatch):
     """Mock reflection database for testing."""
@@ -443,20 +469,23 @@ The graph adapter uses a hybrid sync/async pattern - async method signatures wit
 ### Why Hybrid Pattern?
 
 **The Challenge**:
+
 - `duckdb-engine` (SQLAlchemy dialect) is sync-only, cannot be used with async SQLAlchemy
 - No production-ready async DuckDB drivers exist (`aioduckdb` is experimental)
 - Need API consistency with Vector adapter (async signatures)
 
 **The Solution**:
-DuckDB operations are fast enough (<1ms typically) that sync operations within async contexts don't block the event loop. This is the same pattern ACB's Vector adapter uses successfully.
+DuckDB operations are fast enough (\<1ms typically) that sync operations within async contexts don't block the event loop. This is the same pattern ACB's Vector adapter uses successfully.
 
 ### Migration Steps
 
 #### Step 1: Update Your Imports
 
 **Before** (original):
+
 ```python
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+
 
 async def example():
     async with KnowledgeGraphDatabase() as db:
@@ -464,10 +493,12 @@ async def example():
 ```
 
 **After** (recommended):
+
 ```python
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
 )
+
 
 async def example():
     async with KnowledgeGraphDatabase() as db:
@@ -475,8 +506,12 @@ async def example():
 ```
 
 **Alternative** (explicit adapter):
+
 ```python
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import KnowledgeGraphDatabaseAdapter
+from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    KnowledgeGraphDatabaseAdapter,
+)
+
 
 async def example():
     async with KnowledgeGraphDatabaseAdapter() as db:
@@ -505,6 +540,7 @@ python scripts/migrate_graph_database.py --verbose
 ```
 
 **Migration Script Features**:
+
 - **Dry Run Mode**: Preview changes without modifying data (`--dry-run`)
 - **Automatic Backup**: Creates timestamped backup before migration (`--backup`)
 - **Validation**: Compares record counts before/after migration
@@ -512,6 +548,7 @@ python scripts/migrate_graph_database.py --verbose
 - **Verbose Logging**: Detailed progress reporting (`--verbose`)
 
 **Migration Output Example**:
+
 ```
 Migration Summary:
   Entities: 125 migrated
@@ -528,7 +565,10 @@ After migration, verify your data is accessible:
 
 ```python
 import asyncio
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import KnowledgeGraphDatabaseAdapter
+from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    KnowledgeGraphDatabaseAdapter,
+)
+
 
 async def verify_migration():
     async with KnowledgeGraphDatabaseAdapter() as db:
@@ -541,6 +581,7 @@ async def verify_migration():
         results = await db.search_entities("test", limit=5)
         print(f"Found {len(results)} entities")
 
+
 # Run verification
 asyncio.run(verify_migration())
 ```
@@ -552,6 +593,7 @@ The new `KnowledgeGraphDatabaseAdapter` maintains **100% API compatibility** wit
 ### Core Methods (Unchanged API)
 
 **Entity Management**:
+
 ```python
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create entity (same API)
@@ -559,7 +601,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
         name="session-mgmt-mcp",
         entity_type="project",
         observations=["MCP server for session management"],
-        properties={"language": "Python", "version": "0.7.4"}
+        properties={"language": "Python", "version": "0.7.4"},
     )
 
     # Get entity by ID (same API)
@@ -567,13 +609,12 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 
     # Search entities (same API)
     results = await db.search_entities(
-        query="mcp server",
-        entity_type="project",
-        limit=10
+        query="mcp server", entity_type="project", limit=10
     )
 ```
 
 **Relationship Management**:
+
 ```python
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create relationship (same API)
@@ -581,24 +622,22 @@ async with KnowledgeGraphDatabaseAdapter() as db:
         from_entity="session-mgmt-mcp",
         to_entity="ACB",
         relation_type="uses",
-        properties={"version": ">=0.25.2"}
+        properties={"version": ">=0.25.2"},
     )
 
     # Get relationships (same API)
     relationships = await db.get_relationships(
-        entity_name="session-mgmt-mcp",
-        direction="outgoing"
+        entity_name="session-mgmt-mcp", direction="outgoing"
     )
 ```
 
 **Graph Operations**:
+
 ```python
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Find path between entities (same API)
     paths = await db.find_path(
-        from_entity="session-mgmt-mcp",
-        to_entity="DuckDB",
-        max_depth=3
+        from_entity="session-mgmt-mcp", to_entity="DuckDB", max_depth=3
     )
 
     # Get statistics (same API)
@@ -612,8 +651,10 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 #### Example 1: Basic Entity Creation
 
 **Before** (original):
+
 ```python
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+
 
 async def create_project_entity(name: str, language: str):
     async with KnowledgeGraphDatabase() as db:
@@ -621,13 +662,17 @@ async def create_project_entity(name: str, language: str):
             name=name,
             entity_type="project",
             observations=[f"Project written in {language}"],
-            properties={"language": language}
+            properties={"language": language},
         )
 ```
 
 **After** (recommended):
+
 ```python
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import KnowledgeGraphDatabaseAdapter
+from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    KnowledgeGraphDatabaseAdapter,
+)
+
 
 async def create_project_entity(name: str, language: str):
     async with KnowledgeGraphDatabaseAdapter() as db:
@@ -635,7 +680,7 @@ async def create_project_entity(name: str, language: str):
             name=name,
             entity_type="project",
             observations=[f"Project written in {language}"],
-            properties={"language": language}
+            properties={"language": language},
         )
 ```
 
@@ -644,31 +689,33 @@ async def create_project_entity(name: str, language: str):
 #### Example 2: Graph Traversal
 
 **Before** (original):
+
 ```python
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+
 
 async def find_dependencies(project: str):
     async with KnowledgeGraphDatabase() as db:
         # Get all outgoing "uses" relationships
         deps = await db.get_relationships(
-            entity_name=project,
-            relation_type="uses",
-            direction="outgoing"
+            entity_name=project, relation_type="uses", direction="outgoing"
         )
         return [rel["to_entity"] for rel in deps]
 ```
 
 **After** (recommended):
+
 ```python
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import KnowledgeGraphDatabaseAdapter
+from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    KnowledgeGraphDatabaseAdapter,
+)
+
 
 async def find_dependencies(project: str):
     async with KnowledgeGraphDatabaseAdapter() as db:
         # Get all outgoing "uses" relationships
         deps = await db.get_relationships(
-            entity_name=project,
-            relation_type="uses",
-            direction="outgoing"
+            entity_name=project, relation_type="uses", direction="outgoing"
         )
         return [rel["to_entity"] for rel in deps]
 ```
@@ -680,11 +727,12 @@ async def find_dependencies(project: str):
 The hybrid pattern is safe for DuckDB because:
 
 1. **Local Operations**: DuckDB database is a local file or in-memory (no network I/O)
-2. **Fast Execution**: Operations typically complete in <1ms
-3. **No Blocking**: No waiting for external resources or slow I/O
-4. **Event Loop Safe**: Sync operations that complete quickly don't block the event loop
+1. **Fast Execution**: Operations typically complete in \<1ms
+1. **No Blocking**: No waiting for external resources or slow I/O
+1. **Event Loop Safe**: Sync operations that complete quickly don't block the event loop
 
 **Under the Hood**:
+
 ```python
 class KnowledgeGraphDatabaseAdapter:
     """Hybrid pattern: async signatures, sync operations."""
@@ -722,7 +770,7 @@ A: New data will be stored in the new schema. Old data remains in the old databa
 A: Technically yes, but not recommended. They use different database files. Migrate fully to avoid data fragmentation.
 
 **Q: Will the hybrid pattern cause performance issues?**
-A: No. DuckDB operations are so fast (<1ms) that sync operations don't block the event loop. This is the same pattern ACB uses successfully.
+A: No. DuckDB operations are so fast (\<1ms) that sync operations don't block the event loop. This is the same pattern ACB uses successfully.
 
 **Q: What about async best practices?**
 A: The hybrid pattern follows pragmatic async design: prioritize user experience (API consistency) over theoretical purity when safe to do so.
@@ -755,10 +803,11 @@ async with ReflectionDatabase() as db:
 ### Step 3: Report Issues
 
 If you need to rollback, please report issues:
+
 1. Create GitHub issue with error details
-2. Include migration script output (`--verbose`)
-3. Provide database size and record counts
-4. Note any custom configuration or usage patterns
+1. Include migration script output (`--verbose`)
+1. Provide database size and record counts
+1. Note any custom configuration or usage patterns
 
 ## FAQ
 
@@ -791,10 +840,10 @@ A: Python 3.13+ (same requirement as before migration).
 After migration:
 
 1. ✅ **Update imports** to use `ReflectionDatabaseAdapter`
-2. ✅ **Run migration script** if you have existing data
-3. ✅ **Test your application** to verify everything works
-4. ✅ **Update tests** to use new import
-5. ✅ **Monitor deprecation warnings** and address them
+1. ✅ **Run migration script** if you have existing data
+1. ✅ **Test your application** to verify everything works
+1. ✅ **Update tests** to use new import
+1. ✅ **Monitor deprecation warnings** and address them
 
 ## Additional Resources
 
@@ -806,12 +855,13 @@ After migration:
 ## Support
 
 For migration assistance:
+
 - Check `docs/ACB_MIGRATION_COMPLETE.md` for technical details
 - Review `session_mgmt_mcp/adapters/reflection_adapter.py` source code
 - Open GitHub issue for migration-specific problems
 - Consult CLAUDE.md for architecture overview
 
----
+______________________________________________________________________
 
 **Migration Status**: Ready for Production ✅
 **Last Updated**: January 11, 2025

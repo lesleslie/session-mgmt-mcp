@@ -283,7 +283,9 @@ class ShutdownManager:
 
         """
         self._stats.tasks_failed += 1
-        _get_logger().error(f"Cleanup task failed: {task.name} - {error}", exc_info=True)
+        _get_logger().error(
+            f"Cleanup task failed: {task.name} - {error}", exc_info=True
+        )
         if task.critical:
             _get_logger().critical(
                 f"Critical task failed: {task.name}, stopping cleanup"

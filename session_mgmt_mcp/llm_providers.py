@@ -614,14 +614,18 @@ class OllamaProvider(LLMProvider):
             if content:
                 yield content
 
-    async def _stream_with_mcp_common(self, url: str, data: dict[str, Any]) -> AsyncGenerator[str]:
+    async def _stream_with_mcp_common(
+        self, url: str, data: dict[str, Any]
+    ) -> AsyncGenerator[str]:
         """Stream using MCP-common HTTP adapter."""
         client = await self.http_adapter._create_client()
         async with client.stream("POST", url, json=data) as response:
             async for chunk in self._stream_from_response_httpx(response):
                 yield chunk
 
-    async def _stream_with_aiohttp(self, url: str, data: dict[str, Any]) -> AsyncGenerator[str]:
+    async def _stream_with_aiohttp(
+        self, url: str, data: dict[str, Any]
+    ) -> AsyncGenerator[str]:
         """Stream using aiohttp fallback."""
         try:
             import aiohttp
@@ -1137,13 +1141,12 @@ def _get_provider_api_key_and_env(provider: str) -> tuple[str | None, str | None
     return None, None
 
 
-def _validate_provider_with_security(
-    provider: str, api_key: str
-) -> tuple[bool, str]:
+def _validate_provider_with_security(provider: str, api_key: str) -> tuple[bool, str]:
     """Validate provider API key using mcp-common security module.
 
     Returns:
         Tuple of (success, status_message)
+
     """
     import sys
 
@@ -1170,6 +1173,7 @@ def _validate_provider_basic(provider: str, api_key: str) -> str:
 
     Returns:
         Status message
+
     """
     import sys
 
