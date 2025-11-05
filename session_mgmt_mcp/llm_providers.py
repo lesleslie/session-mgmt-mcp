@@ -614,6 +614,30 @@ class OllamaProvider(LLMProvider):
             if content:
                 yield content
 
+    async def _stream_with_mcp_common(self, url: str, data: dict[str, Any]) -> AsyncGenerator[str]:
+        """Stream using MCP-common HTTP adapter."""
+        client = await self.http_adapter._create_client()
+        async with client.stream("POST", url, json=data) as response:
+            async for chunk in self._stream_from_response_httpx(response):
+                yield chunk
+
+    async def _stream_with_aiohttp(self, url: str, data: dict[str, Any]) -> AsyncGenerator[str]:
+        """Stream using aiohttp fallback."""
+        try:
+            import aiohttp
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json=data,
+                    timeout=aiohttp.ClientTimeout(total=300),
+                ) as response:
+                    async for chunk in self._stream_from_response_aiohttp(response):
+                        yield chunk
+        except ImportError:
+            msg = "aiohttp not installed and mcp-common not available"
+            raise ImportError(msg)
+
     async def stream_generate(  # type: ignore[override]
         self,
         messages: list[LLMMessage],
@@ -633,34 +657,48 @@ class OllamaProvider(LLMProvider):
 
         try:
             if self._use_mcp_common and self.http_adapter:
-                # Use HTTPClientAdapter with connection pooling (streaming)
-                client = await self.http_adapter._create_client()
-                async with client.stream("POST", url, json=data) as response:
-                    async for chunk in self._stream_from_response_httpx(response):
-                        yield chunk
+                async for chunk in self._stream_with_mcp_common(url, data):
+                    yield chunk
             else:
-                # Fallback to aiohttp (legacy)
-                try:
-                    import aiohttp
-
-                    async with aiohttp.ClientSession() as session:
-                        async with session.post(
-                            url,
-                            json=data,
-                            timeout=aiohttp.ClientTimeout(total=300),
-                        ) as response:
-                            async for chunk in self._stream_from_response_aiohttp(
-                                response
-                            ):
-                                yield chunk
-
-                except ImportError:
-                    msg = "aiohttp not installed and mcp-common not available"
-                    raise ImportError(msg)
-
+                async for chunk in self._stream_with_aiohttp(url, data):
+                    yield chunk
         except Exception as e:
             self.logger.exception(f"Ollama streaming failed: {e}")
             raise
+
+    async def _check_with_mcp_common(self, url: str) -> bool:
+        """Check availability using MCP-common HTTP adapter."""
+        try:
+            response = await self.http_adapter.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                self._available_models = [
+                    model["name"] for model in data.get("models", [])
+                ]
+                return True
+            return False
+        except Exception:
+            return False
+
+    async def _check_with_aiohttp(self, url: str) -> bool:
+        """Check availability using aiohttp fallback."""
+        try:
+            import aiohttp
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        self._available_models = [
+                            model["name"] for model in data.get("models", [])
+                        ]
+                        return True
+            return False
+        except Exception:
+            return False
 
     async def is_available(self) -> bool:
         """Check if Ollama is available with connection pooling."""
@@ -668,37 +706,8 @@ class OllamaProvider(LLMProvider):
             url = f"{self.base_url}/api/tags"
 
             if self._use_mcp_common and self.http_adapter:
-                # Use HTTPClientAdapter with connection pooling
-                try:
-                    response = await self.http_adapter.get(url)
-                    if response.status_code == 200:
-                        data = response.json()
-                        self._available_models = [
-                            model["name"] for model in data.get("models", [])
-                        ]
-                        return True
-                    return False
-                except Exception:
-                    return False
-            else:
-                # Fallback to aiohttp (legacy)
-                try:
-                    import aiohttp
-
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(
-                            url,
-                            timeout=aiohttp.ClientTimeout(total=10),
-                        ) as response:
-                            if response.status == 200:
-                                data = await response.json()
-                                self._available_models = [
-                                    model["name"] for model in data.get("models", [])
-                                ]
-                                return True
-                    return False
-                except Exception:
-                    return False
+                return await self._check_with_mcp_common(url)
+            return await self._check_with_aiohttp(url)
         except Exception:
             return False
 

@@ -349,6 +349,28 @@ async def _find_path_impl(
         return f"❌ Error finding path: {e}"
 
 
+def _format_entity_types(entity_types: dict[str, int]) -> list[str]:
+    """Format entity types section."""
+    if not entity_types:
+        return []
+
+    lines = ["📊 Entity Types:"]
+    lines.extend(f"   • {etype}: {count}" for etype, count in entity_types.items())
+    lines.append("")
+    return lines
+
+
+def _format_relationship_types(relationship_types: dict[str, int]) -> list[str]:
+    """Format relationship types section."""
+    if not relationship_types:
+        return []
+
+    lines = ["🔗 Relationship Types:"]
+    lines.extend(f"   • {rtype}: {count}" for rtype, count in relationship_types.items())
+    lines.append("")
+    return lines
+
+
 async def _get_knowledge_graph_stats_impl() -> str:
     """Get knowledge graph statistics."""
     if not _check_knowledge_graph_available():
@@ -358,29 +380,21 @@ async def _get_knowledge_graph_stats_impl() -> str:
         async with await _get_knowledge_graph() as kg:
             stats = await kg.get_stats()
 
-            output = []
-            output.append("📊 Knowledge Graph Statistics")
-            output.append("")
-            output.append(f"📌 Total Entities: {stats['total_entities']}")
-            output.append(f"🔗 Total Relationships: {stats['total_relationships']}")
-            output.append("")
+            output = [
+                "📊 Knowledge Graph Statistics",
+                "",
+                f"📌 Total Entities: {stats['total_entities']}",
+                f"🔗 Total Relationships: {stats['total_relationships']}",
+                "",
+            ]
 
-            if stats["entity_types"]:
-                output.append("📊 Entity Types:")
-                for etype, count in stats["entity_types"].items():
-                    output.append(f"   • {etype}: {count}")
-                output.append("")
+            output.extend(_format_entity_types(stats.get("entity_types", {})))
+            output.extend(_format_relationship_types(stats.get("relationship_types", {})))
 
-            if stats["relationship_types"]:
-                output.append("🔗 Relationship Types:")
-                for rtype, count in stats["relationship_types"].items():
-                    output.append(f"   • {rtype}: {count}")
-                output.append("")
-
-            output.append(f"💾 Database: {stats['database_path']}")
-            output.append(
-                f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}"
-            )
+            output.extend([
+                f"💾 Database: {stats['database_path']}",
+                f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
+            ])
 
             _get_logger().info("Knowledge graph stats retrieved", **stats)
             return "\n".join(output)
