@@ -53,6 +53,7 @@ def configure(*, force: bool = False) -> None:
 
     # Register services with type-safe path access
     _register_logger(paths.logs_dir, force)
+    _register_session_logger(paths.logs_dir, force)  # Register SessionLogger
     _register_permissions_manager(paths.claude_dir, force)
     _register_lifecycle_manager(force)
 
@@ -114,6 +115,27 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
 
     # Register the instance
     depends.set(Logger, logger_instance)
+
+
+def _register_session_logger(logs_dir: Path, force: bool) -> None:
+    """Register SessionLogger with the given logs directory.
+
+    Args:
+        logs_dir: Directory for session log files
+        force: If True, re-registers even if already registered
+
+    """
+    from session_mgmt_mcp.utils.logging import SessionLogger
+
+    if not force:
+        with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+            existing = depends.get_sync(SessionLogger)
+            if isinstance(existing, SessionLogger):
+                return
+
+    # Create SessionLogger instance
+    session_logger = SessionLogger(logs_dir)
+    depends.set(SessionLogger, session_logger)
 
 
 def _register_vector_adapter(paths: SessionPaths, force: bool) -> None:
