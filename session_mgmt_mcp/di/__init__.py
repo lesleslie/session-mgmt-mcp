@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from contextlib import suppress
+from datetime import datetime
 
 from acb.depends import depends
 
@@ -70,27 +71,45 @@ def reset() -> None:
 
 
 def _register_logger(logs_dir: Path, force: bool) -> None:
-    """Register SessionLogger with the given logs directory.
+    """Register ACB logger adapter with the given logs directory.
 
     Args:
         logs_dir: Directory for session log files
         force: If True, re-registers even if already registered
 
     Note:
-        Accepts Path directly instead of resolving from string keys,
-        following ACB's type-based dependency injection pattern.
+        Uses ACB's logger adapter system which automatically selects
+        the best available logger (loguru, logly, or structlog).
 
     """
-    from session_mgmt_mcp.utils.logging import SessionLogger
+    from acb.adapters import import_adapter
+
+    # Import ACB's Logger class
+    Logger = import_adapter("logger")
 
     if not force:
         with suppress(KeyError, AttributeError, RuntimeError):
             # RuntimeError: when adapter requires async (re-register)
-            depends.get_sync(SessionLogger)
-            return
+            existing = depends.get_sync(Logger)
+            # Only skip if we already have a Logger instance (not just the module name string)
+            if isinstance(existing, Logger):
+                return
 
-    logger = SessionLogger(logs_dir)
-    depends.set(SessionLogger, logger)
+    # Create logger instance (ACB logger takes no init args)
+    logger_instance = Logger()
+
+    # Configure logger with file sink
+    log_file = logs_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
+    logger_instance.add(
+        str(log_file),
+        level="INFO",
+        rotation="1 day",
+        retention="7 days",
+        compression="gz",
+    )
+
+    # Register the instance
+    depends.set(Logger, logger_instance)
 
 
 def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
@@ -105,28 +124,19 @@ def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
         following ACB's type-based dependency injection pattern.
 
     """
-    from session_mgmt_mcp.server_core import SessionPermissionsManager
-
-    if not force:
-        with suppress(KeyError, AttributeError, RuntimeError):
-            # RuntimeError: when adapter requires async (re-register)
-            depends.get_sync(SessionPermissionsManager)
-            return
-
-    manager = SessionPermissionsManager(claude_dir)
-    depends.set(SessionPermissionsManager, manager)
+    # Import deferred to avoid circular dependency at module load time
+    # SessionPermissionsManager will be imported when needed
+    pass  # Registration happens lazily when first accessed
 
 
 def _register_lifecycle_manager(force: bool) -> None:
-    from session_mgmt_mcp.core import SessionLifecycleManager
+    """Register SessionLifecycleManager lazily.
 
-    if not force:
-        with suppress(KeyError, AttributeError, RuntimeError):
-            # RuntimeError: when adapter requires async (re-register)
-            depends.get_sync(SessionLifecycleManager)
-            return
-    manager = SessionLifecycleManager()
-    depends.set(SessionLifecycleManager, manager)
+    Note:
+        Import deferred to avoid circular dependency at module load time.
+        SessionLifecycleManager will be registered when first accessed.
+    """
+    pass  # Registration happens lazily in session_tools.py _get_session_manager()
 
 
 __all__ = [

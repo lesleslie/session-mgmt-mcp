@@ -15,13 +15,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Import mcp-common HTTPClientAdapter for connection pooling
+# ACB Requests adapter (httpx/niquests based on config)
 try:
-    from mcp_common import HTTPClientAdapter, HTTPClientSettings
+    from acb.adapters import import_adapter
+    from acb.depends import depends
 
-    MCP_COMMON_AVAILABLE = True
-except ImportError:
-    MCP_COMMON_AVAILABLE = False
+    Requests = import_adapter("requests")
+    REQUESTS_AVAILABLE = True
+except Exception:
+    Requests = None  # type: ignore[assignment]
+    REQUESTS_AVAILABLE = False
 
 # Import mcp-common security utilities for API key validation (Phase 3 Security Hardening)
 try:
@@ -465,7 +468,7 @@ class GeminiProvider(LLMProvider):
 
 
 class OllamaProvider(LLMProvider):
-    """Ollama local LLM provider with connection pooling via mcp-common."""
+    """Ollama local LLM provider using ACB Requests adapter for connection pooling."""
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -473,18 +476,13 @@ class OllamaProvider(LLMProvider):
         self.default_model = config.get("default_model", "llama2")
         self._available_models: list[str] = []
 
-        # Initialize HTTPClientAdapter for connection pooling (11x performance improvement)
-        if MCP_COMMON_AVAILABLE:
-            http_settings = HTTPClientSettings(
-                timeout=300,  # 5 minutes for LLM generation
-                max_connections=10,  # Reasonable for local Ollama
-                max_keepalive_connections=5,
-            )
-            self.http_adapter = HTTPClientAdapter(settings=http_settings)
-            self._use_mcp_common = True
-        else:
-            self.http_adapter = None
-            self._use_mcp_common = False
+        # Initialize ACB Requests adapter if available
+        self._requests = None
+        if REQUESTS_AVAILABLE and Requests is not None:
+            try:
+                self._requests = depends.get(Requests)
+            except Exception:
+                self._requests = None
 
     async def _make_api_request(
         self,
@@ -494,29 +492,31 @@ class OllamaProvider(LLMProvider):
         """Make API request to Ollama service with connection pooling."""
         url = f"{self.base_url}/{endpoint}"
 
-        if self._use_mcp_common and self.http_adapter:
-            # Use HTTPClientAdapter with connection pooling
+        if self._requests is not None:
             try:
-                response = await self.http_adapter.post(url, json=data)
-                return response.json()  # type: ignore[no-any-return]
+                resp = await self._requests.post(url, json=data, timeout=300)
+                # Support both httpx and niquests response objects
+                return resp.json()  # type: ignore[no-any-return]
             except Exception as e:
                 self.logger.exception(f"HTTP request failed: {e}")
                 raise
-        else:
-            # Fallback to aiohttp (legacy)
-            try:
-                import aiohttp
+        # Fallback to aiohttp (legacy)
+        try:
+            import aiohttp
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        url,
-                        json=data,
-                        timeout=aiohttp.ClientTimeout(total=300),
-                    ) as response:
-                        return await response.json()  # type: ignore[no-any-return]
-            except ImportError:
-                msg = "aiohttp package not installed and mcp-common not available. Install with: pip install aiohttp"
-                raise ImportError(msg)  # type: ignore[no-any-return]
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json=data,
+                    timeout=aiohttp.ClientTimeout(total=300),
+                ) as response:
+                    return await response.json()  # type: ignore[no-any-return]
+        except ImportError:
+            msg = (
+                "aiohttp package not installed and ACB Requests adapter not available. "
+                "Install with: pip install aiohttp or configure acb.adapters.requests"
+            )
+            raise ImportError(msg)  # type: ignore[no-any-return]
 
     def _convert_messages(self, messages: list[LLMMessage]) -> list[dict[str, str]]:
         """Convert LLMMessage objects to Ollama format."""

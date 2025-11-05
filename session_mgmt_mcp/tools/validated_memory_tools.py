@@ -25,9 +25,13 @@ from session_mgmt_mcp.parameter_models import (
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 # Lazy detection flag for optional dependencies
 _reflection_tools_available: bool | None = None
@@ -92,16 +96,16 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
                 output.append(f"🏷️ Tags: {', '.join(tags)}")
             output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-            logger.info("Reflection stored", content_length=len(content), tags=tags)
+            _get_logger().info("Reflection stored", content_length=len(content), tags=tags)
             return "\n".join(output)
 
         return "❌ Failed to store reflection"
 
     except ValueError as e:
-        logger.warning(f"Parameter validation failed: {e}")
+        _get_logger().warning(f"Parameter validation failed: {e}")
         return f"❌ Parameter validation error: {e}"
     except Exception as e:
-        logger.exception(f"Error storing reflection: {e}")
+        _get_logger().exception(f"Error storing reflection: {e}")
         return f"❌ Error storing reflection: {e}"
 
 
@@ -143,14 +147,14 @@ async def _quick_search_validated_impl(**params: Any) -> str:
             output.append("🔍 No results found")
             output.append("💡 Try adjusting your search terms or lowering min_score")
 
-        logger.info("Quick search performed", query=query, results_count=len(results))
+        _get_logger().info("Quick search performed", query=query, results_count=len(results))
         return "\n".join(output)
 
     except ValueError as e:
-        logger.warning(f"Parameter validation failed: {e}")
+        _get_logger().warning(f"Parameter validation failed: {e}")
         return f"❌ Parameter validation error: {e}"
     except Exception as e:
-        logger.exception(f"Error in quick search: {e}")
+        _get_logger().exception(f"Error in quick search: {e}")
         return f"❌ Search error: {e}"
 
 
@@ -215,16 +219,16 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
 
         output = _format_file_search_results(results, file_path)
 
-        logger.info(
+        _get_logger().info(
             "File search performed", file_path=file_path, results_count=len(results)
         )
         return "\n".join(output)
 
     except ValueError as e:
-        logger.warning(f"Parameter validation failed: {e}")
+        _get_logger().warning(f"Parameter validation failed: {e}")
         return f"❌ Parameter validation error: {e}"
     except Exception as e:
-        logger.exception(f"Error searching by file: {e}")
+        _get_logger().exception(f"Error searching by file: {e}")
         return f"❌ File search error: {e}"
 
 
@@ -286,16 +290,16 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
             output.append("🔍 No conversations found about this concept")
             output.append("💡 Try related terms or broader concepts")
 
-        logger.info(
+        _get_logger().info(
             "Concept search performed", concept=concept, results_count=len(results)
         )
         return "\n".join(output)
 
     except ValueError as e:
-        logger.warning(f"Parameter validation failed: {e}")
+        _get_logger().warning(f"Parameter validation failed: {e}")
         return f"❌ Parameter validation error: {e}"
     except Exception as e:
-        logger.exception(f"Error searching by concept: {e}")
+        _get_logger().exception(f"Error searching by concept: {e}")
         return f"❌ Concept search error: {e}"
 
 

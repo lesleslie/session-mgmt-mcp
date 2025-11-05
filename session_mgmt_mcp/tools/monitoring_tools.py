@@ -15,12 +15,16 @@ from session_mgmt_mcp.utils.instance_managers import (
 from session_mgmt_mcp.utils.instance_managers import (
     get_interruption_manager as resolve_interruption_manager,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 # Lazy loading flags
 _app_monitor_available: bool | None = None
@@ -36,7 +40,7 @@ async def _get_app_monitor() -> Any:
 
     monitor = await resolve_app_monitor()
     if monitor is None:
-        logger.warning("Application monitoring not available.")
+        _get_logger().warning("Application monitoring not available.")
         _app_monitor_available = False
         return None
 
@@ -53,7 +57,7 @@ async def _get_interruption_manager() -> Any:
 
     manager = await resolve_interruption_manager()
     if manager is None:
-        logger.warning("Interruption management not available.")
+        _get_logger().warning("Interruption management not available.")
         _interruption_available = False
         return None
 
@@ -127,7 +131,7 @@ async def _start_app_monitoring_impl(project_paths: list[str] | None = None) -> 
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error starting app monitoring: {e}")
+        _get_logger().exception(f"Error starting app monitoring: {e}")
         return f"❌ Error starting monitoring: {e}"
 
 
@@ -159,7 +163,7 @@ async def _stop_app_monitoring_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error stopping app monitoring: {e}")
+        _get_logger().exception(f"Error stopping app monitoring: {e}")
         return f"❌ Error stopping monitoring: {e}"
 
 
@@ -235,7 +239,7 @@ async def _get_activity_summary_impl(hours: int = 2) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting activity summary: {e}")
+        _get_logger().exception(f"Error getting activity summary: {e}")
         return f"❌ Error getting activity summary: {e}"
 
 
@@ -292,7 +296,7 @@ async def _get_context_insights_impl(hours: int = 1) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting context insights: {e}")
+        _get_logger().exception(f"Error getting context insights: {e}")
         return f"❌ Error getting context insights: {e}"
 
 
@@ -331,7 +335,7 @@ async def _get_active_files_impl(minutes: int = 60) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting active files: {e}")
+        _get_logger().exception(f"Error getting active files: {e}")
         return f"❌ Error getting active files: {e}"
 
 
@@ -369,7 +373,7 @@ async def _start_interruption_monitoring_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error starting interruption monitoring: {e}")
+        _get_logger().exception(f"Error starting interruption monitoring: {e}")
         return f"❌ Error starting interruption monitoring: {e}"
 
 
@@ -401,7 +405,7 @@ async def _stop_interruption_monitoring_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error stopping interruption monitoring: {e}")
+        _get_logger().exception(f"Error stopping interruption monitoring: {e}")
         return f"❌ Error stopping interruption monitoring: {e}"
 
 
@@ -434,7 +438,7 @@ async def _create_session_context_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error creating session context: {e}")
+        _get_logger().exception(f"Error creating session context: {e}")
         return f"❌ Error creating session context: {e}"
 
 
@@ -464,7 +468,7 @@ async def _preserve_current_context_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error preserving context: {e}")
+        _get_logger().exception(f"Error preserving context: {e}")
         return f"❌ Error preserving context: {e}"
 
 
@@ -514,7 +518,7 @@ async def _restore_session_context_impl(session_id: str) -> str:
         return f"❌ Context not found: {session_id}"
 
     except Exception as e:
-        logger.exception(f"Error restoring context: {e}")
+        _get_logger().exception(f"Error restoring context: {e}")
         return f"❌ Error restoring context: {e}"
 
 
@@ -595,7 +599,7 @@ async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting interruption history: {e}")
+        _get_logger().exception(f"Error getting interruption history: {e}")
         return f"❌ Error getting interruption history: {e}"
 
 

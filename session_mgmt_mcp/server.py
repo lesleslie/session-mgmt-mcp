@@ -27,8 +27,12 @@ if TYPE_CHECKING:
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 
+from acb.adapters import import_adapter
 from acb.depends import depends
 from session_mgmt_mcp.di import configure as configure_di
+
+# CRITICAL: Configure DI BEFORE importing anything that uses loggers!
+configure_di()
 
 # Phase 2.5: Import core infrastructure from server_core
 from session_mgmt_mcp.server_core import (
@@ -47,14 +51,10 @@ from session_mgmt_mcp.server_core import (
     # Session lifecycle handler
     session_lifecycle as _session_lifecycle_impl,
 )
-from session_mgmt_mcp.utils.logging import SessionLogger, get_session_logger
 
-configure_di()
-
-try:
-    session_logger = depends.get_sync(SessionLogger)
-except Exception:
-    session_logger = get_session_logger()
+# Get ACB logger from DI container
+Logger = import_adapter("logger")
+session_logger = depends.get_sync(Logger)
 
 # Check token optimizer availability (Phase 3.3 M2: improved pattern)
 TOKEN_OPTIMIZER_AVAILABLE = (
@@ -151,8 +151,11 @@ current_project: str | None = None
 try:
     permissions_manager = depends.get_sync(SessionPermissionsManager)
 except Exception:
-    claude_root = session_logger.log_dir.parent
-    permissions_manager = SessionPermissionsManager(claude_root)
+    # Get SessionPaths from DI to find claude_root
+    from session_mgmt_mcp.di.config import SessionPaths
+
+    paths = depends.get_sync(SessionPaths)
+    permissions_manager = SessionPermissionsManager(paths.claude_dir)
     depends.set(SessionPermissionsManager, permissions_manager)
 
 # Import required components for automatic lifecycle

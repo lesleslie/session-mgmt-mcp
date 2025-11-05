@@ -11,9 +11,13 @@ import importlib.util
 import re
 from typing import TYPE_CHECKING, Any
 
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 # Lazy detection flag
 _knowledge_graph_available: bool | None = None
@@ -95,7 +99,7 @@ async def _create_entity_impl(
             if properties:
                 output.append(f"⚙️ Properties: {', '.join(properties.keys())}")
 
-            logger.info(
+            _get_logger().info(
                 "Entity created",
                 entity_name=name,
                 entity_type=entity_type,
@@ -104,7 +108,7 @@ async def _create_entity_impl(
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error creating entity: {e}")
+        _get_logger().exception(f"Error creating entity: {e}")
         return f"❌ Error creating entity: {e}"
 
 
@@ -122,7 +126,7 @@ async def _add_observation_impl(entity_name: str, observation: str) -> str:
                 output.append(f"✅ Observation added to '{entity_name}'")
                 output.append(f"📝 Observation: {observation}")
 
-                logger.info(
+                _get_logger().info(
                     "Observation added",
                     entity_name=entity_name,
                     observation=observation[:100],
@@ -131,7 +135,7 @@ async def _add_observation_impl(entity_name: str, observation: str) -> str:
             return f"❌ Entity '{entity_name}' not found"
 
     except Exception as e:
-        logger.exception(f"Error adding observation: {e}")
+        _get_logger().exception(f"Error adding observation: {e}")
         return f"❌ Error adding observation: {e}"
 
 
@@ -163,7 +167,7 @@ async def _create_relation_impl(
                 if properties:
                     output.append(f"⚙️ Properties: {', '.join(properties.keys())}")
 
-                logger.info(
+                _get_logger().info(
                     "Relation created",
                     from_entity=from_entity,
                     to_entity=to_entity,
@@ -173,7 +177,7 @@ async def _create_relation_impl(
             return f"❌ One or both entities not found: {from_entity}, {to_entity}"
 
     except Exception as e:
-        logger.exception(f"Error creating relation: {e}")
+        _get_logger().exception(f"Error creating relation: {e}")
         return f"❌ Error creating relation: {e}"
 
 
@@ -213,7 +217,7 @@ async def _search_entities_impl(
                         )
                 output.append("")
 
-            logger.info(
+            _get_logger().info(
                 "Entities searched",
                 query=query,
                 entity_type=entity_type,
@@ -222,7 +226,7 @@ async def _search_entities_impl(
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error searching entities: {e}")
+        _get_logger().exception(f"Error searching entities: {e}")
         return f"❌ Error searching entities: {e}"
 
 
@@ -264,7 +268,7 @@ async def _get_entity_relationships_impl(
                         f"  {rel['from_entity']} <--[{rel['relation_type']}]-- {rel['to_entity']}"
                     )
 
-            logger.info(
+            _get_logger().info(
                 "Relationships retrieved",
                 entity_name=entity_name,
                 relation_type=relation_type,
@@ -274,7 +278,7 @@ async def _get_entity_relationships_impl(
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting relationships: {e}")
+        _get_logger().exception(f"Error getting relationships: {e}")
         return f"❌ Error getting relationships: {e}"
 
 
@@ -309,7 +313,7 @@ async def _find_path_impl(
                 output.append(f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}")
                 output.append("")
 
-            logger.info(
+            _get_logger().info(
                 "Paths found",
                 from_entity=from_entity,
                 to_entity=to_entity,
@@ -318,7 +322,7 @@ async def _find_path_impl(
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error finding path: {e}")
+        _get_logger().exception(f"Error finding path: {e}")
         return f"❌ Error finding path: {e}"
 
 
@@ -355,11 +359,11 @@ async def _get_knowledge_graph_stats_impl() -> str:
                 f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}"
             )
 
-            logger.info("Knowledge graph stats retrieved", **stats)
+            _get_logger().info("Knowledge graph stats retrieved", **stats)
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error getting stats: {e}")
+        _get_logger().exception(f"Error getting stats: {e}")
         return f"❌ Error getting stats: {e}"
 
 
@@ -415,7 +419,7 @@ async def _extract_entities_from_context_impl(
         if auto_create:
             output.append(f"✅ Auto-created: {created_count} new entities")
 
-        logger.info(
+        _get_logger().info(
             "Entities extracted from context",
             total_extracted=total_extracted,
             auto_created=created_count if auto_create else 0,
@@ -423,7 +427,7 @@ async def _extract_entities_from_context_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error extracting entities: {e}")
+        _get_logger().exception(f"Error extracting entities: {e}")
         return f"❌ Error extracting entities: {e}"
 
 
@@ -469,7 +473,7 @@ async def _batch_create_entities_impl(
                 if len(failed) > 5:
                     output.append(f"   ... and {len(failed) - 5} more")
 
-            logger.info(
+            _get_logger().info(
                 "Batch entities created",
                 total=len(entities),
                 created=len(created),
@@ -478,7 +482,7 @@ async def _batch_create_entities_impl(
             return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error in batch create: {e}")
+        _get_logger().exception(f"Error in batch create: {e}")
         return f"❌ Error in batch create: {e}"
 
 

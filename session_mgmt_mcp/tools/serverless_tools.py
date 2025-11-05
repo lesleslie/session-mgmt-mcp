@@ -12,12 +12,16 @@ from typing import TYPE_CHECKING, Any
 from session_mgmt_mcp.utils.instance_managers import (
     get_serverless_manager as resolve_serverless_manager,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 # Lazy loading flag for optional serverless dependencies
 _serverless_available: bool | None = None
@@ -32,7 +36,7 @@ async def _get_serverless_manager() -> Any:
 
     manager = await resolve_serverless_manager()
     if manager is None:
-        logger.warning("Serverless mode not available.")
+        _get_logger().warning("Serverless mode not available.")
         _serverless_available = False
         return None
 
@@ -81,7 +85,7 @@ async def _create_serverless_session_impl(
         return f"✅ Created serverless session: {session_id}\n🕐 TTL: {ttl_hours} hours"
 
     except Exception as e:
-        logger.exception(f"Error creating serverless session: {e}")
+        _get_logger().exception(f"Error creating serverless session: {e}")
         return f"❌ Error creating session: {e}"
 
 
@@ -116,7 +120,7 @@ async def _get_serverless_session_impl(session_id: str) -> str:
         return f"❌ Session not found: {session_id}"
 
     except Exception as e:
-        logger.exception(f"Error getting serverless session: {e}")
+        _get_logger().exception(f"Error getting serverless session: {e}")
         return f"❌ Error retrieving session: {e}"
 
 
@@ -155,7 +159,7 @@ async def _update_serverless_session_impl(
         return f"❌ Failed to update session: {session_id}"
 
     except Exception as e:
-        logger.exception(f"Error updating serverless session: {e}")
+        _get_logger().exception(f"Error updating serverless session: {e}")
         return f"❌ Error updating session: {e}"
 
 
@@ -176,7 +180,7 @@ async def _delete_serverless_session_impl(session_id: str) -> str:
         return f"❌ Session not found: {session_id}"
 
     except Exception as e:
-        logger.exception(f"Error deleting serverless session: {e}")
+        _get_logger().exception(f"Error deleting serverless session: {e}")
         return f"❌ Error deleting session: {e}"
 
 
@@ -198,7 +202,7 @@ async def _list_serverless_sessions_impl(
         return _format_sessions_list(sessions, user_id, project_id)
 
     except Exception as e:
-        logger.exception(f"Error listing serverless sessions: {e}")
+        _get_logger().exception(f"Error listing serverless sessions: {e}")
         return f"❌ Error listing sessions: {e}"
 
 
@@ -270,7 +274,7 @@ async def _test_serverless_storage_impl() -> str:
         return _format_storage_test_results(test_results)
 
     except Exception as e:
-        logger.exception(f"Error testing serverless storage: {e}")
+        _get_logger().exception(f"Error testing serverless storage: {e}")
         return f"❌ Error testing storage: {e}"
 
 
@@ -335,7 +339,7 @@ async def _cleanup_serverless_sessions_impl() -> str:
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception(f"Error cleaning up serverless sessions: {e}")
+        _get_logger().exception(f"Error cleaning up serverless sessions: {e}")
         return f"❌ Error during cleanup: {e}"
 
 
@@ -361,7 +365,7 @@ async def _configure_serverless_storage_impl(
         )
 
     except Exception as e:
-        logger.exception(f"Error configuring serverless storage: {e}")
+        _get_logger().exception(f"Error configuring serverless storage: {e}")
         return f"❌ Error configuring storage: {e}"
 
 

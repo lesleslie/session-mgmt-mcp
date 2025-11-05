@@ -24,6 +24,7 @@ import typer
 from acb.console import console
 from rich.panel import Panel
 from rich.table import Table
+from mcp_common.ui import ServerPanels
 
 app = typer.Typer(
     name="session-mgmt-mcp",
@@ -114,42 +115,24 @@ def show_status() -> None:
     server_status = get_server_status()
 
     # Create status table
-    table = Table(title="Session Management MCP Server Status")
-    table.add_column("Property", style="cyan")
-    table.add_column("Value", style="green")
-
     status_color = "green" if server_status["running"] else "red"
     status_text = "Running" if server_status["running"] else "Stopped"
-    table.add_row("Status", f"[{status_color}]{status_text}[/{status_color}]")
-    table.add_row("Process Count", str(server_status["process_count"]))
-    table.add_row("HTTP Port", str(server_status["http_port"]))
-    table.add_row("WebSocket Port", str(server_status["websocket_port"]))
-
+    items = {
+        "Status": f"[{status_color}]{status_text}[/{status_color}]",
+        "Process Count": str(server_status["process_count"]),
+        "HTTP Port": str(server_status["http_port"]),
+        "WebSocket Port": str(server_status["websocket_port"]),
+    }
     if server_status["running"]:
-        table.add_row(
-            "HTTP Endpoint", f"http://127.0.0.1:{server_status['http_port']}/mcp"
-        )
-        table.add_row(
-            "WebSocket Monitor", f"ws://127.0.0.1:{server_status['websocket_port']}"
-        )
-
-    console.print(table)
+        items["HTTP Endpoint"] = f"http://127.0.0.1:{server_status['http_port']}/mcp"
+        items[
+            "WebSocket Monitor"
+        ] = f"ws://127.0.0.1:{server_status['websocket_port']}"
+    ServerPanels.config_table("Session Management MCP Server Status", items)
 
     # Show process details if running
     if server_status["processes"]:
-        process_table = Table(title="Running Processes")
-        process_table.add_column("PID", style="cyan")
-        process_table.add_column("Memory (MB)", style="yellow")
-        process_table.add_column("CPU %", style="magenta")
-
-        for proc_info in server_status["processes"]:
-            process_table.add_row(
-                str(proc_info["pid"]),
-                f"{proc_info['memory_mb']:.1f}",
-                f"{proc_info['cpu_percent']:.1f}",
-            )
-
-        console.print(process_table)
+        ServerPanels.process_list(server_status["processes"]) 
 
 
 def start_mcp_server(
@@ -161,11 +144,10 @@ def start_mcp_server(
     server_status = get_server_status()
 
     if server_status["running"]:
-        console.print(
-            Panel(
-                f"[yellow]⚠️  Server already running with {server_status['process_count']} process(es)[/yellow]",
-                title="Server Status",
-            )
+        ServerPanels.status_panel(
+            title="Server Status",
+            status_text=f"[yellow]⚠️  Server already running with {server_status['process_count']} process(es)[/yellow]",
+            severity="warning",
         )
 
         console.print("[yellow]⚠️  Stopping existing server first...[/yellow]")
@@ -211,23 +193,25 @@ def start_mcp_server(
         # Check if server is detected by our process monitoring
         final_status = get_server_status()
         if final_status["running"]:
-            console.print(
-                Panel(
-                    f"[green]✅ Server started successfully![/green]\n"
-                    f"🌐 HTTP Endpoint: http://127.0.0.1:{http_port}/mcp\n"
-                    f"🔌 WebSocket Monitor: ws://127.0.0.1:{ws_port}\n"
-                    f"📊 Process ID: {final_status['processes'][0]['pid']}",
-                    title="Session Management MCP Server",
-                )
+            ServerPanels.status_panel(
+                title="Session Management MCP Server",
+                status_text="[green]✅ Server started successfully![/green]",
+                items={
+                    "HTTP Endpoint": f"http://127.0.0.1:{http_port}/mcp",
+                    "WebSocket Monitor": f"ws://127.0.0.1:{ws_port}",
+                    "Process ID": str(final_status['processes'][0]['pid']),
+                },
+                severity="success",
             )
         else:
-            console.print(
-                Panel(
-                    "[yellow]⚠️ Server process is running but not responding on expected ports[/yellow]\n"
-                    f"Process might be starting in STDIO mode instead of HTTP mode.\n"
-                    f"Process ID: {process.pid}",
-                    title="Warning",
-                )
+            ServerPanels.status_panel(
+                title="Warning",
+                status_text="[yellow]⚠️ Server process is running but not responding on expected ports[/yellow]",
+                items={
+                    "Process ID": str(process.pid),
+                    "Mode": "STDIO?",
+                },
+                severity="warning",
             )
 
     except Exception as e:
@@ -245,12 +229,11 @@ def stop_mcp_server() -> bool:
     processes = find_server_processes()
 
     if not processes:
-        console.print(
-            Panel(
-                "[yellow]⚠️ No running server processes found[/yellow]\n"
-                "Server may already be stopped or running in STDIO mode.",
-                title="Server Status",
-            )
+        ServerPanels.status_panel(
+            title="Server Status",
+            status_text="[yellow]⚠️ No running server processes found[/yellow]",
+            description="Server may already be stopped or running in STDIO mode.",
+            severity="warning",
         )
         return True  # Not an error if already stopped
 
@@ -285,11 +268,10 @@ def stop_mcp_server() -> bool:
             console.print(f"[red]❌ Failed to stop process {proc.pid}: {e}[/red]")
 
     if stopped_count > 0:
-        console.print(
-            Panel(
-                f"[green]✅ Successfully stopped {stopped_count} process(es)[/green]",
-                title="Server Stopped",
-            )
+        ServerPanels.status_panel(
+            title="Server Stopped",
+            status_text=f"[green]✅ Successfully stopped {stopped_count} process(es)[/green]",
+            severity="success",
         )
     else:
         console.print("[red]❌ Failed to stop any processes[/red]")
@@ -304,11 +286,10 @@ def restart_mcp_server(
     verbose: bool = False,
 ) -> bool:
     """Restart the session management MCP server (stop and start)."""
-    console.print(
-        Panel(
-            "[blue]🔄 Restarting Session Management MCP Server...[/blue]",
-            title="Server Restart",
-        )
+    ServerPanels.status_panel(
+        title="Server Restart",
+        status_text="[blue]🔄 Restarting Session Management MCP Server...[/blue]",
+        severity="info",
     )
 
     # Stop existing servers
@@ -326,13 +307,14 @@ def restart_mcp_server(
 
 def show_version() -> None:
     """Show version information."""
-    console.print(
-        Panel(
-            "[cyan]Session Management MCP Server[/cyan]\n"
-            "[yellow]Version: 2.0.0[/yellow]\n"
-            "[green]FastMCP-based server for Claude session management[/green]",
-            title="Version Information",
-        )
+    ServerPanels.status_panel(
+        title="Version Information",
+        status_text="[cyan]Session Management MCP Server[/cyan]",
+        items={
+            "Version": "2.0.0",
+            "Description": "FastMCP-based server for Claude session management",
+        },
+        severity="info",
     )
 
 
@@ -369,9 +351,7 @@ def show_logs(lines: int = 50, follow: bool = False) -> None:
 
 def show_config() -> None:
     """Show current server configuration."""
-    config_table = Table(title="Server Configuration")
-    config_table.add_column("Setting", style="cyan")
-    config_table.add_column("Value", style="green")
+    items: dict[str, str] = {}
 
     # Read configuration from pyproject.toml
     try:
@@ -385,23 +365,20 @@ def show_config() -> None:
                 data = tomli.load(f)
 
             config = data.get("tool", {}).get("session-mgmt-mcp", {})
-
-            config_table.add_row("HTTP Port", str(config.get("mcp_http_port", 8678)))
-            config_table.add_row("HTTP Host", config.get("mcp_http_host", "127.0.0.1"))
-            config_table.add_row(
-                "WebSocket Port", str(config.get("websocket_monitor_port", 8677))
-            )
-            config_table.add_row("HTTP Enabled", str(config.get("http_enabled", True)))
+            items["HTTP Port"] = str(config.get("mcp_http_port", 8678))
+            items["HTTP Host"] = config.get("mcp_http_host", "127.0.0.1")
+            items["WebSocket Port"] = str(config.get("websocket_monitor_port", 8677))
+            items["HTTP Enabled"] = str(config.get("http_enabled", True))
 
         else:
-            config_table.add_row("Status", "[red]pyproject.toml not found[/red]")
+            items["Status"] = "[red]pyproject.toml not found[/red]"
 
     except ImportError:
-        config_table.add_row("Status", "[red]tomli not available[/red]")
+        items["Status"] = "[red]tomli not available[/red]"
     except Exception as e:
-        config_table.add_row("Error", f"[red]{e}[/red]")
+        items["Error"] = f"[red]{e}[/red]"
 
-    console.print(config_table)
+    ServerPanels.config_table("Server Configuration", items)
 
 
 @app.command()

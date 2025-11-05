@@ -10,10 +10,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
+
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
@@ -246,14 +248,17 @@ async def quality_monitor() -> str:
     return await _crackerjack_health_check_impl()
 
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 
 async def _get_reflection_db() -> Any | None:
     """Resolve reflection database via DI helper."""
     db = await resolve_reflection_database()
     if db is None:
-        logger.warning("Reflection database not available for crackerjack operations.")
+        _get_logger().warning("Reflection database not available for crackerjack operations.")
     return db
 
 

@@ -21,7 +21,8 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 from session_mgmt_mcp.core import SessionLifecycleManager
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
 
 @dataclass
@@ -88,8 +89,10 @@ def _get_session_manager() -> SessionLifecycleManager:
     return manager
 
 
-session_manager = _get_session_manager()
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 
 def _create_session_shortcuts() -> dict[str, Any]:
@@ -174,9 +177,9 @@ This will:
             try:
                 shortcut_path.write_text(shortcut_data["content"])
                 created_shortcuts.append(shortcut_name)
-                logger.info(f"Created slash command shortcut: /{shortcut_name}")
+                _get_logger().info(f"Created slash command shortcut: /{shortcut_name}")
             except Exception as e:
-                logger.exception(f"Failed to create shortcut /{shortcut_name}: {e}")
+                _get_logger().exception(f"Failed to create shortcut /{shortcut_name}: {e}")
 
     return {
         "created": bool(created_shortcuts),
@@ -253,7 +256,7 @@ async def _start_impl(working_directory: str | None = None) -> str:
     output_builder.add_header("🚀 Claude Session Initialization via MCP Server")
 
     try:
-        result = await session_manager.initialize_session(working_directory)
+        result = await _get_session_manager().initialize_session(working_directory)
 
         if result["success"]:
             _add_session_info_to_output(output_builder, result)
@@ -268,7 +271,7 @@ async def _start_impl(working_directory: str | None = None) -> str:
             )
 
     except Exception as e:
-        logger.exception("Session initialization error", error=str(e))
+        _get_logger().exception("Session initialization error", error=str(e))
         output_builder.add_simple_item(
             f"❌ Unexpected error during initialization: {e}"
         )
@@ -471,14 +474,14 @@ async def _handle_auto_store_reflection(
                 checkpoint_content += f"Quality {direction} by {delta} points. "
 
             checkpoint_content += (
-                f"Project: {session_manager.current_project or 'unknown'}. "
+                f"Project: {_get_session_manager().current_project or 'unknown'}. "
             )
             checkpoint_content += f"Timestamp: {result['timestamp']}"
 
             # Generate semantic tags
             tags = generate_auto_store_tags(
                 reason=auto_store_decision.reason,
-                project=session_manager.current_project,
+                project=_get_session_manager().current_project,
                 quality_score=result["quality_score"],
             )
 
@@ -486,7 +489,7 @@ async def _handle_auto_store_reflection(
             await db.store_reflection(checkpoint_content, tags)
             output.append(f"\n{result['auto_store_summary']}")
         except Exception as e:
-            logger.exception(f"Failed to store checkpoint reflection: {e}")
+            _get_logger().exception(f"Failed to store checkpoint reflection: {e}")
             output.append(f"⚠️ Reflection storage failed: {e}")
     else:
         # Show why we skipped auto-store
@@ -524,13 +527,13 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
 
     output = []
     output.append(
-        f"🔍 Claude Session Checkpoint - {session_manager.current_project or 'Current Project'}",
+        f"🔍 Claude Session Checkpoint - {_get_session_manager().current_project or 'Current Project'}",
     )
     output.append("=" * 50)
 
     try:
         # Determine if this is a manual checkpoint (always true for explicit tool calls)
-        result = await session_manager.checkpoint_session(
+        result = await _get_session_manager().checkpoint_session(
             working_directory, is_manual=True
         )
 
@@ -555,7 +558,7 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
             output.append(f"❌ Checkpoint failed: {result['error']}")
 
     except Exception as e:
-        logger.exception("Checkpoint error", error=str(e))
+        _get_logger().exception("Checkpoint error", error=str(e))
         output.append(f"❌ Unexpected checkpoint error: {e}")
 
     return "\n".join(output)
@@ -570,10 +573,10 @@ async def _end_impl(working_directory: str | None = None) -> str:
     output = _initialize_end_output()
 
     try:
-        result = await session_manager.end_session(working_directory)
+        result = await _get_session_manager().end_session(working_directory)
         output.extend(_process_end_result(result))
     except Exception as e:
-        logger.exception("Session end error", error=str(e))
+        _get_logger().exception("Session end error", error=str(e))
         output.append(f"❌ Unexpected error during session end: {e}")
 
     return "\n".join(output)
@@ -702,7 +705,7 @@ async def _status_impl(working_directory: str | None = None) -> str:
     output_builder.add_header("📊 Claude Session Status Report")
 
     try:
-        result = await session_manager.get_session_status(working_directory)
+        result = await _get_session_manager().get_session_status(working_directory)
 
         if result["success"]:
             _add_project_section_to_output(output_builder, result)
@@ -725,7 +728,7 @@ async def _status_impl(working_directory: str | None = None) -> str:
             output_builder.add_simple_item(f"❌ Status check failed: {result['error']}")
 
     except Exception as e:
-        logger.exception("Status check error", error=str(e))
+        _get_logger().exception("Status check error", error=str(e))
         output_builder.add_simple_item(f"❌ Unexpected error during status check: {e}")
 
     return output_builder.build()

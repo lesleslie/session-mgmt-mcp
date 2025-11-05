@@ -13,9 +13,13 @@ from typing import TYPE_CHECKING, Any
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 # Lazy detection flag
 _reflection_tools_available: bool | None = None
@@ -82,13 +86,13 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
                 output.append(f"🏷️ Tags: {', '.join(tags)}")
             output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-            logger.info("Reflection stored", content_length=len(content), tags=tags)
+            _get_logger().info("Reflection stored", content_length=len(content), tags=tags)
             return "\n".join(output)
         return "❌ Failed to store reflection"
 
     except Exception as e:
         # Use regular logging instead of exception logging which isn't available
-        logger.exception(f"Error storing reflection: {e}")
+        _get_logger().exception(f"Error storing reflection: {e}")
         return f"❌ Error storing reflection: {e}"
 
 
@@ -140,12 +144,12 @@ async def _quick_search_impl(
         output = _format_quick_search_header(query)
         output.extend(_format_quick_search_results(results))
 
-        logger.info("Quick search performed", query=query, results_count=len(results))
+        _get_logger().info("Quick search performed", query=query, results_count=len(results))
         return "\n".join(output)
 
     except Exception as e:
         # Use regular logging instead of exception logging which isn't available
-        logger.exception(f"Error in quick search: {e}")
+        _get_logger().exception(f"Error in quick search: {e}")
         return f"❌ Search error: {e}"
 
 
@@ -319,12 +323,12 @@ async def _search_summary_impl(
         else:
             output.extend(_format_no_results_message())
 
-        logger.info("Search summary generated", query=query, results_count=len(results))
+        _get_logger().info("Search summary generated", query=query, results_count=len(results))
         return "\n".join(output)
 
     except Exception as e:
         # Use regular logging instead of exception logging which isn't available
-        logger.exception(f"Error generating search summary: {e}")
+        _get_logger().exception(f"Error generating search summary: {e}")
         return f"❌ Search summary error: {e}"
 
 
@@ -376,7 +380,7 @@ async def _search_by_file_impl(
                 "💡 The file might not have been discussed in previous sessions",
             )
 
-        logger.info(
+        _get_logger().info(
             "File search performed",
             file_path=file_path,
             results_count=len(results),
@@ -384,7 +388,7 @@ async def _search_by_file_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error searching by file", error=str(e), file_path=file_path)
+        _get_logger().exception("Error searching by file", error=str(e), file_path=file_path)
         return f"❌ File search error: {e}"
 
 
@@ -442,7 +446,7 @@ async def _search_by_concept_impl(
             output.append("🔍 No conversations found about this concept")
             output.append("💡 Try related terms or broader concepts")
 
-        logger.info(
+        _get_logger().info(
             "Concept search performed",
             concept=concept,
             results_count=len(results),
@@ -450,7 +454,7 @@ async def _search_by_concept_impl(
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error searching by concept", error=str(e), concept=concept)
+        _get_logger().exception("Error searching by concept", error=str(e), concept=concept)
         return f"❌ Concept search error: {e}"
 
 
@@ -509,11 +513,11 @@ async def _reflection_stats_impl() -> str:
             output.append("📊 No statistics available")
             output.append("💡 Database may be empty or inaccessible")
 
-        logger.info("Reflection stats retrieved")
+        _get_logger().info("Reflection stats retrieved")
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error getting reflection stats", error=str(e))
+        _get_logger().exception("Error getting reflection stats", error=str(e))
         return f"❌ Stats error: {e}"
 
 
@@ -530,7 +534,7 @@ async def _reset_reflection_database_impl() -> str:
             try:
                 _reflection_db.conn.close()
             except Exception as e:
-                logger.warning(f"Error closing old connection: {e}")
+                _get_logger().warning(f"Error closing old connection: {e}")
 
         # Reset the global instance
         _reflection_db = None
@@ -543,11 +547,11 @@ async def _reset_reflection_database_impl() -> str:
         output.append("✅ New connection established successfully")
         output.append("💡 Database locks should be resolved")
 
-        logger.info("Reflection database reset successfully")
+        _get_logger().info("Reflection database reset successfully")
         return "\n".join(output)
 
     except Exception as e:
-        logger.exception("Error resetting reflection database", error=str(e))
+        _get_logger().exception("Error resetting reflection database", error=str(e))
         return f"❌ Reset error: {e}"
 
 

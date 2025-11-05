@@ -13,12 +13,16 @@ from typing import TYPE_CHECKING, Any
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 
 async def get_reflection_database() -> ReflectionDatabase | None:
@@ -60,10 +64,10 @@ async def _optimize_search_results_impl(
 
         return {"results": results, "optimized": False, "token_count": 0}
     except ImportError:
-        logger.info("Token optimizer not available, returning results as-is")
+        _get_logger().info("Token optimizer not available, returning results as-is")
         return {"results": results, "optimized": False, "token_count": 0}
     except Exception as e:
-        logger.exception(f"Search optimization failed: {e}")
+        _get_logger().exception(f"Search optimization failed: {e}")
         return {"results": results, "optimized": False, "error": str(e)}
 
 
@@ -82,7 +86,7 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
             )
 
     except Exception as e:
-        logger.exception(f"Failed to store reflection: {e}")
+        _get_logger().exception(f"Failed to store reflection: {e}")
         return f"❌ Error storing reflection: {e!s}"
 
 
@@ -118,7 +122,7 @@ async def _quick_search_impl(
             return result
 
     except Exception as e:
-        logger.exception(f"Quick search failed: {e}")
+        _get_logger().exception(f"Quick search failed: {e}")
         return f"❌ Search error: {e!s}"
 
 
@@ -200,7 +204,7 @@ async def _search_summary_impl(
             return summary
 
     except Exception as e:
-        logger.exception(f"Search summary failed: {e}")
+        _get_logger().exception(f"Search summary failed: {e}")
         return f"❌ Search summary error: {e!s}"
 
 
@@ -230,7 +234,7 @@ async def _get_more_results_impl(
             )
 
     except Exception as e:
-        logger.exception(f"Get more results failed: {e}")
+        _get_logger().exception(f"Get more results failed: {e}")
         return f"❌ Pagination error: {e!s}"
 
 
@@ -322,7 +326,7 @@ async def _search_by_file_impl(
             return output
 
     except Exception as e:
-        logger.exception(f"File search failed: {e}")
+        _get_logger().exception(f"File search failed: {e}")
         return f"❌ File search error: {e!s}"
 
 
@@ -441,7 +445,7 @@ async def _search_by_concept_impl(
         return _build_concept_output(concept, results, include_files)
 
     except Exception as e:
-        logger.exception(f"Concept search failed: {e}")
+        _get_logger().exception(f"Concept search failed: {e}")
         return f"❌ Concept search error: {e!s}"
 
 
@@ -457,7 +461,7 @@ async def _reset_reflection_database_impl() -> str:
             return "✅ Reflection database connection verified successfully"
 
     except Exception as e:
-        logger.exception(f"Database reset failed: {e}")
+        _get_logger().exception(f"Database reset failed: {e}")
         return f"❌ Database reset error: {e!s}"
 
 
@@ -476,7 +480,7 @@ async def _reflection_stats_impl() -> str:
             return output
 
     except Exception as e:
-        logger.exception(f"Stats collection failed: {e}")
+        _get_logger().exception(f"Stats collection failed: {e}")
         return f"❌ Stats error: {e!s}"
 
 
@@ -570,7 +574,7 @@ async def _search_code_impl(
             return output
 
     except Exception as e:
-        logger.exception(f"Code search failed: {e}")
+        _get_logger().exception(f"Code search failed: {e}")
         return f"❌ Code search error: {e!s}"
 
 
@@ -666,7 +670,7 @@ async def _search_errors_impl(
             return _process_error_search_results(results, query, error_type)
 
     except Exception as e:
-        logger.exception(f"Error search failed: {e}")
+        _get_logger().exception(f"Error search failed: {e}")
         return f"❌ Error search failed: {e!s}"
 
 
@@ -751,7 +755,7 @@ async def _search_temporal_impl(
             return output
 
     except Exception as e:
-        logger.exception(f"Temporal search failed: {e}")
+        _get_logger().exception(f"Temporal search failed: {e}")
         return f"❌ Temporal search error: {e!s}"
 
 

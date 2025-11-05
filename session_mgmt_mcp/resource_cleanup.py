@@ -61,21 +61,31 @@ async def cleanup_http_clients() -> None:
     logger.info("Cleaning up HTTP client connections")
 
     try:
-        # Try to cleanup HTTP client adapter
+        # Prefer ACB Requests adapter cleanup (httpx/niquests)
+        from acb.adapters import import_adapter
         from acb.depends import depends
 
         try:
-            from mcp_common.adapters.http.client import HTTPClientAdapter
-
-            # Get instance if it exists
+            Requests = import_adapter("requests")
             with suppress(Exception):
-                http_adapter = depends.get_sync(HTTPClientAdapter)
-                if http_adapter and hasattr(http_adapter, "_cleanup_resources"):
-                    await http_adapter._cleanup_resources()
-                    logger.debug("HTTP client cleanup completed successfully")
-
-        except ImportError:
-            logger.debug("HTTP client adapter not available")
+                requests = depends.get_sync(Requests)
+                # Try adapter-level close method
+                if hasattr(requests, "close") and callable(getattr(requests, "close")):
+                    maybe_await = requests.close()
+                    if hasattr(maybe_await, "__await__"):
+                        await maybe_await  # type: ignore[func-returns-value]
+                    logger.debug("Requests adapter cleanup completed successfully")
+                # Fallback: if underlying client supports aclose/close
+                elif hasattr(requests, "client"):
+                    client = getattr(requests, "client")
+                    if hasattr(client, "aclose"):
+                        await client.aclose()
+                        logger.debug("HTTP client session closed (aclose)")
+                    elif hasattr(client, "close"):
+                        client.close()
+                        logger.debug("HTTP client session closed (close)")
+        except Exception:
+            logger.debug("Requests adapter not available; skipping HTTP cleanup")
 
     except Exception:
         logger.exception("Error during HTTP client cleanup")

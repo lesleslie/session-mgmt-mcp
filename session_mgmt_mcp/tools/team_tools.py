@@ -9,12 +9,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from session_mgmt_mcp.utils.logging import get_session_logger
+from acb.adapters import import_adapter
+from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-logger = get_session_logger()
+def _get_logger():
+    """Lazy logger resolution using ACB's logger adapter from DI container."""
+    Logger = import_adapter("logger")
+    return depends.get_sync(Logger)
 
 
 async def _create_team_impl(
@@ -35,10 +39,10 @@ async def _create_team_impl(
         return f"✅ Team created successfully: {name}"
 
     except ImportError:
-        logger.warning("Team knowledge system not available")
+        _get_logger().warning("Team knowledge system not available")
         return "❌ Team collaboration features not available. Install optional dependencies."
     except Exception as e:
-        logger.exception(f"Team creation failed: {e}")
+        _get_logger().exception(f"Team creation failed: {e}")
         return f"❌ Failed to create team: {e!s}"
 
 
@@ -115,10 +119,10 @@ async def _search_team_knowledge_impl(
         return output
 
     except ImportError:
-        logger.warning("Team knowledge system not available")
+        _get_logger().warning("Team knowledge system not available")
         return "❌ Team collaboration features not available. Install optional dependencies."
     except Exception as e:
-        logger.exception(f"Team knowledge search failed: {e}")
+        _get_logger().exception(f"Team knowledge search failed: {e}")
         return f"❌ Team knowledge search failed: {e!s}"
 
 
@@ -136,10 +140,10 @@ async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
         return _format_team_statistics(team_id, stats)
 
     except ImportError:
-        logger.warning("Team knowledge system not available")
+        _get_logger().warning("Team knowledge system not available")
         return "❌ Team collaboration features not available. Install optional dependencies."
     except Exception as e:
-        logger.exception(f"Error getting team statistics: {e}")
+        _get_logger().exception(f"Error getting team statistics: {e}")
         return f"❌ Error retrieving team statistics: {e}"
 
 
@@ -223,12 +227,12 @@ async def _vote_on_reflection_impl(
         return "❌ Failed to vote on reflection"
 
     except ImportError:
-        logger.warning("Team knowledge system not available")
+        _get_logger().warning("Team knowledge system not available")
         return "❌ Team collaboration features not available. Install optional dependencies."
     except ValueError as e:
         return f"❌ Vote failed: {e!s}"
     except Exception as e:
-        logger.exception(f"Voting failed: {e}")
+        _get_logger().exception(f"Voting failed: {e}")
         return f"❌ Failed to vote on reflection: {e!s}"
 
 
