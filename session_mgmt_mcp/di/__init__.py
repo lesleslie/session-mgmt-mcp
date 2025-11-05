@@ -89,7 +89,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
     """
     from acb.adapters import import_adapter
 
-    # Import ACB's Logger class
+    # Import ACB's Logger class (returns the class, not instance)
     logger_class = import_adapter("logger")
 
     if not force:
@@ -113,8 +113,8 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
         compression="gz",
     )
 
-    # Register the instance
-    depends.set(Logger, logger_instance)
+    # Register the instance using the class we imported
+    depends.set(logger_class, logger_instance)
 
 
 def _register_session_logger(logs_dir: Path, force: bool) -> None:

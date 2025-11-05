@@ -95,7 +95,7 @@ class SessionLifecycleManager:
 
     async def calculate_quality_score(
         self, project_dir: Path | None = None
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         """Calculate session quality score using V2 algorithm.
 
         Delegates to the centralized quality scoring in server.py to avoid
@@ -152,7 +152,7 @@ class SessionLifecycleManager:
         tool_score: int,
         project_context: dict[str, bool],
         uv_available: bool,
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         """Format the quality score calculation result."""
         return {
             "total_score": total_score,
@@ -170,7 +170,7 @@ class SessionLifecycleManager:
     def _generate_quality_recommendations(
         self,
         score: int,
-        project_context: dict[str, Any],
+        project_context: dict[str, t.Any],
         uv_available: bool,
     ) -> list[str]:
         """Generate quality improvement recommendations based on score factors."""
@@ -291,13 +291,13 @@ class SessionLifecycleManager:
 
     async def perform_quality_assessment(
         self, project_dir: Path | None = None
-    ) -> tuple[int, dict[str, Any]]:
+    ) -> tuple[int, dict[str, t.Any]]:
         """Perform quality assessment and return score and data."""
         quality_data = await self.calculate_quality_score(project_dir=project_dir)
         quality_score = quality_data["total_score"]
         return quality_score, quality_data
 
-    def _format_trust_score(self, trust: Any) -> list[str]:
+    def _format_trust_score(self, trust: t.Any) -> list[str]:
         """Format trust score section (helper to reduce complexity). Target complexity: ≤5."""
         output = []
         # Defensive check: trust_score may be a dict or object with total attribute
@@ -334,8 +334,8 @@ class SessionLifecycleManager:
     def format_quality_results(
         self,
         quality_score: int,
-        quality_data: dict[str, Any],
-        checkpoint_result: dict[str, Any] | None = None,
+        quality_data: dict[str, t.Any],
+        checkpoint_result: dict[str, t.Any] | None = None,
     ) -> list[str]:
         """Format quality assessment results for display. Target complexity: ≤10."""
         output = []
@@ -450,7 +450,7 @@ class SessionLifecycleManager:
 
     async def _get_previous_session_info(
         self, current_dir: Path
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, t.Any] | None:
         """Get previous session information if available. Target complexity: ≤5."""
         session_files = self._discover_session_files(current_dir)
 
@@ -469,7 +469,7 @@ class SessionLifecycleManager:
     async def initialize_session(
         self,
         working_directory: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         """Initialize a new session with comprehensive setup."""
         try:
             # Setup directories and project
@@ -526,7 +526,7 @@ class SessionLifecycleManager:
         self,
         working_directory: str | None = None,
         is_manual: bool = False,
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         """Perform a comprehensive session checkpoint.
 
         Args:
@@ -593,7 +593,7 @@ class SessionLifecycleManager:
             self.logger.exception("Session checkpoint failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    async def end_session(self, working_directory: str | None = None) -> dict[str, Any]:
+    async def end_session(self, working_directory: str | None = None) -> dict[str, t.Any]:
         """End the current session with cleanup and summary."""
         try:
             current_dir = Path(working_directory) if working_directory else Path.cwd()
@@ -639,7 +639,7 @@ class SessionLifecycleManager:
             self.logger.exception("Session end failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    def _build_handoff_header(self, summary: dict[str, Any]) -> list[str]:
+    def _build_handoff_header(self, summary: dict[str, t.Any]) -> list[str]:
         """Build handoff documentation header section."""
         return [
             f"# Session Handoff Report - {summary['project']}",
@@ -650,7 +650,7 @@ class SessionLifecycleManager:
             "",
         ]
 
-    def _build_quality_section(self, quality_data: dict[str, Any]) -> list[str]:
+    def _build_quality_section(self, quality_data: dict[str, t.Any]) -> list[str]:
         """Build quality assessment section of handoff documentation."""
         lines = ["## Quality Assessment", ""]
         breakdown = quality_data.get("breakdown", {})
@@ -694,7 +694,7 @@ class SessionLifecycleManager:
         ]
 
     async def _generate_handoff_documentation(
-        self, summary: dict[str, Any], quality_data: dict[str, Any]
+        self, summary: dict[str, t.Any], quality_data: dict[str, t.Any]
     ) -> str:
         """Generate comprehensive handoff documentation in markdown format."""
         # Try to use templates adapter if available
@@ -720,7 +720,7 @@ class SessionLifecycleManager:
         return "\n".join(lines)
 
     async def _generate_handoff_with_templates(
-        self, summary: dict[str, Any], quality_data: dict[str, Any]
+        self, summary: dict[str, t.Any], quality_data: dict[str, t.Any]
     ) -> str:
         """Generate handoff documentation using templates."""
         from session_mgmt_mcp import __version__
@@ -898,7 +898,7 @@ class SessionLifecycleManager:
     async def get_session_status(
         self,
         working_directory: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         """Get current session status and health information."""
         try:
             current_dir = Path(working_directory) if working_directory else Path.cwd()
