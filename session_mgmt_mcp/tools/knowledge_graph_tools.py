@@ -412,6 +412,61 @@ async def _get_knowledge_graph_stats_impl() -> str:
         return f"❌ Error getting stats: {e}"
 
 
+def _extract_patterns_from_context(context: str) -> dict[str, set[str]]:
+    """Extract entity patterns from context text."""
+    extracted: dict[str, set[str]] = {}
+    for entity_type, pattern in ENTITY_PATTERNS.items():
+        matches = re.findall(
+            pattern, context, re.IGNORECASE
+        )  # REGEX OK: Entity extraction from user context with predefined safe patterns
+        if matches:
+            extracted[entity_type] = set(matches)
+    return extracted
+
+
+async def _auto_create_entity_if_new(
+    kg: t.Any,
+    entity_name: str,
+    entity_type: str,
+) -> bool:
+    """Create entity if it doesn't exist. Returns True if created."""
+    existing = await kg.find_entity_by_name(entity_name)
+    if not existing:
+        await kg.create_entity(
+            name=entity_name,
+            entity_type=entity_type,
+            observations=["Extracted from conversation context"],
+        )
+        return True
+    return False
+
+
+async def _format_extraction_output(
+    extracted: dict[str, set[str]],
+    auto_create: bool,
+) -> tuple[list[str], int, int]:
+    """Format extraction output and optionally auto-create entities."""
+    output = ["🔍 Extracted Entities from Context:", ""]
+    total_extracted = 0
+    created_count = 0
+
+    for entity_type, entities in extracted.items():
+        output.append(f"📊 {entity_type.capitalize()}:")
+
+        for entity_name in sorted(entities):
+            output.append(f"   • {entity_name}")
+            total_extracted += 1
+
+            if auto_create:
+                async with await _get_knowledge_graph() as kg:
+                    if await _auto_create_entity_if_new(kg, entity_name, entity_type):
+                        created_count += 1
+
+        output.append("")
+
+    return output, total_extracted, created_count
+
+
 async def _extract_entities_from_context_impl(
     context: str,
     auto_create: bool = False,
@@ -421,44 +476,14 @@ async def _extract_entities_from_context_impl(
         return "❌ Knowledge graph not available. Install dependencies: uv sync"
 
     try:
-        extracted: dict[str, set[str]] = {}
-
-        # Extract entities using patterns
-        for entity_type, pattern in ENTITY_PATTERNS.items():
-            matches = re.findall(
-                pattern, context, re.IGNORECASE
-            )  # REGEX OK: Entity extraction from user context with predefined safe patterns
-            if matches:
-                extracted[entity_type] = set(matches)
+        extracted = _extract_patterns_from_context(context)
 
         if not extracted:
             return "🔍 No entities detected in context"
 
-        output = []
-        output.append("🔍 Extracted Entities from Context:")
-        output.append("")
-
-        total_extracted = 0
-        created_count = 0
-
-        for entity_type, entities in extracted.items():
-            output.append(f"📊 {entity_type.capitalize()}:")
-            for entity_name in sorted(entities):
-                output.append(f"   • {entity_name}")
-                total_extracted += 1
-
-                # Auto-create if requested
-                if auto_create:
-                    async with await _get_knowledge_graph() as kg:
-                        existing = await kg.find_entity_by_name(entity_name)
-                        if not existing:
-                            await kg.create_entity(
-                                name=entity_name,
-                                entity_type=entity_type,
-                                observations=["Extracted from conversation context"],
-                            )
-                            created_count += 1
-            output.append("")
+        output, total_extracted, created_count = await _format_extraction_output(
+            extracted, auto_create
+        )
 
         output.append(f"📊 Total Extracted: {total_extracted}")
         if auto_create:
@@ -476,6 +501,51 @@ async def _extract_entities_from_context_impl(
         return f"❌ Error extracting entities: {e}"
 
 
+async def _create_single_entity(
+    kg: t.Any,
+    entity_data: dict[str, Any],
+) -> tuple[str | None, tuple[str, str] | None]:
+    """Create a single entity. Returns (created_name, None) or (None, (name, error))."""
+    try:
+        entity = await kg.create_entity(
+            name=entity_data["name"],
+            entity_type=entity_data["entity_type"],
+            observations=entity_data.get("observations", []),
+            properties=entity_data.get("properties", {}),
+        )
+        return entity["name"], None
+    except Exception as e:
+        return None, (entity_data["name"], str(e))
+
+
+def _format_batch_results(
+    created: list[str],
+    failed: list[tuple[str, str]],
+) -> list[str]:
+    """Format batch creation results."""
+    output = [
+        "📦 Batch Entity Creation Results:",
+        "",
+        f"✅ Successfully Created: {len(created)}",
+    ]
+
+    if created:
+        for name in created[:10]:  # Show first 10
+            output.append(f"   • {name}")
+        if len(created) > 10:
+            output.append(f"   ... and {len(created) - 10} more")
+    output.append("")
+
+    if failed:
+        output.append(f"❌ Failed: {len(failed)}")
+        for name, error in failed[:5]:  # Show first 5 failures
+            output.append(f"   • {name}: {error}")
+        if len(failed) > 5:
+            output.append(f"   ... and {len(failed) - 5} more")
+
+    return output
+
+
 async def _batch_create_entities_impl(
     entities: list[dict[str, Any]],
 ) -> str:
@@ -489,34 +559,13 @@ async def _batch_create_entities_impl(
             failed = []
 
             for entity_data in entities:
-                try:
-                    entity = await kg.create_entity(
-                        name=entity_data["name"],
-                        entity_type=entity_data["entity_type"],
-                        observations=entity_data.get("observations", []),
-                        properties=entity_data.get("properties", {}),
-                    )
-                    created.append(entity["name"])
-                except Exception as e:
-                    failed.append((entity_data["name"], str(e)))
+                created_name, failure = await _create_single_entity(kg, entity_data)
+                if created_name:
+                    created.append(created_name)
+                elif failure:
+                    failed.append(failure)
 
-            output = []
-            output.append("📦 Batch Entity Creation Results:")
-            output.append("")
-            output.append(f"✅ Successfully Created: {len(created)}")
-            if created:
-                for name in created[:10]:  # Show first 10
-                    output.append(f"   • {name}")
-                if len(created) > 10:
-                    output.append(f"   ... and {len(created) - 10} more")
-            output.append("")
-
-            if failed:
-                output.append(f"❌ Failed: {len(failed)}")
-                for name, error in failed[:5]:  # Show first 5 failures
-                    output.append(f"   • {name}: {error}")
-                if len(failed) > 5:
-                    output.append(f"   ... and {len(failed) - 5} more")
+            output = _format_batch_results(created, failed)
 
             _get_logger().info(
                 "Batch entities created",
