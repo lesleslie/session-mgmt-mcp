@@ -148,7 +148,9 @@ def _safe_json_serialize(obj: t.Any) -> str:
             return json.dumps(
                 {
                     # Use explicit None check for better type inference (refurb FURB168)
-                    k: str(v) if v is not None and not isinstance(v, (str, int, float, bool)) else v
+                    k: str(v)
+                    if v is not None and not isinstance(v, (str, int, float, bool))
+                    else v
                     for k, v in obj.items()
                 }
             )
