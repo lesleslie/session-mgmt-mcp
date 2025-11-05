@@ -51,6 +51,34 @@ async def cleanup_database_connections() -> None:
         raise
 
 
+async def _close_adapter_method(requests: t.Any, logger: t.Any) -> bool:
+    """Try to close using adapter's close method."""
+    if hasattr(requests, "close") and callable(requests.close):
+        maybe_await = requests.close()
+        if hasattr(maybe_await, "__await__"):
+            await maybe_await  # type: ignore[func-returns-value]
+        logger.debug("Requests adapter cleanup completed successfully")
+        return True
+    return False
+
+
+async def _close_underlying_client(requests: t.Any, logger: t.Any) -> bool:
+    """Try to close underlying HTTP client."""
+    if not hasattr(requests, "client"):
+        return False
+
+    client = requests.client
+    if hasattr(client, "aclose"):
+        await client.aclose()
+        logger.debug("HTTP client session closed (aclose)")
+        return True
+    if hasattr(client, "close"):
+        client.close()
+        logger.debug("HTTP client session closed (close)")
+        return True
+    return False
+
+
 async def cleanup_http_clients() -> None:
     """Cleanup HTTP client connections.
 
@@ -61,7 +89,6 @@ async def cleanup_http_clients() -> None:
     logger.info("Cleaning up HTTP client connections")
 
     try:
-        # Prefer ACB Requests adapter cleanup (httpx/niquests)
         from acb.adapters import import_adapter
         from acb.depends import depends
 
@@ -69,21 +96,9 @@ async def cleanup_http_clients() -> None:
             requests_class = import_adapter("requests")
             with suppress(Exception):
                 requests = depends.get_sync(requests_class)
-                # Try adapter-level close method
-                if hasattr(requests, "close") and callable(requests.close):
-                    maybe_await = requests.close()
-                    if hasattr(maybe_await, "__await__"):
-                        await maybe_await  # type: ignore[func-returns-value]
-                    logger.debug("Requests adapter cleanup completed successfully")
-                # Fallback: if underlying client supports aclose/close
-                elif hasattr(requests, "client"):
-                    client = requests.client
-                    if hasattr(client, "aclose"):
-                        await client.aclose()
-                        logger.debug("HTTP client session closed (aclose)")
-                    elif hasattr(client, "close"):
-                        client.close()
-                        logger.debug("HTTP client session closed (close)")
+                # Try adapter-level close first, then underlying client
+                if not await _close_adapter_method(requests, logger):
+                    await _close_underlying_client(requests, logger)
         except Exception:
             logger.debug("Requests adapter not available; skipping HTTP cleanup")
 

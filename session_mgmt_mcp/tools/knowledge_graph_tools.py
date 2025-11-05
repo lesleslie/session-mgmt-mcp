@@ -204,6 +204,22 @@ async def _create_relation_impl(
         return f"❌ Error creating relation: {e}"
 
 
+def _format_entity_result(entity: dict[str, t.Any]) -> list[str]:
+    """Format a single entity search result."""
+    lines = [f"📌 {entity['name']} ({entity['entity_type']})"]
+
+    observations = entity.get("observations")
+    if observations:
+        lines.append(f"   📝 Observations: {len(observations)}")
+        # Show first observation as preview
+        if observations:
+            preview = observations[0]
+            lines.append(f"   └─ {preview[:80]}{'...' if len(preview) > 80 else ''}")
+
+    lines.append("")
+    return lines
+
+
 async def _search_entities_impl(
     query: str,
     entity_type: str | None = None,
@@ -224,21 +240,13 @@ async def _search_entities_impl(
             if not results:
                 return f"🔍 No entities found matching '{query}'"
 
-            output = []
-            output.append(f"🔍 Found {len(results)} entities matching '{query}':")
-            output.append("")
+            output = [
+                f"🔍 Found {len(results)} entities matching '{query}':",
+                "",
+            ]
 
             for entity in results:
-                output.append(f"📌 {entity['name']} ({entity['entity_type']})")
-                if entity.get("observations"):
-                    output.append(f"   📝 Observations: {len(entity['observations'])}")
-                    # Show first observation as preview
-                    if entity["observations"]:
-                        preview = entity["observations"][0]
-                        output.append(
-                            f"   └─ {preview[:80]}{'...' if len(preview) > 80 else ''}"
-                        )
-                output.append("")
+                output.extend(_format_entity_result(entity))
 
             _get_logger().info(
                 "Entities searched",
