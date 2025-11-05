@@ -51,7 +51,7 @@ def get_backup_path() -> Path:
     return get_data_dir() / f"knowledge_graph_backup_{timestamp}.duckdb"
 
 
-async def migrate_graph_database(
+async def migrate_graph_database(  # noqa: C901 - Migration script complexity expected
     *,
     dry_run: bool = False,
     backup: bool = False,
@@ -70,9 +70,9 @@ async def migrate_graph_database(
     Raises:
         FileNotFoundError: If old database doesn't exist
         RuntimeError: If migration fails
+
     """
     import duckdb
-
     from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter,
     )
@@ -86,7 +86,7 @@ async def migrate_graph_database(
         raise FileNotFoundError(msg)
 
     if verbose:
-        print(f"📊 Migration Configuration:")
+        print("📊 Migration Configuration:")
         print(f"  Old DB: {old_db_path}")
         print(f"  New DB: {new_db_path}")
         print(f"  Dry Run: {dry_run}")
@@ -100,7 +100,7 @@ async def migrate_graph_database(
             print(f"💾 Creating backup at {backup_path}...")
         shutil.copy2(old_db_path, backup_path)
         if verbose:
-            print(f"✅ Backup created successfully")
+            print("✅ Backup created successfully")
             print()
 
     # Connect to old database (read-only)
@@ -249,8 +249,10 @@ async def migrate_graph_database(
         relationships_match = stats["total_relationships"] == len(relationships)
 
         if verbose:
-            print(f"  Entities: {stats['total_entities']} (expected {len(entities)}) "
-                  f"{'✅' if entities_match else '❌'}")
+            print(
+                f"  Entities: {stats['total_entities']} (expected {len(entities)}) "
+                f"{'✅' if entities_match else '❌'}"
+            )
             print(
                 f"  Relationships: {stats['total_relationships']} (expected {len(relationships)}) "
                 f"{'✅' if relationships_match else '❌'}"
@@ -298,7 +300,10 @@ Examples:
         "--backup", action="store_true", help="Create backup before migration"
     )
     parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Print detailed progress information"
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print detailed progress information",
     )
 
     args = parser.parse_args()
@@ -319,7 +324,7 @@ Examples:
             print(f"  Relationships: {result['relationships_migrated']} migrated")
             print(f"  Total: {result['total_records']} records")
             print()
-            print(f"✅ Migration complete!")
+            print("✅ Migration complete!")
             print()
             print(f"Old database: {get_old_db_path()}")
             print(f"New database: {get_new_db_path()}")

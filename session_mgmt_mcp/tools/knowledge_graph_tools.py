@@ -14,10 +14,12 @@ from typing import TYPE_CHECKING, Any
 from acb.adapters import import_adapter
 from acb.depends import depends
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
+
 
 # Lazy detection flag
 _knowledge_graph_available: bool | None = None
@@ -34,6 +36,7 @@ async def _get_knowledge_graph() -> KnowledgeGraphDatabase:
     Note:
         Migration Phase 2.7: Now returns KnowledgeGraphDatabaseAdapter which provides
         the same API as KnowledgeGraphDatabase but uses ACB graph adapter.
+
     """
     global _knowledge_graph_available
 
@@ -65,6 +68,7 @@ def _check_knowledge_graph_available() -> bool:
 
     Note:
         Migration Phase 2.7: Checks for KnowledgeGraphDatabaseAdapter instead of old class.
+
     """
     global _knowledge_graph_available
 
@@ -399,7 +403,9 @@ async def _extract_entities_from_context_impl(
 
         # Extract entities using patterns
         for entity_type, pattern in ENTITY_PATTERNS.items():
-            matches = re.findall(pattern, context, re.IGNORECASE)
+            matches = re.findall(
+                pattern, context, re.IGNORECASE
+            )  # REGEX OK: Entity extraction from user context with predefined safe patterns
             if matches:
                 extracted[entity_type] = set(matches)
 
@@ -422,9 +428,7 @@ async def _extract_entities_from_context_impl(
                 # Auto-create if requested
                 if auto_create:
                     async with await _get_knowledge_graph() as kg:
-                        existing = await kg.find_entity_by_name(
-                            entity_name, entity_type
-                        )
+                        existing = await kg.find_entity_by_name(entity_name)
                         if not existing:
                             await kg.create_entity(
                                 name=entity_name,

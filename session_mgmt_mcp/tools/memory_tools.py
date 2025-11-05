@@ -10,16 +10,18 @@ import importlib.util
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from acb.adapters import import_adapter
-from acb.depends import depends
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
+
 
 # Lazy detection flag
 _reflection_tools_available: bool | None = None
@@ -86,7 +88,9 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
                 output.append(f"🏷️ Tags: {', '.join(tags)}")
             output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-            _get_logger().info("Reflection stored", content_length=len(content), tags=tags)
+            _get_logger().info(
+                "Reflection stored", content_length=len(content), tags=tags
+            )
             return "\n".join(output)
         return "❌ Failed to store reflection"
 
@@ -144,7 +148,9 @@ async def _quick_search_impl(
         output = _format_quick_search_header(query)
         output.extend(_format_quick_search_results(results))
 
-        _get_logger().info("Quick search performed", query=query, results_count=len(results))
+        _get_logger().info(
+            "Quick search performed", query=query, results_count=len(results)
+        )
         return "\n".join(output)
 
     except Exception as e:
@@ -323,7 +329,9 @@ async def _search_summary_impl(
         else:
             output.extend(_format_no_results_message())
 
-        _get_logger().info("Search summary generated", query=query, results_count=len(results))
+        _get_logger().info(
+            "Search summary generated", query=query, results_count=len(results)
+        )
         return "\n".join(output)
 
     except Exception as e:
@@ -388,7 +396,9 @@ async def _search_by_file_impl(
         return "\n".join(output)
 
     except Exception as e:
-        _get_logger().exception("Error searching by file", error=str(e), file_path=file_path)
+        _get_logger().exception(
+            "Error searching by file", error=str(e), file_path=file_path
+        )
         return f"❌ File search error: {e}"
 
 
@@ -454,7 +464,9 @@ async def _search_by_concept_impl(
         return "\n".join(output)
 
     except Exception as e:
-        _get_logger().exception("Error searching by concept", error=str(e), concept=concept)
+        _get_logger().exception(
+            "Error searching by concept", error=str(e), concept=concept
+        )
         return f"❌ Concept search error: {e}"
 
 

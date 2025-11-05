@@ -22,8 +22,6 @@ warnings.filterwarnings("ignore", message=".*PyTorch.*TensorFlow.*Flax.*")
 import psutil
 import typer
 from acb.console import console
-from rich.panel import Panel
-from rich.table import Table
 from mcp_common.ui import ServerPanels
 
 app = typer.Typer(
@@ -125,14 +123,12 @@ def show_status() -> None:
     }
     if server_status["running"]:
         items["HTTP Endpoint"] = f"http://127.0.0.1:{server_status['http_port']}/mcp"
-        items[
-            "WebSocket Monitor"
-        ] = f"ws://127.0.0.1:{server_status['websocket_port']}"
+        items["WebSocket Monitor"] = f"ws://127.0.0.1:{server_status['websocket_port']}"
     ServerPanels.config_table("Session Management MCP Server Status", items)
 
     # Show process details if running
     if server_status["processes"]:
-        ServerPanels.process_list(server_status["processes"]) 
+        ServerPanels.process_list(server_status["processes"])
 
 
 def start_mcp_server(
@@ -199,7 +195,7 @@ def start_mcp_server(
                 items={
                     "HTTP Endpoint": f"http://127.0.0.1:{http_port}/mcp",
                     "WebSocket Monitor": f"ws://127.0.0.1:{ws_port}",
-                    "Process ID": str(final_status['processes'][0]['pid']),
+                    "Process ID": str(final_status["processes"][0]["pid"]),
                 },
                 severity="success",
             )

@@ -4,13 +4,14 @@
 
 After deep research into ACB, crackerjack, FastBlocks, and splashstand architectures, I now understand that **adapters in ACB are NOT about "data access"** - they are **external system integrations** with standardized interfaces. This document proposes a reorganization that correctly applies ACB architectural patterns.
 
----
+______________________________________________________________________
 
 ## Critical ACB Understanding
 
 ### What Adapters Actually Are
 
 **Adapters** = External System Integrations (ACB Layer 4)
+
 - **Purpose**: Standardized interfaces to external systems/services
 - **Examples in ACB**: Cache (Redis), SQL (PostgreSQL), Storage (S3), NoSQL (MongoDB)
 - **Examples in crackerjack**: Type checkers (zuban), Security scanners (bandit), Formatters (ruff)
@@ -18,6 +19,7 @@ After deep research into ACB, crackerjack, FastBlocks, and splashstand architect
 - **Pattern**: Protocol-based, configuration-driven, swappable implementations
 
 **NOT Adapters in ACB sense**:
+
 - ❌ Database access layers (these are adapter **implementations**)
 - ❌ Internal data models
 - ❌ Business logic services
@@ -38,17 +40,17 @@ Core Infrastructure (Config, DI, Logger, Context)
 
 **Key Insight**: Each layer has distinct responsibilities. You don't nest adapters inside services - adapters ARE a separate layer that services **use**.
 
----
+______________________________________________________________________
 
 ## Current Structure Problems (Revisited)
 
 1. **Root Directory Clutter**: 31 Python files mixing concerns
-2. **Missing Adapter Layer**: External integrations (DuckDB, Git, Crackerjack) not recognized as adapters
-3. **Non-descriptive `utils/`**: Should be organized by infrastructure concern
-4. **Tools/Services Confusion**: MCP tools mixed with service logic
-5. **No Clear Orchestration Layer**: MCP server functionality not separated
+1. **Missing Adapter Layer**: External integrations (DuckDB, Git, Crackerjack) not recognized as adapters
+1. **Non-descriptive `utils/`**: Should be organized by infrastructure concern
+1. **Tools/Services Confusion**: MCP tools mixed with service logic
+1. **No Clear Orchestration Layer**: MCP server functionality not separated
 
----
+______________________________________________________________________
 
 ## Solution: ACB-Compliant Architecture
 
@@ -179,7 +181,7 @@ session_mgmt_mcp/
     └── constants.py
 ```
 
----
+______________________________________________________________________
 
 ## Key Architectural Decisions
 
@@ -201,6 +203,7 @@ MODULE_STATUS = "stable"
 
 class ReflectionDatabaseSettings(Settings):
     """Settings for DuckDB reflection database."""
+
     db_path: str = "~/.claude/data/reflection.duckdb"
     embedding_dim: int = 384
     connection_timeout: float = 3.0
@@ -225,6 +228,7 @@ class ReflectionDatabase(CleanupMixin):
         """Lazy connection initialization."""
         if self._conn is None:
             import duckdb
+
             self._conn = duckdb.connect(self.settings.db_path)
             self.register_resource(self._conn)
         return self._conn
@@ -275,11 +279,7 @@ class ReflectionService:
             self._db = depends.get_sync(ReflectionDatabase)
         return self._db
 
-    async def store_reflection_with_tags(
-        self,
-        content: str,
-        tags: list[str]
-    ) -> str:
+    async def store_reflection_with_tags(self, content: str, tags: list[str]) -> str:
         """Store reflection with semantic tagging (business logic)."""
         # Generate embedding
         embedding = await self._generate_embedding(content)
@@ -293,9 +293,7 @@ class ReflectionService:
         return reflection_id
 
     async def search_by_concept(
-        self,
-        concept: str,
-        filters: dict | None = None
+        self, concept: str, filters: dict | None = None
     ) -> list[dict]:
         """Conceptual search with filters (business logic)."""
         # Business logic to interpret concept
@@ -314,6 +312,7 @@ class ReflectionService:
 ### 3. MCP Tools Are Domain Layer
 
 **MCP tools live at the application/domain boundary** - they:
+
 - Expose services to external callers (Claude)
 - Provide thin wrappers around services
 - Handle parameter validation
@@ -327,6 +326,7 @@ from acb.depends import depends
 # Get service instance
 _reflection_service = None
 
+
 def _get_reflection_service() -> ReflectionService:
     global _reflection_service
     if _reflection_service is None:
@@ -338,27 +338,23 @@ def _get_reflection_service() -> ReflectionService:
 async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
     """MCP tool for storing reflections."""
     service = _get_reflection_service()
-    reflection_id = await service.store_reflection_with_tags(
-        content,
-        tags or []
-    )
-    return {
-        "success": True,
-        "reflection_id": reflection_id
-    }
+    reflection_id = await service.store_reflection_with_tags(content, tags or [])
+    return {"success": True, "reflection_id": reflection_id}
 ```
 
----
+______________________________________________________________________
 
 ## Layer Responsibilities (ACB-Compliant)
 
 ### Layer 5: Core Infrastructure
+
 **Location**: `infrastructure/`
 **Purpose**: Cross-cutting concerns
 **Contents**: Logging, regex patterns, file utils, format utils
 **Access Pattern**: Direct imports by all layers
 
 ### Layer 4: Adapters
+
 **Location**: `adapters/`
 **Purpose**: External system integrations
 **Contents**: DuckDB, Git, Crackerjack, LLM providers
@@ -366,12 +362,14 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Key Characteristic**: Swappable, configuration-driven
 
 ### Layer 3: Orchestration
+
 **Location**: `orchestration/`
 **Purpose**: Process management and communication
 **Contents**: MCP server, event handling, workflows
 **Access Pattern**: Background services, event-driven
 
 ### Layer 2: Services
+
 **Location**: `services/`
 **Purpose**: Business logic with lifecycle management
 **Contents**: Session, memory, search, quality services
@@ -379,13 +377,14 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Key Characteristic**: Stateful, lifecycle-managed
 
 ### Layer 1: Tools (Domain/Application)
+
 **Location**: `tools/`
 **Purpose**: External interface (MCP protocol)
 **Contents**: MCP tool implementations
 **Access Pattern**: Called by MCP server
 **Key Characteristic**: Thin wrappers around services
 
----
+______________________________________________________________________
 
 ## Migration Strategy
 
@@ -394,11 +393,11 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Goal**: Properly categorize external system integrations
 
 1. Create `adapters/database/` structure
-2. Move `reflection_tools.py` → `adapters/database/reflection_db.py`
-3. Move `knowledge_graph_db.py` → `adapters/database/knowledge_graph_db.py`
-4. Move `crackerjack_integration.py` → `adapters/crackerjack/integration.py`
-5. Move git operations → `adapters/git/operations.py`
-6. Add proper `_base.py` protocol files for each
+1. Move `reflection_tools.py` → `adapters/database/reflection_db.py`
+1. Move `knowledge_graph_db.py` → `adapters/database/knowledge_graph_db.py`
+1. Move `crackerjack_integration.py` → `adapters/crackerjack/integration.py`
+1. Move git operations → `adapters/git/operations.py`
+1. Add proper `_base.py` protocol files for each
 
 **Validation**: DI container resolves all adapters correctly
 
@@ -407,10 +406,10 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Goal**: Separate business logic from adapters
 
 1. Create `services/` structure
-2. Extract business logic from `reflection_tools.py` → `services/memory/reflection.py`
-3. Move `core/session_manager.py` → `services/session/manager.py`
-4. Create service classes that **use** adapters via DI
-5. Update service imports
+1. Extract business logic from `reflection_tools.py` → `services/memory/reflection.py`
+1. Move `core/session_manager.py` → `services/session/manager.py`
+1. Create service classes that **use** adapters via DI
+1. Update service imports
 
 **Validation**: Services properly inject adapters
 
@@ -419,9 +418,9 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Goal**: Separate MCP server from application logic
 
 1. Create `orchestration/mcp/` structure
-2. Move `server.py` → `orchestration/mcp/server.py`
-3. Move `server_core.py` → `orchestration/mcp/server_core.py`
-4. Keep MCP server separate from business services
+1. Move `server.py` → `orchestration/mcp/server.py`
+1. Move `server_core.py` → `orchestration/mcp/server_core.py`
+1. Keep MCP server separate from business services
 
 **Validation**: MCP server correctly orchestrates services
 
@@ -430,8 +429,8 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Goal**: Clean up utils/ directory
 
 1. Create `infrastructure/` categories
-2. Move utilities with clear categorization
-3. Update imports
+1. Move utilities with clear categorization
+1. Update imports
 
 **Validation**: All utilities remain accessible
 
@@ -440,16 +439,17 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Goal**: Ensure MCP tools are thin wrappers
 
 1. Review all MCP tool implementations
-2. Extract business logic to services
-3. Make tools call services via DI
+1. Extract business logic to services
+1. Make tools call services via DI
 
 **Validation**: Tools are simple, services are testable
 
----
+______________________________________________________________________
 
 ## Comparison with Other Projects
 
 ### FastBlocks Pattern
+
 - **Adapters**: Templates (Jinja2), Icons (FontAwesome), Images (Cloudinary)
 - **Actions**: Utility functions (our `infrastructure/`)
 - **MCP**: Adapter discovery and health monitoring
@@ -457,6 +457,7 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Lesson**: FastBlocks extends ACB with web-specific adapters, but follows the same pattern
 
 ### Crackerjack Pattern
+
 - **Adapters**: Type checkers (zuban), Formatters (ruff), Security scanners (bandit)
 - **Services**: Not prominent (tool-focused architecture)
 - **Tools**: CLI handlers
@@ -464,41 +465,47 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 **Lesson**: Crackerjack focuses on adapters for QA tools, lighter on services
 
 ### Our Pattern
+
 - **Adapters**: DuckDB, Git, Crackerjack, LLM providers
 - **Services**: Session, memory, search, quality
 - **Orchestration**: MCP server
 - **Tools**: MCP tool implementations
 
----
+______________________________________________________________________
 
 ## Benefits of ACB-Compliant Architecture
 
 ### 1. Testability
+
 - **Mock adapters easily**: Swap DuckDB for in-memory store in tests
 - **Test services in isolation**: Mock adapter dependencies
 - **Test tools with mocked services**: Fast unit tests
 
 ### 2. Swappability
+
 - **Replace DuckDB with PostgreSQL**: Just swap adapter, services unchanged
 - **Switch Git implementations**: Services remain the same
 - **Try different LLM providers**: Configuration change only
 
 ### 3. Clarity
+
 - **Clear boundaries**: Each layer has distinct responsibility
 - **Easy navigation**: "Where's the DuckDB code?" → `adapters/database/reflection_db.py`
 - **Obvious patterns**: Follow ACB conventions everywhere
 
 ### 4. Scalability
+
 - **Add new adapters**: Just implement protocol and register
 - **Add new services**: Use existing adapters
 - **Add new tools**: Expose existing services
 
 ### 5. ACB Compatibility
+
 - **Upgrade path**: Aligned with ACB 0.19.0+ patterns
 - **Community patterns**: Follows established conventions
 - **Documentation**: Matches ACB/FastBlocks/crackerjack examples
 
----
+______________________________________________________________________
 
 ## Example: Memory Module Transformation
 
@@ -514,6 +521,7 @@ session_mgmt_mcp/
 ```
 
 **Problems**:
+
 - Adapter (DuckDB) mixed with service logic
 - No clear separation of concerns
 - Can't swap database implementation
@@ -538,16 +546,18 @@ session_mgmt_mcp/
 ```
 
 **Benefits**:
+
 - Adapter is swappable (DuckDB → PostgreSQL just configuration change)
 - Services testable in isolation (mock the adapter)
 - Tools are simple wrappers (call service methods)
 - Clear ACB layer compliance
 
----
+______________________________________________________________________
 
 ## Anti-Patterns to Avoid
 
 ### ❌ Anti-Pattern 1: Adapters Inside Services
+
 ```python
 # WRONG: Don't put adapters as subdirectories of services
 services/
@@ -557,6 +567,7 @@ services/
 ```
 
 **Correct**:
+
 ```python
 # RIGHT: Adapters are a separate layer
 adapters/database/
@@ -567,6 +578,7 @@ services/memory/
 ```
 
 ### ❌ Anti-Pattern 2: Business Logic in Adapters
+
 ```python
 # WRONG: Business logic in adapter
 class ReflectionDatabase:
@@ -578,12 +590,14 @@ class ReflectionDatabase:
 ```
 
 **Correct**:
+
 ```python
 # RIGHT: Adapter only does I/O
 class ReflectionDatabase:
     async def store(self, content: str, embedding: np.ndarray) -> str:
         # ✅ Simple I/O operation
         ...
+
 
 # Service handles business logic
 class ReflectionService:
@@ -595,6 +609,7 @@ class ReflectionService:
 ```
 
 ### ❌ Anti-Pattern 3: Deep Nesting
+
 ```python
 # WRONG: Too many levels
 services/
@@ -606,17 +621,19 @@ services/
 ```
 
 **Correct**:
+
 ```python
 # RIGHT: Flat structure
 adapters/database/
 └── reflection_db.py  # ✅ Easy to find
 ```
 
----
+______________________________________________________________________
 
 ## Migration Checklist
 
 - [ ] Phase 1: Create adapter structure and move external integrations
+
   - [ ] Create `adapters/database/` with `_base.py`, `reflection_db.py`, `knowledge_graph_db.py`
   - [ ] Create `adapters/git/` with `_base.py`, `operations.py`
   - [ ] Create `adapters/crackerjack/` with `_base.py`, `integration.py`
@@ -625,6 +642,7 @@ adapters/database/
   - [ ] Test: `depends.get_sync(ReflectionDatabase)` works
 
 - [ ] Phase 2: Extract services
+
   - [ ] Create `services/` structure with subdirectories
   - [ ] Extract business logic from reflection_tools.py → services/memory/reflection.py
   - [ ] Move session_manager.py → services/session/manager.py
@@ -632,39 +650,44 @@ adapters/database/
   - [ ] Test: Services properly inject adapters
 
 - [ ] Phase 3: Organize orchestration
+
   - [ ] Create `orchestration/mcp/` structure
   - [ ] Move server files to orchestration/
   - [ ] Test: MCP server starts and registers tools
 
 - [ ] Phase 4: Reorganize infrastructure
+
   - [ ] Create `infrastructure/` with subdirectories
   - [ ] Move utilities from utils/ to infrastructure/
   - [ ] Test: All imports still work
 
 - [ ] Phase 5: Validate tools
+
   - [ ] Review all MCP tool implementations
   - [ ] Ensure tools call services (not adapters directly)
   - [ ] Test: All MCP tools function correctly
 
 - [ ] Final Validation
+
   - [ ] Run full test suite: `pytest`
   - [ ] Verify DI container: All depends.get() calls work
   - [ ] Check MCP tool registration: All tools discoverable
   - [ ] Update documentation: README.md, CLAUDE.md
 
----
+______________________________________________________________________
 
 ## Conclusion
 
 This refined proposal correctly applies ACB architectural patterns:
 
 1. **Adapters are external system integrations** (Layer 4) - not data access layers
-2. **Services contain business logic** (Layer 2) - and use adapters via DI
-3. **MCP tools are thin wrappers** (Domain layer) - exposing services
-4. **Infrastructure is cross-cutting** (Layer 5) - used by all layers
-5. **Orchestration manages processes** (Layer 3) - like the MCP server
+1. **Services contain business logic** (Layer 2) - and use adapters via DI
+1. **MCP tools are thin wrappers** (Domain layer) - exposing services
+1. **Infrastructure is cross-cutting** (Layer 5) - used by all layers
+1. **Orchestration manages processes** (Layer 3) - like the MCP server
 
 The result is:
+
 - ✅ ACB 0.19.0+ compliant
 - ✅ Testable (mock adapters, test services)
 - ✅ Swappable (replace implementations via configuration)
@@ -674,7 +697,7 @@ The result is:
 
 **Recommended Next Step**: Start with Phase 1 (Adapter Layer) as a pilot, validate the pattern works, then proceed with remaining phases.
 
----
+______________________________________________________________________
 
 *Generated: 2025-01-30 (Refined)*
 *Purpose: ACB-compliant package reorganization with correct adapter understanding*

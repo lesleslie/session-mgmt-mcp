@@ -10,12 +10,12 @@ The server integrates with "Crackerjack" for code quality enforcement, uses a lo
 
 ### Key Technologies
 
-*   **Programming Language:** Python 3.13+
-*   **Server Framework:** `fastmcp`
-*   **Database:** DuckDB (for conversation memory and knowledge graph)
-*   **Code Quality:** Crackerjack, Ruff (linting), Pytest (testing), Pyright (type checking)
-*   **Dependencies:** `pydantic`, `typer`, `onnxruntime`, `transformers`, and more (see `pyproject.toml`).
-*   **Building:** `hatchling`
+- **Programming Language:** Python 3.13+
+- **Server Framework:** `fastmcp`
+- **Database:** DuckDB (for conversation memory and knowledge graph)
+- **Code Quality:** Crackerjack, Ruff (linting), Pytest (testing), Pyright (type checking)
+- **Dependencies:** `pydantic`, `typer`, `onnxruntime`, `transformers`, and more (see `pyproject.toml`).
+- **Building:** `hatchling`
 
 ## Building and Running
 
@@ -35,29 +35,29 @@ uv sync
 
 The server can be run in two modes:
 
-1.  **STDIO Mode (default):**
+1. **STDIO Mode (default):**
 
-    ```bash
-    python -m session_mgmt_mcp.server
-    ```
+   ```bash
+   python -m session_mgmt_mcp.server
+   ```
 
-    or using the script entry point:
+   or using the script entry point:
 
-    ```bash
-    session-mgmt-mcp
-    ```
+   ```bash
+   session-mgmt-mcp
+   ```
 
-2.  **HTTP Mode:**
+1. **HTTP Mode:**
 
-    ```bash
-    python -m session_mgmt_mcp.server --http
-    ```
+   ```bash
+   python -m session_mgmt_mcp.server --http
+   ```
 
-    You can also specify a port:
+   You can also specify a port:
 
-    ```bash
-    python -m session_mgmt_mcp.server --http --http-port 8000
-    ```
+   ```bash
+   python -m session_mgmt_mcp.server --http --http-port 8000
+   ```
 
 ### Running Tests
 
@@ -75,20 +75,20 @@ pytest --cov=session_mgmt_mcp
 
 ## Development Conventions
 
-*   **Coding Style:** The project follows the "Crackerjack" code style.
-*   **Linting:** `ruff` is used for linting. The configuration can be found in `pyproject.toml`.
-*   **Type Checking:** `pyright` is used for static type checking.
-*   **Testing:** Tests are located in the `tests/` directory and are written using `pytest`. The project has unit, functional, integration, and other types of tests.
-*   **Commits:** (No explicit convention found, but assume standard practices like conventional commits would be welcome).
+- **Coding Style:** The project follows the "Crackerjack" code style.
+- **Linting:** `ruff` is used for linting. The configuration can be found in `pyproject.toml`.
+- **Type Checking:** `pyright` is used for static type checking.
+- **Testing:** Tests are located in the `tests/` directory and are written using `pytest`. The project has unit, functional, integration, and other types of tests.
+- **Commits:** (No explicit convention found, but assume standard practices like conventional commits would be welcome).
 
 ## Key Files
 
-*   `README.md`: Provides a detailed overview of the project, its features, and how to use it.
-*   `pyproject.toml`: Defines the project's metadata, dependencies, and tool configurations (for `ruff`, `pytest`, `pyright`, etc.).
-*   `session_mgmt_mcp/server.py`: The main entry point for the MCP server. It initializes the `FastMCP` server and registers all the available tools.
-*   `session_mgmt_mcp/cli.py`: Defines a Typer-based command-line interface for managing the server (starting, stopping, checking status, etc.).
-*   `session_mgmt_mcp/tools/`: This directory likely contains the implementation of the various tool categories mentioned in the `README.md`.
-*   `tests/`: Contains all the tests for the project.
+- `README.md`: Provides a detailed overview of the project, its features, and how to use it.
+- `pyproject.toml`: Defines the project's metadata, dependencies, and tool configurations (for `ruff`, `pytest`, `pyright`, etc.).
+- `session_mgmt_mcp/server.py`: The main entry point for the MCP server. It initializes the `FastMCP` server and registers all the available tools.
+- `session_mgmt_mcp/cli.py`: Defines a Typer-based command-line interface for managing the server (starting, stopping, checking status, etc.).
+- `session_mgmt_mcp/tools/`: This directory likely contains the implementation of the various tool categories mentioned in the `README.md`.
+- `tests/`: Contains all the tests for the project.
 
 ## Usage
 
@@ -96,21 +96,21 @@ The server can be managed via the command-line interface defined in `session_mgm
 
 ### CLI Commands
 
-*   `session-mgmt-mcp --start-mcp-server`: Starts the MCP server.
-*   `session-mgmt-mcp --stop-mcp-server`: Stops the MCP server.
-*   `session-mgmt-mcp --restart-mcp-server`: Restarts the MCP server.
-*   `session-mgmt-mcp --status`: Shows the server's status.
-*   `session-mgmt-mcp --version`: Shows the version of the server.
-*   `session-mgmt-mcp --config`: Shows the server's configuration.
-*   `session-mgmt-mcp --logs`: Shows the server's logs.
+- `session-mgmt-mcp --start-mcp-server`: Starts the MCP server.
+- `session-mgmt-mcp --stop-mcp-server`: Stops the MCP server.
+- `session-mgmt-mcp --restart-mcp-server`: Restarts the MCP server.
+- `session-mgmt-mcp --status`: Shows the server's status.
+- `session-mgmt-mcp --version`: Shows the version of the server.
+- `session-mgmt-mcp --config`: Shows the server's configuration.
+- `session-mgmt-mcp --logs`: Shows the server's logs.
 
 ### Slash Commands (in Claude Code)
 
 Once the server is running, it provides a set of slash commands in "Claude Code" for session management, memory search, and more. The primary commands are:
 
-*   `/session-mgmt:start`
-*   `/session-mgmt:checkpoint`
-*   `/session-mgmt:end`
-*   `/session-mgmt:status`
+- `/session-mgmt:start`
+- `/session-mgmt:checkpoint`
+- `/session-mgmt:end`
+- `/session-mgmt:status`
 
 The server also creates convenient shortcuts for these commands (`/start`, `/checkpoint`, `/end`).

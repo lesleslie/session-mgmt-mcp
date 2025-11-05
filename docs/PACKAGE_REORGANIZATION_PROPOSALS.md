@@ -5,15 +5,16 @@
 ### Problems Identified
 
 1. **Root Directory Clutter**: 31 Python files in the root `session_mgmt_mcp/` directory
-2. **Feature Fragmentation**: Related features split across multiple directories:
+1. **Feature Fragmentation**: Related features split across multiple directories:
    - Memory/Reflection: `reflection_tools.py` (root), `memory_tools.py` (tools/), `knowledge_graph_db.py` (root), `knowledge_graph_tools.py` (tools/)
    - Search: `advanced_search.py` (root), `search_enhanced.py` (root), `search_tools.py` (tools/)
    - Server: `server.py`, `server_core.py`, `server_optimized.py` (all root)
    - Quality: `quality_engine.py` (root), `quality_metrics.py` (tools/), `quality_utils.py` (utils/), `quality_utils_v2.py` (utils/)
-3. **Utils Directory**: 15 files with mixed concerns - not descriptive
-4. **Tools Directory**: Mixes MCP tool implementations with utility code
+1. **Utils Directory**: 15 files with mixed concerns - not descriptive
+1. **Tools Directory**: Mixes MCP tool implementations with utility code
 
 ### Current File Count
+
 - **Total Python files**: 71
 - **Root directory**: 31 files
 - **Tools directory**: 19 files
@@ -21,11 +22,12 @@
 - **Core directory**: 1 file
 - **DI directory**: 3 files
 
----
+______________________________________________________________________
 
 ## Solution 1: Feature-Based Organization (Domain-Driven Design)
 
 ### Philosophy
+
 Organize by **feature domains** where each directory contains ALL code for that feature (models, tools, services, utilities).
 
 ### Structure
@@ -142,6 +144,7 @@ session_mgmt_mcp/
 ```
 
 ### Pros
+
 ✅ **Feature cohesion**: All code for a feature is together
 ✅ **Easy to understand**: Clear domain boundaries
 ✅ **Simple navigation**: Find memory code in `memory/`, search code in `search/`
@@ -149,18 +152,21 @@ session_mgmt_mcp/
 ✅ **Clear ownership**: Each domain has a clear purpose
 
 ### Cons
+
 ❌ **Code duplication risk**: May duplicate infrastructure code
 ❌ **Cross-cutting concerns**: Logging, caching, DI span multiple domains
 ❌ **Large refactor**: Significant file movement required
 
 ### Migration Complexity
+
 **Medium-High**: Requires moving ~60 files and updating ~200+ imports
 
----
+______________________________________________________________________
 
 ## Solution 2: Layer-Based Organization (ACB-Inspired)
 
 ### Philosophy
+
 Organize by **architectural layer** following ACB patterns: adapters, services, orchestration, tools.
 
 ### Structure
@@ -286,6 +292,7 @@ session_mgmt_mcp/
 ```
 
 ### Pros
+
 ✅ **ACB alignment**: Matches ACB framework patterns
 ✅ **Clear separation of concerns**: Adapters, services, tools clearly separated
 ✅ **Crackerjack compatibility**: Similar to crackerjack structure
@@ -293,18 +300,21 @@ session_mgmt_mcp/
 ✅ **Scalability**: Can add new adapters/services without affecting others
 
 ### Cons
+
 ❌ **Feature discovery**: Harder to find "all memory code" - spans adapters, services, tools
 ❌ **Cross-layer navigation**: Need to jump between layers for single feature
 ❌ **Tools directory still large**: 15+ files in tools/
 
 ### Migration Complexity
+
 **Medium**: Requires moving ~50 files and updating ~150+ imports
 
----
+______________________________________________________________________
 
 ## Solution 3: Hybrid Organization (Recommended) ⭐
 
 ### Philosophy
+
 Combine **feature cohesion** with **architectural clarity**: Group by feature at top level, use ACB layers within each feature.
 
 ### Structure
@@ -456,6 +466,7 @@ session_mgmt_mcp/
 ```
 
 ### Pros
+
 ✅ **Best of both worlds**: Feature cohesion + architectural clarity
 ✅ **Easy navigation**: "All memory code is in `memory/`"
 ✅ **Clear layers**: Within each feature: adapters → services → tools
@@ -465,13 +476,15 @@ session_mgmt_mcp/
 ✅ **Infrastructure clarity**: Shared code clearly separated
 
 ### Cons
+
 ⚠️ **More directories**: Deeper nesting (3-4 levels)
 ⚠️ **Import paths longer**: e.g., `from session_mgmt_mcp.memory.adapters.reflection_db import ...`
 
 ### Migration Complexity
+
 **Medium**: Requires moving ~60 files and updating ~180+ imports, but structure is intuitive
 
----
+______________________________________________________________________
 
 ## Comparison Matrix
 
@@ -487,54 +500,59 @@ session_mgmt_mcp/
 | **Migration Effort** | Medium-High | Medium | Medium |
 | **Scalability** | ✅✅ Very Good | ✅✅✅ Excellent | ✅✅✅ Excellent |
 
----
+______________________________________________________________________
 
 ## Recommendation: Solution 3 (Hybrid) ⭐
 
 ### Why Hybrid is Best
 
 1. **Feature Discoverability**: All memory code lives in `memory/`, all search code in `search/`
-2. **Architectural Clarity**: Within each feature, clear separation: `adapters/` → `services/` → `tools/`
-3. **ACB Compatibility**: Follows ACB patterns while maintaining feature boundaries
-4. **MCP Tool Co-location**: MCP tools live with their feature, not in giant `tools/` directory
-5. **Infrastructure Separation**: Shared infrastructure clearly separated in `infrastructure/`
-6. **Scalability**: Easy to add new features (new top-level dir) or layers (new subdir)
+1. **Architectural Clarity**: Within each feature, clear separation: `adapters/` → `services/` → `tools/`
+1. **ACB Compatibility**: Follows ACB patterns while maintaining feature boundaries
+1. **MCP Tool Co-location**: MCP tools live with their feature, not in giant `tools/` directory
+1. **Infrastructure Separation**: Shared infrastructure clearly separated in `infrastructure/`
+1. **Scalability**: Easy to add new features (new top-level dir) or layers (new subdir)
 
 ### Key Benefits Over Current Structure
 
 1. **Reduces root clutter**: From 31 files to ~5 files
-2. **Feature coherence**: No more memory code split across 4 locations
-3. **Tool organization**: From 19-file tools/ to organized per-feature tools/
-4. **Utils clarity**: From generic utils/ to specific infrastructure/ categories
-5. **Import clarity**: `from session_mgmt_mcp.memory.tools import ...` is clear
+1. **Feature coherence**: No more memory code split across 4 locations
+1. **Tool organization**: From 19-file tools/ to organized per-feature tools/
+1. **Utils clarity**: From generic utils/ to specific infrastructure/ categories
+1. **Import clarity**: `from session_mgmt_mcp.memory.tools import ...` is clear
 
 ### Migration Path
 
 **Phase 1: Infrastructure** (Low risk)
+
 - Move utils/ → infrastructure/ with categorization
 - Update imports (mostly internal)
 
 **Phase 2: Feature modules** (Medium risk)
+
 - Create feature directories (session/, memory/, search/, quality/)
 - Move core logic first (adapters, services)
 - Update DI registrations
 
 **Phase 3: MCP tools** (Medium risk)
+
 - Move tools/ files to feature-specific tools/ subdirectories
 - Update MCP tool registrations in server.py
 
 **Phase 4: Testing & validation** (Critical)
+
 - Run full test suite after each phase
 - Verify DI container resolves correctly
 - Test MCP tool discovery
 
----
+______________________________________________________________________
 
 ## Context7 ACB Patterns to Consider
 
 From ACB documentation analysis:
 
 ### 1. Adapter Pattern (from ACB)
+
 ```python
 # Each feature can have adapters/ for external integrations
 memory/
@@ -544,6 +562,7 @@ memory/
 ```
 
 ### 2. Service Pattern (from ACB)
+
 ```python
 # Business logic in services/
 memory/
@@ -553,9 +572,11 @@ memory/
 ```
 
 ### 3. Protocol-Based DI (from ACB 0.20.0+)
+
 ```python
 # Use Protocol interfaces for services
 from typing import Protocol
+
 
 class ReflectionServiceProtocol(Protocol):
     async def store_reflection(self, content: str) -> str: ...
@@ -563,6 +584,7 @@ class ReflectionServiceProtocol(Protocol):
 ```
 
 ### 4. Tool Registration (from ACB MCP)
+
 ```python
 # MCP tools registered per feature
 @mcp.tool()
@@ -571,11 +593,12 @@ async def store_reflection(content: str) -> dict:
     return await service.store_reflection(content)
 ```
 
----
+______________________________________________________________________
 
 ## Implementation Example: Memory Module
 
 ### Before (Current)
+
 ```
 session_mgmt_mcp/
 ├── reflection_tools.py         # 500 LOC - DuckDB + tools mixed
@@ -592,6 +615,7 @@ session_mgmt_mcp/
 ```
 
 ### After (Hybrid Solution 3)
+
 ```
 session_mgmt_mcp/
 └── memory/                     # All memory code together
@@ -614,34 +638,35 @@ session_mgmt_mcp/
 ```
 
 **Benefits:**
+
 - All memory code in one place
 - Clear separation: adapters (data) → services (logic) → tools (MCP)
 - Easy to find: "Where's the reflection DB?" → `memory/adapters/reflection_db.py`
 - Easy to test: Mock adapters, test services, verify tools
 - ACB-compatible: Follows adapter/service pattern
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 1. **Review and Approve**: Choose Solution 3 (Hybrid) or propose modifications
-2. **Create Migration Script**: Write automated script to move files and update imports
-3. **Phase 1 Pilot**: Test migration with one module (e.g., `memory/`)
-4. **Comprehensive Migration**: Apply to all modules
-5. **Update Documentation**: Update CLAUDE.md, README.md with new structure
-6. **CI/CD Validation**: Ensure all tests pass after migration
+1. **Create Migration Script**: Write automated script to move files and update imports
+1. **Phase 1 Pilot**: Test migration with one module (e.g., `memory/`)
+1. **Comprehensive Migration**: Apply to all modules
+1. **Update Documentation**: Update CLAUDE.md, README.md with new structure
+1. **CI/CD Validation**: Ensure all tests pass after migration
 
----
+______________________________________________________________________
 
 ## Questions for Discussion
 
 1. **Import path length**: Are longer paths like `from session_mgmt_mcp.memory.adapters.reflection_db` acceptable?
-2. **Tools organization**: Should MCP tools be co-located with features or in central `tools/`?
-3. **Infrastructure naming**: Is `infrastructure/` better than `utils/` or `shared/`?
-4. **Migration timing**: Should we migrate all at once or incrementally?
-5. **Backward compatibility**: Do we need import aliases for external users?
+1. **Tools organization**: Should MCP tools be co-located with features or in central `tools/`?
+1. **Infrastructure naming**: Is `infrastructure/` better than `utils/` or `shared/`?
+1. **Migration timing**: Should we migrate all at once or incrementally?
+1. **Backward compatibility**: Do we need import aliases for external users?
 
----
+______________________________________________________________________
 
 *Generated: 2025-01-30*
 *Purpose: Propose package reorganization for better maintainability and ACB alignment*

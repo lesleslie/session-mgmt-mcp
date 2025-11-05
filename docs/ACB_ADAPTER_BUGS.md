@@ -14,6 +14,7 @@ This document tracks bugs discovered in the ACB (Asynchronous Component Base) fr
 The `Graph` adapter class has both an `ssl_enabled` property from `BaseAdapter` and a local `self.ssl_enabled` attribute, causing property shadowing and `RecursionError`.
 
 **Error:**
+
 ```python
 RecursionError: maximum recursion depth exceeded
   File: acb/adapters/graph/duckdb_pgq.py:41
@@ -21,6 +22,7 @@ RecursionError: maximum recursion depth exceeded
 ```
 
 **Root Cause:**
+
 ```python
 class Graph(BaseAdapter):
     ssl_enabled: bool  # Property from BaseAdapter
@@ -32,7 +34,7 @@ class Graph(BaseAdapter):
 **Resolution:**
 Fixed in ACB repository. Property shadowing eliminated.
 
----
+______________________________________________________________________
 
 ## Bug #2: Vector Search Array Dimension Type Cast
 
@@ -44,6 +46,7 @@ Fixed in ACB repository. Property shadowing eliminated.
 The vector search query builder uses `$1::FLOAT[]` without specifying array dimensions, causing DuckDB VSS extension functions to fail with type mismatch errors.
 
 **Error:**
+
 ```
 Binder Error: No function matches the given name and argument types
 'array_distance(FLOAT[384], FLOAT[])'. You might need to add explicit type casts.
@@ -55,9 +58,15 @@ Binder Error: No function matches the given name and argument types
 **Location:** `acb/adapters/vector/duckdb.py` lines 155-179
 
 **Problematic Code:**
+
 ```python
-def _build_search_query(self, table_name: str, select_fields: str,
-                        filter_expr: dict[str, t.Any] | None, limit: int) -> str:
+def _build_search_query(
+    self,
+    table_name: str,
+    select_fields: str,
+    filter_expr: dict[str, t.Any] | None,
+    limit: int,
+) -> str:
     """Build the main search query with VSS."""
     query = f"""
         SELECT {safe_select_fields},
@@ -69,10 +78,16 @@ def _build_search_query(self, table_name: str, select_fields: str,
 ```
 
 **Fix Required:**
+
 ```python
-def _build_search_query(self, table_name: str, select_fields: str,
-                        filter_expr: dict[str, t.Any] | None, limit: int,
-                        dimension: int) -> str:  # Add dimension parameter
+def _build_search_query(
+    self,
+    table_name: str,
+    select_fields: str,
+    filter_expr: dict[str, t.Any] | None,
+    limit: int,
+    dimension: int,
+) -> str:  # Add dimension parameter
     """Build the main search query with VSS."""
     query = f"""
         SELECT {safe_select_fields},
@@ -85,11 +100,13 @@ def _build_search_query(self, table_name: str, select_fields: str,
 ```
 
 **Additional Issues:**
+
 1. Uses `array_distance()` instead of `array_cosine_similarity()` - distance semantics are inverted (lower=better) vs similarity (higher=better)
-2. Orders by ASC instead of DESC when using similarity metrics
-3. Dimension information is available in `self.config.vector.default_dimension` but not passed to query builder
+1. Orders by ASC instead of DESC when using similarity metrics
+1. Dimension information is available in `self.config.vector.default_dimension` but not passed to query builder
 
 **Impact:**
+
 - All vector searches fail and fall back to `_build_fallback_query()`
 - Fallback query returns `score=0.0` for all results
 - Semantic search completely non-functional
@@ -99,8 +116,13 @@ def _build_search_query(self, table_name: str, select_fields: str,
 Modified `_build_search_query()` in `/Users/les/Projects/acb/acb/adapters/vector/duckdb.py`:
 
 ```python
-def _build_search_query(self, table_name: str, select_fields: str,
-                        filter_expr: dict[str, t.Any] | None, limit: int) -> str:
+def _build_search_query(
+    self,
+    table_name: str,
+    select_fields: str,
+    filter_expr: dict[str, t.Any] | None,
+    limit: int,
+) -> str:
     """Build the main search query with VSS."""
     safe_table_name = self._validate_table_name(table_name)
     safe_select_fields = self._validate_select_fields(select_fields)
@@ -124,12 +146,14 @@ def _build_search_query(self, table_name: str, select_fields: str,
 ```
 
 **Changes Made:**
+
 1. Added `dimension = self.config.vector.default_dimension` to get dimension from config
-2. Changed `$1::FLOAT[]` → `$1::FLOAT[{dimension}]` to include explicit array size
-3. Changed `array_distance()` → `array_cosine_similarity()` for proper similarity semantics
-4. Changed `ORDER BY score ASC` → `ORDER BY score DESC` (higher similarity = better)
+1. Changed `$1::FLOAT[]` → `$1::FLOAT[{dimension}]` to include explicit array size
+1. Changed `array_distance()` → `array_cosine_similarity()` for proper similarity semantics
+1. Changed `ORDER BY score ASC` → `ORDER BY score DESC` (higher similarity = better)
 
 **Verification:**
+
 ```bash
 # Test that fixed ACB search() method returns proper scores
 python3 -c "
@@ -164,7 +188,7 @@ asyncio.run(test_fix())
 # Output: ✅ Fix verified: 3 results with scores [0.8884, 0.8879, 0.8858]
 ```
 
----
+______________________________________________________________________
 
 ## Summary
 
@@ -175,15 +199,18 @@ asyncio.run(test_fix())
 
 **Impact on Migration:**
 Both critical bugs have been resolved, allowing full ACB adapter integration:
+
 - Vector adapter: ✅ Fully functional with semantic search
 - Graph adapter: ✅ Ready for integration (SSL bug fixed)
 
 **Phase 2 (Vector Migration) Status:**
+
 - ACB adapter registration: ✅ Complete
 - ReflectionDatabaseAdapter wrapper: ✅ Complete and tested
 - All features working: Storage, search, statistics, filtering
 
 **Next Steps:**
+
 1. ✅ Complete Phase 2 vector migration
-2. Begin Phase 3 graph adapter migration
-3. Update memory_tools.py and search_tools.py to use new adapter
+1. Begin Phase 3 graph adapter migration
+1. Update memory_tools.py and search_tools.py to use new adapter

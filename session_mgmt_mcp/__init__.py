@@ -4,9 +4,11 @@ Provides comprehensive session management, conversation memory,
 and quality monitoring for Claude Code projects.
 """
 
+from contextlib import suppress
+
 # Phase 2 Decomposition: New modular architecture
 # These imports expose the decomposed server components
-try:
+with suppress(ImportError):
     from .advanced_features import (
         AdvancedFeaturesHub,
     )
@@ -19,9 +21,6 @@ try:
         SessionLogger,
         SessionPermissionsManager,
     )
-except ImportError:
-    # Modules not yet fully implemented - skeletons only
-    pass
 
 __version__ = "0.7.4"
 

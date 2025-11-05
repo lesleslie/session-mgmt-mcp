@@ -1258,7 +1258,7 @@ class ServerlessConfigManager:
                             from aiocache import Cache as AIOCache
                             from aiocache.serializers import PickleSerializer
 
-                            cache_type = backend_config.get("cache_type", "memory")
+                            backend_config.get("cache_type", "memory")
                             cache = AIOCache(serializer=PickleSerializer())
                             namespace = backend_config.get("namespace", "session")
                             storage = ACBCacheStorage(cache, namespace, backend_config)

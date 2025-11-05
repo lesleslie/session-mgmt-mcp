@@ -33,7 +33,6 @@ import asyncio
 import shutil
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
 
 import duckdb
 
@@ -57,6 +56,7 @@ async def migrate_vector_database(
         - reflections_migrated: Number of reflections migrated
         - total_migrated: Total items migrated
         - errors: Number of errors encountered
+
     """
     from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
     from session_mgmt_mcp.di import SessionPaths, configure
@@ -172,7 +172,7 @@ async def migrate_vector_database(
 
     if dry_run:
         print("\n🔍 DRY RUN - No changes will be made")
-        print(f"\nWould migrate:")
+        print("\nWould migrate:")
         print(f"   - {len(conversations)} conversations")
         print(f"   - {len(reflections)} reflections")
         print(f"   - {total_items} total items")
@@ -193,7 +193,7 @@ async def migrate_vector_database(
     async with ReflectionDatabaseAdapter() as db:
         # Get direct access to ACB adapter for bulk operations
         adapter = db._get_adapter()
-        client = await adapter.get_client()
+        await adapter.get_client()
 
         # Migrate conversations
         if conversations:
@@ -209,7 +209,9 @@ async def migrate_vector_database(
                         "id": conv["id"],
                         "content": conv["content"],
                         "project": conv.get("project"),
-                        "timestamp": conv.get("timestamp", datetime.now(UTC).isoformat()),
+                        "timestamp": conv.get(
+                            "timestamp", datetime.now(UTC).isoformat()
+                        ),
                         "type": "conversation",
                         **conv.get("metadata", {}),
                     }
@@ -232,7 +234,9 @@ async def migrate_vector_database(
 
                 except Exception as e:
                     errors += 1
-                    print(f"      ❌ Error migrating conversation {conv['id'][:8]}: {e}")
+                    print(
+                        f"      ❌ Error migrating conversation {conv['id'][:8]}: {e}"
+                    )
 
             print(f"   ✅ Migrated {conv_migrated}/{len(conversations)} conversations")
 
@@ -250,7 +254,9 @@ async def migrate_vector_database(
                         "id": refl["id"],
                         "content": refl["content"],
                         "tags": refl.get("tags", []),
-                        "timestamp": refl.get("timestamp", datetime.now(UTC).isoformat()),
+                        "timestamp": refl.get(
+                            "timestamp", datetime.now(UTC).isoformat()
+                        ),
                         "type": "reflection",
                     }
 
@@ -280,7 +286,7 @@ async def migrate_vector_database(
     print("\n🔍 Validating migration...")
     async with ReflectionDatabaseAdapter() as db:
         stats = await db.get_stats()
-        print(f"   New database stats:")
+        print("   New database stats:")
         print(f"      - Total vectors: {stats.get('total_vectors')}")
         print(f"      - Conversations: {stats.get('conversations')}")
         print(f"      - Reflections: {stats.get('reflections')}")
@@ -290,7 +296,7 @@ async def migrate_vector_database(
     print("\n" + "=" * 70)
     print("MIGRATION COMPLETE")
     print("=" * 70)
-    print(f"\n📊 Summary:")
+    print("\n📊 Summary:")
     print(f"   - Conversations migrated: {conv_migrated}/{len(conversations)}")
     print(f"   - Reflections migrated: {refl_migrated}/{len(reflections)}")
     print(f"   - Total migrated: {total_migrated}/{total_items}")

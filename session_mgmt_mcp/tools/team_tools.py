@@ -15,7 +15,8 @@ from acb.depends import depends
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)

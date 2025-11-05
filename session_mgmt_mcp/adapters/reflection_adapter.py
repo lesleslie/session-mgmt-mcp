@@ -15,7 +15,6 @@ import time
 import typing as t
 from datetime import UTC, datetime
 from pathlib import Path
-from types import TracebackType
 
 # Import ACB vector adapter
 from acb.adapters.vector.duckdb import Vector
@@ -31,6 +30,9 @@ except ImportError:
     ONNX_AVAILABLE = False
 
 import numpy as np
+
+if t.TYPE_CHECKING:
+    from types import TracebackType
 
 
 class ReflectionDatabaseAdapter:
@@ -51,6 +53,7 @@ class ReflectionDatabaseAdapter:
         >>> async with ReflectionDatabaseAdapter() as db:
         >>>     conv_id = await db.store_conversation("content", {"project": "foo"})
         >>>     results = await db.search_conversations("query")
+
     """
 
     def __init__(self, collection_name: str = "default") -> None:
@@ -59,6 +62,7 @@ class ReflectionDatabaseAdapter:
         Args:
             collection_name: Name of the vector collection to use.
                            Default "default" collection will be created automatically.
+
         """
         self.collection_name = collection_name
         self.vector_adapter: Vector | None = None
@@ -78,7 +82,6 @@ class ReflectionDatabaseAdapter:
         exc_tb: TracebackType | None,
     ) -> None:
         """Sync context manager exit."""
-        pass
 
     async def __aenter__(self) -> t.Self:
         """Async context manager entry."""
@@ -98,12 +101,10 @@ class ReflectionDatabaseAdapter:
         """Close adapter connections (sync version for compatibility)."""
         # ACB adapter handles connection pooling, no explicit close needed
         # Keep method for API compatibility
-        pass
 
     def __del__(self) -> None:
         """Destructor to ensure cleanup."""
         # ACB handles cleanup via dependency injection lifecycle
-        pass
 
     async def initialize(self) -> None:
         """Initialize vector adapter and embedding models.
@@ -179,6 +180,7 @@ class ReflectionDatabaseAdapter:
 
         Raises:
             RuntimeError: If no embedding model is available
+
         """
         if self.onnx_session and self.tokenizer:
 
@@ -233,6 +235,7 @@ class ReflectionDatabaseAdapter:
 
         Returns:
             Unique conversation ID (MD5 hash)
+
         """
         conversation_id = hashlib.md5(
             f"{content}_{time.time()}".encode(),
@@ -297,6 +300,7 @@ class ReflectionDatabaseAdapter:
 
         Returns:
             Unique reflection ID
+
         """
         reflection_id = hashlib.md5(
             f"reflection_{content}_{time.time()}".encode(),
@@ -363,6 +367,7 @@ class ReflectionDatabaseAdapter:
 
         Returns:
             List of conversation results with content, score, timestamp, project
+
         """
         if ONNX_AVAILABLE and self.onnx_session:
             # Use semantic search with embeddings
@@ -448,6 +453,7 @@ class ReflectionDatabaseAdapter:
 
         Returns:
             List of reflection results with content, score, timestamp, tags
+
         """
         if ONNX_AVAILABLE and self.onnx_session:
             try:
@@ -495,6 +501,7 @@ class ReflectionDatabaseAdapter:
 
         Returns:
             Dictionary with counts and other statistics
+
         """
         adapter = self._get_adapter()
 
@@ -516,18 +523,18 @@ class ReflectionDatabaseAdapter:
 
             # Get total count
             total_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name}"  # noqa: S608
+                f"SELECT COUNT(*) FROM {table_name}"
             ).fetchone()
             total_count = total_result[0] if total_result else 0
 
             # Count by type using JSON metadata
             conv_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'conversation'"  # noqa: S608
+                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'conversation'"
             ).fetchone()
             conv_count = conv_result[0] if conv_result else 0
 
             refl_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'reflection'"  # noqa: S608
+                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'reflection'"
             ).fetchone()
             refl_count = refl_result[0] if refl_result else 0
 

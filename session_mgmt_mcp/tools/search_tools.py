@@ -10,18 +10,19 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from acb.adapters import import_adapter
-from acb.depends import depends
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.adapters.reflection_adapter import (
         ReflectionDatabaseAdapter as ReflectionDatabase,
     )
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
@@ -36,6 +37,7 @@ async def get_reflection_database() -> ReflectionDatabase | None:
     Note:
         Uses instance_managers.get_reflection_database() which returns a
         properly initialized singleton instance from the DI container.
+
     """
     try:
         from session_mgmt_mcp.adapters.reflection_adapter import (

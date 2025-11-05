@@ -46,7 +46,6 @@ class SessionInfo:
 
 from acb.adapters import import_adapter
 from acb.depends import depends
-
 from session_mgmt_mcp.utils.git_operations import (
     create_checkpoint_commit,
     is_git_repository,

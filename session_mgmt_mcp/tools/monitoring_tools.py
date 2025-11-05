@@ -9,22 +9,24 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
 from session_mgmt_mcp.utils.instance_managers import (
     get_app_monitor as resolve_app_monitor,
 )
 from session_mgmt_mcp.utils.instance_managers import (
     get_interruption_manager as resolve_interruption_manager,
 )
-from acb.adapters import import_adapter
-from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
+
 
 # Lazy loading flags
 _app_monitor_available: bool | None = None

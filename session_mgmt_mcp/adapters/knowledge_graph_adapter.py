@@ -15,6 +15,7 @@ Note:
     - Sync DuckDB operations (complete in <1ms typically)
     - ACB handles config, logging, and dependency injection
     - No blocking since DuckDB has no network I/O
+
 """
 
 from __future__ import annotations
@@ -22,12 +23,15 @@ from __future__ import annotations
 import json
 import typing as t
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime
-from pathlib import Path
-from types import TracebackType
 
 from acb.config import Config
 from acb.depends import depends
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
+    from types import TracebackType
 
 # DuckDB will be imported at runtime
 DUCKDB_AVAILABLE = True
@@ -59,6 +63,7 @@ class KnowledgeGraphDatabaseAdapter:
         >>> async with KnowledgeGraphDatabaseAdapter() as kg:
         >>>     entity = await kg.create_entity("project", "project", ["observation"])
         >>>     relation = await kg.create_relation("proj1", "proj2", "depends_on")
+
     """
 
     def __init__(self, db_path: str | Path | None = None) -> None:
@@ -67,6 +72,7 @@ class KnowledgeGraphDatabaseAdapter:
         Args:
             db_path: Path to DuckDB database file. If None, uses path from ACB config.
                     Kept for API compatibility but overridden by ACB config when available.
+
         """
         self.db_path = str(db_path) if db_path else None
         self.conn: t.Any = None  # DuckDB connection (sync)
@@ -85,7 +91,6 @@ class KnowledgeGraphDatabaseAdapter:
         exc_tb: TracebackType | None,
     ) -> None:
         """Sync context manager exit."""
-        pass
 
     async def __aenter__(self) -> t.Self:
         """Async context manager entry."""
@@ -116,14 +121,13 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             Database file path
+
         """
         # Try to get from ACB config first
-        try:
+        with suppress(Exception):
             config = depends.get_sync(Config)
             if hasattr(config, "graph") and hasattr(config.graph, "database_path"):
                 return str(config.graph.database_path)
-        except Exception:
-            pass  # ACB config not available, use fallback
 
         # Fallback to instance path or default
         if self.db_path:
@@ -177,6 +181,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Raises:
             RuntimeError: If connection not initialized
+
         """
         if self.conn is None:
             msg = "Database connection not initialized. Call initialize() first."
@@ -265,6 +270,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Raises:
             ValueError: If entity with name already exists
+
         """
         conn = self._get_conn()
 
@@ -315,6 +321,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             Entity dictionary or None if not found
+
         """
         conn = self._get_conn()
 
@@ -344,6 +351,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             Entity dictionary or None if not found
+
         """
         conn = self._get_conn()
 
@@ -387,6 +395,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Raises:
             ValueError: If either entity doesn't exist
+
         """
         conn = self._get_conn()
 
@@ -447,6 +456,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Raises:
             ValueError: If entity doesn't exist
+
         """
         conn = self._get_conn()
 
@@ -486,6 +496,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             List of matching entities
+
         """
         conn = self._get_conn()
 
@@ -494,9 +505,7 @@ class KnowledgeGraphDatabaseAdapter:
         params: list[t.Any] = []
 
         if query:
-            conditions.append(
-                "(name LIKE ? OR list_contains(observations, ?))"
-            )
+            conditions.append("(name LIKE ? OR list_contains(observations, ?))")
             params.extend([f"%{query}%", query])
 
         if entity_type:
@@ -546,6 +555,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             List of relationships involving this entity
+
         """
         conn = self._get_conn()
 
@@ -604,6 +614,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             Paths found between entities with hop counts
+
         """
         conn = self._get_conn()
 
@@ -631,8 +642,8 @@ class KnowledgeGraphDatabaseAdapter:
         )
         visited = {from_entity}
 
-        paths = []
-        while queue and len(paths) == 0:  # Find first path only
+        paths: list[dict[str, t.Any]] = []
+        while queue and not paths:  # Find first path only (refurb FURB115)
             current, path, relations = queue.popleft()
 
             if len(path) > max_depth + 1:
@@ -651,7 +662,7 @@ class KnowledgeGraphDatabaseAdapter:
             for neighbor, rel_type in graph.get(current, []):
                 if neighbor not in visited:
                     visited.add(neighbor)
-                    queue.append((neighbor, path + [neighbor], relations + [rel_type]))
+                    queue.append((neighbor, [*path, neighbor], [*relations, rel_type]))
 
         return paths
 
@@ -660,6 +671,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         Returns:
             Summary with entity count, relationship count, type distributions
+
         """
         conn = self._get_conn()
 

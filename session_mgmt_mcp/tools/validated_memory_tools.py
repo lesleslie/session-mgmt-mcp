@@ -15,6 +15,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
 from session_mgmt_mcp.parameter_models import (
     ConceptSearchParams,
     FileSearchParams,
@@ -25,13 +27,13 @@ from session_mgmt_mcp.parameter_models import (
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
-from acb.adapters import import_adapter
-from acb.depends import depends
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
+
 
 # Lazy detection flag for optional dependencies
 _reflection_tools_available: bool | None = None
@@ -96,7 +98,9 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
                 output.append(f"🏷️ Tags: {', '.join(tags)}")
             output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-            _get_logger().info("Reflection stored", content_length=len(content), tags=tags)
+            _get_logger().info(
+                "Reflection stored", content_length=len(content), tags=tags
+            )
             return "\n".join(output)
 
         return "❌ Failed to store reflection"
@@ -147,7 +151,9 @@ async def _quick_search_validated_impl(**params: Any) -> str:
             output.append("🔍 No results found")
             output.append("💡 Try adjusting your search terms or lowering min_score")
 
-        _get_logger().info("Quick search performed", query=query, results_count=len(results))
+        _get_logger().info(
+            "Quick search performed", query=query, results_count=len(results)
+        )
         return "\n".join(output)
 
     except ValueError as e:

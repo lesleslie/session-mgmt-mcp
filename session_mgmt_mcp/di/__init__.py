@@ -162,12 +162,14 @@ def _register_vector_adapter(paths: SessionPaths, force: bool) -> None:
     # Set logger from DI (adapters need a logger instance)
     try:
         from acb.adapters import import_adapter
+
         Logger = import_adapter("logger")
         logger_instance = depends.get_sync(Logger)
         vector_adapter.logger = logger_instance
     except Exception:
         # If logger not available, create a minimal print-based logger
         import logging
+
         vector_adapter.logger = logging.getLogger("acb.vector")
 
     # Initialize adapter to create vectors schema (ACB requirement)
@@ -237,7 +239,7 @@ def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
     """
     # Import deferred to avoid circular dependency at module load time
     # SessionPermissionsManager will be imported when needed
-    pass  # Registration happens lazily when first accessed
+    # Registration happens lazily when first accessed
 
 
 def _register_lifecycle_manager(force: bool) -> None:
@@ -246,8 +248,9 @@ def _register_lifecycle_manager(force: bool) -> None:
     Note:
         Import deferred to avoid circular dependency at module load time.
         SessionLifecycleManager will be registered when first accessed.
+
     """
-    pass  # Registration happens lazily in session_tools.py _get_session_manager()
+    # Registration happens lazily in session_tools.py _get_session_manager()
 
 
 __all__ = [

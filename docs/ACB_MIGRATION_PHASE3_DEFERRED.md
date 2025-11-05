@@ -13,21 +13,25 @@ Phase 3 (Knowledge Graph ACB migration) has been deferred to a future release. T
 ## Rationale
 
 ### 1. Dependency Requirements
+
 - ACB's Graph adapter requires `duckdb-engine` (SQLAlchemy DuckDB dialect)
 - This would add a new production dependency
 - Current implementation uses DuckDB directly without SQLAlchemy
 
 ### 2. Implementation Complexity
+
 - Full migration requires converting all SQL queries to SQLAlchemy syntax
 - Estimated ~600+ lines of code changes across 10+ methods
 - Time investment doesn't match current project priorities
 
 ### 3. Working Solution Available
+
 - Original `KnowledgeGraphDatabase` is fully functional
 - Uses DuckDB PGQ extension directly
 - No reported issues or performance problems
 
 ### 4. Phase Scope Management
+
 - Phase 2 (Vector Adapter) is complete and tested ✅
 - Completing Phases 4-5 (Testing & Documentation) provides immediate value
 - Graph migration can be tackled when additional graph features are needed
@@ -48,6 +52,7 @@ Phase 3 (Knowledge Graph ACB migration) has been deferred to a future release. T
 ## Current State
 
 ### Working Approach
+
 ```python
 # Current - Direct DuckDB (WORKS)
 from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
@@ -58,9 +63,12 @@ async with KnowledgeGraphDatabase() as kg:
 ```
 
 ### Future Approach (When Completed)
+
 ```python
 # Future - ACB Graph Adapter (DEFERRED)
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import KnowledgeGraphDatabaseAdapter
+from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    KnowledgeGraphDatabaseAdapter,
+)
 
 async with KnowledgeGraphDatabaseAdapter() as kg:
     entity = await kg.create_entity("name", "type", ["observation"])
@@ -70,30 +78,36 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 ## Migration Plan (When Ready)
 
 ### Prerequisites
+
 1. Add dependency: `uv add "duckdb-engine>=0.11.2"`
-2. Review ACB Graph adapter patterns in `/Users/les/Projects/acb/acb/adapters/graph/duckdb_pgq.py`
+1. Review ACB Graph adapter patterns in `/Users/les/Projects/acb/acb/adapters/graph/duckdb_pgq.py`
 
 ### Implementation Steps
+
 1. Convert all methods to use SQLAlchemy async connections:
+
    ```python
    engine = await self.graph_adapter._ensure_client()
    async with engine.begin() as conn:
        result = await conn.execute(text("SELECT ..."), params)
    ```
 
-2. Update parameter binding from `?` placeholders to `:param` style:
+1. Update parameter binding from `?` placeholders to `:param` style:
+
    ```python
    # Old:  conn.execute("WHERE id = ?", (entity_id,))
    # New:  await conn.execute(text("WHERE id = :id"), {"id": entity_id})
    ```
 
-3. Handle result sets via SQLAlchemy Result objects:
+1. Handle result sets via SQLAlchemy Result objects:
+
    ```python
    result = await conn.execute(...)
    rows = result.fetchall()  # Returns list of Row objects
    ```
 
-4. Test all 10 methods:
+1. Test all 10 methods:
+
    - create_entity
    - get_entity
    - find_entity_by_name
@@ -104,9 +118,10 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
    - find_path (SQL/PGQ)
    - get_stats
 
-5. Create migration script using same pattern as `scripts/migrate_vector_database.py`
+1. Create migration script using same pattern as `scripts/migrate_vector_database.py`
 
 ### Estimated Effort
+
 - **Code Changes**: 2-3 hours (10 methods × 15-20 minutes each)
 - **Testing**: 1-2 hours (integration tests + migration validation)
 - **Documentation**: 30 minutes (CLAUDE.md updates, migration guide)
@@ -122,16 +137,19 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 ## Impact Assessment
 
 ### User Impact
+
 - **None** - Knowledge graph functionality continues to work
 - No breaking changes to MCP tools or API
 - Future migration will be transparent (same API)
 
 ### Technical Debt
+
 - Minimal - Graph adapter is independent subsystem
 - Can be migrated incrementally when needed
 - No coupling with vector adapter migration (Phase 2)
 
 ### Benefits of Deferral
+
 - ✅ Completes Phase 2 (Vector) with high confidence
 - ✅ Allows focus on testing & documentation (Phases 4-5)
 - ✅ Avoids scope creep during current release
@@ -142,10 +160,12 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 **Proceed with Phases 4-5** (Testing & Documentation) using the following approach:
 
 1. **Phase 4**: Update test fixtures to support **both** implementations:
+
    - Tests should work with `KnowledgeGraphDatabase` (current)
    - Tests should be adapter-agnostic (works with future adapter)
 
-2. **Phase 5**: Document migration status clearly:
+1. **Phase 5**: Document migration status clearly:
+
    - Mark `ReflectionDatabase` as deprecated (vector migration complete)
    - Note `KnowledgeGraphDatabase` as "stable, future ACB migration planned"
    - Provide this document as reference for future contributors

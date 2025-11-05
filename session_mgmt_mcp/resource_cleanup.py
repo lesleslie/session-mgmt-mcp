@@ -70,14 +70,14 @@ async def cleanup_http_clients() -> None:
             with suppress(Exception):
                 requests = depends.get_sync(Requests)
                 # Try adapter-level close method
-                if hasattr(requests, "close") and callable(getattr(requests, "close")):
+                if hasattr(requests, "close") and callable(requests.close):
                     maybe_await = requests.close()
                     if hasattr(maybe_await, "__await__"):
                         await maybe_await  # type: ignore[func-returns-value]
                     logger.debug("Requests adapter cleanup completed successfully")
                 # Fallback: if underlying client supports aclose/close
                 elif hasattr(requests, "client"):
-                    client = getattr(requests, "client")
+                    client = requests.client
                     if hasattr(client, "aclose"):
                         await client.aclose()
                         logger.debug("HTTP client session closed (aclose)")

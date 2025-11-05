@@ -9,19 +9,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters import import_adapter
+from acb.depends import depends
 from session_mgmt_mcp.utils.instance_managers import (
     get_serverless_manager as resolve_serverless_manager,
 )
-from acb.adapters import import_adapter
-from acb.depends import depends
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-def _get_logger():
+
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
+
 
 # Lazy loading flag for optional serverless dependencies
 _serverless_available: bool | None = None

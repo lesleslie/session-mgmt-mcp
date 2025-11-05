@@ -20,9 +20,8 @@ from bevy import get_container
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-from session_mgmt_mcp.core import SessionLifecycleManager
 from acb.adapters import import_adapter
-from acb.depends import depends
+from session_mgmt_mcp.core import SessionLifecycleManager
 
 
 @dataclass
@@ -89,7 +88,7 @@ def _get_session_manager() -> SessionLifecycleManager:
     return manager
 
 
-def _get_logger():
+def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
     Logger = import_adapter("logger")
     return depends.get_sync(Logger)
@@ -179,7 +178,9 @@ This will:
                 created_shortcuts.append(shortcut_name)
                 _get_logger().info(f"Created slash command shortcut: /{shortcut_name}")
             except Exception as e:
-                _get_logger().exception(f"Failed to create shortcut /{shortcut_name}: {e}")
+                _get_logger().exception(
+                    f"Failed to create shortcut /{shortcut_name}: {e}"
+                )
 
     return {
         "created": bool(created_shortcuts),
