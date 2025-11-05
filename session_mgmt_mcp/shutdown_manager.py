@@ -223,6 +223,100 @@ class ShutdownManager:
             with suppress(RuntimeError):
                 asyncio.run(self.shutdown())
 
+    async def _execute_cleanup_task(self, task: CleanupTask) -> None:
+        """Execute a single cleanup task with timeout enforcement.
+
+        Args:
+            task: Cleanup task to execute
+
+        Raises:
+            TimeoutError: If task exceeds timeout
+            Exception: If task execution fails
+
+        """
+        _get_logger().debug(
+            f"Executing cleanup task: {task.name} "
+            f"(priority: {task.priority}, timeout: {task.timeout_seconds}s)"
+        )
+
+        # Execute with timeout
+        if asyncio.iscoroutinefunction(task.callback):
+            await asyncio.wait_for(task.callback(), timeout=task.timeout_seconds)
+        else:
+            # Sync function - run in executor
+            loop = asyncio.get_running_loop()
+            await asyncio.wait_for(
+                loop.run_in_executor(None, task.callback),
+                timeout=task.timeout_seconds,
+            )
+
+    def _handle_task_timeout(self, task: CleanupTask) -> bool:
+        """Handle cleanup task timeout.
+
+        Args:
+            task: Task that timed out
+
+        Returns:
+            True if should stop cleanup (critical task), False otherwise
+
+        """
+        self._stats.tasks_timeout += 1
+        _get_logger().error(
+            f"Cleanup task timed out after {task.timeout_seconds}s: {task.name}"
+        )
+        if task.critical:
+            _get_logger().critical(
+                f"Critical task failed: {task.name}, stopping cleanup"
+            )
+            return True
+        return False
+
+    def _handle_task_failure(self, task: CleanupTask, error: Exception) -> bool:
+        """Handle cleanup task failure.
+
+        Args:
+            task: Task that failed
+            error: Exception that occurred
+
+        Returns:
+            True if should stop cleanup (critical task), False otherwise
+
+        """
+        self._stats.tasks_failed += 1
+        _get_logger().error(f"Cleanup task failed: {task.name} - {error}", exc_info=True)
+        if task.critical:
+            _get_logger().critical(
+                f"Critical task failed: {task.name}, stopping cleanup"
+            )
+            return True
+        return False
+
+    def _finalize_shutdown(
+        self, sorted_tasks: list[CleanupTask], start_time: float
+    ) -> None:
+        """Finalize shutdown and log results.
+
+        Args:
+            sorted_tasks: List of tasks that were executed
+            start_time: When shutdown started (from time.perf_counter())
+
+        """
+        import time
+
+        # Calculate total duration
+        self._stats.total_duration_ms = (time.perf_counter() - start_time) * 1000
+
+        _get_logger().info(
+            f"Shutdown complete: {self._stats.tasks_executed}/{len(sorted_tasks)} tasks succeeded "
+            f"in {self._stats.total_duration_ms:.2f}ms"
+        )
+
+        if self._stats.tasks_failed > 0 or self._stats.tasks_timeout > 0:
+            _get_logger().warning(
+                f"Shutdown had issues: {self._stats.tasks_failed} failed, "
+                f"{self._stats.tasks_timeout} timed out"
+            )
+
     async def shutdown(self) -> ShutdownStats:
         """Execute all cleanup tasks in priority order.
 
@@ -259,63 +353,19 @@ class ShutdownManager:
 
             for task in sorted_tasks:
                 try:
-                    _get_logger().debug(
-                        f"Executing cleanup task: {task.name} "
-                        f"(priority: {task.priority}, timeout: {task.timeout_seconds}s)"
-                    )
-
-                    # Execute with timeout
-                    if asyncio.iscoroutinefunction(task.callback):
-                        await asyncio.wait_for(
-                            task.callback(), timeout=task.timeout_seconds
-                        )
-                    else:
-                        # Sync function - run in executor
-                        loop = asyncio.get_running_loop()
-                        await asyncio.wait_for(
-                            loop.run_in_executor(None, task.callback),
-                            timeout=task.timeout_seconds,
-                        )
-
+                    await self._execute_cleanup_task(task)
                     self._stats.tasks_executed += 1
                     _get_logger().debug(f"Cleanup task completed: {task.name}")
 
                 except TimeoutError:
-                    self._stats.tasks_timeout += 1
-                    _get_logger().error(
-                        f"Cleanup task timed out after {task.timeout_seconds}s: {task.name}"
-                    )
-                    if task.critical:
-                        _get_logger().critical(
-                            f"Critical task failed: {task.name}, stopping cleanup"
-                        )
+                    if self._handle_task_timeout(task):
                         break
 
                 except Exception as e:
-                    self._stats.tasks_failed += 1
-                    _get_logger().error(
-                        f"Cleanup task failed: {task.name} - {e}", exc_info=True
-                    )
-                    if task.critical:
-                        _get_logger().critical(
-                            f"Critical task failed: {task.name}, stopping cleanup"
-                        )
+                    if self._handle_task_failure(task, e):
                         break
 
-            # Calculate total duration
-            self._stats.total_duration_ms = (time.perf_counter() - start_time) * 1000
-
-            _get_logger().info(
-                f"Shutdown complete: {self._stats.tasks_executed}/{len(sorted_tasks)} tasks succeeded "
-                f"in {self._stats.total_duration_ms:.2f}ms"
-            )
-
-            if self._stats.tasks_failed > 0 or self._stats.tasks_timeout > 0:
-                _get_logger().warning(
-                    f"Shutdown had issues: {self._stats.tasks_failed} failed, "
-                    f"{self._stats.tasks_timeout} timed out"
-                )
-
+            self._finalize_shutdown(sorted_tasks, start_time)
             return self._stats
 
     def get_stats(self) -> ShutdownStats:

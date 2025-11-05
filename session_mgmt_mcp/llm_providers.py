@@ -1124,6 +1124,78 @@ def get_masked_api_key(provider: str = "openai") -> str:
     return f"...{api_key[-4:]}"
 
 
+def _get_provider_api_key_and_env(provider: str) -> tuple[str | None, str | None]:
+    """Get API key and environment variable name for provider."""
+    if provider == "openai":
+        return os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY"
+    if provider == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        env_var_name = (
+            "GEMINI_API_KEY" if os.getenv("GEMINI_API_KEY") else "GOOGLE_API_KEY"
+        )
+        return api_key, env_var_name
+    return None, None
+
+
+def _validate_provider_with_security(
+    provider: str, api_key: str
+) -> tuple[bool, str]:
+    """Validate provider API key using mcp-common security module.
+
+    Returns:
+        Tuple of (success, status_message)
+    """
+    import sys
+
+    validator = APIKeyValidator(provider=provider)
+    try:
+        validator.validate(api_key, raise_on_invalid=True)
+        masked_key = get_masked_api_key(provider)
+        print(
+            f"✅ {provider.title()} API Key validated: {masked_key}",
+            file=sys.stderr,
+        )
+        return True, "valid"
+    except ValueError as e:
+        print(
+            f"\n❌ {provider.title()} API Key Validation Failed",
+            file=sys.stderr,
+        )
+        print(f"   {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _validate_provider_basic(provider: str, api_key: str) -> str:
+    """Basic API key validation without security module.
+
+    Returns:
+        Status message
+    """
+    import sys
+
+    if len(api_key) < 16:
+        print(f"\n⚠️  {provider.title()} API Key Warning", file=sys.stderr)
+        print(
+            f"   API key appears very short ({len(api_key)} characters)",
+            file=sys.stderr,
+        )
+        print(
+            "   Minimum 32 characters recommended for security",
+            file=sys.stderr,
+        )
+    return "basic_check"
+
+
+def _get_configured_providers() -> list[str]:
+    """Get list of configured LLM providers."""
+    providers = []
+    if os.getenv("OPENAI_API_KEY"):
+        providers.append("openai")
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+        providers.append("gemini")
+    return providers
+
+
 def validate_llm_api_keys_at_startup() -> dict[str, str]:
     """Validate LLM provider API keys at server startup (Phase 3 Security Hardening).
 
@@ -1140,13 +1212,7 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
     import sys
 
     validated_providers: dict[str, str] = {}
-    providers_configured = []
-
-    # Check which providers are configured
-    if os.getenv("OPENAI_API_KEY"):
-        providers_configured.append("openai")
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
-        providers_configured.append("gemini")
+    providers_configured = _get_configured_providers()
 
     # If no providers configured, warn but allow startup (Ollama might be used)
     if not providers_configured:
@@ -1163,17 +1229,7 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
 
     # Validate each configured provider
     for provider in providers_configured:
-        api_key = None
-        env_var_name = None
-
-        if provider == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
-            env_var_name = "OPENAI_API_KEY"
-        elif provider == "gemini":
-            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-            env_var_name = (
-                "GEMINI_API_KEY" if os.getenv("GEMINI_API_KEY") else "GOOGLE_API_KEY"
-            )
+        api_key, env_var_name = _get_provider_api_key_and_env(provider)
 
         if not api_key or not api_key.strip():
             print(f"\n❌ {provider.title()} API Key Validation Failed", file=sys.stderr)
@@ -1181,39 +1237,10 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
             sys.exit(1)
 
         if SECURITY_AVAILABLE:
-            # Use provider-specific validation from mcp-common
-            validator = APIKeyValidator(provider=provider)
-            try:
-                validator.validate(api_key, raise_on_invalid=True)
-                masked_key = get_masked_api_key(provider)
-                print(
-                    f"✅ {provider.title()} API Key validated: {masked_key}",
-                    file=sys.stderr,
-                )
-                validated_providers[provider] = "valid"
-            except ValueError as e:
-                print(
-                    f"\n❌ {provider.title()} API Key Validation Failed",
-                    file=sys.stderr,
-                )
-                print(f"   {e}", file=sys.stderr)
-                sys.exit(1)
+            _, status = _validate_provider_with_security(provider, api_key)
+            validated_providers[provider] = status
         else:
-            # Basic validation without security module
-            if len(api_key) < 16:
-                print(
-                    f"\n⚠️  {provider.title()} API Key Warning",
-                    file=sys.stderr,
-                )
-                print(
-                    f"   API key appears very short ({len(api_key)} characters)",
-                    file=sys.stderr,
-                )
-                print(
-                    "   Minimum 32 characters recommended for security",
-                    file=sys.stderr,
-                )
-
-            validated_providers[provider] = "basic_check"
+            status = _validate_provider_basic(provider, api_key)
+            validated_providers[provider] = status
 
     return validated_providers

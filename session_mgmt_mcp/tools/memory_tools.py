@@ -470,6 +470,48 @@ async def _search_by_concept_impl(
         return f"❌ Concept search error: {e}"
 
 
+def _format_new_stats(stats: dict[str, t.Any]) -> list[str]:
+    """Format statistics in new format (conversations_count, reflections_count)."""
+    conv_count = stats.get("conversations_count", 0)
+    refl_count = stats.get("reflections_count", 0)
+    provider = stats.get("embedding_provider", "unknown")
+
+    output = [
+        f"📈 Total conversations: {conv_count}",
+        f"💭 Total reflections: {refl_count}",
+        f"🔧 Embedding provider: {provider}",
+        f"\n🏥 Database health: {'✅ Healthy' if (conv_count + refl_count) > 0 else '⚠️ Empty'}",
+    ]
+    return output
+
+
+def _format_old_stats(stats: dict[str, t.Any]) -> list[str]:
+    """Format statistics in old/test format (total_reflections, projects, date_range)."""
+    output = [
+        f"📈 Total reflections: {stats.get('total_reflections', 0)}",
+        f"📁 Projects: {stats.get('projects', 0)}",
+    ]
+
+    # Add date range if present
+    date_range = stats.get("date_range")
+    if isinstance(date_range, dict):
+        output.append(
+            f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}"
+        )
+
+    # Add recent activity if present
+    recent_activity = stats.get("recent_activity", [])
+    if recent_activity:
+        output.append("\n🕐 Recent activity:")
+        output.extend([f"   • {activity}" for activity in recent_activity[:5]])
+
+    # Database health
+    is_healthy = stats.get("total_reflections", 0) > 0
+    output.append(f"\n🏥 Database health: {'✅ Healthy' if is_healthy else '⚠️ Empty'}")
+
+    return output
+
+
 async def _reflection_stats_impl() -> str:
     """Implementation for reflection_stats tool."""
     if not _check_reflection_tools_available():
@@ -479,51 +521,19 @@ async def _reflection_stats_impl() -> str:
         db = await _get_reflection_database()
         stats = await db.get_stats()
 
-        output = []
-        output.append("📊 Reflection Database Statistics")
-        output.append("=" * 40)
+        output = ["📊 Reflection Database Statistics", "=" * 40]
 
         if stats and "error" not in stats:
-            # Handle both old and new stat formats
-            # New format from reflection_tools.py: conversations_count, reflections_count, embedding_provider
+            # Format based on stat structure
             if "conversations_count" in stats:
-                conv_count = stats.get("conversations_count", 0)
-                refl_count = stats.get("reflections_count", 0)
-                output.append(f"📈 Total conversations: {conv_count}")
-                output.append(f"💭 Total reflections: {refl_count}")
-
-                provider = stats.get("embedding_provider", "unknown")
-                output.append(f"🔧 Embedding provider: {provider}")
-
-                output.append(
-                    f"\n🏥 Database health: {'✅ Healthy' if (conv_count + refl_count) > 0 else '⚠️ Empty'}"
-                )
+                output.extend(_format_new_stats(stats))
             else:
-                # Old/test format: total_reflections, projects, date_range
-                output.append(
-                    f"📈 Total reflections: {stats.get('total_reflections', 0)}"
-                )
-                output.append(f"📁 Projects: {stats.get('projects', 0)}")
-
-                date_range = stats.get("date_range")
-                if isinstance(date_range, dict):
-                    output.append(
-                        f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}",
-                    )
-
-                recent_activity = stats.get("recent_activity", [])
-                if recent_activity:
-                    output.append("\n🕐 Recent activity:")
-                    for activity in recent_activity[:5]:
-                        output.append(f"   • {activity}")
-
-                # Database health info
-                output.append(
-                    f"\n🏥 Database health: {'✅ Healthy' if stats.get('total_reflections', 0) > 0 else '⚠️ Empty'}",
-                )
+                output.extend(_format_old_stats(stats))
         else:
-            output.append("📊 No statistics available")
-            output.append("💡 Database may be empty or inaccessible")
+            output.extend([
+                "📊 No statistics available",
+                "💡 Database may be empty or inaccessible",
+            ])
 
         _get_logger().info("Reflection stats retrieved")
         return "\n".join(output)

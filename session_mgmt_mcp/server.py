@@ -436,20 +436,21 @@ mcp.tool()(git_worktree_switch)
 mcp.tool()(session_welcome)
 
 
-def main(http_mode: bool = False, http_port: int | None = None) -> None:
-    """Main entry point for the MCP server."""
-    # Validate LLM API keys at startup (Phase 3 Security Hardening)
-    # Phase 3.2 H3 fix: Replace broad exception suppression with specific handling
-    if LLM_PROVIDERS_AVAILABLE:
-        try:
-            validate_llm_api_keys_at_startup()
-        except (ImportError, ValueError) as e:
-            logger.warning(f"LLM API key validation skipped (optional feature): {e}")
-        except Exception:
-            logger.exception("Unexpected error during LLM validation")
+def _perform_startup_validation() -> None:
+    """Perform startup validation checks (LLM API keys)."""
+    if not LLM_PROVIDERS_AVAILABLE:
+        return
 
-    # Initialize new features on startup
-    # Phase 3.2 H3 fix: Replace broad exception suppression with specific handling
+    try:
+        validate_llm_api_keys_at_startup()
+    except (ImportError, ValueError) as e:
+        logger.warning(f"LLM API key validation skipped (optional feature): {e}")
+    except Exception:
+        logger.exception("Unexpected error during LLM validation")
+
+
+def _initialize_features() -> None:
+    """Initialize optional features on startup."""
     try:
         asyncio.run(initialize_new_features())
     except (ImportError, RuntimeError) as e:
@@ -457,51 +458,82 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
     except Exception:
         logger.exception("Unexpected error during feature init")
 
-    # Get host and port from config
+
+def _build_feature_list() -> list[str]:
+    """Build list of available features for display."""
+    features = [
+        "Session Lifecycle Management",
+        "Memory & Reflection System",
+        "Crackerjack Quality Integration",
+        "Knowledge Graph (DuckPGQ)",
+        "LLM Provider Management",
+    ]
+    if SECURITY_AVAILABLE:
+        features.append("🔒 API Key Validation (OpenAI/Gemini)")
+    if RATE_LIMITING_AVAILABLE:
+        features.append("⚡ Rate Limiting (10 req/sec, burst 30)")
+    return features
+
+
+def _display_http_startup(host: str, port: int, features: list[str]) -> None:
+    """Display HTTP mode startup information."""
+    if SERVERPANELS_AVAILABLE:
+        from mcp_common.ui import ServerPanels
+
+        ServerPanels.startup_success(
+            server_name="Session Management MCP",
+            version="2.0.0",
+            features=features,
+            endpoint=f"http://{host}:{port}/mcp",
+            websocket_monitor=str(_mcp_config.get("websocket_monitor_port", 8677)),
+            transport="HTTP (streamable)",
+        )
+    else:
+        # Fallback to simple print
+        print(
+            f"Starting Session Management MCP HTTP Server on http://{host}:{port}/mcp",
+            file=sys.stderr,
+        )
+        print(
+            f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
+            file=sys.stderr,
+        )
+
+
+def _display_stdio_startup(features: list[str]) -> None:
+    """Display STDIO mode startup information."""
+    if SERVERPANELS_AVAILABLE:
+        from mcp_common.ui import ServerPanels
+
+        ServerPanels.startup_success(
+            server_name="Session Management MCP",
+            version="2.0.0",
+            features=features,
+            transport="STDIO",
+            mode="Claude Desktop",
+        )
+    else:
+        # Fallback to simple print
+        print("Starting Session Management MCP Server in STDIO mode", file=sys.stderr)
+
+
+def main(http_mode: bool = False, http_port: int | None = None) -> None:
+    """Main entry point for the MCP server."""
+    # Perform startup validation and initialization
+    _perform_startup_validation()
+    _initialize_features()
+
+    # Get configuration
     host = _mcp_config.get("http_host", "127.0.0.1")
     port = http_port or _mcp_config.get("http_port", 8678)
+    use_http = http_mode or _mcp_config.get("http_enabled", False)
 
-    # Check configuration and command line flags
-    config_http_enabled = _mcp_config.get("http_enabled", False)
-    use_http = http_mode or config_http_enabled
+    # Build feature list for display
+    features = _build_feature_list()
 
+    # Display startup information and run server
     if use_http:
-        # Use ServerPanels for beautiful startup UI
-        if SERVERPANELS_AVAILABLE:
-            from mcp_common.ui import ServerPanels
-
-            # Build features list with optional security and rate limiting features
-            features = [
-                "Session Lifecycle Management",
-                "Memory & Reflection System",
-                "Crackerjack Quality Integration",
-                "Knowledge Graph (DuckPGQ)",
-                "LLM Provider Management",
-            ]
-            if SECURITY_AVAILABLE:
-                features.append("🔒 API Key Validation (OpenAI/Gemini)")
-            if RATE_LIMITING_AVAILABLE:
-                features.append("⚡ Rate Limiting (10 req/sec, burst 30)")
-
-            ServerPanels.startup_success(
-                server_name="Session Management MCP",
-                version="2.0.0",
-                features=features,
-                endpoint=f"http://{host}:{port}/mcp",
-                websocket_monitor=str(_mcp_config.get("websocket_monitor_port", 8677)),
-                transport="HTTP (streamable)",
-            )
-        else:
-            # Fallback to simple print
-            print(
-                f"Starting Session Management MCP HTTP Server on http://{host}:{port}/mcp",
-                file=sys.stderr,
-            )
-            print(
-                f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
-                file=sys.stderr,
-            )
-
+        _display_http_startup(host, port, features)
         mcp.run(
             transport="streamable-http",
             host=host,
@@ -510,36 +542,7 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
             stateless_http=True,
         )
     else:
-        # Use ServerPanels for STDIO mode
-        if SERVERPANELS_AVAILABLE:
-            from mcp_common.ui import ServerPanels
-
-            # Build features list with optional security and rate limiting features
-            features = [
-                "Session Lifecycle Management",
-                "Memory & Reflection System",
-                "Crackerjack Quality Integration",
-                "Knowledge Graph (DuckPGQ)",
-                "LLM Provider Management",
-            ]
-            if SECURITY_AVAILABLE:
-                features.append("🔒 API Key Validation (OpenAI/Gemini)")
-            if RATE_LIMITING_AVAILABLE:
-                features.append("⚡ Rate Limiting (10 req/sec, burst 30)")
-
-            ServerPanels.startup_success(
-                server_name="Session Management MCP",
-                version="2.0.0",
-                features=features,
-                transport="STDIO",
-                mode="Claude Desktop",
-            )
-        else:
-            # Fallback to simple print
-            print(
-                "Starting Session Management MCP Server in STDIO mode", file=sys.stderr
-            )
-
+        _display_stdio_startup(features)
         mcp.run(stateless_http=True)
 
 
