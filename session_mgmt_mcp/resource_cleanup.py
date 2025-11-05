@@ -66,9 +66,9 @@ async def cleanup_http_clients() -> None:
         from acb.depends import depends
 
         try:
-            Requests = import_adapter("requests")
+            requests_class = import_adapter("requests")
             with suppress(Exception):
-                requests = depends.get_sync(Requests)
+                requests = depends.get_sync(requests_class)
                 # Try adapter-level close method
                 if hasattr(requests, "close") and callable(requests.close):
                     maybe_await = requests.close()

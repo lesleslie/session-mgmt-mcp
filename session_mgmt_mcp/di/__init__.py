@@ -89,18 +89,18 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
     from acb.adapters import import_adapter
 
     # Import ACB's Logger class
-    Logger = import_adapter("logger")
+    logger_class = import_adapter("logger")
 
     if not force:
         with suppress(KeyError, AttributeError, RuntimeError):
             # RuntimeError: when adapter requires async (re-register)
-            existing = depends.get_sync(Logger)
+            existing = depends.get_sync(logger_class)
             # Only skip if we already have a Logger instance (not just the module name string)
-            if isinstance(existing, Logger):
+            if isinstance(existing, logger_class):
                 return
 
     # Create logger instance (ACB logger takes no init args)
-    logger_instance = Logger()
+    logger_instance = logger_class()
 
     # Configure logger with file sink
     log_file = logs_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
@@ -163,8 +163,8 @@ def _register_vector_adapter(paths: SessionPaths, force: bool) -> None:
     try:
         from acb.adapters import import_adapter
 
-        Logger = import_adapter("logger")
-        logger_instance = depends.get_sync(Logger)
+        logger_class = import_adapter("logger")
+        logger_instance = depends.get_sync(logger_class)
         vector_adapter.logger = logger_instance
     except Exception:
         # If logger not available, create a minimal print-based logger

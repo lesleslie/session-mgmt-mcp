@@ -90,8 +90,8 @@ def _get_session_manager() -> SessionLifecycleManager:
 
 def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
-    Logger = import_adapter("logger")
-    return depends.get_sync(Logger)
+    logger_class = import_adapter("logger")
+    return depends.get_sync(logger_class)
 
 
 def _create_session_shortcuts() -> dict[str, Any]:

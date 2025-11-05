@@ -249,8 +249,8 @@ async def quality_monitor() -> str:
 
 def _get_logger() -> t.Any:
     """Lazy logger resolution using ACB's logger adapter from DI container."""
-    Logger = import_adapter("logger")
-    return depends.get_sync(Logger)
+    logger_class = import_adapter("logger")
+    return depends.get_sync(logger_class)
 
 
 async def _get_reflection_db() -> Any | None:

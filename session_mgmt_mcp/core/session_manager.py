@@ -56,8 +56,8 @@ class SessionLifecycleManager:
     """Manages session lifecycle operations."""
 
     def __init__(self) -> None:
-        Logger = import_adapter("logger")
-        self.logger = depends.get_sync(Logger)
+        logger_class = import_adapter("logger")
+        self.logger = depends.get_sync(logger_class)
         self.current_project: str | None = None
         self._quality_history: dict[str, list[int]] = {}  # project -> [scores]
 

@@ -37,7 +37,7 @@ from datetime import UTC, datetime
 import duckdb
 
 
-async def migrate_vector_database(
+async def migrate_vector_database(  # noqa: C901 - Migration script complexity expected
     *,
     dry_run: bool = False,
     backup: bool = False,
