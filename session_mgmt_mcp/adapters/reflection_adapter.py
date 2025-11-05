@@ -129,15 +129,13 @@ class ReflectionDatabaseAdapter:
                 self.vector_adapter._schema_initialized = True
 
         # Ensure default collection exists
-        try:
+        with suppress(Exception):
+            # Collection may already exist, continue if it does
             await self.vector_adapter.create_collection(
                 name=self.collection_name,
                 dimension=self.embedding_dim,
                 distance_metric="cosine",
             )
-        except Exception:
-            # Collection may already exist, continue
-            pass
 
         # Initialize ONNX embedding model (same as original ReflectionDatabase)
         if ONNX_AVAILABLE:
@@ -557,12 +555,9 @@ class ReflectionDatabaseAdapter:
         """
         adapter = self._get_adapter()
 
-        try:
-            # Delete existing collection
+        with suppress(Exception):
+            # Delete existing collection (might not exist, continue if so)
             await adapter.delete_collection(self.collection_name)
-        except Exception:
-            # Collection might not exist, continue
-            pass
 
         # Recreate collection
         await adapter.create_collection(

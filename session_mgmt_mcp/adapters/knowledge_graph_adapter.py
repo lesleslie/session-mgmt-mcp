@@ -523,22 +523,20 @@ class KnowledgeGraphDatabaseAdapter:
 
         result = conn.execute(sql, params).fetchall()
 
-        results = []
-        for row in result:
-            results.append(
-                {
-                    "id": row[0],
-                    "name": row[1],
-                    "entity_type": row[2],
-                    "observations": list(row[3]) if row[3] else [],
-                    "properties": json.loads(row[4]) if row[4] else {},
-                    "created_at": row[5].isoformat() if row[5] else None,
-                    "updated_at": row[6].isoformat() if row[6] else None,
-                    "metadata": json.loads(row[7]) if row[7] else {},
-                }
-            )
-
-        return results
+        # Use list comprehension for better readability (refurb FURB138)
+        return [
+            {
+                "id": row[0],
+                "name": row[1],
+                "entity_type": row[2],
+                "observations": list(row[3]) if row[3] else [],
+                "properties": json.loads(row[4]) if row[4] else {},
+                "created_at": row[5].isoformat() if row[5] else None,
+                "updated_at": row[6].isoformat() if row[6] else None,
+                "metadata": json.loads(row[7]) if row[7] else {},
+            }
+            for row in result
+        ]
 
     async def get_relationships(
         self,
@@ -585,22 +583,20 @@ class KnowledgeGraphDatabaseAdapter:
 
         result = conn.execute(sql, params).fetchall()
 
-        results = []
-        for row in result:
-            results.append(
-                {
-                    "id": row[0],
-                    "from_entity": row[1],
-                    "to_entity": row[2],
-                    "relation_type": row[3],
-                    "properties": json.loads(row[4]) if row[4] else {},
-                    "created_at": row[5].isoformat() if row[5] else None,
-                    "updated_at": row[6].isoformat() if row[6] else None,
-                    "metadata": json.loads(row[7]) if row[7] else {},
-                }
-            )
-
-        return results
+        # Use list comprehension for better readability (refurb FURB138)
+        return [
+            {
+                "id": row[0],
+                "from_entity": row[1],
+                "to_entity": row[2],
+                "relation_type": row[3],
+                "properties": json.loads(row[4]) if row[4] else {},
+                "created_at": row[5].isoformat() if row[5] else None,
+                "updated_at": row[6].isoformat() if row[6] else None,
+                "metadata": json.loads(row[7]) if row[7] else {},
+            }
+            for row in result
+        ]
 
     async def find_path(
         self, from_entity: str, to_entity: str, max_depth: int = 5

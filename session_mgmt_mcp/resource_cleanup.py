@@ -237,8 +237,8 @@ async def cleanup_logging_handlers() -> None:
     try:
         import logging
 
-        # Flush and close all handlers
-        for handler in logging.root.handlers[:]:
+        # Flush and close all handlers (use .copy() for clarity - refurb FURB145)
+        for handler in logging.root.handlers.copy():
             try:
                 handler.flush()
                 handler.close()
