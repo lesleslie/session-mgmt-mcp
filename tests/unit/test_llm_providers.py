@@ -4,10 +4,12 @@ Tests cross-LLM compatibility with OpenAI, Gemini, and Ollama providers,
 including provider initialization, message handling, and fallback strategies.
 
 Phase: Week 4 Day 4 - LLM Provider Coverage
+Phase 2: Core Coverage (30% → 70%) - Helper Function Tests
 """
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
