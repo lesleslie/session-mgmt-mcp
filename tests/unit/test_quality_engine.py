@@ -142,17 +142,22 @@ class TestCompactionAnalysis:
             assert isinstance(should_compact, bool)
             assert isinstance(reason, str)
 
+    @pytest.mark.slow  # Marked slow due to filesystem operations
     @pytest.mark.asyncio
     async def test_perform_strategic_compaction_returns_list(self) -> None:
         """Should return list of compaction results."""
         from session_mgmt_mcp.quality_engine import perform_strategic_compaction
 
-        result = await perform_strategic_compaction()
+        # Mock filesystem operations to prevent timeout
+        with patch("session_mgmt_mcp.utils.file_utils._cleanup_temp_files") as mock_cleanup:
+            mock_cleanup.return_value = "✅ Cleaned 0 temporary files (0.0 MB)"
 
-        assert isinstance(result, list)
-        # Each item should be a string describing an action
-        for item in result:
-            assert isinstance(item, str)
+            result = await perform_strategic_compaction()
+
+            assert isinstance(result, list)
+            # Each item should be a string describing an action
+            for item in result:
+                assert isinstance(item, str)
 
     @pytest.mark.asyncio
     async def test_perform_strategic_compaction_includes_database_optimization(self) -> None:
