@@ -378,5 +378,165 @@ class TestServerMain:
             pytest.skip("main function not available")
 
 
+class TestServerHelperFunctions:
+    """Test server initialization helper functions.
+
+    Phase: Week 1 Day 2 - Quick Win Coverage (65% → 75%)
+    """
+
+    def test_build_feature_list_returns_list(self):
+        """Should return a list of feature strings."""
+        from session_mgmt_mcp.server import _build_feature_list
+
+        features = _build_feature_list()
+
+        assert isinstance(features, list)
+        assert len(features) >= 5  # At minimum the core features
+
+    def test_build_feature_list_includes_core_features(self):
+        """Should include all core features."""
+        from session_mgmt_mcp.server import _build_feature_list
+
+        features = _build_feature_list()
+
+        # Core features that should always be present
+        assert any("Session Lifecycle" in f for f in features)
+        assert any("Memory" in f or "Reflection" in f for f in features)
+        assert any("Crackerjack" in f for f in features)
+        assert any("Knowledge Graph" in f or "DuckPGQ" in f for f in features)
+        assert any("LLM Provider" in f for f in features)
+
+    def test_build_feature_list_conditional_security(self):
+        """Should conditionally include security features based on availability."""
+        from session_mgmt_mcp.server import _build_feature_list, SECURITY_AVAILABLE
+
+        features = _build_feature_list()
+
+        # Security features should only appear if SECURITY_AVAILABLE is True
+        has_security_feature = any("API Key Validation" in f for f in features)
+        if SECURITY_AVAILABLE:
+            assert has_security_feature, "Security feature should be present when SECURITY_AVAILABLE=True"
+        else:
+            # May or may not be present depending on actual availability
+            pass
+
+    def test_build_feature_list_conditional_rate_limiting(self):
+        """Should conditionally include rate limiting based on availability."""
+        from session_mgmt_mcp.server import _build_feature_list, RATE_LIMITING_AVAILABLE
+
+        features = _build_feature_list()
+
+        # Rate limiting should only appear if RATE_LIMITING_AVAILABLE is True
+        has_rate_limit_feature = any("Rate Limiting" in f for f in features)
+        if RATE_LIMITING_AVAILABLE:
+            assert has_rate_limit_feature, "Rate limiting feature should be present when RATE_LIMITING_AVAILABLE=True"
+
+    def test_display_http_startup_with_serverpanels(self):
+        """Should use ServerPanels when available."""
+        from session_mgmt_mcp.server import _display_http_startup, SERVERPANELS_AVAILABLE
+
+        if not SERVERPANELS_AVAILABLE:
+            pytest.skip("ServerPanels not available")
+
+        features = ["Feature 1", "Feature 2"]
+
+        # Mock ServerPanels (imported inside the function)
+        with patch("mcp_common.ui.ServerPanels") as mock_panels:
+            _display_http_startup("localhost", 3000, features)
+
+            # Verify startup_success was called with correct parameters
+            mock_panels.startup_success.assert_called_once()
+            call_kwargs = mock_panels.startup_success.call_args.kwargs
+            assert call_kwargs["server_name"] == "Session Management MCP"
+            assert call_kwargs["version"] == "2.0.0"
+            assert call_kwargs["features"] == features
+            assert "localhost:3000" in call_kwargs["endpoint"]
+            assert call_kwargs["transport"] == "HTTP (streamable)"
+
+    def test_display_http_startup_fallback(self):
+        """Should fall back to print when ServerPanels unavailable."""
+        from session_mgmt_mcp.server import _display_http_startup
+
+        features = ["Feature 1", "Feature 2"]
+
+        # Temporarily disable SERVERPANELS_AVAILABLE
+        with patch("session_mgmt_mcp.server.SERVERPANELS_AVAILABLE", False):
+            # Mock print to verify fallback behavior
+            with patch("sys.stderr") as mock_stderr:
+                _display_http_startup("localhost", 8080, features)
+
+                # Verify print was called (stderr.write is used by print)
+                # At least one call to stderr should contain server info
+                assert mock_stderr.write.called
+
+    def test_display_http_startup_with_custom_port(self):
+        """Should display correct port in endpoint URL."""
+        from session_mgmt_mcp.server import _display_http_startup, SERVERPANELS_AVAILABLE
+
+        if not SERVERPANELS_AVAILABLE:
+            pytest.skip("ServerPanels not available")
+
+        features = []
+
+        with patch("mcp_common.ui.ServerPanels") as mock_panels:
+            _display_http_startup("0.0.0.0", 9999, features)
+
+            call_kwargs = mock_panels.startup_success.call_args.kwargs
+            assert "9999" in call_kwargs["endpoint"]
+
+    def test_display_stdio_startup_with_serverpanels(self):
+        """Should use ServerPanels for STDIO mode when available."""
+        from session_mgmt_mcp.server import _display_stdio_startup, SERVERPANELS_AVAILABLE
+
+        if not SERVERPANELS_AVAILABLE:
+            pytest.skip("ServerPanels not available")
+
+        features = ["Feature A", "Feature B"]
+
+        with patch("mcp_common.ui.ServerPanels") as mock_panels:
+            _display_stdio_startup(features)
+
+            # Verify startup_success was called with STDIO-specific params
+            mock_panels.startup_success.assert_called_once()
+            call_kwargs = mock_panels.startup_success.call_args.kwargs
+            assert call_kwargs["server_name"] == "Session Management MCP"
+            assert call_kwargs["version"] == "2.0.0"
+            assert call_kwargs["features"] == features
+            assert call_kwargs["transport"] == "STDIO"
+            assert call_kwargs["mode"] == "Claude Desktop"
+
+    def test_display_stdio_startup_fallback(self):
+        """Should fall back to print when ServerPanels unavailable."""
+        from session_mgmt_mcp.server import _display_stdio_startup
+
+        features = ["Feature X"]
+
+        # Temporarily disable SERVERPANELS_AVAILABLE
+        with patch("session_mgmt_mcp.server.SERVERPANELS_AVAILABLE", False):
+            # Mock print to verify fallback behavior
+            with patch("sys.stderr") as mock_stderr:
+                _display_stdio_startup(features)
+
+                # Verify print was called with STDIO mode message
+                assert mock_stderr.write.called
+
+    def test_display_stdio_startup_with_empty_features(self):
+        """Should handle empty feature list gracefully."""
+        from session_mgmt_mcp.server import _display_stdio_startup, SERVERPANELS_AVAILABLE
+
+        if not SERVERPANELS_AVAILABLE:
+            pytest.skip("ServerPanels not available")
+
+        features = []
+
+        with patch("mcp_common.ui.ServerPanels") as mock_panels:
+            _display_stdio_startup(features)
+
+            # Should not crash with empty features
+            mock_panels.startup_success.assert_called_once()
+            call_kwargs = mock_panels.startup_success.call_args.kwargs
+            assert call_kwargs["features"] == []
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
