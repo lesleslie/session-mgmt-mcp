@@ -2,6 +2,8 @@
 """Unit tests for memory tools.
 
 Tests the MCP tools for storing, searching, and managing reflections and conversation memories.
+
+Phase: Week 1 Day 2 - Quick Win Coverage (84% → 90%+)
 """
 
 from unittest.mock import AsyncMock, patch
@@ -9,6 +11,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from session_mgmt_mcp.tools.memory_tools import (
     _check_reflection_tools_available,
+    _format_new_stats,
+    _format_old_stats,
     _quick_search_impl,
     _reflection_stats_impl,
     _reset_reflection_database_impl,
@@ -644,3 +648,205 @@ class TestResetReflectionDatabaseImpl:
             result = await _reset_reflection_database_impl()
 
             assert "Reset error" in result
+
+
+class TestFormatNewStats:
+    """Test _format_new_stats helper function for V2 stats format.
+
+    Phase: Week 1 Day 2 - Quick Win Coverage (84% → 90%)
+    """
+
+    def test_format_new_stats_with_complete_data(self):
+        """Should format complete stats with all fields."""
+        stats = {
+            "conversations_count": 150,
+            "reflections_count": 75,
+            "embedding_provider": "onnx-local",
+        }
+
+        result = _format_new_stats(stats)
+
+        assert isinstance(result, list)
+        assert len(result) == 4
+        assert "150" in result[0]  # conversations_count
+        assert "75" in result[1]   # reflections_count
+        assert "onnx-local" in result[2]  # embedding_provider
+        assert "✅ Healthy" in result[3]  # Database health (has data)
+
+    def test_format_new_stats_with_zero_counts(self):
+        """Should indicate empty database for zero counts."""
+        stats = {
+            "conversations_count": 0,
+            "reflections_count": 0,
+            "embedding_provider": "unknown",
+        }
+
+        result = _format_new_stats(stats)
+
+        assert isinstance(result, list)
+        assert "0" in result[0]  # conversations_count
+        assert "0" in result[1]  # reflections_count
+        assert "⚠️ Empty" in result[3]  # Database health warning
+
+    def test_format_new_stats_with_missing_fields(self):
+        """Should handle missing optional fields gracefully."""
+        stats = {}  # Empty dict
+
+        result = _format_new_stats(stats)
+
+        assert isinstance(result, list)
+        assert "0" in result[0]  # Default conversations_count
+        assert "0" in result[1]  # Default reflections_count
+        assert "unknown" in result[2]  # Default embedding_provider
+        assert "⚠️ Empty" in result[3]  # Empty database
+
+    def test_format_new_stats_with_partial_data(self):
+        """Should use defaults for missing fields."""
+        stats = {
+            "conversations_count": 50,
+            # reflections_count missing
+            "embedding_provider": "transformers",
+        }
+
+        result = _format_new_stats(stats)
+
+        assert isinstance(result, list)
+        assert "50" in result[0]  # conversations_count present
+        assert "0" in result[1]   # reflections_count default
+        assert "transformers" in result[2]
+        assert "✅ Healthy" in result[3]  # Has some data (50 > 0)
+
+    def test_format_new_stats_health_threshold(self):
+        """Should show healthy when total count > 0."""
+        stats = {
+            "conversations_count": 0,
+            "reflections_count": 1,  # Just one reflection
+            "embedding_provider": "test",
+        }
+
+        result = _format_new_stats(stats)
+
+        assert "✅ Healthy" in result[3]  # Total = 1, healthy
+
+
+class TestFormatOldStats:
+    """Test _format_old_stats helper function for legacy stats format.
+
+    Phase: Week 1 Day 2 - Quick Win Coverage (84% → 90%)
+    """
+
+    def test_format_old_stats_with_complete_data(self):
+        """Should format complete old-style stats."""
+        stats = {
+            "total_reflections": 100,
+            "projects": 5,
+            "date_range": {
+                "start": "2025-01-01",
+                "end": "2025-01-15",
+            },
+            "recent_activity": [
+                "Activity 1",
+                "Activity 2",
+                "Activity 3",
+                "Activity 4",
+                "Activity 5",
+                "Activity 6",  # Should be truncated to 5
+            ],
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        # Check total reflections
+        assert any("100" in line for line in result)
+        # Check projects count
+        assert any("5" in line for line in result)
+        # Check date range formatted
+        assert any("2025-01-01" in line and "2025-01-15" in line for line in result)
+        # Check recent activity (max 5 items)
+        activity_section = [line for line in result if "Activity" in line]
+        assert len(activity_section) == 5  # Limited to 5 items
+        # Check healthy status
+        assert any("✅ Healthy" in line for line in result)
+
+    def test_format_old_stats_with_zero_reflections(self):
+        """Should show empty database warning for zero reflections."""
+        stats = {
+            "total_reflections": 0,
+            "projects": 0,
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        assert any("0" in line for line in result)
+        assert any("⚠️ Empty" in line for line in result)
+
+    def test_format_old_stats_with_missing_date_range(self):
+        """Should handle missing date_range gracefully."""
+        stats = {
+            "total_reflections": 50,
+            "projects": 3,
+            # date_range missing
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        assert any("50" in line for line in result)
+        assert any("3" in line for line in result)
+        # Should not crash, just skip date range
+        assert not any("Date range" in line for line in result)
+
+    def test_format_old_stats_with_empty_recent_activity(self):
+        """Should handle empty recent_activity list."""
+        stats = {
+            "total_reflections": 25,
+            "projects": 2,
+            "recent_activity": [],
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        # Should not include recent activity section
+        assert not any("Recent activity" in line for line in result)
+
+    def test_format_old_stats_with_invalid_date_range_type(self):
+        """Should handle non-dict date_range gracefully."""
+        stats = {
+            "total_reflections": 10,
+            "projects": 1,
+            "date_range": "invalid",  # Not a dict
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        # Should not crash, just skip invalid date range
+        assert not any("Date range" in line for line in result)
+
+    def test_format_old_stats_minimal_data(self):
+        """Should work with minimal stats (just total_reflections)."""
+        stats = {
+            "total_reflections": 1,
+        }
+
+        result = _format_old_stats(stats)
+
+        assert isinstance(result, list)
+        assert len(result) >= 3  # At least total, projects, health
+        assert any("1" in line for line in result)
+        assert any("0" in line for line in result)  # Default projects = 0
+        assert any("✅ Healthy" in line for line in result)  # 1 reflection = healthy
+
+    def test_format_old_stats_health_threshold(self):
+        """Should show healthy when total_reflections > 0."""
+        stats = {
+            "total_reflections": 1,
+            "projects": 1,
+        }
+
+        result = _format_old_stats(stats)
+
+        assert any("✅ Healthy" in line for line in result)
