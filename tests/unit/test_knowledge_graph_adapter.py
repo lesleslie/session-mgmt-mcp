@@ -1,0 +1,614 @@
+#!/usr/bin/env python3
+"""Tests for knowledge_graph_adapter with ACB dependency injection.
+
+Tests the KnowledgeGraphDatabaseAdapter which uses ACB for configuration
+and DuckDB PGQ extension for property graph queries.
+
+Phase 2: Core Coverage (0% → 60%) - Knowledge Graph Adapter Tests
+
+Testing Strategy:
+- Use unique temp database paths per test for isolation
+- Mock ACB Config.graph.database_path when needed
+- Test hybrid async/sync pattern (async API, sync DuckDB operations)
+- Cover both ACB config path and fallback path logic
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+
+class TestKnowledgeGraphAdapterInit:
+    """Test KnowledgeGraphDatabaseAdapter initialization.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    def test_adapter_init_with_explicit_path(self) -> None:
+        """Should initialize with explicit database path."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = "/tmp/test.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        assert adapter.db_path == db_path
+        assert adapter.conn is None
+        assert adapter._initialized is False
+
+    def test_adapter_init_without_path(self) -> None:
+        """Should initialize without database path (uses config later)."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        adapter = KnowledgeGraphDatabaseAdapter()
+
+        assert adapter.db_path is None
+        assert adapter.conn is None
+        assert adapter._initialized is False
+
+    def test_adapter_init_with_path_object(self, tmp_path: Path) -> None:
+        """Should accept Path object as database path."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / "test.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        assert adapter.db_path == str(db_path)
+
+
+class TestContextManagers:
+    """Test context manager protocols.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    def test_sync_context_manager_raises_error(self, tmp_path: Path) -> None:
+        """Should raise error when using sync context manager."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        with pytest.raises(
+            RuntimeError,
+            match="Use 'async with' instead of 'with' for KnowledgeGraphDatabaseAdapter",
+        ):
+            with adapter:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager_initializes(self, tmp_path: Path) -> None:
+        """Should initialize when entering async context manager."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        async with adapter as kg:
+            assert kg is adapter
+            assert kg.conn is not None
+            assert kg._initialized is True
+
+        # Connection should be closed after exit
+        assert adapter.conn is None
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager_cleanup_on_exception(
+        self, tmp_path: Path
+    ) -> None:
+        """Should cleanup connection even if exception occurs."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        with pytest.raises(ValueError, match="test exception"):
+            async with adapter:
+                raise ValueError("test exception")
+
+        # Connection should still be cleaned up
+        assert adapter.conn is None
+
+
+class TestDatabasePathResolution:
+    """Test _get_db_path method with ACB config integration.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    def test_get_db_path_uses_acb_config(self, tmp_path: Path) -> None:
+        """Should use ACB config path when available."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        # Mock ACB config
+        mock_config = Mock()
+        mock_config.graph = Mock()
+        mock_config.graph.database_path = tmp_path / "acb_config.duckdb"
+
+        adapter = KnowledgeGraphDatabaseAdapter()
+
+        with patch("session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync", return_value=mock_config):
+            result = adapter._get_db_path()
+
+        assert result == str(mock_config.graph.database_path)
+
+    def test_get_db_path_falls_back_to_instance_path(self, tmp_path: Path) -> None:
+        """Should fall back to instance path when ACB config unavailable."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / "instance.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        # Mock depends.get_sync to raise exception (ACB config unavailable)
+        with patch(
+            "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+            side_effect=Exception("ACB not configured"),
+        ):
+            result = adapter._get_db_path()
+
+        assert result == str(db_path)
+
+    def test_get_db_path_uses_default_when_no_path(self, tmp_path: Path) -> None:
+        """Should use default path when no instance path or ACB config."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        adapter = KnowledgeGraphDatabaseAdapter()  # No path
+
+        # Mock depends.get_sync to raise exception and Path.home()
+        with (
+            patch(
+                "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+                side_effect=Exception("ACB not configured"),
+            ),
+            patch(
+                "session_mgmt_mcp.adapters.knowledge_graph_adapter.Path.home",
+                return_value=tmp_path,
+            ),
+        ):
+            result = adapter._get_db_path()
+
+        expected = tmp_path / ".claude" / "data" / "knowledge_graph.duckdb"
+        assert result == str(expected)
+        # Should create parent directory
+        assert expected.parent.exists()
+
+
+class TestInitialization:
+    """Test initialize method.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    @pytest.mark.asyncio
+    async def test_initialize_creates_connection(self, tmp_path: Path) -> None:
+        """Should create DuckDB connection."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        await adapter.initialize()
+
+        assert adapter.conn is not None
+        assert adapter._initialized is True
+
+        adapter.close()
+
+    @pytest.mark.asyncio
+    async def test_initialize_creates_schema(self, tmp_path: Path) -> None:
+        """Should create knowledge graph schema."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        await adapter.initialize()
+
+        # Verify schema was created by checking for tables
+        cursor = adapter.conn.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'"
+        )
+        tables = {row[0] for row in cursor.fetchall()}
+
+        assert "entities" in tables
+        assert "relationships" in tables
+
+        adapter.close()
+
+    @pytest.mark.asyncio
+    async def test_initialize_idempotent(self, tmp_path: Path) -> None:
+        """Should be safe to call initialize multiple times."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        await adapter.initialize()
+        first_conn = adapter.conn
+
+        await adapter.initialize()
+        second_conn = adapter.conn
+
+        # Should reuse connection or create new one gracefully
+        assert second_conn is not None
+
+        adapter.close()
+
+
+class TestCloseAndCleanup:
+    """Test close and cleanup methods.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    @pytest.mark.asyncio
+    async def test_close_closes_connection(self, tmp_path: Path) -> None:
+        """Should close DuckDB connection."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        await adapter.initialize()
+        assert adapter.conn is not None
+
+        adapter.close()
+        assert adapter.conn is None
+
+    def test_close_when_not_initialized(self) -> None:
+        """Should handle close when connection is None."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        adapter = KnowledgeGraphDatabaseAdapter()
+        adapter.close()  # Should not raise
+
+        assert adapter.conn is None
+
+    @pytest.mark.asyncio
+    async def test_destructor_closes_connection(self, tmp_path: Path) -> None:
+        """Should close connection in destructor."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        adapter = KnowledgeGraphDatabaseAdapter(db_path)
+
+        await adapter.initialize()
+        conn = adapter.conn
+
+        # Trigger destructor
+        del adapter
+
+        # Connection should be closed (can't verify directly, but shouldn't error)
+        # This test mainly ensures __del__ doesn't raise
+
+
+class TestEntityOperations:
+    """Test entity CRUD operations.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    @pytest.mark.asyncio
+    async def test_create_entity_with_observations(self, tmp_path: Path) -> None:
+        """Should create entity with observations."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            result = await kg.create_entity(
+                name="test-project",
+                entity_type="project",
+                observations=["First observation", "Second observation"],
+            )
+
+            assert "id" in result
+            assert result["name"] == "test-project"
+            assert result["entity_type"] == "project"
+            assert len(result["observations"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_create_entity_with_properties(self, tmp_path: Path) -> None:
+        """Should create entity with properties."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            properties = {"version": "1.0", "language": "python"}
+            result = await kg.create_entity(
+                name="FastMCP",
+                entity_type="library",
+                observations=["MCP framework"],
+                properties=properties,
+            )
+
+            assert result["name"] == "FastMCP"
+            # Properties should be stored in metadata
+            assert "properties" in result or "metadata" in result
+
+    @pytest.mark.asyncio
+    async def test_find_entity_by_name(self, tmp_path: Path) -> None:
+        """Should find entity by name."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create entity
+            created = await kg.create_entity(
+                name="unique-entity", entity_type="test", observations=["test"]
+            )
+
+            # Find it
+            found = await kg.find_entity_by_name("unique-entity")
+
+            assert found is not None
+            assert found["id"] == created["id"]
+            assert found["name"] == "unique-entity"
+
+    @pytest.mark.asyncio
+    async def test_find_entity_not_found(self, tmp_path: Path) -> None:
+        """Should return None when entity not found."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            result = await kg.find_entity_by_name("nonexistent")
+
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_add_observation_to_entity(self, tmp_path: Path) -> None:
+        """Should add observation to existing entity."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create entity
+            entity = await kg.create_entity(
+                name="test-entity", entity_type="test", observations=["first"]
+            )
+
+            # Add observation
+            success = await kg.add_observation(entity["id"], "second observation")
+
+            assert success is True
+
+            # Verify observation was added
+            updated = await kg.find_entity_by_name("test-entity")
+            assert len(updated["observations"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_search_entities_by_query(self, tmp_path: Path) -> None:
+        """Should search entities by query."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create test entities
+            await kg.create_entity(
+                name="python-lib", entity_type="library", observations=["Python library"]
+            )
+            await kg.create_entity(
+                name="js-lib", entity_type="library", observations=["JavaScript library"]
+            )
+
+            # Search for python
+            results = await kg.search_entities("python")
+
+            assert len(results) >= 1
+            assert any("python" in r["name"].lower() or "python" in str(r.get("observations", [])).lower() for r in results)
+
+
+class TestRelationshipOperations:
+    """Test relationship CRUD operations.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    @pytest.mark.asyncio
+    async def test_create_relation_between_entities(self, tmp_path: Path) -> None:
+        """Should create relationship between entities."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create two entities
+            entity1 = await kg.create_entity(
+                name="project-a", entity_type="project", observations=["test"]
+            )
+            entity2 = await kg.create_entity(
+                name="project-b", entity_type="project", observations=["test"]
+            )
+
+            # Create relationship
+            relation = await kg.create_relation(
+                from_entity=entity1["id"],
+                to_entity=entity2["id"],
+                relation_type="depends_on",
+            )
+
+            assert "id" in relation
+            assert relation["relation_type"] == "depends_on"
+
+    @pytest.mark.asyncio
+    async def test_create_relation_with_properties(self, tmp_path: Path) -> None:
+        """Should create relationship with properties."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create two entities
+            entity1 = await kg.create_entity(
+                name="service-a", entity_type="service", observations=["test"]
+            )
+            entity2 = await kg.create_entity(
+                name="service-b", entity_type="service", observations=["test"]
+            )
+
+            # Create relationship with properties
+            properties = {"version": ">=1.0", "optional": False}
+            relation = await kg.create_relation(
+                from_entity=entity1["id"],
+                to_entity=entity2["id"],
+                relation_type="requires",
+                properties=properties,
+            )
+
+            assert "id" in relation
+            # Properties should be in metadata
+            assert "properties" in relation or "metadata" in relation
+
+    @pytest.mark.asyncio
+    async def test_get_entity_relationships(self, tmp_path: Path) -> None:
+        """Should get all relationships for an entity."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create entities
+            entity1 = await kg.create_entity(
+                name="center", entity_type="test", observations=["test"]
+            )
+            entity2 = await kg.create_entity(
+                name="related1", entity_type="test", observations=["test"]
+            )
+            entity3 = await kg.create_entity(
+                name="related2", entity_type="test", observations=["test"]
+            )
+
+            # Create relationships
+            await kg.create_relation(entity1["id"], entity2["id"], "uses")
+            await kg.create_relation(entity3["id"], entity1["id"], "extends")
+
+            # Get relationships
+            relationships = await kg.get_entity_relationships(entity1["id"])
+
+            assert len(relationships) >= 2
+
+    @pytest.mark.asyncio
+    async def test_find_path_between_entities(self, tmp_path: Path) -> None:
+        """Should find paths between entities."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create chain of entities
+            e1 = await kg.create_entity("start", "test", ["test"])
+            e2 = await kg.create_entity("middle", "test", ["test"])
+            e3 = await kg.create_entity("end", "test", ["test"])
+
+            # Create path
+            await kg.create_relation(e1["id"], e2["id"], "connects_to")
+            await kg.create_relation(e2["id"], e3["id"], "connects_to")
+
+            # Find path
+            paths = await kg.find_path(e1["id"], e3["id"])
+
+            # Should find a path through middle entity
+            assert len(paths) >= 1
+
+
+class TestStatistics:
+    """Test graph statistics methods.
+
+    Phase 2: Core Coverage - knowledge_graph_adapter.py (0% → 60%)
+    """
+
+    @pytest.mark.asyncio
+    async def test_get_statistics_empty_graph(self, tmp_path: Path) -> None:
+        """Should get statistics for empty graph."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            stats = await kg.get_statistics()
+
+            assert "entity_count" in stats
+            assert "relationship_count" in stats
+            assert stats["entity_count"] == 0
+            assert stats["relationship_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_get_statistics_with_data(self, tmp_path: Path) -> None:
+        """Should get accurate statistics."""
+        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+            KnowledgeGraphDatabaseAdapter,
+        )
+
+        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+
+        async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
+            # Create some entities and relationships
+            e1 = await kg.create_entity("entity1", "test", ["test"])
+            e2 = await kg.create_entity("entity2", "test", ["test"])
+            await kg.create_relation(e1["id"], e2["id"], "relates_to")
+
+            stats = await kg.get_statistics()
+
+            assert stats["entity_count"] == 2
+            assert stats["relationship_count"] == 1
