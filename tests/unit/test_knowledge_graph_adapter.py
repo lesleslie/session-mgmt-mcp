@@ -327,18 +327,20 @@ class TestEntityOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_name = f"test-project-{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             result = await kg.create_entity(
-                name="test-project",
+                name=unique_name,
                 entity_type="project",
                 observations=["First observation", "Second observation"],
             )
 
             assert "id" in result
-            assert result["name"] == "test-project"
+            assert result["name"] == unique_name
             assert result["entity_type"] == "project"
             assert len(result["observations"]) == 2
 
@@ -348,19 +350,21 @@ class TestEntityOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_name = f"FastMCP-{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             properties = {"version": "1.0", "language": "python"}
             result = await kg.create_entity(
-                name="FastMCP",
+                name=unique_name,
                 entity_type="library",
                 observations=["MCP framework"],
                 properties=properties,
             )
 
-            assert result["name"] == "FastMCP"
+            assert result["name"] == unique_name
             # Properties should be stored in metadata
             assert "properties" in result or "metadata" in result
 
@@ -370,21 +374,23 @@ class TestEntityOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_name = f"unique-entity-{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             # Create entity
             created = await kg.create_entity(
-                name="unique-entity", entity_type="test", observations=["test"]
+                name=unique_name, entity_type="test", observations=["test"]
             )
 
             # Find it
-            found = await kg.find_entity_by_name("unique-entity")
+            found = await kg.find_entity_by_name(unique_name)
 
             assert found is not None
             assert found["id"] == created["id"]
-            assert found["name"] == "unique-entity"
+            assert found["name"] == unique_name
 
     @pytest.mark.asyncio
     async def test_find_entity_not_found(self, tmp_path: Path) -> None:
@@ -406,22 +412,24 @@ class TestEntityOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_name = f"test-entity-{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             # Create entity
             entity = await kg.create_entity(
-                name="test-entity", entity_type="test", observations=["first"]
+                name=unique_name, entity_type="test", observations=["first"]
             )
 
-            # Add observation
-            success = await kg.add_observation(entity["id"], "second observation")
+            # Add observation using entity name (not ID)
+            success = await kg.add_observation(entity["name"], "second observation")
 
             assert success is True
 
             # Verify observation was added
-            updated = await kg.find_entity_by_name("test-entity")
+            updated = await kg.find_entity_by_name(unique_name)
             assert len(updated["observations"]) == 2
 
     @pytest.mark.asyncio
@@ -430,16 +438,18 @@ class TestEntityOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create test entities
+            # Create test entities with unique names
             await kg.create_entity(
-                name="python-lib", entity_type="library", observations=["Python library"]
+                name=f"python-lib-{unique_id}", entity_type="library", observations=["Python library"]
             )
             await kg.create_entity(
-                name="js-lib", entity_type="library", observations=["JavaScript library"]
+                name=f"js-lib-{unique_id}", entity_type="library", observations=["JavaScript library"]
             )
 
             # Search for python
@@ -461,22 +471,24 @@ class TestRelationshipOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create two entities
+            # Create two entities with unique names
             entity1 = await kg.create_entity(
-                name="project-a", entity_type="project", observations=["test"]
+                name=f"project-a-{unique_id}", entity_type="project", observations=["test"]
             )
             entity2 = await kg.create_entity(
-                name="project-b", entity_type="project", observations=["test"]
+                name=f"project-b-{unique_id}", entity_type="project", observations=["test"]
             )
 
-            # Create relationship
+            # Create relationship using entity names (not IDs)
             relation = await kg.create_relation(
-                from_entity=entity1["id"],
-                to_entity=entity2["id"],
+                from_entity=entity1["name"],
+                to_entity=entity2["name"],
                 relation_type="depends_on",
             )
 
@@ -489,23 +501,25 @@ class TestRelationshipOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create two entities
+            # Create two entities with unique names
             entity1 = await kg.create_entity(
-                name="service-a", entity_type="service", observations=["test"]
+                name=f"service-a-{unique_id}", entity_type="service", observations=["test"]
             )
             entity2 = await kg.create_entity(
-                name="service-b", entity_type="service", observations=["test"]
+                name=f"service-b-{unique_id}", entity_type="service", observations=["test"]
             )
 
-            # Create relationship with properties
+            # Create relationship with properties using entity names (not IDs)
             properties = {"version": ">=1.0", "optional": False}
             relation = await kg.create_relation(
-                from_entity=entity1["id"],
-                to_entity=entity2["id"],
+                from_entity=entity1["name"],
+                to_entity=entity2["name"],
                 relation_type="requires",
                 properties=properties,
             )
@@ -520,27 +534,29 @@ class TestRelationshipOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create entities
+            # Create entities with unique names
             entity1 = await kg.create_entity(
-                name="center", entity_type="test", observations=["test"]
+                name=f"center-{unique_id}", entity_type="test", observations=["test"]
             )
             entity2 = await kg.create_entity(
-                name="related1", entity_type="test", observations=["test"]
+                name=f"related1-{unique_id}", entity_type="test", observations=["test"]
             )
             entity3 = await kg.create_entity(
-                name="related2", entity_type="test", observations=["test"]
+                name=f"related2-{unique_id}", entity_type="test", observations=["test"]
             )
 
-            # Create relationships
-            await kg.create_relation(entity1["id"], entity2["id"], "uses")
-            await kg.create_relation(entity3["id"], entity1["id"], "extends")
+            # Create relationships using entity names (not IDs)
+            await kg.create_relation(entity1["name"], entity2["name"], "uses")
+            await kg.create_relation(entity3["name"], entity1["name"], "extends")
 
-            # Get relationships
-            relationships = await kg.get_entity_relationships(entity1["id"])
+            # Get relationships using correct method name and entity name
+            relationships = await kg.get_relationships(entity1["name"])
 
             assert len(relationships) >= 2
 
@@ -550,21 +566,23 @@ class TestRelationshipOperations:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create chain of entities
-            e1 = await kg.create_entity("start", "test", ["test"])
-            e2 = await kg.create_entity("middle", "test", ["test"])
-            e3 = await kg.create_entity("end", "test", ["test"])
+            # Create chain of entities with unique names
+            e1 = await kg.create_entity(f"start-{unique_id}", "test", ["test"])
+            e2 = await kg.create_entity(f"middle-{unique_id}", "test", ["test"])
+            e3 = await kg.create_entity(f"end-{unique_id}", "test", ["test"])
 
-            # Create path
-            await kg.create_relation(e1["id"], e2["id"], "connects_to")
-            await kg.create_relation(e2["id"], e3["id"], "connects_to")
+            # Create path using entity names (not IDs)
+            await kg.create_relation(e1["name"], e2["name"], "connects_to")
+            await kg.create_relation(e2["name"], e3["name"], "connects_to")
 
-            # Find path
-            paths = await kg.find_path(e1["id"], e3["id"])
+            # Find path using entity names
+            paths = await kg.find_path(e1["name"], e3["name"])
 
             # Should find a path through middle entity
             assert len(paths) >= 1
@@ -582,16 +600,19 @@ class TestStatistics:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            stats = await kg.get_statistics()
+            # Use correct method name: get_stats() not get_statistics()
+            stats = await kg.get_stats()
 
-            assert "entity_count" in stats
-            assert "relationship_count" in stats
-            assert stats["entity_count"] == 0
-            assert stats["relationship_count"] == 0
+            # API returns total_entities and total_relationships
+            assert "total_entities" in stats
+            assert "total_relationships" in stats
+            assert stats["total_entities"] == 0
+            assert stats["total_relationships"] == 0
 
     @pytest.mark.asyncio
     async def test_get_statistics_with_data(self, tmp_path: Path) -> None:
@@ -599,16 +620,21 @@ class TestStatistics:
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
+        import time
 
-        db_path = tmp_path / f"test_{id(tmp_path)}.duckdb"
+        db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
+        unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
 
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
-            # Create some entities and relationships
-            e1 = await kg.create_entity("entity1", "test", ["test"])
-            e2 = await kg.create_entity("entity2", "test", ["test"])
-            await kg.create_relation(e1["id"], e2["id"], "relates_to")
+            # Create some entities and relationships with unique names
+            e1 = await kg.create_entity(f"entity1-{unique_id}", "test", ["test"])
+            e2 = await kg.create_entity(f"entity2-{unique_id}", "test", ["test"])
+            # Use entity names (not IDs) for create_relation
+            await kg.create_relation(e1["name"], e2["name"], "relates_to")
 
-            stats = await kg.get_statistics()
+            # Use correct method name: get_stats() not get_statistics()
+            stats = await kg.get_stats()
 
-            assert stats["entity_count"] == 2
-            assert stats["relationship_count"] == 1
+            # API returns total_entities and total_relationships
+            assert stats["total_entities"] == 2
+            assert stats["total_relationships"] == 1
