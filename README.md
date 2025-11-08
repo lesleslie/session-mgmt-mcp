@@ -403,6 +403,7 @@ If installed with pip/uv, you can use the script entry point:
 - Python 3.13+
 - `fastmcp>=2` - MCP server framework
 - `duckdb>=0.9` - Conversation storage with vector support
+- `fastapi<0.121.0` - **Pinned to <0.121.0** (prevents circular import bug in 0.121.0)
 - `numpy>=1.24` - Numerical operations for embeddings
 - `pydantic>=2.0` - Data validation and settings management
 - `tiktoken>=0.5` - Token counting and optimization
@@ -415,6 +416,11 @@ If installed with pip/uv, you can use the script entry point:
 - `pydantic-settings>=2.0` - Settings management
 - `tomli>=2.2.1` - TOML parsing
 - `typer>=0.17.4` - CLI interface
+
+**Recent Changes** (January 7, 2025):
+- ✅ Removed `sitecustomize.py` - No longer needed; improved startup reliability
+- ✅ Pinned FastAPI to `<0.121.0` - Prevents circular import bug in FastAPI 0.121.0
+- ✅ Documentation reorganization - Archived 80 historical docs to `docs/archive/`
 
 **Development Dependencies** (install with `--group dev`):
 
