@@ -43,7 +43,7 @@ Created comprehensive test suite for the knowledge graph semantic memory system 
 
 ### Test Suite Architecture
 
-```python
+```text
 TestKnowledgeGraphInitialization:      # 6 tests - Setup & lifecycle
   ├── test_init_with_default_path
   ├── test_init_with_custom_path
@@ -185,7 +185,7 @@ Created comprehensive test suite for cross-LLM compatibility layer supporting Op
 
 ### Test Suite Architecture
 
-```python
+```text
 TestDataClasses:                      # 8 tests - Data models
   ├── test_stream_generation_options_defaults
   ├── test_stream_generation_options_immutable
@@ -346,7 +346,7 @@ ______________________________________________________________________
 
 ### 1. Async Context Manager Testing
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_context_manager_async(self, tmp_path: Path) -> None:
     """Should support asynchronous context manager."""
@@ -367,7 +367,7 @@ async def test_context_manager_async(self, tmp_path: Path) -> None:
 
 ### 2. Temporary Database Fixtures
 
-```python
+```text
 async def test_create_entity_basic(self, tmp_path: Path) -> None:
     """Should create entity with basic information."""
     db_path = str(tmp_path / "entities.duckdb")
@@ -388,7 +388,7 @@ async def test_create_entity_basic(self, tmp_path: Path) -> None:
 
 ### 3. Immutable Dataclass Validation
 
-```python
+```text
 def test_stream_generation_options_immutable(self) -> None:
     """Should be frozen/immutable dataclass."""
     from session_mgmt_mcp.llm_providers import StreamGenerationOptions
@@ -451,7 +451,7 @@ ______________________________________________________________________
 
 **Code Example:**
 
-```python
+```text
 # WRONG: Assuming CASCADE works everywhere
 FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
 
@@ -478,7 +478,7 @@ FOREIGN KEY (from_entity) REFERENCES kg_entities(id)
 
 **Standard Logging Levels Checklist:**
 
-```python
+```text
 ✅ debug()
 ✅ info()
 ✅ warning()
@@ -553,7 +553,7 @@ Day 4: Write LLM tests → Discover API pattern → Update usage throughout code
 
 **Test Pattern:**
 
-```python
+```text
 # Test success path
 async def test_with_api_key(self) -> None:
     provider = Provider({"api_key": "valid"})
@@ -618,7 +618,7 @@ The LLM provider system uses a sophisticated fallback and configuration pattern:
 
 **Architecture Pattern:**
 
-```python
+```text
 # Manager coordinates multiple providers
 manager = LLMManager(config_path=None)  # Loads from env
 
@@ -640,7 +640,7 @@ for provider in manager.fallback_order:
 **Discovery:**
 SessionLogger supports structured logging with context:
 
-```python
+```text
 logger.critical(
     "Database connection lost", database="postgres", retry_count=3, error_code=1234
 )

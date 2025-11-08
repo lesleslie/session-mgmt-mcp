@@ -617,7 +617,7 @@ ______________________________________________________________________
 
 **✅ Consistently Implemented Across All Servers**:
 
-```python
+```text
 # Every server follows this pattern
 try:
     from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware

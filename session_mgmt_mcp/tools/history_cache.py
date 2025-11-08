@@ -23,11 +23,11 @@ def get_cache(ttl: float = 300.0) -> ACBHistoryCache:
     return get_history_cache(ttl=ttl)
 
 
-def reset_cache() -> None:
+async def reset_cache() -> None:
     """Reset global cache instance.
 
     Useful for testing or clearing all cached data.
     """
     from session_mgmt_mcp.acb_cache_adapter import reset_caches
 
-    reset_caches()
+    await reset_caches()

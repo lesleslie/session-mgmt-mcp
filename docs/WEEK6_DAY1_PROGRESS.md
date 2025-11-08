@@ -68,7 +68,7 @@ claude_dir = Path(os.path.expanduser("~")) / ".claude"
 
 **Code Changes:**
 
-```python
+```text
 # Proper cache verification
 assert len(coordinator.active_project_groups) == 0  # Initially empty
 group = await coordinator.create_project_group(...)

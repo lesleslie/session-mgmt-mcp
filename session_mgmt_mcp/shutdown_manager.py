@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from session_mgmt_mcp.utils.logging import get_session_logger
 
 
-def _get_logger():
+def _get_logger() -> t.Any:
     """Get logger with lazy initialization to avoid DI issues during import."""
     try:
         return get_session_logger()

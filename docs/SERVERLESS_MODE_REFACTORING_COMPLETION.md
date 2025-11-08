@@ -24,7 +24,7 @@ ______________________________________________________________________
 
 ### Before: Duplicate Infrastructure (945 lines total)
 
-```python
+```text
 # Custom Redis implementation (224 lines) - duplicates what aiocache/ACB already provide
 class RedisStorage(SessionStorage):
     def __init__(self, config):
@@ -50,7 +50,7 @@ class LocalFileStorage(SessionStorage):
 
 ### After: aiocache Integration (254 lines total)
 
-```python
+```text
 # New ACBCacheStorage adapter - wraps aiocache (same as ACB uses)
 class ACBCacheStorage(SessionStorage):
     """Wraps aiocache to implement SessionStorage interface.
@@ -95,7 +95,7 @@ ______________________________________________________________________
 
 **Key Methods:**
 
-```python
+```text
 async def store_session(session_state: SessionState, ttl_seconds: int | None) -> bool:
     """Store session with TTL using aiocache."""
     key = f"{self.namespace}:{session_state.session_id}"
@@ -144,7 +144,7 @@ async def cleanup_expired_sessions() -> int:
 
 **create_storage_backend** (updated):
 
-```python
+```text
 @staticmethod
 def create_storage_backend(config: dict[str, Any]) -> SessionStorage:
     backend_type = config.get("storage_backend", "acb")  # Default to ACB
@@ -384,7 +384,7 @@ ______________________________________________________________________
 
 ### Unit Tests (Planned - Week 5 Day 3)
 
-```python
+```text
 class TestACBCacheStorage:
     """Test ACBCacheStorage adapter."""
 

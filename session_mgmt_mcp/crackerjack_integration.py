@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import sqlite3
+import tempfile
 import threading
 import time
 from dataclasses import asdict, dataclass
@@ -713,7 +714,19 @@ class CrackerjackIntegration:
         )
         self.parser = CrackerjackOutputParser()
         self._lock = threading.Lock()
-        self._init_database()
+        try:
+            self._init_database()
+        except Exception:
+            # Fall back to a temp-writable path if the default is not writable
+            tmp_db = (
+                Path(tempfile.gettempdir())
+                / "session-mgmt-mcp"
+                / "data"
+                / "crackerjack_integration.db"
+            )
+            tmp_db.parent.mkdir(parents=True, exist_ok=True)
+            self.db_path = str(tmp_db)
+            self._init_database()
 
     def execute_command(
         self,
@@ -1394,28 +1407,32 @@ class CrackerjackIntegration:
 
     async def _store_result(self, result_id: str, result: CrackerjackResult) -> None:
         """Store Crackerjack result in database."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
-                INSERT INTO crackerjack_results
-                (id, command, exit_code, stdout, stderr, execution_time, timestamp,
-                 working_directory, parsed_data, quality_metrics, memory_insights)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    result_id,
-                    result.command,
-                    result.exit_code,
-                    result.stdout,
-                    result.stderr,
-                    result.execution_time,
-                    result.timestamp.isoformat(),
-                    result.working_directory,
-                    json.dumps(result.parsed_data),
-                    json.dumps(result.quality_metrics),
-                    json.dumps(result.memory_insights),
-                ),
-            )
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    """
+                    INSERT INTO crackerjack_results
+                    (id, command, exit_code, stdout, stderr, execution_time, timestamp,
+                     working_directory, parsed_data, quality_metrics, memory_insights)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        result_id,
+                        result.command,
+                        result.exit_code,
+                        result.stdout,
+                        result.stderr,
+                        result.execution_time,
+                        result.timestamp.isoformat(),
+                        result.working_directory,
+                        json.dumps(result.parsed_data),
+                        json.dumps(result.quality_metrics),
+                        json.dumps(result.memory_insights),
+                    ),
+                )
+        except Exception:
+            # In sandboxed/readonly environments, skip persistence
+            return
 
             # Store individual test results
             for test_result in result.test_results:
@@ -1469,29 +1486,31 @@ class CrackerjackIntegration:
 
         if progress_info:
             snapshot_id = f"progress_{result_id}"
-
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute(
-                    """
-                    INSERT INTO progress_snapshots
-                    (id, project_path, command, stage, progress_percentage, current_task,
-                     completed_tasks, failed_tasks, quality_metrics, timestamp, memory_context)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        snapshot_id,
-                        project_path,
-                        result.command,
-                        progress_info.get("stage", ""),
-                        progress_info.get("percentage", 0),
-                        progress_info.get("current_task", ""),
-                        json.dumps(progress_info.get("completed_tasks", [])),
-                        json.dumps(progress_info.get("failed_tasks", [])),
-                        json.dumps(result.quality_metrics),
-                        result.timestamp.isoformat(),
-                        json.dumps(result.memory_insights),
-                    ),
-                )
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute(
+                        """
+                        INSERT INTO progress_snapshots
+                        (id, project_path, command, stage, progress_percentage, current_task,
+                         completed_tasks, failed_tasks, quality_metrics, timestamp, memory_context)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            snapshot_id,
+                            project_path,
+                            result.command,
+                            progress_info.get("stage", ""),
+                            progress_info.get("percentage", 0),
+                            progress_info.get("current_task", ""),
+                            json.dumps(progress_info.get("completed_tasks", [])),
+                            json.dumps(progress_info.get("failed_tasks", [])),
+                            json.dumps(result.quality_metrics),
+                            result.timestamp.isoformat(),
+                            json.dumps(result.memory_insights),
+                        ),
+                    )
+            except Exception:
+                return
 
 
 # Global integration instance

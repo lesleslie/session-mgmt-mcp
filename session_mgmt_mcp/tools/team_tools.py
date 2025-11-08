@@ -7,6 +7,7 @@ team coordination, and collaborative development workflows.
 
 from __future__ import annotations
 
+import typing as t
 from typing import TYPE_CHECKING, Any
 
 from acb.adapters import import_adapter

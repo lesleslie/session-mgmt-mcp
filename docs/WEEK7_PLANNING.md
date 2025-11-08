@@ -130,7 +130,7 @@ class SessionPaths:
 
 **2. Update DI Configuration**
 
-```python
+```text
 # session_mgmt_mcp/di/__init__.py
 def configure(*, force: bool = False) -> None:
     """Register default dependencies for the session-mgmt MCP stack."""
@@ -153,7 +153,7 @@ def configure(*, force: bool = False) -> None:
 
 **3. Update Instance Managers**
 
-```python
+```text
 # session_mgmt_mcp/utils/instance_managers.py
 def _resolve_claude_dir() -> Path:
     """Resolve claude directory via type-safe DI."""
@@ -244,7 +244,7 @@ ______________________________________________________________________
 
 **File:** `tests/unit/test_di_config.py`
 
-```python
+```text
 class TestSessionPaths:
     def test_create_from_home(self, tmp_path):
         """Should create paths from home directory."""

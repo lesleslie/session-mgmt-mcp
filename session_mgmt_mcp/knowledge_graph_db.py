@@ -69,7 +69,12 @@ class KnowledgeGraphDatabase:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         """Context manager exit with cleanup."""
         self.close()
 
@@ -78,7 +83,12 @@ class KnowledgeGraphDatabase:
         await self.initialize()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 
@@ -300,15 +310,25 @@ class KnowledgeGraphDatabase:
         if not result:
             return None
 
+        # Type annotations for clarity - result is tuple from fetchone()
+        entity_id_str: str = str(result[0])
+        name: str = str(result[1])  # type: ignore[misc]
+        entity_type: str = str(result[2])  # type: ignore[misc]
+        observations: list[str] = list(result[3]) if result[3] else []  # type: ignore[misc]
+        properties_json: str | None = result[4] if len(result) > 4 else None
+        created_at_raw = result[5] if len(result) > 5 else None
+        updated_at_raw = result[6] if len(result) > 6 else None
+        metadata_json: str | None = result[7] if len(result) > 7 else None
+
         return {
-            "id": result[0],
-            "name": result[1],
-            "entity_type": result[2],
-            "observations": result[3],
-            "properties": json.loads(result[4]) if result[4] else {},
-            "created_at": result[5].isoformat() if result[5] else None,
-            "updated_at": result[6].isoformat() if result[6] else None,
-            "metadata": json.loads(result[7]) if result[7] else {},
+            "id": entity_id_str,
+            "name": name,
+            "entity_type": entity_type,
+            "observations": observations,
+            "properties": json.loads(properties_json) if properties_json else {},
+            "created_at": created_at_raw.isoformat() if created_at_raw else None,
+            "updated_at": updated_at_raw.isoformat() if updated_at_raw else None,
+            "metadata": json.loads(metadata_json) if metadata_json else {},
         }
 
     async def find_entity_by_name(
@@ -340,15 +360,25 @@ class KnowledgeGraphDatabase:
         if not result:
             return None
 
+        # Type annotations for clarity - result is tuple from fetchone()
+        entity_id: str = str(result[0])
+        entity_name: str = str(result[1])  # type: ignore[misc]
+        entity_type_str: str = str(result[2])  # type: ignore[misc]
+        observations: list[str] = list(result[3]) if result[3] else []  # type: ignore[misc]
+        properties_json: str | None = result[4] if len(result) > 4 else None
+        created_at_raw = result[5] if len(result) > 5 else None
+        updated_at_raw = result[6] if len(result) > 6 else None
+        metadata_json: str | None = result[7] if len(result) > 7 else None
+
         return {
-            "id": result[0],
-            "name": result[1],
-            "entity_type": result[2],
-            "observations": result[3],
-            "properties": json.loads(result[4]) if result[4] else {},
-            "created_at": result[5].isoformat() if result[5] else None,
-            "updated_at": result[6].isoformat() if result[6] else None,
-            "metadata": json.loads(result[7]) if result[7] else {},
+            "id": entity_id,
+            "name": entity_name,
+            "entity_type": entity_type_str,
+            "observations": observations,
+            "properties": json.loads(properties_json) if properties_json else {},
+            "created_at": created_at_raw.isoformat() if created_at_raw else None,
+            "updated_at": updated_at_raw.isoformat() if updated_at_raw else None,
+            "metadata": json.loads(metadata_json) if metadata_json else {},
         }
 
     async def create_relation(
@@ -468,6 +498,7 @@ class KnowledgeGraphDatabase:
         """
         conn = self._get_conn()
 
+        params_tuple: tuple[str, ...] | tuple[str, str, str, int] | tuple[str, str, int]
         if entity_type:
             sql = """
                 SELECT * FROM kg_entities
@@ -476,7 +507,7 @@ class KnowledgeGraphDatabase:
                 ORDER BY created_at DESC
                 LIMIT ?
             """
-            params = (f"%{query}%", f"%{query}%", entity_type, limit)
+            params_tuple = (f"%{query}%", f"%{query}%", entity_type, limit)
         else:
             sql = """
                 SELECT * FROM kg_entities
@@ -484,23 +515,40 @@ class KnowledgeGraphDatabase:
                 ORDER BY created_at DESC
                 LIMIT ?
             """
-            params = (f"%{query}%", f"%{query}%", limit)
+            params_tuple = (f"%{query}%", f"%{query}%", limit)
 
-        results = conn.execute(sql, params).fetchall()
+        results = conn.execute(sql, params_tuple).fetchall()
 
-        return [
-            {
-                "id": row[0],
-                "name": row[1],
-                "entity_type": row[2],
-                "observations": row[3],
-                "properties": json.loads(row[4]) if row[4] else {},
-                "created_at": row[5].isoformat() if row[5] else None,
-                "updated_at": row[6].isoformat() if row[6] else None,
-                "metadata": json.loads(row[7]) if row[7] else {},
-            }
-            for row in results
-        ]
+        entities: list[dict[str, Any]] = []
+        for row in results:
+            entity_id: str = str(row[0])
+            name: str = str(row[1])
+            row_entity_type: str = str(row[2])
+            observations: list[str] = list(row[3]) if row[3] else []
+            properties_json: str | None = row[4] if len(row) > 4 else None
+            created_at_raw = row[5] if len(row) > 5 else None
+            updated_at_raw = row[6] if len(row) > 6 else None
+            metadata_json: str | None = row[7] if len(row) > 7 else None
+
+            entities.append(
+                {
+                    "id": entity_id,
+                    "name": name,
+                    "entity_type": row_entity_type,
+                    "observations": observations,
+                    "properties": json.loads(properties_json)
+                    if properties_json
+                    else {},
+                    "created_at": created_at_raw.isoformat()
+                    if created_at_raw
+                    else None,
+                    "updated_at": updated_at_raw.isoformat()
+                    if updated_at_raw
+                    else None,
+                    "metadata": json.loads(metadata_json) if metadata_json else {},
+                }
+            )
+        return entities
 
     async def get_relationships(
         self,
@@ -551,28 +599,43 @@ class KnowledgeGraphDatabase:
             ORDER BY r.created_at DESC
         """
 
+        # Build parameters tuple based on direction and relation_type
         if direction == "both":
-            params = (
-                (entity["id"], entity["id"], relation_type)
-                if relation_type
-                else (entity["id"], entity["id"])
-            )
+            if relation_type:
+                params: tuple[str, ...] = (entity["id"], entity["id"], relation_type)
+            else:
+                params = (entity["id"], entity["id"])
+        elif relation_type:
+            params = (entity["id"], relation_type)
         else:
-            params = (entity["id"], relation_type) if relation_type else (entity["id"],)
+            params = (entity["id"],)
 
         results = conn.execute(sql, params).fetchall()
 
-        return [
-            {
-                "id": row[0],
-                "relation_type": row[1],
-                "from_entity": row[2],
-                "to_entity": row[3],
-                "properties": json.loads(row[4]) if row[4] else {},
-                "created_at": row[5].isoformat() if row[5] else None,
-            }
-            for row in results
-        ]
+        relationships: list[dict[str, Any]] = []
+        for row in results:
+            rel_id: str = str(row[0])
+            row_relation_type: str = str(row[1])
+            from_name: str = str(row[2])
+            to_name: str = str(row[3])
+            properties_json: str | None = row[4] if len(row) > 4 else None
+            created_at_raw = row[5] if len(row) > 5 else None
+
+            relationships.append(
+                {
+                    "id": rel_id,
+                    "relation_type": row_relation_type,
+                    "from_entity": from_name,
+                    "to_entity": to_name,
+                    "properties": json.loads(properties_json)
+                    if properties_json
+                    else {},
+                    "created_at": created_at_raw.isoformat()
+                    if created_at_raw
+                    else None,
+                }
+            )
+        return relationships
 
     async def find_path(
         self,
@@ -621,14 +684,20 @@ class KnowledgeGraphDatabase:
         try:
             results = conn.execute(query).fetchall()
 
-            return [
-                {
-                    "from_entity": row[0],
-                    "to_entity": row[1],
-                    "path_length": row[2],
-                }
-                for row in results
-            ]
+            paths = []
+            for row in results:
+                from_name: str = str(row[0])
+                to_name: str = str(row[1])
+                path_length: int = int(row[2])
+
+                paths.append(
+                    {
+                        "from_entity": from_name,
+                        "to_entity": to_name,
+                        "path_length": path_length,
+                    }
+                )
+            return paths
         except Exception:
             # Fallback to simple check if SQL/PGQ fails
             # (This can happen if graph is complex)
@@ -644,12 +713,18 @@ class KnowledgeGraphDatabase:
         conn = self._get_conn()
 
         # Count entities
-        entity_count = conn.execute("SELECT COUNT(*) FROM kg_entities").fetchone()[0]
+        entity_count_result = conn.execute(
+            "SELECT COUNT(*) FROM kg_entities"
+        ).fetchone()
+        entity_count: int = int(entity_count_result[0]) if entity_count_result else 0
 
         # Count relationships
-        relationship_count = conn.execute(
+        relationship_count_result = conn.execute(
             "SELECT COUNT(*) FROM kg_relationships"
-        ).fetchone()[0]
+        ).fetchone()
+        relationship_count: int = (
+            int(relationship_count_result[0]) if relationship_count_result else 0
+        )
 
         # Get entity types
         entity_types = conn.execute("""

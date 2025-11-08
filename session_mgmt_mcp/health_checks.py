@@ -9,6 +9,7 @@ Phase 10.1: Production Hardening - Session Management Health Checks
 from __future__ import annotations
 
 import time
+import typing as t
 
 # Health status types (mcp_common.health doesn't exist in 2.0.0)
 from dataclasses import dataclass, field
@@ -351,7 +352,7 @@ async def get_all_health_checks() -> list[ComponentHealth]:
                 )
             )
         else:
-            components.append(result)
+            components.append(result)  # type: ignore[arg-type]  # result is ComponentHealth from gather
 
     return components
 

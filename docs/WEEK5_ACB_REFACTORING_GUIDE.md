@@ -68,7 +68,7 @@ ______________________________________________________________________
 
 ### Current Code (BEFORE)
 
-```python
+```text
 #!/usr/bin/env python3
 """Multi-Project Session Coordination."""
 
@@ -841,7 +841,7 @@ def serverless_storage(mock_cache):
 
 ### Updated Test Examples
 
-```python
+```text
 # tests/unit/test_multi_project_coordinator.py
 
 
@@ -936,7 +936,7 @@ ______________________________________________________________________
 
 ### ❌ Pitfall 1: Forgetting to call init()
 
-```python
+```text
 # WRONG
 coordinator = MultiProjectCoordinator()
 await coordinator.create_project_group(...)  # Will fail, db is None

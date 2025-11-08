@@ -14,7 +14,7 @@ from contextlib import suppress
 from pathlib import Path
 
 
-def _get_logger():
+def _get_logger() -> t.Any:
     """Get logger with lazy initialization."""
     try:
         from session_mgmt_mcp.utils.logging import get_session_logger
@@ -339,9 +339,13 @@ def register_all_cleanup_handlers(
     )
 
     # Priority 20: Temp files
+    async def _cleanup_temp_files_wrapper() -> None:
+        """Wrapper to properly await cleanup_temp_files coroutine."""
+        await cleanup_temp_files(temp_dir)
+
     shutdown_manager.register_cleanup(
         name="temp_files",
-        callback=lambda: cleanup_temp_files(temp_dir),
+        callback=_cleanup_temp_files_wrapper,
         priority=20,
         timeout_seconds=10.0,
         critical=False,

@@ -173,7 +173,7 @@ depends.set(LOGS_DIR_KEY, logs_dir)  # ❌ String key
 
 **After (SessionPaths):**
 
-```python
+```text
 # di/config.py
 @dataclass(frozen=True)
 class SessionPaths:
@@ -198,7 +198,7 @@ depends.set(SessionPaths, paths)  # ✅ Type-based key
 
 **Before (Bevy DI Resolution):**
 
-```python
+```text
 async def get_app_monitor() -> ApplicationMonitor | None:
     with suppress(KeyError, AttributeError):
         # ❌ RuntimeError: asyncio.run() from async context

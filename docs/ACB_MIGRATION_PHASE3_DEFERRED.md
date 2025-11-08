@@ -53,7 +53,7 @@ Phase 3 (Knowledge Graph ACB migration) has been deferred to a future release. T
 
 ### Working Approach
 
-```python
+```text
 # Current - Direct DuckDB (WORKS)
 from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
 
@@ -64,7 +64,7 @@ async with KnowledgeGraphDatabase() as kg:
 
 ### Future Approach (When Completed)
 
-```python
+```text
 # Future - ACB Graph Adapter (DEFERRED)
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
@@ -86,7 +86,7 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 
 1. Convert all methods to use SQLAlchemy async connections:
 
-   ```python
+   ```text
    engine = await self.graph_adapter._ensure_client()
    async with engine.begin() as conn:
        result = await conn.execute(text("SELECT ..."), params)
@@ -94,14 +94,14 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 
 1. Update parameter binding from `?` placeholders to `:param` style:
 
-   ```python
+   ```text
    # Old:  conn.execute("WHERE id = ?", (entity_id,))
    # New:  await conn.execute(text("WHERE id = :id"), {"id": entity_id})
    ```
 
 1. Handle result sets via SQLAlchemy Result objects:
 
-   ```python
+   ```text
    result = await conn.execute(...)
    rows = result.fetchall()  # Returns list of Row objects
    ```

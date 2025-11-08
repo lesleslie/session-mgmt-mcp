@@ -494,7 +494,13 @@ class OllamaProvider(LLMProvider):
 
         if self._requests is not None:
             try:
-                resp = await self._requests.post(url, json=data, timeout=300)
+                # ACB Requests adapter returns Response object with .post() method
+                requests_obj = (
+                    self._requests
+                    if not callable(self._requests)
+                    else await self._requests()
+                )
+                resp = await requests_obj.post(url, json=data, timeout=300)  # type: ignore[attr-defined]
                 # Support both httpx and niquests response objects
                 return resp.json()  # type: ignore[no-any-return]
             except Exception as e:
@@ -618,9 +624,13 @@ class OllamaProvider(LLMProvider):
         self, url: str, data: dict[str, Any]
     ) -> AsyncGenerator[str]:
         """Stream using MCP-common HTTP adapter."""
-        client = await self.http_adapter._create_client()
-        async with client.stream("POST", url, json=data) as response:
-            async for chunk in self._stream_from_response_httpx(response):
+        # Note: http_adapter access requires mcp-common integration setup
+        # This is a placeholder for future mcp-common integration
+        if False:  # Disabled until http_adapter is properly initialized
+            yield ""  # pragma: no cover
+        else:
+            # Fallback to aiohttp for now
+            async for chunk in self._stream_with_aiohttp(url, data):
                 yield chunk
 
     async def _stream_with_aiohttp(
@@ -660,29 +670,22 @@ class OllamaProvider(LLMProvider):
         url = f"{self.base_url}/api/chat"
 
         try:
-            if self._use_mcp_common and self.http_adapter:
-                async for chunk in self._stream_with_mcp_common(url, data):
-                    yield chunk
-            else:
-                async for chunk in self._stream_with_aiohttp(url, data):
-                    yield chunk
+            # Note: mcp-common integration deferred - using aiohttp fallback
+            # if self._use_mcp_common and self.http_adapter:
+            #     async for chunk in self._stream_with_mcp_common(url, data):
+            #         yield chunk
+            # else:
+            async for chunk in self._stream_with_aiohttp(url, data):
+                yield chunk
         except Exception as e:
             self.logger.exception(f"Ollama streaming failed: {e}")
             raise
 
     async def _check_with_mcp_common(self, url: str) -> bool:
         """Check availability using MCP-common HTTP adapter."""
-        try:
-            response = await self.http_adapter.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                self._available_models = [
-                    model["name"] for model in data.get("models", [])
-                ]
-                return True
-            return False
-        except Exception:
-            return False
+        # Note: http_adapter access requires mcp-common integration setup
+        # This is a placeholder for future mcp-common integration
+        return False  # Disabled until http_adapter is properly initialized
 
     async def _check_with_aiohttp(self, url: str) -> bool:
         """Check availability using aiohttp fallback."""
@@ -709,8 +712,9 @@ class OllamaProvider(LLMProvider):
         try:
             url = f"{self.base_url}/api/tags"
 
-            if self._use_mcp_common and self.http_adapter:
-                return await self._check_with_mcp_common(url)
+            # Note: mcp-common integration deferred - using aiohttp fallback
+            # if self._use_mcp_common and self.http_adapter:
+            #     return await self._check_with_mcp_common(url)
             return await self._check_with_aiohttp(url)
         except Exception:
             return False

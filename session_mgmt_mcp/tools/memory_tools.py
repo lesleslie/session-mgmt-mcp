@@ -7,6 +7,7 @@ This module provides tools for storing, searching, and managing reflections and 
 from __future__ import annotations
 
 import importlib.util
+import typing as t
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -33,10 +34,10 @@ def _format_score(score: float) -> str:
 
 
 if TYPE_CHECKING:
-    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
-async def _get_reflection_database() -> ReflectionDatabase:
+async def _get_reflection_database() -> ReflectionDatabaseAdapter:
     """Resolve reflection database via DI and ensure availability."""
     global _reflection_tools_available
 
@@ -274,7 +275,7 @@ def _check_reflection_tools() -> bool:
 
 
 async def _get_search_results(
-    db: ReflectionDatabase, query: str, project: str | None, min_score: float
+    db: ReflectionDatabaseAdapter, query: str, project: str | None, min_score: float
 ) -> list[dict[str, Any]]:
     """Get search results from the database."""
     return await db.search_conversations(
@@ -550,19 +551,7 @@ async def _reset_reflection_database_impl() -> str:
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
     try:
-        global _reflection_db
-
-        # Close existing connection if any
-        if _reflection_db and hasattr(_reflection_db, "conn") and _reflection_db.conn:
-            try:
-                _reflection_db.conn.close()
-            except Exception as e:
-                _get_logger().warning(f"Error closing old connection: {e}")
-
-        # Reset the global instance
-        _reflection_db = None
-
-        # Try to create a new connection
+        # Try to create a new database connection (DI will handle cleanup)
         await _get_reflection_database()
 
         output = []

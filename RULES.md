@@ -70,7 +70,7 @@
 
 **Bandit B108 (Hardcoded Temp Directory):**
 
-```python
+```text
 # NEVER do this - causes security warnings
 config_path = "/tmp/test-config.yaml"
 
@@ -301,7 +301,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
   - **Write focused tests**: Each test should cover 1-3 lines of uncovered code
   - **Quality over quantity**: Tests should be simple, reliable, and fast (< 1 second each)
   - **Example incremental approach**:
-    ```python
+    ```text
     # Target: Cover error handling in Options validation
     def test_options_invalid_bump_option():
         with pytest.raises(ValueError, match="Invalid bump option"):

@@ -112,7 +112,8 @@ class ACBChunkCache:
             True if key exists and is not expired
 
         """
-        return await self._cache.exists(key)
+        result = await self._cache.exists(key)
+        return bool(result)
 
     async def __getitem__(self, key: str) -> t.Any:
         """Get item using dict syntax asynchronously.
@@ -195,7 +196,7 @@ class ACBHistoryCache:
 
         """
         key = self._generate_key(project, days)
-        result = await self._cache.get(key)
+        result: dict[str, t.Any] | None = await self._cache.get(key)
         if result is None:
             self.stats.misses += 1
         else:

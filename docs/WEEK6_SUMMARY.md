@@ -69,7 +69,7 @@ claude_dir = Path(os.path.expanduser("~")) / ".claude"
 
 **Fix Applied:**
 
-```python
+```text
 # Renamed test and added proper assertions
 def test_cache_population_on_create(self) -> None:
     """Should populate cache when creating new group."""

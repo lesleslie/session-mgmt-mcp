@@ -28,14 +28,14 @@ Your project has **TWO different architectural patterns**:
 
 ### Pattern A: Core Modules (server.py, tools/)
 
-```python
+```text
 from acb.depends import depends
 permissions_manager = depends.get_sync(SessionPermissionsManager)  ✅ Good
 ```
 
 ### Pattern B: Infrastructure Modules (tested this week)
 
-```python
+```text
 class MultiProjectCoordinator:
     def __init__(self, db: ReflectionDatabase):  ❌ Should use DI
         self.db = db

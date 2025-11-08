@@ -207,7 +207,7 @@ print(
 
 **After**:
 
-```python
+```text
 ServerPanels.warning(
     title="Project Analysis Warning",
     message=f"Could not analyze project context for {project_dir}",
@@ -231,7 +231,7 @@ ______________________________________________________________________
 
 All ServerPanels integrations include **fallback to plain print** when mcp-common is not available:
 
-```python
+```text
 if SERVERPANELS_AVAILABLE:
     ServerPanels.startup_success(...)
 else:

@@ -114,7 +114,7 @@ class TemplatesAdapter:
 
 ### Usage in Projects
 
-```python
+```text
 # session-mgmt-mcp or any ACB project
 from acb.adapters import import_adapter
 from acb.depends import depends
@@ -159,7 +159,7 @@ ______________________________________________________________________
 
 ### 2. **Async-First Architecture**
 
-```python
+```text
 # All rendering is async by default
 async def render(...) -> str:
     template = self.env.get_template(template_name)
@@ -198,7 +198,7 @@ templates = import_adapter("templates")
 
 ### 4. **Extensibility via Composition**
 
-```python
+```text
 # Projects can extend for advanced features
 from acb.adapters.templates import TemplatesAdapter
 

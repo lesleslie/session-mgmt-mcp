@@ -83,7 +83,7 @@ Day 2 focused on addressing the security auditor's critical finding (6.5/10 scor
 
 **Solution:** Explicitly call `SessionPermissionsManager.reset_singleton()` at the start of persistence tests before creating instances.
 
-```python
+```text
 def test_load_permissions_from_existing_file(self, temp_permissions_dir: Path) -> None:
     temp_permissions_dir.mkdir(parents=True, exist_ok=True)
 

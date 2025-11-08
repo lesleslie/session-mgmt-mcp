@@ -246,7 +246,7 @@ ______________________________________________________________________
 
 1. ⏳ **Add ACB storage option** to `ServerlessSessionManager`
 
-   ```python
+```text
    class ServerlessSessionManager:
        def __init__(
            self,
@@ -260,7 +260,7 @@ ______________________________________________________________________
                # Legacy path (deprecated)
                self.storage = RedisStorage(**storage_config)
            # ...
-   ```
+```
 
 1. ⏳ **Update configuration** to prefer ACB by default
 
@@ -349,7 +349,7 @@ ______________________________________________________________________
 
 1. **Test ACBCacheStorage adapter**
 
-   ```python
+   ```text
    @pytest.mark.asyncio
    async def test_acb_cache_storage_store_session(mock_cache):
        storage = ACBCacheStorage(mock_cache)
@@ -376,7 +376,7 @@ ______________________________________________________________________
 
 1. **Test with real ACB Redis cache**
 
-   ```python
+   ```text
    @pytest.mark.integration
    @pytest.mark.asyncio
    async def test_redis_cache_integration():
@@ -394,7 +394,7 @@ ______________________________________________________________________
 
 1. **Test with ACB Memory cache** (for CI/CD)
 
-   ```python
+```text
    @pytest.mark.asyncio
    async def test_memory_cache_integration():
        from acb.adapters.cache import memory
@@ -402,7 +402,7 @@ ______________________________________________________________________
        cache = memory.Cache()
        storage = ACBCacheStorage(cache)
        # ... same tests as Redis
-   ```
+```
 
 ______________________________________________________________________
 

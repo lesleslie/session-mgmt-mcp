@@ -181,7 +181,7 @@ ______________________________________________________________________
 
 **Async MCP Tool Testing:**
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_async_mcp_tool(self) -> None:
     from session_mgmt_mcp.tools.session_tools import tool_function
@@ -194,7 +194,7 @@ async def test_async_mcp_tool(self) -> None:
 
 **Dynamic Import Mocking for Optional Dependencies:**
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_optional_dependency_unavailable(self) -> None:
     from session_mgmt_mcp.advanced_features import function_with_optional_dep
@@ -206,7 +206,7 @@ async def test_optional_dependency_unavailable(self) -> None:
 
 **WorktreeManager Mocking (Correct Module Path):**
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_git_worktree_operation(self) -> None:
     from session_mgmt_mcp.advanced_features import git_worktree_add

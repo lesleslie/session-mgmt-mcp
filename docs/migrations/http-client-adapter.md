@@ -30,7 +30,7 @@ Migrate from aiohttp or httpx direct usage to mcp_common's HTTPClientAdapter for
 
 ### Before (aiohttp)
 
-```python
+```text
 import aiohttp
 
 
@@ -42,7 +42,7 @@ async def fetch_data(url: str) -> dict:
 
 ### After (HTTPClientAdapter)
 
-```python
+```text
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
@@ -95,7 +95,7 @@ depends.set(HTTPClientAdapter, http_adapter)
 
 **Before:**
 
-```python
+```text
 import aiohttp
 
 
@@ -108,7 +108,7 @@ async def get_data(url: str):
 
 **After:**
 
-```python
+```text
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
@@ -125,7 +125,7 @@ async def get_data(url: str):
 
 **Before:**
 
-```python
+```text
 import aiohttp
 
 
@@ -138,7 +138,7 @@ async def post_data(url: str, data: dict, api_key: str):
 
 **After:**
 
-```python
+```text
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
@@ -155,7 +155,7 @@ async def post_data(url: str, data: dict, api_key: str):
 
 **Before:**
 
-```python
+```text
 import aiohttp
 
 
@@ -168,7 +168,7 @@ async def fetch_with_timeout(url: str, timeout_seconds: int):
 
 **After:**
 
-```python
+```text
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter, HTTPClientSettings
 
@@ -193,7 +193,7 @@ async def fetch_with_timeout(url: str, timeout_seconds: float):
 
 **Before:**
 
-```python
+```text
 import aiohttp
 
 
@@ -210,7 +210,7 @@ class APIClient:
 
 **After:**
 
-```python
+```text
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
@@ -309,7 +309,7 @@ Update `pyproject.toml` or `requirements.txt` to remove aiohttp references.
 
 ### Test 1: Basic Functionality
 
-```python
+```text
 import asyncio
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
@@ -329,7 +329,7 @@ asyncio.run(test_basic_request())
 
 ### Test 2: Performance Comparison
 
-```python
+```text
 import asyncio
 import time
 
@@ -530,7 +530,7 @@ Migration from aiohttp to HTTPClientAdapter typically shows:
 
 ### 1. Use DI Container
 
-```python
+```text
 # ✅ Good: Use DI
 http_adapter = depends.get_sync(HTTPClientAdapter)
 
@@ -540,7 +540,7 @@ http_adapter = HTTPClientAdapter()
 
 ### 2. Context Manager Pattern
 
-```python
+```text
 # ✅ Good: Auto-cleanup
 async with http_adapter as client:
     response = await client.get(url)
@@ -553,7 +553,7 @@ await client.aclose()
 
 ### 3. Configure Settings Once
 
-```python
+```text
 # ✅ Good: Configure at startup
 settings = HTTPClientSettings(max_connections=200)
 http_adapter = HTTPClientAdapter(settings=settings)
@@ -565,7 +565,7 @@ http_adapter = HTTPClientAdapter(settings=HTTPClientSettings(max_connections=200
 
 ### 4. Include Health Checks
 
-```python
+```text
 # ✅ Good: Monitor HTTP client health
 @mcp.tool()
 async def health_check():

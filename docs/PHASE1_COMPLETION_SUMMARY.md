@@ -52,7 +52,7 @@ Successfully completed Phase 1 of the 16-week ACB transformation roadmap, establ
 
 **Before:**
 
-```python
+```text
 # 9 nested config classes
 class DatabaseConfig(BaseSettings): ...
 
@@ -72,7 +72,7 @@ config.database.connection_timeout
 
 **After:**
 
-```python
+```text
 # 1 flat ACB Settings class
 class SessionMgmtSettings(Settings):
     enable_auto_store_reflections: bool = Field(...)
@@ -112,7 +112,7 @@ config.database_connection_timeout
 
 **Before - Custom Cache:**
 
-```python
+```text
 # token_optimizer.py
 self.chunk_cache: dict[str, ChunkResult] = {}
 

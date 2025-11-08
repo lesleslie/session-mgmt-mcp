@@ -38,7 +38,7 @@ ______________________________________________________________________
 
 **Current Implementation:**
 
-```python
+```text
 # acb/mcp/server.py (Lines 348-357)
 class ACBMCPServer:
     def __init__(self) -> None:
@@ -108,7 +108,7 @@ class ACBMCPServer:
 
 **Recommendation**: Register the server service:
 
-```python
+```text
 def create_mcp_server() -> ACBMCPServer:
     server = ACBMCPServer()
     depends.set(ACBMCPServer, server)  # Add this
@@ -172,7 +172,7 @@ FastBlocks (Plugin/Extension)
 
 **Current FastBlocks Implementation:**
 
-```python
+```text
 # fastblocks/mcp/tools.py (Line 551)
 from acb.mcp import register_tools  # ❌ DOES NOT EXIST
 
@@ -252,7 +252,7 @@ async def register_resources(server: Any, resources: Dict[str, Callable]) -> Non
 
 **Update ACB's __init__.py:**
 
-```python
+```text
 # acb/mcp/__init__.py (Line 31)
 from .utils import register_tools, register_resources
 
@@ -365,7 +365,7 @@ def run(self, transport: str = "stdio", **kwargs: Any) -> None:
 
 **Current Implementation:**
 
-```python
+```text
 if SERVERPANELS_AVAILABLE:
     features = [
         "🔧 Component Management",
@@ -605,7 +605,7 @@ class YourPluginMCPServer:
 
 ### 2. Tool Registration
 
-```python
+```text
 # your_plugin/mcp/tools.py
 from typing import Any
 from acb.mcp import register_tools
@@ -744,7 +744,7 @@ mcp.add_middleware(rate_limiter)
 
 **2. Create `register_tools()` Function** 🔴 CRITICAL
 
-```python
+```text
 # File: acb/mcp/utils.py (NEW or add to existing)
 
 
@@ -766,7 +766,7 @@ async def register_resources(server: Any, resources: dict[str, Callable]) -> Non
 
 **3. Export Registration Functions** 🔴 CRITICAL
 
-```python
+```text
 # File: acb/mcp/__init__.py
 # Add to __all__:
 

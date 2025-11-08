@@ -56,6 +56,12 @@ from session_mgmt_mcp.server_core import (
 Logger = import_adapter("logger")
 session_logger = depends.get_sync(Logger)
 
+# Check mcp-common exceptions availability (must be defined early for FastMCP import)
+EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
+
+if EXCEPTIONS_AVAILABLE:
+    from mcp_common.exceptions import DependencyMissingError
+
 # Check token optimizer availability (Phase 3.3 M2: improved pattern)
 TOKEN_OPTIMIZER_AVAILABLE = (
     importlib.util.find_spec("session_mgmt_mcp.token_optimizer") is not None
@@ -172,12 +178,6 @@ SECURITY_AVAILABLE = importlib.util.find_spec("mcp_common.security") is not None
 RATE_LIMITING_AVAILABLE = (
     importlib.util.find_spec("fastmcp.server.middleware.rate_limiting") is not None
 )
-
-# Check mcp-common exceptions availability (Phase 3.3 M3: custom exceptions)
-EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
-
-if EXCEPTIONS_AVAILABLE:
-    pass
 
 # Phase 2.2: Import utility and formatting functions from server_helpers
 
@@ -444,9 +444,11 @@ def _perform_startup_validation() -> None:
     try:
         validate_llm_api_keys_at_startup()
     except (ImportError, ValueError) as e:
-        logger.warning(f"LLM API key validation skipped (optional feature): {e}")
+        session_logger.warning(
+            f"LLM API key validation skipped (optional feature): {e}"
+        )
     except Exception:
-        logger.exception("Unexpected error during LLM validation")
+        session_logger.exception("Unexpected error during LLM validation")
 
 
 def _initialize_features() -> None:
@@ -454,9 +456,9 @@ def _initialize_features() -> None:
     try:
         asyncio.run(initialize_new_features())
     except (ImportError, RuntimeError) as e:
-        logger.warning(f"Feature initialization skipped (optional): {e}")
+        session_logger.warning(f"Feature initialization skipped (optional): {e}")
     except Exception:
-        logger.exception("Unexpected error during feature init")
+        session_logger.exception("Unexpected error during feature init")
 
 
 def _build_feature_list() -> list[str]:

@@ -83,7 +83,7 @@ ______________________________________________________________________
 
 **Why `frozen=True`?**
 
-```python
+```text
 @dataclass(frozen=True)
 class SessionPaths:
     # ...
@@ -98,7 +98,7 @@ class SessionPaths:
 
 **Test Verification:**
 
-```python
+```text
 def test_immutability_claude_dir(self) -> None:
     """Should raise FrozenInstanceError when attempting to modify."""
     paths = SessionPaths.from_home()
@@ -111,7 +111,7 @@ def test_immutability_claude_dir(self) -> None:
 
 **Why `from_home()` class method?**
 
-```python
+```text
 @classmethod
 def from_home(cls, home: Path | None = None) -> SessionPaths:
     if home is None:
@@ -188,7 +188,7 @@ ______________________________________________________________________
 
 **Key Test:**
 
-```python
+```text
 def test_from_home_with_explicit_path(self, tmp_path: Path) -> None:
     """Should create paths from explicit home directory."""
     paths = SessionPaths.from_home(tmp_path)
@@ -209,7 +209,7 @@ def test_from_home_with_explicit_path(self, tmp_path: Path) -> None:
 
 **Key Test:**
 
-```python
+```text
 def test_immutability_prevents_new_attributes(self) -> None:
     """Should prevent adding new attributes (frozen dataclass behavior)."""
     paths = SessionPaths.from_home()

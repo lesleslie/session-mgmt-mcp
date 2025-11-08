@@ -64,7 +64,7 @@ def __init__(self, config: dict[str, Any]) -> None:
 **Before**: Created new aiohttp.ClientSession per request
 **After**: Uses HTTPClientAdapter.post() with connection pooling
 
-```python
+```text
 if self._use_mcp_common and self.http_adapter:
     # Use HTTPClientAdapter with connection pooling
     response = await self.http_adapter.post(url, json=data)
@@ -81,7 +81,7 @@ else:
 **Before**: Created new aiohttp.ClientSession per availability check
 **After**: Uses HTTPClientAdapter.get() with connection pooling
 
-```python
+```text
 if self._use_mcp_common and self.http_adapter:
     # Use HTTPClientAdapter with connection pooling
     response = await self.http_adapter.get(url)
@@ -105,7 +105,7 @@ if self._use_mcp_common and self.http_adapter:
 - Used `client.stream("POST", url, json=data)` for streaming
 - Replaced `response.content` with `response.aiter_bytes()` for httpx
 
-```python
+```text
 if self._use_mcp_common and self.http_adapter:
     # Use HTTPClientAdapter with connection pooling (streaming)
     client = await self.http_adapter._create_client()

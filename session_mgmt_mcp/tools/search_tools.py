@@ -7,6 +7,7 @@ for conversation memory, semantic search, and knowledge retrieval.
 
 from __future__ import annotations
 
+import typing as t
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -71,7 +72,10 @@ async def _optimize_search_results_impl(
 
         if optimize_tokens and results:
             optimizer = TokenOptimizer()
-            optimized_results, optimization_info = optimizer.optimize_search_results(
+            (
+                optimized_results,
+                optimization_info,
+            ) = await optimizer.optimize_search_results(
                 results, "truncate_old", max_tokens
             )
             return {

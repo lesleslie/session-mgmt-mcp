@@ -2,7 +2,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-34.6%25-red)
+![Coverage](https://img.shields.io/badge/coverage-45.6%25-red)
 
 A dedicated MCP server that provides comprehensive session management functionality for Claude Code sessions across any project.
 

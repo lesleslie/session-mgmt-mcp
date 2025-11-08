@@ -122,7 +122,7 @@ DuckDB does not support CASCADE, SET NULL, or SET DEFAULT clauses in foreign key
 
 **Fix:**
 
-```python
+```text
 # Before (lines 182-183):
 FOREIGN KEY (from_entity) REFERENCES kg_entities(id) ON DELETE CASCADE,
 FOREIGN KEY (to_entity) REFERENCES kg_entities(id) ON DELETE CASCADE
@@ -199,7 +199,7 @@ ______________________________________________________________________
 
 ### test_knowledge_graph_db.py Structure
 
-```python
+```text
 TestKnowledgeGraphInitialization:      # 6 tests - Setup & lifecycle
   ├── test_init_with_default_path
   ├── test_init_with_custom_path

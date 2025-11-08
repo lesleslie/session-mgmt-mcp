@@ -29,7 +29,7 @@ RuntimeError: asyncio.run() cannot be called from a running event loop
 **Solution:**
 Replaced `depends.get_sync()` calls with direct bevy container access:
 
-```python
+```text
 # ❌ Before: Triggers bevy async event loop issue
 async def get_app_monitor() -> ApplicationMonitor | None:
     with suppress(KeyError, AttributeError):
@@ -84,7 +84,7 @@ test_serverless_manager_uses_config PASSED
 **Problem:**
 The `_get_session_manager()` function was called at module level (line 82), triggering `depends.get_sync()` during import:
 
-```python
+```text
 def _get_session_manager() -> SessionLifecycleManager:
     with suppress(KeyError, AttributeError, RuntimeError, TypeError):
         manager = depends.get_sync(SessionLifecycleManager)  # Called during import!
@@ -113,7 +113,7 @@ bevy.injection_types.DependencyResolutionError: No handler found that can handle
 **Solution:**
 Applied the same fix - check bevy container directly instead of using `depends.get_sync()`:
 
-```python
+```text
 # ❌ Before:
 def _get_session_manager() -> SessionLifecycleManager:
     with suppress(KeyError, AttributeError, RuntimeError, TypeError):

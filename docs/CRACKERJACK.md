@@ -19,7 +19,7 @@ ______________________________________________________________________
 
 ### Basic Usage
 
-```python
+```text
 # Via MCP tool
 await crackerjack_run(command="test")
 
@@ -34,7 +34,7 @@ await crackerjack_run(
 
 ### Available Commands
 
-```python
+```text
 # Quality checks
 crackerjack_run(command="check")  # Basic quality checks
 crackerjack_run(command="lint")  # Linting and style
@@ -59,7 +59,7 @@ ______________________________________________________________________
 
 The integration provides a sophisticated MCP tool with input validation and error handling:
 
-```python
+```text
 @mcp.tool()
 async def crackerjack_run(
     command: str,
@@ -396,7 +396,7 @@ class CrackerjackResult:
 
 #### QualityMetric
 
-```python
+```text
 class QualityMetric(Enum):
     CODE_COVERAGE = "coverage"  # Test coverage %
     COMPLEXITY = "complexity"  # Cognitive complexity
@@ -412,7 +412,7 @@ ______________________________________________________________________
 
 ### Basic Quality Check
 
-```python
+```text
 # Run all hooks without auto-fix
 result = await crackerjack_run(command="check")
 
@@ -426,7 +426,7 @@ All hooks passed successfully!
 
 ### AI-Powered Auto-Fix Workflow
 
-```python
+```text
 # Run with AI auto-fix enabled
 result = await crackerjack_run(
     command="test",
@@ -547,7 +547,7 @@ export CRACKERJACK_AI_LEARNING="true"
 
 ### Integration Configuration
 
-```python
+```text
 # Configuration file settings
 integration_config = {
     "enabled": True,
@@ -571,7 +571,7 @@ ______________________________________________________________________
 
 **Error: Command with flags**
 
-````python
+````text
 await crackerjack_run(command="--ai-fix")
 
 # Returns:
@@ -583,7 +583,7 @@ await crackerjack_run(command="--ai-fix")
 **Valid commands**: all, check, complexity, format, lint, security, test
 
 **Correct usage**:
-```python
+```text
 crackerjack_run(command='test', ai_agent_mode=True)
 ````
 
@@ -592,7 +592,7 @@ crackerjack_run(command='test', ai_agent_mode=True)
 ````
 
 **Error: --ai-fix in args**
-```python
+```text
 await crackerjack_run(command="test", args="--ai-fix")
 
 # Returns:
@@ -602,7 +602,7 @@ await crackerjack_run(command="test", args="--ai-fix")
 **Use instead**: Set `ai_agent_mode=True` parameter
 
 **Correct**:
-```python
+```text
 crackerjack_run(command='test', ai_agent_mode=True)
 ````
 
@@ -613,7 +613,7 @@ crackerjack_run(command='test', ai_agent_mode=True)
 ### Execution Errors
 
 **Timeout:**
-```python
+```text
 await crackerjack_run(command="all", timeout=10)
 
 # Returns:
@@ -626,7 +626,7 @@ await crackerjack_run(command="all", timeout=10)
 
 **Hook Failures:**
 
-```python
+```text
 # When hooks fail (basic mode)
 result = await crackerjack_run(command="lint")
 

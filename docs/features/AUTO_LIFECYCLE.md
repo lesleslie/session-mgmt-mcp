@@ -72,7 +72,7 @@ async def session_lifecycle():
 
 #### 1.2 Enhanced Checkpoint with Auto-Compaction
 
-```python
+```text
 async def checkpoint(name: str | None = None) -> str:
     """Enhanced checkpoint with automatic compaction"""
     # ... existing checkpoint logic ...

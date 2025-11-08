@@ -115,7 +115,9 @@ def _resolve_logs_dir() -> Path:
     return logs_dir
 
 
-def _get_console_handler(logger: logging.Logger) -> logging.StreamHandler | None:
+def _get_console_handler(
+    logger: logging.Logger,
+) -> logging.StreamHandler[t.TextIO] | None:
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler) and not isinstance(
             handler, logging.FileHandler

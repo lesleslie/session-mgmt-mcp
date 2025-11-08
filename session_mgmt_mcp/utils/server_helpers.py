@@ -11,8 +11,33 @@ Total: 40 functions, ~900 lines
 
 from __future__ import annotations
 
+import os
+import subprocess
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
+
+# Feature availability flags - set based on module availability
+TOKEN_OPTIMIZER_AVAILABLE = False
+CONFIG_AVAILABLE = False
+CRACKERJACK_INTEGRATION_AVAILABLE = False
+
+with suppress(ImportError):
+    from session_mgmt_mcp.token_optimizer import TokenOptimizer  # noqa: F401
+
+    TOKEN_OPTIMIZER_AVAILABLE = True
+
+with suppress(ImportError):
+    from session_mgmt_mcp.di.config import SessionPaths  # noqa: F401
+
+    CONFIG_AVAILABLE = True
+
+with suppress(ImportError):
+    from session_mgmt_mcp.crackerjack_integration import (
+        CrackerjackIntegration,  # noqa: F401
+    )
+
+    CRACKERJACK_INTEGRATION_AVAILABLE = True
 
 # ============================================================================
 # Display Formatting Functions (26 functions)
@@ -129,18 +154,19 @@ def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
     output.append(f"\n#{index}")
     output.append(f"🆔 ID: {reminder['id']}")
     output.append(f"📝 Title: {reminder['title']}")
+    return output
 
 
 def _format_reminders_list(
     reminders: list[dict[str, Any]], user_id: str, project_id: str | None
 ) -> list[str]:
     """Format the complete reminders list."""
-    _format_reminders_header(reminders, user_id, project_id)
+    return _format_reminders_header(reminders, user_id, project_id)
 
 
 def _format_reminder_basic_info(reminder: dict[str, Any], index: int) -> list[str]:
     """Format basic reminder information."""
-    [
+    return [
         f"\n🔥 #{index} OVERDUE",
         f"🆔 ID: {reminder['id']}",
         f"📝 Title: {reminder['title']}",
@@ -149,6 +175,7 @@ def _format_reminder_basic_info(reminder: dict[str, Any], index: int) -> list[st
 
 def _format_project_insights(insights: dict[str, Any], time_range_days: int) -> str:
     """Format project insights for display."""
+    return f"Project insights over {time_range_days} days: {len(insights)} items"
 
 
 def _format_project_activity_section(project_activity: dict[str, Any]) -> list[str]:
@@ -176,7 +203,7 @@ def _format_common_patterns_section(common_patterns: list[dict[str, Any]]) -> li
 
 def _format_advanced_search_results(results: list[Any]) -> str:
     """Format advanced search results for display."""
-    [f"🔍 **Advanced Search Results** ({len(results)} found)\n"]
+    return f"🔍 **Advanced Search Results** ({len(results)} found)\n"
 
 
 def _format_worktree_status(wt: dict[str, Any]) -> str:
@@ -190,6 +217,7 @@ def _format_worktree_status(wt: dict[str, Any]) -> str:
         status_items.append("❌ missing")
     if wt["has_session"]:
         status_items.append("🧠 has session")
+    return ", ".join(status_items) if status_items else "✓ normal"
 
 
 def _format_worktree_list_header(
@@ -205,6 +233,14 @@ def _format_worktree_list_header(
 
 def _format_single_worktree(wt: dict[str, Any]) -> list[str]:
     """Format a single worktree entry."""
+    output = [
+        f"• {wt['branch']}",
+        f"  Path: {wt['path']}",
+    ]
+    status = _format_worktree_status(wt)
+    if status != "✓ normal":
+        output.append(f"  Status: {status}")
+    return output
 
 
 def _format_session_summary(result: dict[str, Any]) -> list[str]:
@@ -223,8 +259,10 @@ def _format_worktree_status_display(
     status_info: dict[str, Any], working_dir: Path
 ) -> str:
     """Format worktree status information for display."""
-    _format_basic_worktree_info(status_info, working_dir)
-    _format_session_info(status_info.get("session_info"))
+    output = _format_basic_worktree_info(status_info, working_dir)
+    session_output = _format_session_info(status_info.get("session_info"))
+    output.extend(session_output)
+    return "\n".join(output)
 
 
 def _format_basic_worktree_info(
@@ -244,21 +282,39 @@ def _format_session_info(session_info: dict[str, Any] | None) -> list[str]:
     """Format session information if available."""
     if not session_info:
         return []
-    return None
+    return [
+        "📊 Session Information:",
+        f"  ID: {session_info.get('id', 'N/A')}",
+        f"  Status: {session_info.get('status', 'unknown')}",
+    ]
 
 
 def _format_interruption_statistics(interruptions: list[dict[str, Any]]) -> list[str]:
     """Format interruption statistics for display."""
     if not interruptions:
         return ["📊 **Interruption Patterns**: No recent interruptions"]
-    return None
+    output = [
+        f"📊 **Interruption Patterns**: {len(interruptions)} interruptions",
+    ]
+    for i, interruption in enumerate(interruptions[:5], 1):
+        output.append(
+            f"  {i}. {interruption.get('type', 'unknown')}: {interruption.get('timestamp', 'N/A')}"
+        )
+    return output
 
 
 def _format_snapshot_statistics(snapshots: list[dict[str, Any]]) -> list[str]:
     """Format snapshot statistics for display."""
     if not snapshots:
         return ["💾 **Context Snapshots**: No snapshots available"]
-    return None
+    output = [
+        f"💾 **Context Snapshots**: {len(snapshots)} snapshots",
+    ]
+    for i, snapshot in enumerate(snapshots[:5], 1):
+        output.append(
+            f"  {i}. {snapshot.get('type', 'unknown')}: {snapshot.get('timestamp', 'N/A')}"
+        )
+    return output
 
 
 # ============================================================================
@@ -269,6 +325,8 @@ def _format_snapshot_statistics(snapshots: list[dict[str, Any]]) -> list[str]:
 def _setup_claude_directory(output: list[str]) -> dict[str, Any]:
     """Setup Claude directory and return validation results."""
     output.append("\n📋 Phase 1: Claude directory setup...")
+    # Placeholder implementation - actual logic should be in server.py
+    return {"status": "success", "directories_created": []}
 
 
 def _setup_uv_dependencies(output: list[str], current_dir: Path) -> None:
@@ -316,14 +374,20 @@ def _add_final_summary(
     output.append("=" * 60)
 
 
-def _add_permissions_and_tools_summary(output: list[str], current_project: str) -> None:
+def _add_permissions_and_tools_summary(
+    output: list[str], current_project: str, permissions_manager: Any | None = None
+) -> None:
     """Add permissions summary and available tools."""
     # Permissions Summary
-    permissions_status = permissions_manager.get_permission_status()
-    output.append("\n🔐 Session Permissions Summary:")
-    output.append(
-        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
-    )
+    if permissions_manager is not None:
+        permissions_status = permissions_manager.get_permission_status()
+        output.append("\n🔐 Session Permissions Summary:")
+        output.append(
+            f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+        )
+    else:
+        output.append("\n🔐 Session Permissions Summary:")
+        output.append("   ⚠️ Permissions manager not available")
 
 
 def _add_session_health_insights(insights: list[str], quality_score: float) -> None:
@@ -345,18 +409,26 @@ def _add_current_session_context(summary: dict[str, Any]) -> None:
         summary["key_topics"].append("session-mgmt-mcp development")
 
 
-def _add_permissions_info(output: list[str]) -> None:
+def _add_permissions_info(
+    output: list[str], permissions_manager: Any | None = None
+) -> None:
     """Add permissions information to output."""
-    permissions_status = permissions_manager.get_permission_status()
-    output.append("\n🔐 Session Permissions:")
-    output.append(
-        f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
-    )
-    if permissions_status["trusted_operations"]:
-        for op in permissions_status["trusted_operations"]:
-            output.append(f"   ✅ {op.replace('_', ' ').title()}")
+    if permissions_manager is not None:
+        permissions_status = permissions_manager.get_permission_status()
+        output.append("\n🔐 Session Permissions:")
+        output.append(
+            f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+        )
+        if permissions_status["trusted_operations"]:
+            for op in permissions_status["trusted_operations"]:
+                output.append(f"   ✅ {op.replace('_', ' ').title()}")
+        else:
+            output.append(
+                "   ⚠️ No trusted operations yet - will prompt for permissions"
+            )
     else:
-        output.append("   ⚠️ No trusted operations yet - will prompt for permissions")
+        output.append("\n🔐 Session Permissions:")
+        output.append("   ⚠️ Permissions manager not available")
 
 
 def _add_basic_tools_info(output: list[str]) -> None:

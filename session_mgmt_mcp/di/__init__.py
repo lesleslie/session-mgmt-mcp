@@ -1,21 +1,21 @@
 from __future__ import annotations
 
+import tempfile
 import typing as t
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
 
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from pathlib import Path
-
     from session_mgmt_mcp.core import (
         SessionLifecycleManager as SessionLifecycleManagerT,  # noqa: F401
     )
     from session_mgmt_mcp.server_core import (
         SessionPermissionsManager as SessionPermissionsManagerT,  # noqa: F401
     )
-    from session_mgmt_mcp.utils.logging import (
+    from session_mgmt_mcp.utils.logging import (  # type: ignore[attr-defined]
         SessionLogger as SessionLoggerT,  # noqa: F401
     )
 
@@ -103,15 +103,32 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
     # Create logger instance (ACB logger takes no init args)
     logger_instance = logger_class()
 
-    # Configure logger with file sink
+    # Configure logger with file sink, falling back to a temp directory when
+    # the default home-based location is not writable (e.g., sandboxed tests).
     log_file = logs_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
-    logger_instance.add(
-        str(log_file),
-        level="INFO",
-        rotation="1 day",
-        retention="7 days",
-        compression="gz",
-    )
+    try:
+        logger_instance.add(
+            str(log_file),
+            level="INFO",
+            rotation="1 day",
+            retention="7 days",
+            compression="gz",
+        )
+    except Exception:
+        # Fallback: use a temp logs directory under the system temp path
+        tmp_logs = Path(tempfile.gettempdir()) / "session-mgmt-mcp" / "logs"
+        tmp_logs.mkdir(parents=True, exist_ok=True)
+        depends.set(LOGS_DIR_KEY, tmp_logs)
+        log_file = (
+            tmp_logs / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
+        )
+        logger_instance.add(
+            str(log_file),
+            level="INFO",
+            rotation="1 day",
+            retention="7 days",
+            compression="gz",
+        )
 
     # Register the instance using the class we imported
     depends.set(logger_class, logger_instance)
@@ -128,13 +145,19 @@ def _register_session_logger(logs_dir: Path, force: bool) -> None:
     from session_mgmt_mcp.utils.logging import SessionLogger
 
     if not force:
-        with suppress(KeyError, AttributeError, RuntimeError, TypeError):
+        with suppress(Exception):
             existing = depends.get_sync(SessionLogger)
             if isinstance(existing, SessionLogger):
                 return
 
-    # Create SessionLogger instance
-    session_logger = SessionLogger(logs_dir)
+    # Create SessionLogger instance with fallback to temp logs if needed
+    try:
+        session_logger = SessionLogger(logs_dir)
+    except Exception:
+        tmp_logs = Path(tempfile.gettempdir()) / "session-mgmt-mcp" / "logs"
+        tmp_logs.mkdir(parents=True, exist_ok=True)
+        depends.set(LOGS_DIR_KEY, tmp_logs)
+        session_logger = SessionLogger(tmp_logs)
     depends.set(SessionLogger, session_logger)
 
 

@@ -159,7 +159,7 @@ ______________________________________________________________________
 
 ### Pattern 1: Type-Safe DI Configuration
 
-```python
+```text
 @dataclass(frozen=True)
 class SessionPaths:
     claude_dir: Path
@@ -177,7 +177,7 @@ class SessionPaths:
 
 ### Pattern 2: Direct Container Access
 
-```python
+```text
 def get_service() -> SomeService:
     container = get_container()
     if SomeService in container.instances:

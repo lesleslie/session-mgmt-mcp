@@ -218,7 +218,7 @@ ______________________________________________________________________
 
 For each module, create comprehensive test suite following Week 4 patterns:
 
-```python
+```text
 """Tests for [MODULE_NAME].
 
 Tests [brief description of functionality].

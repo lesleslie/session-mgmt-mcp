@@ -100,7 +100,7 @@ The extraction maintains 100% backwards compatibility through:
 
 ### Key Implementation Details
 
-```python
+```text
 # Phase 2.4: Import advanced feature tools from advanced_features module
 from session_mgmt_mcp.advanced_features import (
     # Natural Language Scheduling Tools (5 MCP tools)

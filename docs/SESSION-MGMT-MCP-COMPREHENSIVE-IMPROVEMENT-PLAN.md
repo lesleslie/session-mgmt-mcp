@@ -597,7 +597,7 @@ ______________________________________________________________________
 
 **Migration Steps:**
 
-```python
+```text
 # Before: Custom config
 from pydantic import BaseModel
 
@@ -623,7 +623,7 @@ config = Config.from_file("session_mgmt.toml")
 
 **Migration Steps:**
 
-```python
+```text
 # Before: Custom cache
 class TokenCache:
     def __init__(self):
@@ -707,7 +707,7 @@ async def search_reflections(q: str) -> List[Reflection]:
 
 **Migration Steps:**
 
-```python
+```text
 # Before: Custom events
 class SessionEventHandler:
     def __init__(self):
@@ -778,7 +778,7 @@ session_mgmt_mcp/
 
 **Phase 1: Extract Tool Registry (Week 3)**
 
-```python
+```text
 # server/tool_registry.py
 from acb import depends
 from ..tools import session_tools, memory_tools, crackerjack_tools
@@ -802,7 +802,7 @@ class ToolRegistry:
 
 **Phase 2: Extract Lifecycle Handlers (Week 3)**
 
-```python
+```text
 # server/lifecycle_handlers.py
 from acb import depends, events
 
@@ -824,7 +824,7 @@ class LifecycleHandlers:
 
 **Phase 3: Extract Quality Scoring (Week 4)**
 
-```python
+```text
 # server/quality_scoring.py
 from acb import depends
 
@@ -1153,7 +1153,7 @@ ______________________________________________________________________
 
 **Testing Patterns:**
 
-```python
+```text
 # Unit Test Example
 @pytest.mark.asyncio
 async def test_reflection_storage():

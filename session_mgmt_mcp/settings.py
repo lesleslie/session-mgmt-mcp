@@ -21,7 +21,7 @@ from acb.config import Settings
 from pydantic import Field, field_validator
 
 
-class SessionMgmtSettings(Settings):
+class SessionMgmtSettings(Settings):  # type: ignore[misc]
     """Unified ACB Settings for session-mgmt-mcp.
 
     All configuration consolidated into a single flat structure

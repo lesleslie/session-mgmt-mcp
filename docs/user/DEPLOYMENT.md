@@ -1208,7 +1208,7 @@ env:
 
 ### Load Testing
 
-```python
+```text
 # load-test.py
 import asyncio
 import aiohttp

@@ -318,7 +318,7 @@ class ReflectionService:
 - Handle parameter validation
 - Transform between external and internal representations
 
-```python
+```text
 # session_mgmt_mcp/tools/memory_tools.py
 from session_mgmt_mcp.services.memory import ReflectionService
 from acb.depends import depends
@@ -558,7 +558,7 @@ ______________________________________________________________________
 
 ### ❌ Anti-Pattern 1: Adapters Inside Services
 
-```python
+```text
 # WRONG: Don't put adapters as subdirectories of services
 services/
 └── memory/
@@ -568,7 +568,7 @@ services/
 
 **Correct**:
 
-```python
+```text
 # RIGHT: Adapters are a separate layer
 adapters/database/
 └── reflection_db.py
@@ -591,7 +591,7 @@ class ReflectionDatabase:
 
 **Correct**:
 
-```python
+```text
 # RIGHT: Adapter only does I/O
 class ReflectionDatabase:
     async def store(self, content: str, embedding: np.ndarray) -> str:
@@ -610,7 +610,7 @@ class ReflectionService:
 
 ### ❌ Anti-Pattern 3: Deep Nesting
 
-```python
+```text
 # WRONG: Too many levels
 services/
 └── memory/
@@ -622,7 +622,7 @@ services/
 
 **Correct**:
 
-```python
+```text
 # RIGHT: Flat structure
 adapters/database/
 └── reflection_db.py  # ✅ Easy to find

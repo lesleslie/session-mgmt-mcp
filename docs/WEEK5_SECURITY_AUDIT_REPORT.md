@@ -83,7 +83,7 @@ ______________________________________________________________________
 
 **Example Missing Test Case:**
 
-```python
+```text
 @pytest.mark.security
 async def test_cross_user_session_access_prevention():
     """MISSING: Test that users cannot access other users' sessions."""
@@ -163,7 +163,7 @@ ______________________________________________________________________
 
 **Specific Gap:**
 
-```python
+```text
 # test_multi_project_coordinator.py - Line 304
 async def test_dependency_aware_ranking(self) -> None:
     """Should rank results based on project dependencies."""
@@ -270,7 +270,7 @@ From `test_permission_security.py`:
 
 **Example Missing Test:**
 
-```python
+```text
 @pytest.mark.security
 async def test_integer_overflow_in_quality_score():
     """Test handling of integer overflow in quality scores."""
@@ -584,7 +584,7 @@ ______________________________________________________________________
 
 ### Example 1: Cross-User Session Access Prevention
 
-```python
+```text
 @pytest.mark.security
 @pytest.mark.asyncio
 async def test_cross_user_session_access_denied():

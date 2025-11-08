@@ -59,7 +59,7 @@ The `session_mgmt_mcp.parameter_models` module provides:
 - **Consistent constraints** across all MCP tools
 - **Integration helpers** for easy adoption
 
-```python
+```text
 from session_mgmt_mcp.parameter_models import SearchQueryParams, validate_mcp_params
 
 
@@ -118,7 +118,7 @@ async def search_reflections(
 
 ### Before: Manual Validation
 
-```python
+```text
 @mcp.tool()
 async def store_reflection(content: str, tags: list[str] | None = None) -> str:
     # Manual validation - error-prone and inconsistent
@@ -142,7 +142,7 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> str:
 
 ### After: Pydantic Validation
 
-```python
+```text
 from session_mgmt_mcp.parameter_models import ReflectionStoreParams, validate_mcp_params
 
 
@@ -169,7 +169,7 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> str:
 
 ### 1. **Type-Safe Validation**
 
-```python
+```text
 # Before: Manual validation, error-prone
 if not query or not query.strip():
     return "❌ Query cannot be empty"
@@ -181,7 +181,7 @@ query = validated["query"]  # Guaranteed non-empty, 1-1000 chars
 
 ### 2. **Consistent Error Messages**
 
-```python
+```text
 # Standardized validation errors across all tools
 "❌ Parameter validation failed: query: ensure this value has at least 1 characters"
 
@@ -251,7 +251,7 @@ max_tag_length = 50  # characters
 
 ### 8. Enum Validation
 
-```python
+```text
 # Strict enum validation
 role: Literal["owner", "admin", "moderator", "contributor", "viewer"]
 access_level: Literal["private", "team", "public"]
@@ -262,7 +262,7 @@ dependency_type: Literal["uses", "extends", "references", "shares_code"]
 
 ### 1. Use Appropriate Models
 
-```python
+```text
 # For simple working directory operations
 validate_mcp_params(WorkingDirectoryParams, working_directory=wd)
 
@@ -275,7 +275,7 @@ validate_mcp_params(TeamUserParams, user_id=uid, username=name, role=role)
 
 ### 2. Handle Validation Errors Gracefully
 
-```python
+```text
 @mcp.tool()
 async def my_tool(**params) -> str:
     try:
@@ -328,7 +328,7 @@ The validation system provides clear, actionable error messages:
 
 ## Testing Parameter Models
 
-```python
+```text
 import pytest
 from pydantic import ValidationError
 from session_mgmt_mcp.parameter_models import SearchQueryParams
@@ -367,7 +367,7 @@ def test_parameter_defaults():
 
 ### Pattern 1: Helper Function Integration
 
-```python
+```text
 @mcp.tool()
 async def search_reflections(**params) -> str:
     try:
@@ -379,7 +379,7 @@ async def search_reflections(**params) -> str:
 
 ### Pattern 2: Direct Model Usage
 
-```python
+```text
 def validate_and_process(params: SearchQueryParams):
     # Parameters are already validated
     return process_search(params.query, params.limit)
@@ -387,7 +387,7 @@ def validate_and_process(params: SearchQueryParams):
 
 ### Pattern 3: Inheritance and Composition
 
-```python
+```text
 class SearchQueryParams(ProjectContextParams, SearchLimitParams, ScoreThresholdParams):
     # Inherits validation from all parent classes
     query: str = Field(min_length=1, max_length=1000)
@@ -397,7 +397,7 @@ class SearchQueryParams(ProjectContextParams, SearchLimitParams, ScoreThresholdP
 
 The parameter models work seamlessly with FastMCP's `@mcp.tool()` decorator:
 
-```python
+```text
 @mcp.tool()
 async def enhanced_search(
     query: str, limit: int = 10, project: str | None = None, min_score: float = 0.7
@@ -488,7 +488,7 @@ class CustomToolParams(BaseModel, NonEmptyStringMixin, PathValidationMixin):
 
 **Example reduction**:
 
-```python
+```text
 # Before: 15 lines of manual validation
 if not content or not content.strip():
     return "❌ Content cannot be empty"

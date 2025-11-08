@@ -7,6 +7,8 @@ code analysis, and development workflow integration.
 
 from __future__ import annotations
 
+import logging
+import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +17,8 @@ from acb.depends import depends
 from session_mgmt_mcp.utils.instance_managers import (
     get_reflection_database as resolve_reflection_database,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
@@ -1026,7 +1030,7 @@ async def _get_failure_pattern_results(
         return []
 
     async with db:
-        return await db.search_conversations(
+        return await db.search_conversations(  # type: ignore[no-any-return]
             query="test failure error pattern",
             project=Path(working_directory).name,
             limit=limit,

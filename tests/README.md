@@ -80,7 +80,7 @@ def mock_embeddings_disabled():
 
 Generate realistic test data:
 
-```python
+```text
 # Individual conversation
 conversation = TestDataFactory.conversation("Test content", "project-name")
 
@@ -95,7 +95,7 @@ reflection = TestDataFactory.reflection("Important insight", ["tag1", "tag2"])
 
 Database testing utilities:
 
-```python
+```text
 # Temporary database
 async with DatabaseTestHelper.temp_reflection_db() as db:
     # Use database for testing
@@ -111,7 +111,7 @@ perf_data = await DatabaseTestHelper.measure_query_performance(db, search_func, 
 
 Comprehensive mocking utilities:
 
-```python
+```text
 # Mock embedding system
 mocks = MockingHelper.mock_embedding_system()
 
@@ -128,7 +128,7 @@ with MockingHelper.patch_environment(TEST_VAR="value"):
 
 Specialized assertions:
 
-```python
+```text
 # UUID validation
 AssertionHelper.assert_valid_uuid(conversation_id)
 
@@ -149,7 +149,7 @@ AssertionHelper.assert_database_record(record, ["id", "content", "project"])
 
 Performance testing utilities:
 
-```python
+```text
 # Time measurement
 async with PerformanceHelper.measure_time() as measurements:
     await expensive_operation()
@@ -225,7 +225,7 @@ python -m pytest --timeout=300
 
 ### Unit Test Example
 
-```python
+```text
 class TestExampleUnit:
     def test_data_generation(self):
         """Example unit test with test data factory."""
@@ -246,7 +246,7 @@ class TestExampleUnit:
 
 ### Integration Test Example
 
-```python
+```text
 class TestExampleIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -272,7 +272,7 @@ class TestExampleIntegration:
 
 ### Performance Test Example
 
-```python
+```text
 class TestPerformance:
     @pytest.mark.performance
     @pytest.mark.asyncio

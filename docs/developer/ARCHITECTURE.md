@@ -70,7 +70,7 @@ Built on FastMCP framework providing:
 - **Type Safety**: Full TypeScript-compatible type annotations
 - **Error Handling**: Structured error responses with recovery strategies
 
-```python
+```text
 # Core server setup
 from fastmcp import FastMCP
 
@@ -330,7 +330,7 @@ Quality Metrics:
 
 Real-time code quality monitoring:
 
-```python
+```text
 class CrackerjackIntegration:
     async def run_quality_check(self) -> QualityReport:
         """Execute crackerjack and parse results."""
@@ -352,7 +352,7 @@ class CrackerjackIntegration:
 
 All I/O operations use async/await to prevent blocking:
 
-```python
+```text
 # ✅ Correct: Non-blocking database operations
 async def store_conversation(self, content: str) -> str:
     async with self.get_connection() as conn:
@@ -369,7 +369,7 @@ async def generate_embedding(self, text: str) -> np.ndarray:
 
 System continues operating when optional components fail:
 
-```python
+```text
 async def search(self, query: str) -> list[SearchResult]:
     """Search with fallback strategy."""
     try:
@@ -385,7 +385,7 @@ async def search(self, query: str) -> list[SearchResult]:
 
 Comprehensive type hints with runtime validation:
 
-```python
+```text
 from typing import Literal, TypedDict
 
 
@@ -548,7 +548,7 @@ class OperationClassifier:
 
 **SQL Injection Prevention:**
 
-```python
+```text
 async def safe_query(self, query: str, params: tuple) -> list[dict]:
     """Parameterized queries only."""
     # Never allow string formatting in queries
@@ -665,7 +665,7 @@ class TestMCPServer:
 
 **Structured Metrics:**
 
-```python
+```text
 @dataclass
 class SystemMetrics:
     requests_per_minute: float
@@ -681,7 +681,7 @@ class SystemMetrics:
 
 **OpenTelemetry Integration:**
 
-```python
+```text
 from opentelemetry import trace
 
 tracer = trace.get_tracer(__name__)
@@ -703,7 +703,7 @@ async def traced_search(query: str) -> dict:
 
 **Comprehensive Health Monitoring:**
 
-```python
+```text
 @mcp.tool()
 async def health_check() -> dict[str, Any]:
     """System health check."""
@@ -780,7 +780,7 @@ logger.info("Logging without triggering DI at import time")
 
 High-performance HTTP client with connection pooling:
 
-```python
+```text
 from mcp_common.adapters.http.client import HTTPClientAdapter
 
 # Get from DI container
@@ -863,7 +863,7 @@ session_mgr = SessionManager()
 
 #### 2. Handle DI Errors Gracefully
 
-```python
+```text
 # ✅ Good: Graceful fallback
 try:
     from acb.depends import depends
@@ -879,7 +879,7 @@ http_adapter = depends.get_sync(HTTPClientAdapter)
 
 #### 3. Use Context Managers for Resources
 
-```python
+```text
 # ✅ Good: Proper resource cleanup
 async with http_adapter as client:
     response = await client.get(url)
@@ -1129,7 +1129,7 @@ async def check_python_environment_health() -> ComponentHealth:
 
 #### Database Health Check
 
-```python
+```text
 async def check_database_health() -> ComponentHealth:
     """Check DuckDB reflection database health."""
     start_time = time.perf_counter()
@@ -1307,7 +1307,7 @@ async def get_all_health_checks() -> list[ComponentHealth]:
 
 Always measure and report latency for performance diagnostics:
 
-```python
+```text
 start_time = time.perf_counter()
 # ... perform check ...
 latency_ms = (time.perf_counter() - start_time) * 1000
@@ -1317,7 +1317,7 @@ latency_ms = (time.perf_counter() - start_time) * 1000
 
 Include context that helps diagnose issues:
 
-```python
+```text
 metadata = {
     "conversations": count,
     "database_size_mb": size,
@@ -1330,7 +1330,7 @@ metadata = {
 
 Never let health check exceptions propagate:
 
-```python
+```text
 try:
     # Perform check
     return ComponentHealth(status=HealthStatus.HEALTHY, ...)
@@ -1506,7 +1506,7 @@ async def cleanup_database_connections() -> None:
 
 #### HTTP Client Cleanup
 
-```python
+```text
 async def cleanup_http_clients() -> None:
     """Cleanup HTTP client connections and release pools."""
     logger.info("Cleaning up HTTP client connections")
@@ -1586,7 +1586,7 @@ async def cleanup_temp_files(temp_dir: Path | None = None) -> None:
 
 ### Shutdown Execution Flow
 
-```python
+```text
 async def shutdown(self) -> ShutdownStats:
     """Execute all cleanup tasks in priority order."""
     import time

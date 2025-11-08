@@ -48,7 +48,7 @@ ______________________________________________________________________
 **Solution:**
 Added exception suppression to all DI resolution points:
 
-```python
+```text
 # Pattern applied across codebase
 def get_session_logger() -> SessionLogger:
     with suppress(KeyError, AttributeError, RuntimeError, TypeError):
@@ -253,7 +253,7 @@ ______________________________________________________________________
 ★ **Key Learning:**
 The DI container resolution failures in tests exposed a fundamental pattern need:
 
-```python
+```text
 # BEFORE (brittle - fails in test environment)
 logger = depends.get_sync(SessionLogger)
 

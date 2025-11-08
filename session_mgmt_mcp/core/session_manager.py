@@ -593,7 +593,9 @@ class SessionLifecycleManager:
             self.logger.exception("Session checkpoint failed", error=str(e))
             return {"success": False, "error": str(e)}
 
-    async def end_session(self, working_directory: str | None = None) -> dict[str, t.Any]:
+    async def end_session(
+        self, working_directory: str | None = None
+    ) -> dict[str, t.Any]:
         """End the current session with cleanup and summary."""
         try:
             current_dir = Path(working_directory) if working_directory else Path.cwd()
@@ -755,8 +757,15 @@ class SessionLifecycleManager:
             "version": __version__,
         }
 
-        # Render template
-        return await self.templates.render("session/handoff.md", context)
+        # Render template - templates is guaranteed to be non-None here
+        # because this method is only called when self.templates is not None (line 703)
+        if self.templates is None:
+            msg = "Templates adapter unexpectedly None"
+            raise RuntimeError(msg)
+
+        result = await self.templates.render("session/handoff.md", context)
+        # templates.render() returns str, not Optional[str]
+        return result if result is not None else ""
 
     def _save_handoff_documentation(
         self, content: str, working_dir: Path

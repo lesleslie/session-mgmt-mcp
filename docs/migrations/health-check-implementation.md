@@ -30,7 +30,7 @@ Add production-ready health checks to your MCP server using mcp_common's health 
 
 ### Before (No Health Checks)
 
-```python
+```text
 # No health monitoring - issues discovered through failures
 
 
@@ -41,7 +41,7 @@ async def status():
 
 ### After (Comprehensive Health Checks)
 
-```python
+```text
 from mcp_common.health import ComponentHealth, HealthStatus
 from mcp_common.http_health import check_http_client_health
 
@@ -233,7 +233,7 @@ async def get_all_health_checks() -> list[ComponentHealth]:
 
 If using HTTPClientAdapter:
 
-```python
+```text
 # In health_checks.py, add:
 from mcp_common.http_health import check_http_client_health, check_http_connectivity
 
@@ -248,7 +248,7 @@ async def check_http_health() -> list[ComponentHealth]:
 
 ### Step 4: Register MCP Health Check Tool
 
-```python
+```text
 # server.py
 from fastmcp import FastMCP
 from my_server.health_checks import get_all_health_checks
@@ -470,7 +470,7 @@ Health checks are additive and safe to rollback:
 
 Comment out or remove the health_check tool:
 
-```python
+```text
 # @mcp.tool()
 # async def health_check():
 #     ...
@@ -570,7 +570,7 @@ Health check endpoint takes >1 second to respond.
 
 Run checks concurrently with `asyncio.gather()`:
 
-```python
+```text
 # ✅ Good: Concurrent execution (fast)
 components = await asyncio.gather(
     check_1(),
@@ -590,7 +590,7 @@ components = [
 
 ### 1. Measure Latency
 
-```python
+```text
 # ✅ Good: Always measure latency
 start_time = time.perf_counter()
 # ... perform check ...
@@ -632,11 +632,11 @@ components = await asyncio.gather(
 
 ### 5. Handle Errors Gracefully
 
-```python
+```text
 # ✅ Good: Never let exceptions propagate
 try:
     # Check logic
-    return ComponentHealth(status=HealthStatus.HEALTHY, ...)
+    return ComponentHealth(status=HealthStatus.HEALTHY)
 except Exception as e:
     return ComponentHealth(
         status=HealthStatus.UNHEALTHY,

@@ -225,7 +225,7 @@ This structure makes it easy to identify what's tested and what's not.
 
 Key insight: All async fixtures must properly await initialization:
 
-```python
+```text
 async def fixture():
     db = ReflectionDatabase(path)
     await db.initialize()  # Critical!

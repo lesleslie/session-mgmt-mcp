@@ -21,7 +21,7 @@ Successfully completed the final cleanup phase of the server.py refactoring proj
 
 **Implementation:**
 
-```python
+```text
 class FeatureDetector:
     """Centralized feature detection for MCP server capabilities."""
 
@@ -33,7 +33,7 @@ class FeatureDetector:
 
 **Before (server.py lines 106-238):**
 
-```python
+```text
 # Import session management core
 try:
     from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
@@ -48,7 +48,7 @@ except ImportError as e:
 
 **After (server.py lines 78-92):**
 
-```python
+```text
 # Phase 2.6: Get all feature flags from centralized detector
 _features = get_feature_flags()
 SESSION_MANAGEMENT_AVAILABLE = _features["SESSION_MANAGEMENT_AVAILABLE"]
@@ -76,7 +76,7 @@ REFLECTION_TOOLS_AVAILABLE = _features["REFLECTION_TOOLS_AVAILABLE"]
 
 **Before (server.py lines 429-481):**
 
-```python
+```text
 async def get_app_monitor() -> ApplicationMonitor | None:
     """Get or initialize application monitor."""
     global _app_monitor
@@ -95,7 +95,7 @@ async def get_app_monitor() -> ApplicationMonitor | None:
 
 **After (server.py):**
 
-```python
+```text
 # Imported from utils/instance_managers.py
 from session_mgmt_mcp.utils.instance_managers import (
     get_app_monitor,
@@ -117,7 +117,7 @@ from session_mgmt_mcp.utils.instance_managers import (
 
 **Before (server.py):**
 
-```python
+```text
 if "pytest" in sys.modules or "test" in sys.argv[0].lower():
     print("Warning: FastMCP not available in test environment, using mock", ...)
 
@@ -132,7 +132,7 @@ if "pytest" in sys.modules or "test" in sys.argv[0].lower():
 
 **After (server.py):**
 
-```python
+```text
 if "pytest" in sys.modules or "test" in sys.argv[0].lower():
     from tests.conftest import MockFastMCP
 
@@ -155,7 +155,7 @@ if "pytest" in sys.modules or "test" in sys.argv[0].lower():
 
 **Before (server.py):**
 
-```python
+```text
 @asynccontextmanager
 async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only (wrapper)."""
@@ -166,7 +166,7 @@ async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
 
 **After (server.py):**
 
-```python
+```text
 @asynccontextmanager
 async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only (wrapper)."""

@@ -255,7 +255,7 @@ ______________________________________________________________________
 
 ### Pattern 1: Direct Bevy Container Cleanup
 
-```python
+```text
 from bevy import get_container
 
 
@@ -270,7 +270,7 @@ def cleanup_singleton(cls):
 
 ### Pattern 2: Dynamic Singleton Class Import
 
-```python
+```text
 def _import_singleton_class(cls_name: str):
     """Dynamically import singleton class by name."""
     if cls_name == "SessionLogger":
@@ -446,7 +446,7 @@ ______________________________________________________________________
 
 **Example:**
 
-```python
+```text
 @pytest.fixture(autouse=True)
 def cleanup_fixture():
     yield
@@ -459,7 +459,7 @@ def cleanup_fixture():
 
 **Example:**
 
-```python
+```text
 # Don't just reset Python variables
 my_singleton = None
 
@@ -473,7 +473,7 @@ container.instances.pop(MySingleton, None)
 
 **Example:**
 
-```python
+```text
 with suppress(KeyError, TypeError, ImportError):
     container.instances.pop(OptionalClass, None)
 ```

@@ -101,7 +101,7 @@ def mock_fastmcp_server() -> Mock:
 
 7 fixtures + 3 factories for Git operations testing:
 
-```python
+```text
 @pytest.fixture
 def tmp_git_repo(tmp_path: Path) -> Path:
     """Create temporary Git repository with initial commit."""
@@ -125,7 +125,7 @@ def tmp_git_repo(tmp_path: Path) -> Path:
 
 8 fixtures + 2 factories for quality metrics testing:
 
-```python
+```text
 @pytest.fixture
 def mock_crackerjack_metrics_success() -> dict[str, Any]:
     """Mock successful crackerjack quality metrics."""
@@ -176,7 +176,7 @@ ______________________________________________________________________
 - Verifies tool decorator is called correctly
 - Tests all 9 registration functions (session, search, crackerjack, llm, etc.)
 
-```python
+```text
 def test_all_tool_modules_registration(self, mock_fastmcp_server: Mock):
     """All tool modules can be registered without errors."""
     # Register all 9 tool modules
@@ -255,7 +255,7 @@ ______________________________________________________________________
 
 Main function testing with different scenarios:
 
-```python
+```text
 @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
 async def test_calculate_quality_score_v2_with_perfect_metrics(
     self, mock_metrics: AsyncMock, tmp_path: Path
@@ -309,7 +309,7 @@ async def test_code_quality_with_perfect_scores():
 
 30-point component testing:
 
-```python
+```text
 async def test_project_health_with_perfect_setup(tmp_path: Path):
     """Project health with all tooling returns high score."""
     # Create perfect tooling
@@ -361,7 +361,7 @@ def test_trust_score_with_perfect_environment():
 
 Recommendation logic testing:
 
-```python
+```text
 def test_recommendations_for_excellent_quality():
     """Recommendations for excellent quality include maintenance message."""
     # Create perfect scores
@@ -508,7 +508,7 @@ TrustScore (separate 0-100 scale):
 
 **Factory Functions** for flexible test data:
 
-```python
+```text
 @pytest.fixture
 def crackerjack_metrics_factory() -> Callable[..., dict[str, Any]]:
     """Factory for generating crackerjack metrics."""
@@ -534,7 +534,7 @@ def crackerjack_metrics_factory() -> Callable[..., dict[str, Any]]:
 
 **Async-Compatible Fixtures**:
 
-```python
+```text
 @pytest.fixture
 def mock_lifecycle_manager() -> Mock:
     """Mock SessionLifecycleManager with async methods."""
@@ -553,7 +553,7 @@ def mock_lifecycle_manager() -> Mock:
 
 **Temporary Git Repositories**:
 
-```python
+```text
 @pytest.fixture
 def tmp_git_repo(tmp_path: Path) -> Path:
     """Create temporary Git repository with realistic setup."""

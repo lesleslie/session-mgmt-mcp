@@ -177,7 +177,7 @@ ______________________________________________________________________
 
 **Async Function Testing:**
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_async_function(self, tmp_path: Path) -> None:
     result = await some_async_function(tmp_path)
@@ -186,7 +186,7 @@ async def test_async_function(self, tmp_path: Path) -> None:
 
 **Dataclass Mocking:**
 
-```python
+```text
 mock_result = QualityScoreV2(
     total_score=75.0,
     code_quality=CodeQualityScore(...),
@@ -197,7 +197,7 @@ mock_result = QualityScoreV2(
 
 **Mock Patching:**
 
-```python
+```text
 with patch("module.function") as mock_func:
     mock_func.return_value = expected_value
     result = call_function_that_uses_mock()

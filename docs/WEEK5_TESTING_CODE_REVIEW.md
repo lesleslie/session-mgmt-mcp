@@ -65,7 +65,7 @@ ______________________________________________________________________
 
 1. **Placeholder Test (Line 261):**
 
-   ```python
+   ```text
    async def test_cache_invalidation_on_create(self) -> None:
        # ...
        assert True  # Placeholder for cache invalidation verification
@@ -323,7 +323,7 @@ ______________________________________________________________________
 
 1. **Deprecation Warning Test (Test 17, line 369):**
 
-   ```python
+   ```text
    def test_create_storage_backend_legacy_redis_warns(self) -> None:
        with patch("logging.warning") as mock_warn:
            # ...

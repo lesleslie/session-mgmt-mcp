@@ -59,7 +59,7 @@ ______________________________________________________________________
 
 #### Database Health Checks (4 unit + 1 integration)
 
-```python
+```text
 ✅ Operational database returns HEALTHY
 ✅ Missing database returns DEGRADED
 ✅ Slow database (>500ms) returns DEGRADED
@@ -69,7 +69,7 @@ ______________________________________________________________________
 
 #### File System Health Checks (4 unit + 1 integration)
 
-```python
+```text
 ✅ Accessible ~/.claude returns HEALTHY
 ✅ Missing directory returns UNHEALTHY
 ✅ Read-only directory returns UNHEALTHY
@@ -79,7 +79,7 @@ ______________________________________________________________________
 
 #### Dependencies Health Checks (3 unit + 1 integration)
 
-```python
+```text
 ✅ All optional dependencies returns HEALTHY
 ✅ No optional dependencies returns DEGRADED (fixed during session)
 ✅ Mixed availability returns DEGRADED
@@ -88,7 +88,7 @@ ______________________________________________________________________
 
 #### Python Environment Health Checks (2 unit + 1 integration)
 
-```python
+```text
 ✅ Python 3.13+ returns HEALTHY
 ✅ Python <3.13 returns UNHEALTHY
 ✅ Integration with real version checking
@@ -96,7 +96,7 @@ ______________________________________________________________________
 
 #### Aggregation & MCP Tools (3 + 6 tests)
 
-```python
+```text
 ✅ Concurrent execution of all 4 checks (<1000ms)
 ✅ Partial failure handling (continues despite errors)
 ✅ Response structure validation (ComponentHealth schema)
@@ -110,7 +110,7 @@ ______________________________________________________________________
 
 **Fixed Issue During Session:**
 
-```python
+```text
 # test_dependencies_none_available was failing
 # Root cause: multi_project module detected via importlib.util.find_spec
 
@@ -137,7 +137,7 @@ with (
 
 #### MCP Server Detection (4 tests)
 
-```python
+```text
 ✅ Detect crackerjack when available (subprocess returncode 0)
 ✅ Handle crackerjack not found (FileNotFoundError)
 ✅ Handle crackerjack bad returncode (non-zero)
@@ -148,7 +148,7 @@ with (
 
 #### Server Guidance Generation (2 tests)
 
-```python
+```text
 ✅ Provide guidance when crackerjack detected
 ✅ Provide basic guidance when no servers detected
 ```
@@ -157,7 +157,7 @@ with (
 
 #### Project Context Analysis (8 tests)
 
-```python
+```text
 ✅ Detect Python project with pyproject.toml
 ✅ Handle minimal project (empty directory)
 ✅ Detect uv.lock and requirements.txt
@@ -172,7 +172,7 @@ with (
 
 #### Git Working Directory Setup (2 tests)
 
-```python
+```text
 ✅ Detect git repo and setup working directory
 ✅ Handle non-git directory gracefully
 ```
@@ -181,7 +181,7 @@ with (
 
 #### Conversation Summary Formatting (3 tests)
 
-```python
+```text
 ✅ Handle empty conversation history
 ✅ Format conversation results with session data
 ✅ Handle missing reflection database
@@ -210,7 +210,7 @@ with (
 
 #### Resource Cleanup (16/18 tests)
 
-```python
+```text
 ✅ Cleanup database connections when available
 ✅ Handle missing database module gracefully
 ✅ Cleanup HTTP clients when available
@@ -233,7 +233,7 @@ with (
 
 #### Shutdown Manager (24/24 tests)
 
-```python
+```text
 ✅ Register sync/async cleanup tasks (5 tests)
 ✅ Execute cleanup tasks properly (7 tests, 1 needs fix)
 ✅ Signal handling (3 tests)
@@ -367,7 +367,7 @@ Comprehensive module testing requires three distinct levels, each with different
 
 **Level 1: Unit Tests (Mocked Dependencies)**
 
-```python
+```text
 # Goal: Test logic and edge cases
 @patch("session_mgmt_mcp.health_checks.get_reflection_database")
 async def test_database_healthy(mock_db):
@@ -379,7 +379,7 @@ async def test_database_healthy(mock_db):
 
 **Level 2: Integration Tests (Real System Operations)**
 
-```python
+```text
 # Goal: Verify real-world behavior
 async def test_file_system_healthy(tmp_path: Path):
     # Real file system operations
@@ -393,7 +393,7 @@ async def test_file_system_healthy(tmp_path: Path):
 
 **Level 3: MCP Tool Tests (Protocol Validation)**
 
-```python
+```text
 # Goal: Validate client-facing API
 async def test_health_check_tool(mcp_server):
     result = await mcp_server.call_tool("health_check", {})

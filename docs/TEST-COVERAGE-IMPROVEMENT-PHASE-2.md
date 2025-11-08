@@ -113,7 +113,7 @@ ______________________________________________________________________
 
 **Key Insight:** Tests use proper mocking of session_logger to avoid DI container issues in test environment. This demonstrates how to work with dependency injection systems in testing.
 
-```python
+```text
 ★ Insight ─────────────────────────────────────
 The session logger is retrieved via a DI container that returns
 coroutines in the test environment. Tests mock this logger to
@@ -170,7 +170,7 @@ This is a common pattern when testing systems with dependency injection.
 
 **Key Insight:** Tools tests use AsyncMock fixtures to simulate database behavior without external dependencies. Many tests are skipped because tools functions require proper DI container setup.
 
-```python
+```text
 ★ Insight ─────────────────────────────────────
 Tools module tests are design-oriented rather than execution-focused.
 They verify that functions exist and can be called, but skip detailed
@@ -297,7 +297,7 @@ ______________________________________________________________________
 
 ### 1. Async/Await in Testing
 
-```python
+```text
 # Proper async fixture pattern
 @pytest.fixture
 async def initialized_db():
@@ -311,7 +311,7 @@ Key lesson: Always await async initialization in fixtures before yielding to tes
 
 ### 2. Mocking DI Containers
 
-```python
+```text
 # Correct way to mock DI-injected dependencies
 with patch("session_mgmt_mcp.server.session_logger") as mock_logger:
     mock_logger.info = MagicMock()
@@ -322,7 +322,7 @@ Key lesson: Mock at the point of use, not the source, to avoid coroutine issues.
 
 ### 3. Property-Based Testing with Hypothesis
 
-```python
+```text
 @given(st.text(min_size=1000, max_size=10000))
 def test_with_random_inputs(text: str):
     """Generates 100+ test cases automatically."""

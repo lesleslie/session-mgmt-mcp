@@ -50,7 +50,7 @@
 
 ### Fix 1: Database Initialization Pattern (Effort: 2 hours)
 
-```python
+```text
 # File: tests/conftest.py - Add this fixture at line 545
 @pytest.fixture
 async def initialized_db():

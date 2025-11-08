@@ -92,7 +92,7 @@ ______________________________________________________________________
 
 **Example:**
 
-```python
+```text
 def test_reflection_storage():
     """Test basic reflection storage."""
     async with ReflectionDatabase() as db:
@@ -354,7 +354,7 @@ ______________________________________________________________________
 
 ### Async Test Pattern
 
-```python
+```text
 import pytest
 
 
@@ -368,7 +368,7 @@ async def test_async_operation():
 
 ### Fixture Usage
 
-```python
+```text
 @pytest.fixture
 async def temp_database():
     """Provide temporary database for testing."""
@@ -381,7 +381,7 @@ async def temp_database():
 
 ### Mocking External Dependencies
 
-```python
+```text
 from unittest.mock import patch, MagicMock
 
 
@@ -401,7 +401,7 @@ ______________________________________________________________________
 
 **Issue: Tests failing with DuckDB connection errors**
 
-```python
+```text
 # Solution: Use temporary database in fixtures
 @pytest.fixture
 async def db():

@@ -149,7 +149,7 @@ ______________________________________________________________________
 
 #### Gap 1: Test Infrastructure Collapse (BLOCKER)
 
-```python
+```text
 # 14 test files with collection errors
 ERROR tests/integration/test_health_check_integration.py
 ERROR tests/unit/test_health_checks.py - ModuleNotFoundError: No module named 'mcp_common.health'

@@ -151,7 +151,7 @@ Discovered that DuckDB operations are fast enough to use sync operations within 
 
 **The Solution**:
 
-```python
+```text
 class KnowledgeGraphDatabaseAdapter:
     """Hybrid pattern: async signatures, sync operations."""
 
@@ -226,14 +226,14 @@ if hasattr(self.vector_adapter, "_schema_initialized"):
 
 Fixed critical bug in ACB's vector search that caused all similarity scores to return 0.0:
 
-```python
-# Before (bug):
-array_distance(vector, $1::FLOAT[]) as score  # Missing dimension
-ORDER BY score ASC  # Wrong direction for similarity
+```sql
+-- Before (bug):
+array_distance(vector, $1::FLOAT[]) as score  -- Missing dimension
+ORDER BY score ASC  -- Wrong direction for similarity
 
-# After (fixed):
+-- After (fixed):
 array_cosine_similarity(vector, $1::FLOAT[{dimension}]) as score
-ORDER BY score DESC  # Correct for similarity (higher = better)
+ORDER BY score DESC  -- Correct for similarity (higher = better)
 ```
 
 ## Files Modified/Created
@@ -296,7 +296,7 @@ pytest tests/unit/test_reflection_tools.py -k "test_store_reflection" -xvs
 
 ### Manual Testing
 
-```python
+```text
 # Vector adapter successfully tested:
 async with ReflectionDatabaseAdapter() as db:
     conv_id = await db.store_conversation("test", {"project": "test"})

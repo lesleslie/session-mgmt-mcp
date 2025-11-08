@@ -18,7 +18,7 @@ with suppress(ImportError):
     )
     from .server_core import (
         MCPServerCore,
-        SessionLogger,
+        SessionLogger,  # type: ignore[attr-defined]
         SessionPermissionsManager,
     )
 

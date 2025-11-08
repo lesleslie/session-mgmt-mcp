@@ -59,7 +59,7 @@ Binder Error: No function matches the given name and argument types
 
 **Problematic Code:**
 
-```python
+```text
 def _build_search_query(
     self,
     table_name: str,
@@ -79,7 +79,7 @@ def _build_search_query(
 
 **Fix Required:**
 
-```python
+```text
 def _build_search_query(
     self,
     table_name: str,

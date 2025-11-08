@@ -31,7 +31,7 @@ ______________________________________________________________________
 
 **Structure:**
 
-```python
+```text
 # 9 Pydantic BaseModel config classes (nested hierarchy)
 ├── DatabaseConfig (62 lines)
 │   ├── DuckDB settings (path, timeouts, connections)
@@ -129,7 +129,7 @@ ______________________________________________________________________
 
 **Structure:**
 
-```python
+```text
 from acb.config import Settings
 
 
@@ -241,7 +241,7 @@ ______________________________________________________________________
 
 **Example:**
 
-```python
+```text
 from acb.config import Settings
 
 
@@ -287,7 +287,7 @@ class SessionMgmtSettings(Settings):
 
 **Example:**
 
-```python
+```text
 from acb.config import Settings
 from pydantic import BaseModel
 
@@ -335,7 +335,7 @@ class SessionMgmtSettings(Settings):
 
 **Example:**
 
-```python
+```text
 from acb.config import Settings
 from functools import cached_property
 
@@ -567,7 +567,7 @@ ______________________________________________________________________
 
 **Implementation:**
 
-```python
+```text
 # New ACB Settings (100 lines)
 class SessionMgmtSettings(Settings):
     database_path: str = "~/.claude/data/reflection.duckdb"
@@ -810,7 +810,7 @@ ______________________________________________________________________
 
 1. **New file:** `session_mgmt_mcp/config_v2.py` (~150 lines)
 
-   ```python
+   ```text
    from acb.config import Settings
 
 
@@ -871,7 +871,7 @@ ______________________________________________________________________
 
 1. **New file:** `session_mgmt_mcp/config_compat.py` (~100 lines)
 
-   ```python
+```text
    from functools import cached_property
    from session_mgmt_mcp.config_v2 import SessionMgmtSettings
 
@@ -908,11 +908,11 @@ ______________________________________________________________________
            return SearchConfig(self._settings)
 
        # ... other nested views ...
-   ```
+```
 
 1. **New file:** `session_mgmt_mcp/loader.py` (~150 lines)
 
-   ```python
+   ```text
    from pathlib import Path
    import yaml
    from acb.config import Settings

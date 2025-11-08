@@ -114,7 +114,7 @@ else:
 
 **Current Code:**
 
-```python
+```text
 if network_client:
     _register_network_tools(server, network_client)
 # No confirmation tools were registered successfully
@@ -122,7 +122,7 @@ if network_client:
 
 **Suggested Enhancement:**
 
-```python
+```text
 if network_client:
     tool_count = _register_network_tools(server, network_client)
     logger.info(f"Registered {tool_count} network tools")
@@ -154,7 +154,7 @@ def _register_network_tools(server: FastMCP, network_client: NetworkClient) -> i
 
 Add docstring explaining why nested functions are used:
 
-```python
+```text
 def _register_network_tools(server: FastMCP, network_client: NetworkClient) -> None:
     """Register network tools with the server.
 
@@ -180,7 +180,7 @@ ______________________________________________________________________
 
 **Before (Per-Request Client):**
 
-```python
+```text
 @mcp.tool()
 async def send_message(...) -> dict[str, Any]:
     async with httpx.AsyncClient() as client:  # ❌ Creates new connection pool
@@ -190,7 +190,7 @@ async def send_message(...) -> dict[str, Any]:
 
 **After (Connection Pooling):**
 
-```python
+```text
 # Module-level initialization
 http_adapter = HTTPClientAdapter(settings=HTTPClientSettings(
     timeout=30,
@@ -217,7 +217,7 @@ async def send_message(...) -> dict[str, Any]:
 
 #### ✅ EXCELLENT: Centralized HTTP Request Handler
 
-```python
+```text
 async def _http_request(method: str, url: str, **kwargs: Any) -> httpx.Response:
     """Make HTTP request with connection pooling if available.
 
@@ -245,7 +245,7 @@ async def _http_request(method: str, url: str, **kwargs: Any) -> httpx.Response:
 
 #### ✅ EXCELLENT: Consistent Error Response Format
 
-```python
+```text
 if response.is_success:
     return response.json()  # type: ignore
 return {
@@ -265,7 +265,7 @@ return {
 
 #### ✅ EXCELLENT: Module-Level Startup Message
 
-```python
+```text
 # Display beautiful startup message (when module is loaded)
 if SERVERPANELS_AVAILABLE:
     ServerPanels.startup_success(...)
@@ -341,7 +341,7 @@ http_adapter = HTTPClientAdapter(
 
 **Suggested Enhancement:**
 
-```python
+```text
 import os
 
 
@@ -367,7 +367,7 @@ http_adapter = HTTPClientAdapter(settings=get_http_settings())
 
 Track connection pool usage for optimization:
 
-```python
+```text
 @mcp.tool()
 async def get_connection_pool_stats() -> dict[str, Any]:
     """Get HTTP connection pool statistics for monitoring."""
@@ -503,7 +503,7 @@ def init_background_services() -> None:
 
 #### ⚠️ MEDIUM PRIORITY: Monitoring Cleanup Race Condition
 
-```python
+```text
 def cleanup_monitoring() -> None:
     if monitoring_supervisor.is_running:
         from contextlib import suppress
@@ -754,7 +754,7 @@ ______________________________________________________________________
 
 ### Suggested Test Structure
 
-```python
+```text
 # tests/test_server_integration.py
 import pytest
 from unittest.mock import patch

@@ -281,7 +281,7 @@ ______________________________________________________________________
 
 ### 1. Async Function Testing
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_async_function(self, tmp_path: Path) -> None:
     result = await some_async_function(tmp_path)
@@ -290,7 +290,7 @@ async def test_async_function(self, tmp_path: Path) -> None:
 
 ### 2. Dataclass Mocking
 
-```python
+```text
 from session_mgmt_mcp.utils.quality_utils_v2 import (
     QualityScoreV2,
     ProjectHealthScore,
@@ -306,7 +306,7 @@ mock_result = QualityScoreV2(
 
 ### 3. File System Testing
 
-```python
+```text
 def test_file_operations(self, tmp_path: Path) -> None:
     (tmp_path / "file.txt").write_text("content")
     result = function_under_test(tmp_path)
@@ -315,7 +315,7 @@ def test_file_operations(self, tmp_path: Path) -> None:
 
 ### 4. Mock Patching
 
-```python
+```text
 with patch("module.function") as mock_func:
     mock_func.return_value = expected_value
     result = call_function_that_uses_mock()

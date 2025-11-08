@@ -140,7 +140,7 @@ Both database layers have been successfully migrated to ACB (Asynchronous Compon
 
 **Hybrid Pattern Key Insight**:
 
-```python
+```text
 async def create_entity(self, name: str, ...) -> dict:
     """Async signature for API consistency, sync operation internally."""
     conn = self._get_conn()  # Sync DuckDB connection
@@ -299,7 +299,7 @@ This pattern can be applied to other fast local databases (SQLite, in-memory cac
 
 #### 1. **Async-First Architecture**
 
-```python
+```text
 # Database operations use executor threads to prevent blocking
 async def generate_embedding(text: str) -> np.ndarray:
     loop = asyncio.get_event_loop()
@@ -712,7 +712,7 @@ The `.mcp.json` shows integration with multiple MCP servers:
 
 ### 1. **Async/Await Best Practices**
 
-```python
+```text
 # ✅ Correct: Use executor for blocking operations
 async def generate_embedding(text: str) -> np.ndarray:
     loop = asyncio.get_event_loop()
@@ -726,7 +726,7 @@ async def bad_embedding(text: str) -> np.ndarray:
 
 ### 2. **Database Connection Management**
 
-```python
+```text
 # ✅ Correct: Context manager with connection pooling
 async def store_conversation(content: str) -> str:
     async with ReflectionDatabase() as db:
@@ -741,7 +741,7 @@ async def bulk_store(conversations: list[str]) -> list[str]:
 
 ### 3. **Error Handling Strategy**
 
-```python
+```text
 # ✅ Correct: Graceful degradation with logging
 async def search_with_fallback(query: str) -> list[SearchResult]:
     try:
@@ -757,7 +757,7 @@ async def search_with_fallback(query: str) -> list[SearchResult]:
 
 ### 4. **MCP Tool Development Pattern**
 
-```python
+```text
 @mcp.tool()
 async def example_tool(param1: str, param2: int | None = None) -> dict[str, Any]:
     """

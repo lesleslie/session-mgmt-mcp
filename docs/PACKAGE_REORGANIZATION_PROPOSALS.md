@@ -553,7 +553,7 @@ From ACB documentation analysis:
 
 ### 1. Adapter Pattern (from ACB)
 
-```python
+```text
 # Each feature can have adapters/ for external integrations
 memory/
 ├── adapters/
@@ -563,7 +563,7 @@ memory/
 
 ### 2. Service Pattern (from ACB)
 
-```python
+```text
 # Business logic in services/
 memory/
 ├── services/
@@ -573,7 +573,7 @@ memory/
 
 ### 3. Protocol-Based DI (from ACB 0.20.0+)
 
-```python
+```text
 # Use Protocol interfaces for services
 from typing import Protocol
 
@@ -585,7 +585,7 @@ class ReflectionServiceProtocol(Protocol):
 
 ### 4. Tool Registration (from ACB MCP)
 
-```python
+```text
 # MCP tools registered per feature
 @mcp.tool()
 async def store_reflection(content: str) -> dict:

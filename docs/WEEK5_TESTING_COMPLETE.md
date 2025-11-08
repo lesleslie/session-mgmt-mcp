@@ -173,7 +173,7 @@ Successfully tested async patterns across:
 
 Properly handled optional dependencies:
 
-```python
+```text
 # watchdog for file monitoring
 with patch("session_mgmt_mcp.app_monitor.WATCHDOG_AVAILABLE", False):
     result = monitor.start_monitoring()
@@ -312,7 +312,7 @@ ______________________________________________________________________
 
 **Pattern:** Test both with and without optional dependencies:
 
-```python
+```text
 # Test with dependency available
 result = component.feature()
 assert result is not None

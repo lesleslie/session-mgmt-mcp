@@ -176,7 +176,7 @@ ______________________________________________________________________
 
 **Solution Pattern:**
 
-```python
+```text
 @pytest.fixture(autouse=True)
 def reset_di_container():
     """Reset DI state after each test."""
@@ -409,7 +409,7 @@ ______________________________________________________________________
 
 ### Pattern 1: DI Test Isolation
 
-```python
+```text
 @pytest.fixture(autouse=True)
 def reset_di_container():
     """Ensure clean DI state for each test."""
@@ -422,7 +422,7 @@ def reset_di_container():
 
 ### Pattern 2: Mock MCP Server
 
-```python
+```text
 @pytest.fixture
 async def mock_mcp_server(tmp_path):
     """Create isolated MCP server for testing."""
@@ -439,7 +439,7 @@ async def mock_mcp_server(tmp_path):
 
 ### Pattern 3: Async Database Testing
 
-```python
+```text
 @pytest.fixture
 async def reflection_db(tmp_path):
     """Create in-memory reflection database."""

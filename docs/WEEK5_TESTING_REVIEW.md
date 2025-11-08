@@ -600,7 +600,7 @@ def conversation_dataset(conversation_dataset_size):
 
 ##### F. Add Test Markers and Custom Markers
 
-```python
+```text
 # pytest.ini additions
 [tool:pytest]
 markers =

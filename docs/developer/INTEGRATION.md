@@ -392,7 +392,7 @@ Extend the memory system to support external databases:
 
 #### PostgreSQL Integration
 
-```python
+```text
 import asyncpg
 from typing import Optional
 

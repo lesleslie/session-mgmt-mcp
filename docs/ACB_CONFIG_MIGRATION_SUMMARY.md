@@ -82,7 +82,7 @@ config.search.enable_semantic_search
 
 #### After: Flat ACB Settings
 
-```python
+```text
 # Single flat Settings class
 class SessionMgmtSettings(Settings):
     # All settings as direct fields

@@ -12,7 +12,7 @@ The current quality scoring system (V1) has critical flaws:
 
 ### Current Algorithm (Flawed)
 
-```python
+```text
 # V1 Scoring (Total: 100 points)
 project_health = (indicators / 7) * 40  # 40% - Binary file checks
 permissions = min(trusted_ops * 5, 20)  # 20% - Gameable, not quality
@@ -30,7 +30,7 @@ tools = 20 if uv_available else 10  # 20% - Tool presence, not usage
 
 ### New Formula (Total: 100 points)
 
-```python
+```text
 # V2 Scoring - Actual Code Quality
 code_quality     = 40%  # Test coverage, lint scores, type checking
 project_health   = 30%  # Structure, documentation, CI/CD
@@ -46,7 +46,7 @@ security         = 10%  # Dependency audits, secret scanning, vulnerabilities
 
 Integrates with Crackerjack quality metrics:
 
-```python
+```text
 # Sub-components:
 test_coverage    = 15 points  # From Crackerjack CODE_COVERAGE
 lint_score       = 10 points  # From Crackerjack LINT_SCORE
@@ -66,7 +66,7 @@ code_quality_score = (
 
 Modernized indicators with smart detection:
 
-```python
+```text
 # Modern tooling (15 points):
 package_management = 5 pts   # pyproject.toml + (uv.lock OR requirements.txt)
 version_control    = 5 pts   # .git + meaningful commit history
@@ -88,7 +88,7 @@ project_health_score = (
 
 Measures development health:
 
-```python
+```text
 # Git activity (10 points):
 commit_frequency   = 5 pts   # Regular commits (not too sparse, not spam)
 commit_quality     = 5 pts   # Conventional commits, meaningful messages
@@ -108,7 +108,7 @@ velocity_score = (
 
 Critical security indicators:
 
-```python
+```text
 # Security tooling (5 points):
 dependency_scan    = 3 pts   # Bandit/safety checks via Crackerjack
 secret_detection   = 2 pts   # No hardcoded secrets/keys
@@ -128,7 +128,7 @@ security_score = (
 
 Permissions and session management moved to separate metric:
 
-```python
+```text
 # Trust Score (separate from quality, 0-100)
 trusted_operations   = 40 pts  # Number of trusted operations
 session_availability = 30 pts  # Session management features
@@ -168,7 +168,7 @@ tool_ecosystem       = 30 pts  # Available MCP tools and integrations
 
 ### Example 1: Modern Python Project (This Repository)
 
-```python
+```text
 # Code Quality (40 points)
 test_coverage:    31.6% → 4.7 points   # Low coverage hurts
 lint_score:       100   → 10 points    # Clean code
@@ -193,7 +193,7 @@ hygiene:         4 points   # Clean patterns
 
 ### Example 2: Excellent Project
 
-```python
+```text
 # Code Quality: 38/40 (95% coverage, perfect lint, 100% types, low complexity)
 # Project Health: 28/30 (full tooling, CI/CD, excellent docs)
 # Dev Velocity: 18/20 (active development, good patterns)
@@ -203,7 +203,7 @@ hygiene:         4 points   # Clean patterns
 
 ### Example 3: Quick Script (Low Quality Expected)
 
-```python
+```text
 # Code Quality: 8/40 (no tests, some lint issues)
 # Project Health: 8/30 (just .py files, no structure)
 # Dev Velocity: 5/20 (few commits)
@@ -230,7 +230,7 @@ hygiene:         4 points   # Clean patterns
 
 ## API Changes
 
-```python
+```text
 # Old API (deprecated)
 quality_data = await calculate_quality_score()
 # Returns: {"total_score": 73, "breakdown": {...}}

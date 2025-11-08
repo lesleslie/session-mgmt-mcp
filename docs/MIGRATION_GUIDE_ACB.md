@@ -35,7 +35,7 @@ Both migrations maintain 100% API compatibility while providing improved resourc
 
 **Before** (deprecated):
 
-```python
+```text
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 
@@ -46,7 +46,7 @@ async def example():
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
@@ -59,7 +59,7 @@ async def example():
 
 **Alternative** (alias for compatibility):
 
-```python
+```text
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
@@ -113,7 +113,7 @@ Backup created: ~/.claude/data/reflection_backup_20250111_123456.duckdb
 
 After migration, verify your data is accessible:
 
-```python
+```text
 import asyncio
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
@@ -141,7 +141,7 @@ The new `ReflectionDatabaseAdapter` maintains **100% API compatibility** with th
 
 **Conversation Storage**:
 
-```python
+```text
 async with ReflectionDatabaseAdapter() as db:
     # Store conversation (same API)
     conv_id = await db.store_conversation(
@@ -157,7 +157,7 @@ async with ReflectionDatabaseAdapter() as db:
 
 **Reflection Storage**:
 
-```python
+```text
 async with ReflectionDatabaseAdapter() as db:
     # Store reflection (same API)
     refl_id = await db.store_reflection(
@@ -173,7 +173,7 @@ async with ReflectionDatabaseAdapter() as db:
 
 **Statistics & Utilities**:
 
-```python
+```text
 async with ReflectionDatabaseAdapter() as db:
     # Get statistics (same API)
     stats = await db.get_stats()
@@ -191,7 +191,7 @@ async with ReflectionDatabaseAdapter() as db:
 
 **Before** (deprecated):
 
-```python
+```text
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 
@@ -202,7 +202,7 @@ async def store_user_query(query: str, project: str):
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
@@ -217,7 +217,7 @@ async def store_user_query(query: str, project: str):
 
 **Before** (deprecated):
 
-```python
+```text
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
 
@@ -231,7 +231,7 @@ async def find_related_conversations(topic: str, project_name: str):
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
@@ -249,7 +249,7 @@ async def find_related_conversations(topic: str, project_name: str):
 
 **Before** (deprecated):
 
-```python
+```text
 import pytest
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
@@ -262,7 +262,7 @@ async def reflection_db():
 
 **After** (recommended):
 
-```python
+```text
 import pytest
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
@@ -321,7 +321,7 @@ uv sync --group dev
 
 **Check Installation**:
 
-```python
+```text
 python -c "from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter; print('✅ Migration available')"
 ```
 
@@ -335,7 +335,7 @@ RuntimeError: Connection not initialized. Call initialize() first.
 
 **Solution**: Ensure you're using the async context manager pattern:
 
-```python
+```text
 # ✅ Correct (async context manager)
 async with ReflectionDatabaseAdapter() as db:
     await db.store_conversation(...)
@@ -383,7 +383,7 @@ asyncio.run(check())
 
 **Investigation**:
 
-```python
+```text
 import time
 import asyncio
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
@@ -412,7 +412,7 @@ asyncio.run(benchmark_search())
 
 Both old and new implementations support custom database paths:
 
-```python
+```text
 from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 # Custom path
@@ -483,7 +483,7 @@ DuckDB operations are fast enough (\<1ms typically) that sync operations within 
 
 **Before** (original):
 
-```python
+```text
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
 
 
@@ -494,7 +494,7 @@ async def example():
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
 )
@@ -507,7 +507,7 @@ async def example():
 
 **Alternative** (explicit adapter):
 
-```python
+```text
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
@@ -563,7 +563,7 @@ Backup created: ~/.claude/data/knowledge_graph_backup_20250111_123456.duckdb
 
 After migration, verify your data is accessible:
 
-```python
+```text
 import asyncio
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
@@ -594,7 +594,7 @@ The new `KnowledgeGraphDatabaseAdapter` maintains **100% API compatibility** wit
 
 **Entity Management**:
 
-```python
+```text
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create entity (same API)
     entity_id = await db.create_entity(
@@ -615,7 +615,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 
 **Relationship Management**:
 
-```python
+```text
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create relationship (same API)
     rel_id = await db.create_relation(
@@ -633,7 +633,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 
 **Graph Operations**:
 
-```python
+```text
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Find path between entities (same API)
     paths = await db.find_path(
@@ -652,7 +652,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 
 **Before** (original):
 
-```python
+```text
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
 
 
@@ -668,7 +668,7 @@ async def create_project_entity(name: str, language: str):
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
@@ -690,7 +690,7 @@ async def create_project_entity(name: str, language: str):
 
 **Before** (original):
 
-```python
+```text
 from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
 
 
@@ -705,7 +705,7 @@ async def find_dependencies(project: str):
 
 **After** (recommended):
 
-```python
+```text
 from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
@@ -733,7 +733,7 @@ The hybrid pattern is safe for DuckDB because:
 
 **Under the Hood**:
 
-```python
+```text
 class KnowledgeGraphDatabaseAdapter:
     """Hybrid pattern: async signatures, sync operations."""
 
@@ -791,7 +791,7 @@ cp ~/.claude/data/reflection_backup_YYYYMMDD_HHMMSS.duckdb ~/.claude/data/reflec
 
 ### Step 2: Revert Code Changes
 
-```python
+```text
 # Temporarily use deprecated class (generates warnings)
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 

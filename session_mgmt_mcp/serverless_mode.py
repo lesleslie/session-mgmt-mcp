@@ -134,7 +134,7 @@ class RedisStorage(SessionStorage):
             try:
                 import redis.asyncio as redis
 
-                self._redis = redis.Redis(
+                self._redis = redis.Redis(  # type: ignore[assignment]
                     host=self.host,
                     port=self.port,
                     db=self.db,
@@ -989,7 +989,8 @@ class ACBCacheStorage(SessionStorage):
     ) -> None:
         """Add session to index for list_sessions()."""
         try:
-            index_data = await self.cache.get(self._index_key) or {}
+            result = await self.cache.get(self._index_key)
+            index_data: dict[str, Any] = result or {}
             index_data[session_id] = {
                 "user_id": user_id,
                 "project_id": project_id,

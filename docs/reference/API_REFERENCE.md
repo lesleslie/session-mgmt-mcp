@@ -30,7 +30,7 @@ High-performance async HTTP client built on httpx with ACB adapter lifecycle man
 
 **Import:**
 
-```python
+```text
 from mcp_common.adapters.http import HTTPClientAdapter
 from acb.depends import depends
 ```
@@ -43,7 +43,7 @@ from acb.depends import depends
 
 #### Getting the Adapter
 
-```python
+```text
 # Via ACB dependency injection (recommended)
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
@@ -56,7 +56,7 @@ http_adapter = HTTPClientAdapter()
 
 #### Making Requests
 
-```python
+```text
 # Using context manager (recommended)
 async with http_adapter as client:
     response = await client.get("https://api.example.com/data")
@@ -78,7 +78,7 @@ Creates configured async HTTP client.
 
 **Example:**
 
-```python
+```text
 client = await http_adapter._create_client()
 try:
     response = await client.get("https://api.example.com/endpoint")
@@ -225,13 +225,13 @@ from dataclasses import dataclass
 
 #### Constructor
 
-```python
+```text
 ComponentHealth(
     name: str,
     status: HealthStatus,
     message: str,
     latency_ms: float | None = None,
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict),
 )
 ```
 
@@ -274,7 +274,7 @@ async def check_database_health() -> ComponentHealth:
 
 #### Example: HTTP Client Health Check
 
-```python
+```text
 from mcp_common.health import ComponentHealth, HealthStatus
 
 
@@ -351,11 +351,11 @@ from mcp_common.health import HealthCheckResponse
 
 #### Constructor
 
-```python
+```text
 HealthCheckResponse(
     status: HealthStatus,
     components: list[ComponentHealth],
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=datetime.now),
 )
 ```
 
@@ -421,7 +421,7 @@ from mcp_common.http_health import check_http_client_health
 
 #### Signature
 
-```python
+```text
 async def check_http_client_health(
     http_client: HTTPClientAdapter | None = None,
     test_url: str | None = None,
@@ -498,7 +498,7 @@ from mcp_common.http_health import check_http_connectivity
 
 #### Signature
 
-```python
+```text
 async def check_http_connectivity(
     test_url: str = "https://www.google.com",
     timeout_ms: float = 5000,
@@ -723,7 +723,7 @@ Display welcome panel with server features.
 
 **Example:**
 
-```python
+```text
 from mcp_common.ui import ServerPanels
 
 ServerPanels.welcome(
@@ -761,7 +761,7 @@ Display health status panel for multiple components.
 
 **Example:**
 
-```python
+```text
 from mcp_common.ui import ServerPanels
 from mcp_common.health import ComponentHealth, HealthStatus
 
@@ -1242,7 +1242,7 @@ ______________________________________________________________________
 
 ### 1. Use ACB Dependency Injection
 
-```python
+```text
 # ✅ Good: Use DI container
 from acb.depends import depends
 
@@ -1254,7 +1254,7 @@ http_adapter = HTTPClientAdapter()
 
 ### 2. Always Measure Health Check Latency
 
-```python
+```text
 # ✅ Good: Include latency measurement
 start_time = time.perf_counter()
 # ... perform check ...
@@ -1270,7 +1270,7 @@ return ComponentHealth(
 
 ### 3. Provide Actionable Metadata
 
-```python
+```text
 # ✅ Good: Detailed metadata
 return ComponentHealth(
     name="database",
@@ -1286,7 +1286,7 @@ return ComponentHealth(
 
 ### 4. Use Context Managers for HTTP Clients
 
-```python
+```text
 # ✅ Good: Automatic cleanup
 async with http_adapter as client:
     response = await client.get(url)
@@ -1304,12 +1304,12 @@ await client.aclose()
 async def check_service() -> ComponentHealth:
     try:
         # Check logic
-        return ComponentHealth(status=HealthStatus.HEALTHY, ...)
+        return ComponentHealth(status=HealthStatus.HEALTHY)
     except Exception as e:
         return ComponentHealth(
             status=HealthStatus.UNHEALTHY,
             message=f"Check failed: {e}",
-            metadata={"error": str(e)}
+            metadata={"error": str(e)},
         )
 ```
 

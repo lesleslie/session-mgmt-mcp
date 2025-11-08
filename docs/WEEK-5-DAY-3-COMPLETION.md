@@ -270,7 +270,7 @@ ______________________________________________________________________
 
 ### Pattern 1: Async/Await Testing with Mocks
 
-```python
+```text
 @pytest.mark.asyncio
 async def test_store_session_success(self) -> None:
     """Should store session using aiocache."""
@@ -554,7 +554,7 @@ ______________________________________________________________________
 
 The memory_optimizer.py tests mock database operations. For production confidence, add integration tests:
 
-```python
+```text
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_compression_with_real_database(tmp_path):

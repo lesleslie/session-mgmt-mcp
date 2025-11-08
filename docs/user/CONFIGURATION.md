@@ -437,7 +437,7 @@ export MIGRATION_TIMEOUT=300
 
 ### Validation Script
 
-```python
+```text
 #!/usr/bin/env python3
 """Validate Session Management MCP configuration."""
 

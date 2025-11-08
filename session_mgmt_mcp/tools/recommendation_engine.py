@@ -38,12 +38,12 @@ class RecommendationEngine:
     """Learn from execution history to improve recommendations."""
 
     @classmethod
-    def _get_cached_result(cls, project: str, days: int) -> dict[str, Any] | None:
+    async def _get_cached_result(cls, project: str, days: int) -> dict[str, Any] | None:
         """Get cached analysis result if available."""
         from .history_cache import get_cache
 
         cache = get_cache()
-        return cache.get(project, days)
+        return await cache.get(project, days)
 
     @classmethod
     def _filter_results_by_date(
@@ -67,12 +67,14 @@ class RecommendationEngine:
         return filtered_results
 
     @classmethod
-    def _cache_result(cls, project: str, days: int, result: dict[str, Any]) -> None:
+    async def _cache_result(
+        cls, project: str, days: int, result: dict[str, Any]
+    ) -> None:
         """Cache analysis result."""
         from .history_cache import get_cache
 
         cache = get_cache()
-        cache.set(project, days, result)
+        await cache.set(project, days, result)
 
     @classmethod
     async def analyze_history(
@@ -96,7 +98,7 @@ class RecommendationEngine:
         """
         # Check cache first
         if use_cache:
-            if cached_result := cls._get_cached_result(project, days):
+            if cached_result := await cls._get_cached_result(project, days):
                 return cached_result
 
         end_date = datetime.now()
@@ -127,7 +129,7 @@ class RecommendationEngine:
 
         # Cache the result
         if use_cache:
-            cls._cache_result(project, days, analysis_result)
+            await cls._cache_result(project, days, analysis_result)
 
         return analysis_result
 

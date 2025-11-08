@@ -19,10 +19,12 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 ## Priority 1: Critical Zero-Coverage Files (0% → 60%+)
 
 ### File 1: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (186 lines, 0%)
+
 **Why Critical**: Core DuckPGQ graph adapter for knowledge graph operations
 **Test Priority**: High
 **Effort**: 4-6 hours
 **Tests Needed**:
+
 - Node CRUD operations (create, read, update, delete)
 - Edge/relationship management
 - Graph traversal queries
@@ -30,10 +32,12 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - Error handling for invalid graph structures
 
 ### File 2: `session_mgmt_mcp/context_manager.py` (261 lines, 0%)
+
 **Why Critical**: Session context preservation during interruptions
 **Test Priority**: High
 **Effort**: 5-7 hours
 **Tests Needed**:
+
 - Context snapshot creation
 - Context restoration
 - Interruption detection
@@ -41,10 +45,12 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - Concurrent access safety
 
 ### File 3: `session_mgmt_mcp/team_knowledge.py` (302 lines, 0%)
+
 **Why Critical**: Team collaboration and knowledge sharing features
 **Test Priority**: Medium
 **Effort**: 6-8 hours
 **Tests Needed**:
+
 - Team creation and management
 - Permission/access control
 - Knowledge search across teams
@@ -52,20 +58,24 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - Team statistics aggregation
 
 ### File 4: `session_mgmt_mcp/tools/health_tools.py` (28 lines, 0%)
+
 **Why Critical**: System health monitoring
 **Test Priority**: High (small, easy win)
 **Effort**: 1-2 hours
 **Tests Needed**:
+
 - Health check endpoint
 - Dependency availability checks
 - System resource monitoring
 - Error state detection
 
 ### File 5: `session_mgmt_mcp/tools/validated_memory_tools.py` (208 lines, 0%)
+
 **Why Critical**: Memory validation and integrity
 **Test Priority**: High
 **Effort**: 4-5 hours
 **Tests Needed**:
+
 - Input validation
 - Schema validation
 - Data integrity checks
@@ -75,12 +85,15 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 ## Priority 2: Low-Coverage Refactored Files (Complexity Fixes)
 
 ### File 6: `session_mgmt_mcp/llm_providers.py` (30% → 70% target, 351 missing lines)
+
 **Refactored Functions**:
+
 - `OllamaProvider::is_available()` (helper: `_check_with_mcp_common`, `_check_with_aiohttp`)
 - `OllamaProvider::stream_generate()` (helper: `_stream_with_mcp_common`, `_stream_with_aiohttp`)
 - `validate_llm_api_keys_at_startup()` (helpers: `_get_configured_providers`, `_validate_provider_with_security`, `_validate_provider_basic`)
 
 **Tests Needed**:
+
 - Test `_check_with_mcp_common` success and failure paths
 - Test `_check_with_aiohttp` fallback when mcp-common unavailable
 - Test `_stream_with_mcp_common` chunk processing
@@ -93,13 +106,16 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 **Effort**: 6-8 hours
 
 ### File 7: `session_mgmt_mcp/tools/knowledge_graph_tools.py` (13.68% → 60%, 239 missing lines)
+
 **Refactored Functions**:
+
 - `_extract_entities_from_context_impl()` (helpers: `_extract_patterns_from_context`, `_auto_create_entity_if_new`, `_format_extraction_output`)
 - `_batch_create_entities_impl()` (helpers: similar pattern extraction)
 - `_get_knowledge_graph_stats_impl()` (helpers: `_format_entity_types`, `_format_relationship_types`)
 - `_search_entities_impl()` (helper: `_format_entity_search_results`)
 
 **Tests Needed**:
+
 - Test `_extract_patterns_from_context` with various entity types
 - Test `_auto_create_entity_if_new` with existing and new entities
 - Test `_format_extraction_output` with auto_create enabled/disabled
@@ -112,30 +128,37 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 ## Priority 3: Medium-Coverage Files Needing Improvement
 
 ### File 8: `session_mgmt_mcp/tools/monitoring_tools.py` (11.34% → 50%, 318 missing lines)
+
 **Effort**: 5-7 hours
 **Focus**: App activity monitoring, file system watching, context insights
 
 ### File 9: `session_mgmt_mcp/search_enhanced.py` (11.47% → 60%, 197 missing lines)
+
 **Effort**: 4-6 hours
 **Focus**: Faceted search, aggregations, full-text indexing
 
 ### File 10: `session_mgmt_mcp/tools/search_tools.py` (17.01% → 60%, 348 missing lines)
+
 **Effort**: 6-8 hours
 **Focus**: Advanced search capabilities, pagination, filtering
 
 ## Priority 4: Fix Failing Tests
 
 ### Issue 1: `test_perform_strategic_compaction_returns_list` (TIMEOUT)
+
 **Problem**: Recursive glob `**/*.pyc` scans entire project including `.venv`
 **Solution Options**:
+
 1. Mock filesystem operations in test
-2. Mark test as `@pytest.mark.slow` and exclude from coverage runs
-3. Fix `_cleanup_temp_files()` to exclude `.venv` and large directories
+1. Mark test as `@pytest.mark.slow` and exclude from coverage runs
+1. Fix `_cleanup_temp_files()` to exclude `.venv` and large directories
 
 **Recommended**: Option 1 (mock) + Option 2 (mark slow) for quick wins
 
 ### Issue 2: 99 Failing Tests (Missing DI/Test Fixtures)
+
 **Categories**:
+
 - SessionPermissionsManager not registered in DI (22 tests)
 - ReflectionDatabase initialization failures (31 tests)
 - Advanced search missing implementations (24 tests)
@@ -144,7 +167,9 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 **Solution**: Complete DI registration for all components
 
 ### Issue 3: 127 Test Errors (Missing Implementations)
+
 **Categories**:
+
 - Performance tests (12 errors) - need benchmark baselines
 - Security tests (5 errors) - need security test infrastructure
 - Advanced search tests (30 errors) - need advanced search implementation
@@ -155,31 +180,37 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 ## Test Writing Strategy
 
 ### Phase 1: Quick Wins (Week 1 - Days 1-2)
+
 **Target**: 45.61% → 55% (+1,355 lines)
+
 1. Fix `test_perform_strategic_compaction` with mocks
-2. Add tests for `health_tools.py` (28 lines, easy)
-3. Add tests for refactored helper functions in `memory_tools.py` (current 84% → 90%)
-4. Add tests for `server.py` helpers (current 65% → 75%)
+1. Add tests for `health_tools.py` (28 lines, easy)
+1. Add tests for refactored helper functions in `memory_tools.py` (current 84% → 90%)
+1. Add tests for `server.py` helpers (current 65% → 75%)
 
 **Estimated Effort**: 8-10 hours
 
 ### Phase 2: Core Coverage (Week 1 - Days 3-5)
+
 **Target**: 55% → 70% (+2,159 lines)
+
 1. Complete `llm_providers.py` helper function tests
-2. Complete `knowledge_graph_tools.py` helper function tests
-3. Add tests for `knowledge_graph_adapter.py` (186 lines, 0% → 60%)
-4. Add tests for `validated_memory_tools.py` (208 lines, 0% → 60%)
-5. Add tests for `context_manager.py` (261 lines, 0% → 60%)
+1. Complete `knowledge_graph_tools.py` helper function tests
+1. Add tests for `knowledge_graph_adapter.py` (186 lines, 0% → 60%)
+1. Add tests for `validated_memory_tools.py` (208 lines, 0% → 60%)
+1. Add tests for `context_manager.py` (261 lines, 0% → 60%)
 
 **Estimated Effort**: 25-30 hours
 
 ### Phase 3: Advanced Features (Week 2)
+
 **Target**: 70% → 80%+ (+1,439 lines)
+
 1. Complete `team_knowledge.py` tests (302 lines, 0% → 60%)
-2. Improve `monitoring_tools.py` (11% → 50%)
-3. Improve `search_enhanced.py` (11% → 60%)
-4. Improve `search_tools.py` (17% → 60%)
-5. Fix remaining failing tests and errors
+1. Improve `monitoring_tools.py` (11% → 50%)
+1. Improve `search_enhanced.py` (11% → 60%)
+1. Improve `search_tools.py` (17% → 60%)
+1. Fix remaining failing tests and errors
 
 **Estimated Effort**: 30-35 hours
 
@@ -195,18 +226,18 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 
 - **Coverage Target**: 80%+ (11,516+ lines covered)
 - **Test Count Target**: 1,400+ tests (from current 1,152)
-- **Failing Tests Target**: <10 (from current 99)
-- **Test Errors Target**: <5 (from current 127)
-- **Test Runtime Target**: <5 minutes for full suite (excluding slow tests)
+- **Failing Tests Target**: \<10 (from current 99)
+- **Test Errors Target**: \<5 (from current 127)
+- **Test Runtime Target**: \<5 minutes for full suite (excluding slow tests)
 
 ## Immediate Next Steps
 
 1. ✅ **COMPLETED**: Fix type hint issues (`import typing as t`)
-2. ✅ **COMPLETED**: Establish baseline coverage (45.61%)
-3. ✅ **COMPLETED**: Identify low-coverage files and refactored functions
-4. **TODO**: Mark `test_perform_strategic_compaction` as slow and mock filesystem
-5. **TODO**: Begin Phase 1 with `health_tools.py` tests (easiest win)
-6. **TODO**: Add tests for all refactored helper functions
+1. ✅ **COMPLETED**: Establish baseline coverage (45.61%)
+1. ✅ **COMPLETED**: Identify low-coverage files and refactored functions
+1. **TODO**: Mark `test_perform_strategic_compaction` as slow and mock filesystem
+1. **TODO**: Begin Phase 1 with `health_tools.py` tests (easiest win)
+1. **TODO**: Add tests for all refactored helper functions
 
 ## Notes
 

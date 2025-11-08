@@ -390,7 +390,7 @@ ______________________________________________________________________
 
 **❌ DON'T DO THIS:**
 
-```python
+```text
 # Using strings as DI keys
 CLAUDE_DIR_KEY = "paths.claude_dir"
 depends.set(CLAUDE_DIR_KEY, claude_dir)
@@ -402,7 +402,7 @@ claude_dir = depends.get_sync(CLAUDE_DIR_KEY)
 
 **✅ DO THIS INSTEAD:**
 
-```python
+```text
 @dataclass(frozen=True)
 class SessionPaths:
     claude_dir: Path
@@ -446,7 +446,7 @@ async def get_service() -> SomeService:
 
 **❌ DON'T DO THIS:**
 
-```python
+```text
 class SessionPaths:
     def __init__(self):
         self.claude_dir = Path.home() / ".claude"
@@ -459,7 +459,7 @@ paths.claude_dir = Path("/tmp")  # ❌ Mutable, not thread-safe
 
 **✅ DO THIS INSTEAD:**
 
-```python
+```text
 @dataclass(frozen=True)
 class SessionPaths:
     claude_dir: Path
@@ -517,7 +517,7 @@ ______________________________________________________________________
 
 ### Pattern 1: Injecting Test Dependencies
 
-```python
+```text
 import pytest
 from acb.depends import depends
 from bevy import get_container

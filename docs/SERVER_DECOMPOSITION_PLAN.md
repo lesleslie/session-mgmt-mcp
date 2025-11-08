@@ -311,7 +311,7 @@ ______________________________________________________________________
 
 #### Key Components
 
-```python
+```text
 class AdvancedFeaturesHub:
     """NEW: Central hub for optional advanced features"""
 
@@ -418,7 +418,7 @@ ______________________________________________________________________
 
 #### Key Components
 
-```python
+```text
 # Session Initialization Helpers (300 lines)
 def _setup_claude_directory(output: list[str]) -> dict[str, Any]:
     """Setup Claude directory structure"""
@@ -553,7 +553,7 @@ ______________________________________________________________________
    - All `_format_*` functions (40+ functions)
    - Keep original functions as aliases pointing to new location
    - Example:
-     ```python
+     ```text
      # server.py (temporary bridge)
      from session_mgmt_mcp.utils.server_helpers import _format_worktree_status
 
@@ -569,7 +569,7 @@ ______________________________________________________________________
 
 1. **Update imports in server.py**
 
-   ```python
+   ```text
    from session_mgmt_mcp.utils.server_helpers import (
        _format_worktree_status,
        _setup_claude_directory,
@@ -662,7 +662,7 @@ ______________________________________________________________________
 
 1. **Create `AdvancedFeaturesHub` class in `advanced_features.py`**
 
-   ```python
+   ```text
    class AdvancedFeaturesHub:
        def __init__(self, logger: SessionLogger):
            self.logger = logger
@@ -682,7 +682,7 @@ ______________________________________________________________________
 
 1. **Update tool registration**
 
-   ```python
+   ```text
    # tools/advanced_tools.py (NEW)
    def register_advanced_tools(mcp: FastMCP, features_hub: AdvancedFeaturesHub):
        @mcp.tool()
@@ -720,7 +720,7 @@ ______________________________________________________________________
 
 1. **Create `MCPServerCore` class in `server_core.py`**
 
-   ```python
+   ```text
    class MCPServerCore:
        def __init__(self):
            self.logger = SessionLogger(Path.home() / ".claude" / "logs")
@@ -830,9 +830,9 @@ ______________________________________________________________________
 
 1. **Add deprecation warnings for direct imports**
 
-   ```python
-   # server.py
-   import warnings
+```text
+# server.py
+import warnings
 
    def __getattr__(name: str):
        if name in ["SessionLogger", "SessionPermissionsManager"]:
@@ -844,7 +844,7 @@ ______________________________________________________________________
            from session_mgmt_mcp.server_core import ...
            return ...
        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-   ```
+```
 
 1. **Update all internal imports**
 
@@ -965,7 +965,7 @@ class QualitySettings(Settings):
 **Current:** Custom `SessionLogger` class
 **ACB Pattern:** Structured logging with context propagation
 
-```python
+```text
 # server_core.py with ACB logging
 from acb.logging import get_logger, log_context
 
@@ -1416,7 +1416,7 @@ ______________________________________________________________________
 
 ### Current (server.py imports)
 
-```python
+```text
 # Internal (20+ modules)
 from session_mgmt_mcp.reflection_tools import ...
 from session_mgmt_mcp.core.session_manager import ...
@@ -1446,7 +1446,7 @@ import shutil
 
 #### server_core.py imports
 
-```python
+```text
 from fastmcp import FastMCP
 from session_mgmt_mcp.quality_engine import QualityEngine
 from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
@@ -1460,7 +1460,7 @@ import asyncio
 
 #### quality_engine.py imports
 
-```python
+```text
 from session_mgmt_mcp.utils.quality_utils_v2 import ...
 from session_mgmt_mcp.reflection_tools import ...
 from session_mgmt_mcp.utils.git_operations import ...
@@ -1471,7 +1471,7 @@ from dataclasses import dataclass
 
 #### advanced_features.py imports
 
-```python
+```text
 from session_mgmt_mcp.multi_project_coordinator import ...
 from session_mgmt_mcp.advanced_search import ...
 from session_mgmt_mcp.natural_scheduler import ...
@@ -1485,7 +1485,7 @@ from typing import TYPE_CHECKING
 
 #### utils/server_helpers.py imports
 
-```python
+```text
 from session_mgmt_mcp.utils.format_utils import ...
 from session_mgmt_mcp.utils.quality_utils import ...
 from session_mgmt_mcp.reflection_tools import ...
@@ -1605,7 +1605,7 @@ ______________________________________________________________________
 
 ### Example 1: Dependency Injection in QualityEngine
 
-```python
+```text
 # Before (server.py)
 session_logger = SessionLogger(claude_dir / "logs")
 
@@ -1640,7 +1640,7 @@ result = await quality_engine.calculate_quality_score()
 
 ### Example 2: Caching in QualityEngine
 
-```python
+```text
 # Before (no caching)
 def _count_significant_files(current_dir: Path) -> int:
     file_count = 0
@@ -1704,7 +1704,7 @@ class QualityEngine:
 
 ### Example 4: Structured Logging
 
-```python
+```text
 # Before (custom SessionLogger)
 session_logger.info(f"Processing quality score for {project}")
 session_logger.error(f"Quality scoring failed: {error}")

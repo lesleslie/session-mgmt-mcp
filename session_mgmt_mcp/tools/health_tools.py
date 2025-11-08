@@ -70,7 +70,7 @@ async def get_health_status(ready: bool = False) -> dict[str, t.Any]:
 
     # Create health response
     response = HealthCheckResponse.create(
-        components=components,
+        components=components,  # type: ignore[arg-type]  # ComponentHealth structurally compatible
         version=version,
         start_time=_SERVER_START_TIME,
         metadata={"check_type": "readiness" if ready else "liveness"},

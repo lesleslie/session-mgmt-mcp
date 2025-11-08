@@ -13,6 +13,7 @@ import hashlib
 import json
 import time
 import typing as t
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -181,10 +182,13 @@ class ReflectionDatabaseAdapter:
 
         """
         if self.onnx_session and self.tokenizer:
+            # Type narrowing: onnx_session is guaranteed non-None here
+            onnx_session = self.onnx_session
+            tokenizer = self.tokenizer
 
             def _get_embedding() -> list[float]:
                 # Tokenize text
-                encoded = self.tokenizer(
+                encoded = tokenizer(
                     text,
                     truncation=True,
                     padding=True,
@@ -192,7 +196,7 @@ class ReflectionDatabaseAdapter:
                 )
 
                 # Run ONNX inference
-                outputs = self.onnx_session.run(
+                outputs = onnx_session.run(
                     None,
                     {
                         "input_ids": encoded["input_ids"],
@@ -217,7 +221,8 @@ class ReflectionDatabaseAdapter:
                 normalized = mean_pooled / norms
 
                 # Convert to float32 to match DuckDB FLOAT type
-                return normalized[0].astype(np.float32).tolist()
+                result: list[float] = normalized[0].astype(np.float32).tolist()
+                return result
 
             return await asyncio.get_event_loop().run_in_executor(None, _get_embedding)
 

@@ -43,7 +43,7 @@ class HTTPClientAdapter:
 
 **session-mgmt Approach:**
 
-```python
+```text
 # Phase 1: Install ACB directly, use raw ACB APIs
 from acb.config import Settings
 from acb.depends import depends
@@ -181,7 +181,7 @@ Benefits:
 
 **Migration Strategy:**
 
-```python
+```text
 # Phase 5 (Week 10-11): One-step migration
 # Before:
 from session_mgmt_mcp.config import (
@@ -246,7 +246,7 @@ class RateLimiterAdapter:
 
 **session-mgmt Plan:**
 
-```python
+```text
 # Phase 1: Direct ACB usage (implied, not explicitly mentioned)
 # Would need to implement or wait for mcp-common
 
@@ -329,7 +329,7 @@ def configure_di():
 
 **session-mgmt Plan (Phase 2.7 - IN PROGRESS):**
 
-```python
+```text
 # session_mgmt_mcp/di/ - Direct ACB wiring
 from acb.depends import depends
 
@@ -630,7 +630,7 @@ session-mgmt-mcp/
 
 **Migration Strategy:**
 
-```python
+```text
 # Before: String formatting (128 functions, 2,500 lines)
 def format_quality_report(score, metrics, recommendations):
     output = f"Quality Score: {score}/100\n"

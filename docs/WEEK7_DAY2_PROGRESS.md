@@ -94,7 +94,7 @@ Removed `_register_path()` and `_resolve_path()` as they're no longer needed wit
 
 **Changes:**
 
-```python
+```text
 # Before:
 from session_mgmt_mcp.di import CLAUDE_DIR_KEY, LOGS_DIR_KEY, configure, reset
 
@@ -133,7 +133,7 @@ def test_configure_registers_singletons(...):
 
 1. **Replaced String Key Import with SessionPaths**
 
-```python
+```text
 # Before:
 from session_mgmt_mcp.di.constants import CLAUDE_DIR_KEY
 
@@ -143,7 +143,7 @@ from session_mgmt_mcp.di import SessionPaths
 
 2. **Updated `_resolve_claude_dir()` to Use Type-Safe DI**
 
-```python
+```text
 # Before (Line 144 - Root cause of TypeError):
 def _resolve_claude_dir() -> Path:
     with suppress(KeyError, AttributeError, RuntimeError, TypeError):

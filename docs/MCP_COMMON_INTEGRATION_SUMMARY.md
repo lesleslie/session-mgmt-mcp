@@ -200,7 +200,7 @@ All integrations maintain **100% backward compatibility**:
 
 ### HTTPClientAdapter
 
-```python
+```text
 if self._use_mcp_common and self.http_adapter:
     # Use HTTPClientAdapter (11x faster)
     response = await self.http_adapter.post(url, json=data)

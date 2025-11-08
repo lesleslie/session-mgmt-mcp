@@ -146,7 +146,7 @@ ______________________________________________________________________
 
 1. **Proper async/await testing** (100% correct usage)
 
-   ```python
+   ```text
    @pytest.mark.asyncio
    async def test_create_project_group(self) -> None:
        result = await coordinator.create_project_group(...)
@@ -345,7 +345,7 @@ ______________________________________________________________________
 **Problem:**
 Modules implement custom patterns instead of ACB's battle-tested adapters:
 
-```python
+```text
 # ❌ CURRENT: Custom storage abstraction
 class SessionStorage(ABC):
     @abstractmethod
@@ -395,7 +395,7 @@ ______________________________________________________________________
 **Problem:**
 Tests require extensive mock setup due to lack of DI:
 
-```python
+```text
 # Lines 77-92 from test_multi_project_coordinator.py
 mock_db = MagicMock()
 mock_db.conn = MagicMock()
@@ -407,7 +407,7 @@ assert mock_db.conn.execute.call_count >= 1  # Weak assertion
 
 **Better with DI:**
 
-```python
+```text
 @pytest.fixture
 def coordinator(mock_reflection_db):
     depends.set(ReflectionDatabase, mock_reflection_db)
@@ -517,7 +517,7 @@ class ProjectActivityMonitor(AdapterBase):
 
 **Test Improvements:**
 
-```python
+```text
 # Use fixtures for repeated setup
 @pytest.fixture
 def activity_monitor():
@@ -607,7 +607,7 @@ class ServerlessConfigManager:
 
 **Test Improvements:**
 
-```python
+```text
 # Add integration tests for ACB cache adapter
 @pytest.mark.integration
 async def test_acb_cache_storage_with_real_cache():

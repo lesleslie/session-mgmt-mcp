@@ -107,7 +107,7 @@ Create a new entity (node) in the knowledge graph.
 
 **Example:**
 
-```python
+```text
 create_entity(
     name="session-mgmt-mcp",
     entity_type="project",
@@ -172,7 +172,7 @@ Create a relationship between two entities.
 
 **Example:**
 
-```python
+```text
 create_relation(
     from_entity="session-mgmt-mcp",
     to_entity="ACB",
@@ -203,7 +203,7 @@ Search for entities by name or observations.
 
 **Example:**
 
-```python
+```text
 search_entities(query="session management", entity_type="project", limit=5)
 ```
 
@@ -347,7 +347,7 @@ Auto-extract entities from conversation context using pattern matching.
 
 **Example:**
 
-```python
+```text
 extract_entities_from_context(
     context="The session-mgmt-mcp project uses ACB for dependency injection and DuckDB for semantic memory.",
     auto_create=True,
@@ -390,7 +390,7 @@ Bulk create multiple entities in one operation.
 
 **Example:**
 
-```python
+```text
 batch_create_entities(
     [
         {

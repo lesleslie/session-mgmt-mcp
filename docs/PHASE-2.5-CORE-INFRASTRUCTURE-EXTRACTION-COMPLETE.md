@@ -52,7 +52,7 @@ Successfully extracted core infrastructure from server.py to server_core.py, com
 
 ### 1. Singleton Pattern (SessionPermissionsManager)
 
-```python
+```text
 _instance: SessionPermissionsManager | None = None
 _session_id: str | None = None
 _initialized: bool = False
@@ -69,7 +69,7 @@ def __new__(cls, claude_dir: Path) -> Self:
 
 ### 2. FastMCP Lifespan Handler
 
-```python
+```text
 @asynccontextmanager
 async def session_lifecycle(
     app: Any, lifecycle_manager: Any, session_logger: SessionLogger
@@ -84,7 +84,7 @@ async def session_lifecycle(
 
 ### 3. Global Instance Management
 
-```python
+```text
 # server.py - Global instances remain accessible
 claude_dir = Path.home() / ".claude"
 session_logger = SessionLogger(claude_dir / "logs")
@@ -98,7 +98,7 @@ lifecycle_manager = SessionLifecycleManager()
 
 ### Import-Based Delegation Pattern
 
-```python
+```text
 # server.py imports from server_core.py
 from session_mgmt_mcp.server_core import (
     SessionLogger,

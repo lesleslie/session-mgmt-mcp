@@ -33,7 +33,7 @@ ______________________________________________________________________
 
 #### TestSessionManagerInitialization (3 tests fixed)
 
-```python
+```text
 # Before: assert hasattr(manager, "session_state")
 # After:
 assert hasattr(manager, "logger")
@@ -42,7 +42,7 @@ assert hasattr(manager, "current_project")
 
 #### TestSessionLifecycle (5 tests fixed)
 
-```python
+```text
 # Now tests actual methods:
 - calculate_quality_score()
 - Project context analysis
@@ -51,7 +51,7 @@ assert hasattr(manager, "current_project")
 
 #### TestSessionStateManagement (4 tests fixed)
 
-```python
+```text
 # Now tests actual behavior:
 - _quality_history tracking
 - project tracking
