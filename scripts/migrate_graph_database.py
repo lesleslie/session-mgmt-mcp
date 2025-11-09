@@ -51,7 +51,7 @@ def get_backup_path() -> Path:
     return get_data_dir() / f"knowledge_graph_backup_{timestamp}.duckdb"
 
 
-async def migrate_graph_database(  # noqa: C901 - Migration script complexity expected
+async def migrate_graph_database(
     *,
     dry_run: bool = False,
     backup: bool = False,
@@ -72,13 +72,7 @@ async def migrate_graph_database(  # noqa: C901 - Migration script complexity ex
         RuntimeError: If migration fails
 
     """
-    import duckdb
-    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
-        KnowledgeGraphDatabaseAdapter,
-    )
-
     old_db_path = get_old_db_path()
-    new_db_path = get_new_db_path()
 
     # Check if old database exists
     if not old_db_path.exists():
@@ -86,97 +80,163 @@ async def migrate_graph_database(  # noqa: C901 - Migration script complexity ex
         raise FileNotFoundError(msg)
 
     if verbose:
-        print("📊 Migration Configuration:")
-        print(f"  Old DB: {old_db_path}")
-        print(f"  New DB: {new_db_path}")
-        print(f"  Dry Run: {dry_run}")
-        print(f"  Backup: {backup}")
-        print()
+        _print_migration_config(old_db_path, dry_run, backup)
 
     # Create backup if requested
     if backup and not dry_run:
-        backup_path = get_backup_path()
-        if verbose:
-            print(f"💾 Creating backup at {backup_path}...")
-        shutil.copy2(old_db_path, backup_path)
-        if verbose:
-            print("✅ Backup created successfully")
-            print()
+        await _create_backup_graph(old_db_path, verbose)
 
-    # Connect to old database (read-only)
+    # Read data from old database
+    entities, relationships = await _read_old_graph_data(old_db_path, verbose)
+
+    # If dry run, just report what would be migrated
+    if dry_run:
+        return await _handle_dry_run_graph(entities, relationships)
+
+    # Write to new database using adapter
+    await _migrate_to_new_database(entities, relationships, verbose)
+
+    # Validate migration
+    await _validate_graph_migration(entities, relationships, verbose)
+
+    if verbose:
+        print()
+        print("✅ Migration completed successfully!")
+        print()
+
+    return {
+        "entities_migrated": len(entities),
+        "relationships_migrated": len(relationships),
+        "total_records": len(entities) + len(relationships),
+    }
+
+
+def _print_migration_config(old_db_path, dry_run: bool, backup: bool):
+    """Print migration configuration."""
+    new_db_path = get_new_db_path()
+    print("📊 Migration Configuration:")
+    print(f"  Old DB: {old_db_path}")
+    print(f"  New DB: {new_db_path}")
+    print(f"  Dry Run: {dry_run}")
+    print(f"  Backup: {backup}")
+    print()
+
+
+async def _create_backup_graph(old_db_path, verbose: bool):
+    """Create backup of old database if requested."""
+    backup_path = get_backup_path()
+    if verbose:
+        print(f"💾 Creating backup at {backup_path}...")
+    shutil.copy2(old_db_path, backup_path)
+    if verbose:
+        print("✅ Backup created successfully")
+        print()
+
+
+async def _read_old_graph_data(old_db_path, verbose: bool):
+    """Read entities and relationships from old database."""
+    import duckdb
+
     if verbose:
         print("📖 Reading from old database...")
 
     old_conn = duckdb.connect(str(old_db_path), read_only=True)
 
-    # Get table list
-    tables_result = old_conn.execute(
+    try:
+        # Get table list
+        tables_result = old_conn.execute(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name IN ('kg_entities', 'kg_relationships')
         """
-        SELECT name FROM sqlite_master
-        WHERE type='table' AND name IN ('kg_entities', 'kg_relationships')
-    """
-    ).fetchall()
-    tables = [row[0] for row in tables_result]
+        ).fetchall()
+        tables = [row[0] for row in tables_result]
 
-    if verbose:
-        print(f"  Found tables: {', '.join(tables)}")
+        if verbose:
+            print(f"  Found tables: {', '.join(tables)}")
 
-    # Read entities
+        # Read entities
+        entities = []
+        if "kg_entities" in tables:
+            entities = await _read_entities(old_conn, verbose)
+
+        # Read relationships
+        relationships = []
+        if "kg_relationships" in tables:
+            relationships = await _read_relationships(old_conn, verbose)
+
+        if verbose:
+            print(f"  Read {len(relationships)} relationships")
+            print()
+
+        return entities, relationships
+    finally:
+        old_conn.close()
+
+
+async def _read_entities(old_conn, verbose: bool):
+    """Read entities from old database."""
+    entity_result = old_conn.execute("SELECT * FROM kg_entities").fetchall()
     entities = []
-    if "kg_entities" in tables:
-        entity_result = old_conn.execute("SELECT * FROM kg_entities").fetchall()
-        for row in entity_result:
-            entities.append(
-                {
-                    "id": row[0],
-                    "name": row[1],
-                    "entity_type": row[2],
-                    "observations": list(row[3]) if row[3] else [],
-                    "properties": row[4] if row[4] else {},
-                    "created_at": row[5],
-                    "updated_at": row[6],
-                    "metadata": row[7] if row[7] else {},
-                }
-            )
+    for row in entity_result:
+        entities.append(
+            {
+                "id": row[0],
+                "name": row[1],
+                "entity_type": row[2],
+                "observations": list(row[3]) if row[3] else [],
+                "properties": row[4] if row[4] else {},
+                "created_at": row[5],
+                "updated_at": row[6],
+                "metadata": row[7] if row[7] else {},
+            }
+        )
 
     if verbose:
         print(f"  Read {len(entities)} entities")
+    return entities
 
-    # Read relationships
+
+async def _read_relationships(old_conn, verbose: bool):
+    """Read relationships from old database."""
+    rel_result = old_conn.execute("SELECT * FROM kg_relationships").fetchall()
     relationships = []
-    if "kg_relationships" in tables:
-        rel_result = old_conn.execute("SELECT * FROM kg_relationships").fetchall()
-        for row in rel_result:
-            relationships.append(
-                {
-                    "id": row[0],
-                    "from_entity": row[1],
-                    "to_entity": row[2],
-                    "relation_type": row[3],
-                    "properties": row[4] if row[4] else {},
-                    "created_at": row[5],
-                    "updated_at": row[6],
-                    "metadata": row[7] if row[7] else {},
-                }
-            )
+    for row in rel_result:
+        relationships.append(
+            {
+                "id": row[0],
+                "from_entity": row[1],
+                "to_entity": row[2],
+                "relation_type": row[3],
+                "properties": row[4] if row[4] else {},
+                "created_at": row[5],
+                "updated_at": row[6],
+                "metadata": row[7] if row[7] else {},
+            }
+        )
 
-    if verbose:
-        print(f"  Read {len(relationships)} relationships")
-        print()
+    return relationships
 
-    old_conn.close()
 
-    # If dry run, just report what would be migrated
-    if dry_run:
-        print("🔍 DRY RUN - No changes will be made")
-        print()
-        print("Would migrate:")
-        print(f"  📦 {len(entities)} entities")
-        print(f"  🔗 {len(relationships)} relationships")
-        print()
-        return {"entities": len(entities), "relationships": len(relationships)}
+async def _handle_dry_run_graph(entities, relationships):
+    """Handle dry run scenario."""
+    print("🔍 DRY RUN - No changes will be made")
+    print()
+    print("Would migrate:")
+    print(f"  📦 {len(entities)} entities")
+    print(f"  🔗 {len(relationships)} relationships")
+    print()
+    return {"entities": len(entities), "relationships": len(relationships)}
 
-    # Write to new database using adapter
+
+async def _migrate_to_new_database(entities, relationships, verbose: bool):
+    """Write data to the new database using the adapter."""
+    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        KnowledgeGraphDatabaseAdapter,
+    )
+
+    new_db_path = get_new_db_path()
+
     if verbose:
         print("✍️  Writing to new ACB-managed database...")
 
@@ -236,6 +296,15 @@ async def migrate_graph_database(  # noqa: C901 - Migration script complexity ex
         if verbose:
             print(f"  ✅ Migrated {len(relationships)} relationships")
 
+
+async def _validate_graph_migration(entities, relationships, verbose: bool):
+    """Validate the graph migration."""
+    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        KnowledgeGraphDatabaseAdapter,
+    )
+
+    new_db_path = get_new_db_path()
+
     # Validate migration
     if verbose:
         print()
@@ -261,17 +330,6 @@ async def migrate_graph_database(  # noqa: C901 - Migration script complexity ex
         if not (entities_match and relationships_match):
             msg = "Migration validation failed - record counts don't match"
             raise RuntimeError(msg)
-
-    if verbose:
-        print()
-        print("✅ Migration completed successfully!")
-        print()
-
-    return {
-        "entities_migrated": len(entities),
-        "relationships_migrated": len(relationships),
-        "total_records": len(entities) + len(relationships),
-    }
 
 
 def main() -> None:

@@ -7,7 +7,7 @@ Provides high-level worktree operations and coordination with session management
 import json
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import time
 from dataclasses import dataclass, field
 from datetime import datetime

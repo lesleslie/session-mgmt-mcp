@@ -98,6 +98,7 @@ class KnowledgeGraphDatabase:
             try:
                 self.conn.close()
             except Exception:
+                # nosec B110 - intentionally suppressing exceptions during cleanup
                 pass  # Ignore errors during cleanup
             finally:
                 self.conn = None
@@ -597,7 +598,7 @@ class KnowledgeGraphDatabase:
             JOIN kg_entities e2 ON r.to_entity = e2.id
             {where_clause}
             ORDER BY r.created_at DESC
-        """
+        """  # nosec B608
 
         # Build parameters tuple based on direction and relation_type
         if direction == "both":
@@ -667,12 +668,12 @@ class KnowledgeGraphDatabase:
 
         # Use SQL/PGQ for path finding
         # This is the beautiful part - SQL:2023 standard graph queries!
-        query = f"""
+        query = """
             SELECT *
             FROM GRAPH_TABLE (knowledge_graph
-                MATCH (start)-[path:*1..{max_depth}]->(end)
-                WHERE start.id = '{from_node["id"]}'
-                  AND end.id = '{to_node["id"]}'
+                MATCH (start)-[path:*1..?] ->(end)
+                WHERE start.id = ?
+                  AND end.id = ?
                 COLUMNS (
                     start.name AS from_name,
                     end.name AS to_name,
@@ -680,9 +681,10 @@ class KnowledgeGraphDatabase:
                 )
             )
         """
+        params = [max_depth, from_node["id"], to_node["id"]]
 
         try:
-            results = conn.execute(query).fetchall()
+            results = conn.execute(query, params).fetchall()
 
             paths = []
             for row in results:

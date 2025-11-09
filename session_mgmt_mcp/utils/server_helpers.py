@@ -12,7 +12,7 @@ Total: 40 functions, ~900 lines
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404
 from contextlib import suppress
 from pathlib import Path
 from typing import Any

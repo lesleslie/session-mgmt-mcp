@@ -349,7 +349,7 @@ class TestRealIntegration:
         """Test with real CrackerjackIntegration but mocked subprocess calls."""
         # Setup mock subprocess
         mock_process = AsyncMock()
-        mock_process.communicate.return_value = (b"All hooks passed successfully", b"")
+        mock_process.communicate.return_value = (b"All checks passed successfully", b"")
         mock_process.returncode = 0
         mock_create_subprocess.return_value = mock_process
 
@@ -362,8 +362,8 @@ class TestRealIntegration:
         mock_create_subprocess.assert_called_once()
         call_args = mock_create_subprocess.call_args
 
-        # Should call with crackerjack --fast, NOT crackerjack lint
-        expected_cmd = ["crackerjack", "--fast"]
+        # Should call with crackerjack --lint, NOT crackerjack lint
+        expected_cmd = ["crackerjack", "--lint"]
         assert call_args[0] == tuple(expected_cmd), (
             f"Expected {expected_cmd}, got {call_args[0]}"
         )
@@ -373,7 +373,7 @@ class TestRealIntegration:
 
         # Verify result format
         assert "Status: Success" in result
-        assert "All hooks passed successfully" in result
+        assert "All checks passed successfully" in result
 
     @pytest.mark.asyncio
     @patch("asyncio.create_subprocess_exec")
@@ -386,11 +386,15 @@ class TestRealIntegration:
 
         # Test command mappings
         test_cases = [
-            ("lint", ["crackerjack", "--fast"]),
-            ("check", ["crackerjack", "--comp"]),
+            ("lint", ["crackerjack", "--lint"]),
+            ("check", ["crackerjack", "--check"]),
             ("test", ["crackerjack", "--test"]),
-            ("format", ["crackerjack", "--fast"]),
-            ("typecheck", ["crackerjack", "--comp"]),
+            ("format", ["crackerjack", "--format"]),
+            ("typecheck", ["crackerjack", "--typecheck"]),
+            ("security", ["crackerjack", "--security"]),
+            ("complexity", ["crackerjack", "--complexity"]),
+            ("analyze", ["crackerjack", "--analyze"]),
+            ("build", ["crackerjack", "--build"]),
             ("clean", ["crackerjack", "--clean"]),
             ("all", ["crackerjack", "--all"]),
         ]

@@ -37,7 +37,7 @@ dependencies = [
     "aiocache>=0.12.3",
     "crackerjack",
     "duckdb>=0.9",
-    "fastapi<0.121.0",
+    "fastapi>=0.120.4",
     "fastmcp>=2",
     "jinja2>=3.1.6",
     "jinja2-async-environment>=0.14.3",

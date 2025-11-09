@@ -267,133 +267,168 @@ async def _get_reflection_db() -> Any | None:
     return db
 
 
-# Import the production-ready hook parser
-try:
-    from .hook_parser import ParseError, parse_hook_output
-except ImportError:
-    # Fallback if hook_parser isn't available
-    logger.warning("hook_parser module not available, using fallback parser")
-    parse_hook_output = None  # type: ignore[assignment]
-    ParseError = None  # type: ignore[assignment,misc,no-redef]
-
-
-def _is_valid_hook_line(line: str) -> bool:
-    """Check if line is a valid hook result line."""
-    return bool(line and "..." in line)
-
-
-def _extract_hook_parts(line: str) -> tuple[str, str] | None:
-    """Extract hook name and status from line."""
-    parts = line.split("...", 1)
-    if len(parts) < 2:
-        return None
-
-    hook_name = parts[0].strip()
-    if not hook_name:
-        return None
-
-    return hook_name, parts[1]
-
-
-def _is_failed_hook(status_part: str) -> bool:
-    """Check if status indicates failure."""
-    return "❌" in status_part or "Failed" in status_part
-
-
-def _is_passed_hook(status_part: str) -> bool:
-    """Check if status indicates success."""
-    return "✅" in status_part or "Passed" in status_part
-
-
-def _parse_fallback_hook_output(stdout: str) -> tuple[list[str], list[str]]:
-    """Fallback parser for hook output when hook_parser unavailable."""
-    passed_hooks = []
-    failed_hooks = []
-
-    for line in stdout.split("\n"):
-        line = line.strip()
-
-        if not _is_valid_hook_line(line):
-            continue
-
-        parts = _extract_hook_parts(line)
-        if parts is None:
-            continue
-
-        hook_name, status_part = parts
-
-        if _is_failed_hook(status_part):
-            failed_hooks.append(hook_name)
-        elif _is_passed_hook(status_part):
-            passed_hooks.append(hook_name)
-
-    return passed_hooks, failed_hooks
-
-
-def _parse_hook_results(stdout: str) -> tuple[list[str], list[str]]:
-    """Parse hook results from stdout to find actual failures.
-
-    Uses the production-ready reverse-parsing algorithm from hook_parser module.
-
-    Expected format:
-        hook-name........... ✅
-        hook-name........... ❌
-
-    Returns:
-        Tuple of (passed_hooks, failed_hooks)
-
-    """
-    passed_hooks: list[str] = []
-    failed_hooks: list[str] = []
-
-    if not stdout or not isinstance(stdout, str):
-        logger.warning("Invalid stdout provided to hook parser")
-        return passed_hooks, failed_hooks
-
-    try:
-        # Use the robust hook_parser if available
-        if parse_hook_output is not None:
-            results = parse_hook_output(stdout)
-            for result in results:
-                if result.passed:
-                    passed_hooks.append(result.hook_name)
-                else:
-                    failed_hooks.append(result.hook_name)
-        else:
-            # Fallback: basic parsing (less robust but works for simple cases)
-            logger.debug("Using fallback hook parser")
-            passed_hooks, failed_hooks = _parse_fallback_hook_output(stdout)
-
-    except ParseError as e:
-        logger.exception(f"Hook parsing failed: {e}")
-    except Exception as e:
-        logger.exception(f"Unexpected error in hook parsing: {e}")
-
-    return passed_hooks, failed_hooks
-
-
 def _format_execution_status(result: CrackerjackResult) -> str:
     """Format execution status for output."""
-    # Parse actual hook results from stdout
-    passed_hooks, failed_hooks = _parse_hook_results(result.stdout)
+    # Determine status based on exit code
+    has_failures = result.exit_code != 0
 
-    # Validate parsing worked
-    if not passed_hooks and not failed_hooks and result.stdout.strip():
-        logger.warning(
-            "Hook parsing returned no results despite non-empty stdout - "
-            "this may indicate a parsing failure or unexpected output format"
-        )
-
-    # Determine true status based on both exit code AND hook failures
-    has_failures = result.exit_code != 0 or len(failed_hooks) > 0
+    # Parse hook results from output to provide detailed status
+    passed_hooks, failed_hooks = _parse_crackerjack_output(result.stdout)
 
     if has_failures:
         status = f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
+
         if failed_hooks:
             status += f"**Failed Hooks**: {', '.join(failed_hooks)}\n"
+
+        # Include stderr if there are failures and it contains relevant information
+        if result.stderr and "error" in result.stderr.lower():
+            status += f"**Error Details**:\n```\n{result.stderr[:500]}...\n```\n"
+
         return status
 
+    if passed_hooks:
+        return f"✅ **Status**: Success ({len(passed_hooks)} hooks passed)\n"
+
     return "✅ **Status**: Success\n"
+
+
+def _parse_crackerjack_output(output: str) -> tuple[list[str], list[str]]:
+    """Parse crackerjack output to extract passed and failed hooks."""
+    passed_hooks = []
+    failed_hooks = []
+
+    lines = output.split("\n")
+
+    for line in lines:
+        # Look for hook lines in format like:
+        # ruff-format....................................................... ✅
+        # bandit............................................................ ❌
+        if _should_parse_line(line):
+            hook_name = _extract_hook_name(line)
+            if hook_name:
+                _categorize_hook(hook_name, line, passed_hooks, failed_hooks)
+
+    return passed_hooks, failed_hooks
+
+
+def _should_parse_line(line: str) -> bool:
+    """Check if a line should be parsed for hook results."""
+    return "..." in line and (
+        "✅" in line or "❌" in line or "Passed" in line or "Failed" in line
+    )
+
+
+def _extract_hook_name(line: str) -> str | None:
+    """Extract hook name from a line."""
+    parts = line.split("...")
+    if parts:
+        hook_name = parts[0].strip()
+        return hook_name if hook_name and not hook_name.startswith("-") else None
+    return None
+
+
+def _categorize_hook(
+    hook_name: str, line: str, passed_hooks: list[str], failed_hooks: list[str]
+) -> None:
+    """Categorize hook as passed or failed based on the line content."""
+    if "❌" in line or "Failed" in line:
+        failed_hooks.append(hook_name)
+    elif "✅" in line or "Passed" in line:
+        passed_hooks.append(hook_name)
+
+
+def _parse_hook_results_table(output: str) -> str:
+    """Parse and extract detailed hook results tables from output."""
+    lines = output.split("\n")
+    results_table = []
+    in_results_table = False
+
+    for line in lines:
+        # Look for the results table after stages
+        if "Fast Hook Results:" in line or "Comprehensive Hook Results:" in line:
+            in_results_table = True
+            results_table.append(line)
+            continue
+
+        if in_results_table:
+            # End the results table if we encounter a new section or empty line after results
+            if line.strip() == "" and results_table and results_table[-1].strip() != "":
+                # Continue if this is just a separator line in the results table
+                pass
+            elif "⏳ Started:" in line or (
+                "----------------------------------------------------------------------"
+                in line
+                and results_table
+            ):
+                # End the results section when we reach a new stage
+                break
+            # Check if this line looks like a results entry (contains ::)
+            elif "::" in line or line.strip() == "":
+                results_table.append(line)
+            else:
+                # If it's not a results line, end parsing
+                break
+
+    return "\n".join(results_table) if results_table else ""
+
+
+def _parse_hook_stage_results(output: str) -> str:
+    """Parse and extract hook results for all stages."""
+    lines = output.split("\n")
+    all_stage_results = []
+
+    # Look for both fast and comprehensive results sections
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if "Fast Hook Results:" in line or "Comprehensive Hook Results:" in line:
+            stage_results = _extract_single_stage_results(lines, i)
+            all_stage_results.extend(stage_results)
+            # Skip past the extracted results to avoid reprocessing
+            i += len(
+                stage_results
+            )  # This might not be accurate, so let's continue normally
+        i += 1
+
+    return "\n".join(all_stage_results) if all_stage_results else ""
+
+
+def _extract_single_stage_results(lines: list[str], start_index: int) -> list[str]:
+    """Extract results for a single stage starting from start_index."""
+    stage_results = [lines[start_index]]
+    j = start_index + 1
+
+    while j < len(lines):
+        if _should_add_to_results(lines[j]):
+            stage_results.append(lines[j])
+            j += 1
+        elif _is_new_section_start(lines[j]):
+            # Next major section starts, stop collecting
+            break
+        else:
+            # Not part of results table, stop collecting
+            break
+
+    return stage_results
+
+
+def _should_add_to_results(line: str) -> bool:
+    """Check if line should be added to results."""
+    next_line = line.strip()
+    return next_line == "" or "::" in line or _is_separator_line(next_line)
+
+
+def _is_separator_line(line: str) -> bool:
+    """Check if line is a separator line (contains only dashes and spaces)."""
+    return (
+        "-" in line and len(line.strip()) > 10 and all(c in "- " for c in line.strip())
+    )
+
+
+def _is_new_section_start(line: str) -> bool:
+    """Check if line indicates a new section start."""
+    return "⏳ Started:" in line or "Workflow" in line or "Building" in line
 
 
 def _format_output_sections(result: CrackerjackResult) -> str:
@@ -466,31 +501,36 @@ def _format_basic_result(result: Any, command: str) -> str:
     """Format basic execution result with status and output."""
     formatted = f"🔧 **Crackerjack {command}** executed\n\n"
 
-    # Parse actual hook results from stdout
-    passed_hooks, failed_hooks = _parse_hook_results(result.stdout)
+    # Parse hook results from output to provide detailed status
+    passed_hooks, failed_hooks = _parse_crackerjack_output(result.stdout)
 
-    # Validate parsing worked
-    if not passed_hooks and not failed_hooks and result.stdout.strip():
-        logger.warning(
-            "Hook parsing returned no results despite non-empty stdout - "
-            "this may indicate a parsing failure or unexpected output format"
-        )
+    # Also extract detailed results tables if available
+    hook_results_tables = _parse_hook_stage_results(result.stdout)
 
-    # Determine true status based on both exit code AND hook failures
-    has_failures = result.exit_code != 0 or len(failed_hooks) > 0
+    # Determine status based on exit code
+    has_failures = result.exit_code != 0
 
     if has_failures:
         formatted += f"❌ **Status**: Failed (exit code: {result.exit_code})\n"
         if failed_hooks:
             formatted += f"**Failed Hooks**: {', '.join(failed_hooks)}\n"
+        if passed_hooks:
+            formatted += f"**Passed Hooks**: {', '.join(passed_hooks)}\n"
     else:
         formatted += "✅ **Status**: Success\n"
+        if passed_hooks:
+            formatted += f"**Passed Hooks**: {', '.join(passed_hooks)}\n"
+
+    # Include hook results tables if available
+    if hook_results_tables.strip():
+        formatted += f"\n**Hook Results**:\n```\n{hook_results_tables}\n```\n"
 
     if result.stdout.strip():
         formatted += f"\n**Output**:\n```\n{result.stdout}\n```\n"
 
+    # Include stderr as structured logging output
     if result.stderr.strip():
-        formatted += f"\n**Errors**:\n```\n{result.stderr}\n```\n"
+        formatted += f"\n**Structured Logging**:\n```\n{result.stderr}\n```\n"
 
     return formatted
 
@@ -1224,7 +1264,7 @@ async def _crackerjack_health_check_impl() -> str:
 
     try:
         # Check if crackerjack is available
-        import subprocess
+        import subprocess  # nosec B404
 
         result = subprocess.run(
             ["python", "-m", "crackerjack", "--version"],

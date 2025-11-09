@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path

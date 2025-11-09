@@ -8,7 +8,7 @@ initialization, checkpoints, and cleanup.
 from __future__ import annotations
 
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import typing as t
 from contextlib import suppress
 from dataclasses import dataclass, field

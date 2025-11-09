@@ -282,23 +282,9 @@ async def _get_entity_relationships_impl(
             if not relationships:
                 return f"🔍 No relationships found for '{entity_name}'"
 
-            output = []
-            output.append(
-                f"🔗 Found {len(relationships)} relationships for '{entity_name}':"
+            output_lines = _build_relationship_output_lines(
+                relationships, direction, entity_name
             )
-            output.append("")
-
-            for rel in relationships:
-                if direction == "outgoing" or (
-                    direction == "both" and rel["from_entity"] == entity_name
-                ):
-                    output.append(
-                        f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
-                    )
-                else:
-                    output.append(
-                        f"  {rel['from_entity']} <--[{rel['relation_type']}]-- {rel['to_entity']}"
-                    )
 
             _get_logger().info(
                 "Relationships retrieved",
@@ -307,11 +293,37 @@ async def _get_entity_relationships_impl(
                 direction=direction,
                 count=len(relationships),
             )
-            return "\n".join(output)
+            return "\n".join(output_lines)
 
     except Exception as e:
         _get_logger().exception(f"Error getting relationships: {e}")
         return f"❌ Error getting relationships: {e}"
+
+
+def _build_relationship_output_lines(
+    relationships: list, direction: str, entity_name: str
+) -> list[str]:
+    """Build output lines for relationships based on direction."""
+    output = []
+    output.append(f"🔗 Found {len(relationships)} relationships for '{entity_name}':")
+    output.append("")
+
+    for rel in relationships:
+        formatted_rel = _format_relationship(rel, direction, entity_name)
+        output.append(formatted_rel)
+
+    return output
+
+
+def _format_relationship(rel: dict, direction: str, entity_name: str) -> str:
+    """Format a single relationship based on direction."""
+    if direction == "outgoing" or (
+        direction == "both" and rel["from_entity"] == entity_name
+    ):
+        return (
+            f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
+        )
+    return f"  {rel['from_entity']} <--[{rel['relation_type']}]-- {rel['to_entity']}"
 
 
 async def _find_path_impl(

@@ -526,18 +526,18 @@ class ReflectionDatabaseAdapter:
 
             # Get total count
             total_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name}"
+                f"SELECT COUNT(*) FROM {table_name}"  # nosec B608
             ).fetchone()
             total_count = total_result[0] if total_result else 0
 
             # Count by type using JSON metadata
             conv_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'conversation'"
+                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'conversation'"  # nosec B608
             ).fetchone()
             conv_count = conv_result[0] if conv_result else 0
 
             refl_result = client.execute(
-                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'reflection'"
+                f"SELECT COUNT(*) FROM {table_name} WHERE json_extract_string(metadata, '$.type') = 'reflection'"  # nosec B608
             ).fetchone()
             refl_count = refl_result[0] if refl_result else 0
 

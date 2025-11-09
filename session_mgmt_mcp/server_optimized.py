@@ -308,7 +308,7 @@ def _count_significant_files(current_dir: Path) -> int:
 
 def _check_git_activity(current_dir: Path) -> tuple[int, int] | None:
     """Check for active development via git and return (recent_commits, modified_files)."""
-    import subprocess
+    import subprocess  # nosec B404
 
     git_dir = current_dir / ".git"
     if not git_dir.exists():

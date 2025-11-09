@@ -14,7 +14,7 @@ Key improvements over V1:
 from __future__ import annotations
 
 import re
-import subprocess
+import subprocess  # nosec B404
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta

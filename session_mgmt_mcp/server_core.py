@@ -19,7 +19,7 @@ import importlib.util
 import json
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 import warnings
 from contextlib import asynccontextmanager, suppress

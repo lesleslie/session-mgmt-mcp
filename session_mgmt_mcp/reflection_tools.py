@@ -114,6 +114,7 @@ class ReflectionDatabase:
             try:
                 self._get_conn().close()
             except Exception:
+                # nosec B110 - intentionally suppressing exceptions during cleanup
                 pass  # Ignore errors during cleanup
             finally:
                 self.conn = None

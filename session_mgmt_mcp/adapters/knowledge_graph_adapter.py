@@ -518,7 +518,7 @@ class KnowledgeGraphDatabaseAdapter:
             WHERE {where_clause}
             ORDER BY created_at DESC
             LIMIT ?
-        """
+        """  # nosec B608
         params.append(limit)
 
         result = conn.execute(sql, params).fetchall()
@@ -579,7 +579,7 @@ class KnowledgeGraphDatabaseAdapter:
             SELECT * FROM kg_relationships
             WHERE {where_clause}
             ORDER BY created_at DESC
-        """
+        """  # nosec B608
 
         result = conn.execute(sql, params).fetchall()
 

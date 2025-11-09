@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess
+import subprocess  # nosec B404
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path

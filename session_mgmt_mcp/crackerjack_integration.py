@@ -70,7 +70,7 @@ class QualityMetric(Enum):
     COMPLEXITY = "complexity"
     LINT_SCORE = "lint_score"
     SECURITY_SCORE = "security_score"
-    TEST_PASS_RATE = "test_pass_rate"
+    TEST_PASS_RATE = "test_pass_rate"  # nosec B105
     BUILD_STATUS = "build_status"
 
 
@@ -738,7 +738,7 @@ class CrackerjackIntegration:
         This is a synchronous wrapper around execute_crackerjack_command for
         compatibility with crackerjack's CommandRunner protocol.
         """
-        import subprocess
+        import subprocess  # nosec B404
 
         try:
             # Execute the command directly using subprocess
@@ -853,18 +853,18 @@ class CrackerjackIntegration:
     def _build_command_flags(self, command: str, ai_agent_mode: bool) -> list[str]:
         """Build appropriate command flags for the given command."""
         command_mappings = {
-            "lint": ["--fast", "--quick"],
-            "check": ["--comp", "--quick"],
-            "test": ["--run-tests", "--quick"],
-            "format": ["--fast", "--quick"],
-            "typecheck": ["--comp", "--quick"],
-            "security": ["--comp", "--quick"],
-            "complexity": ["--comp", "--quick"],
-            "analyze": ["--comp", "--quick"],
-            "build": ["--quick"],
-            "clean": ["--quick"],
-            "all": ["--all", "--quick"],
-            "run": ["--quick"],
+            "lint": ["--lint"],
+            "check": ["--check"],
+            "test": ["--test"],
+            "format": ["--format"],
+            "typecheck": ["--typecheck"],
+            "security": ["--security"],
+            "complexity": ["--complexity"],
+            "analyze": ["--analyze"],
+            "build": ["--build"],
+            "clean": ["--clean"],
+            "all": ["--all"],
+            "run": ["--run"],
         }
 
         flags = command_mappings.get(command.lower(), [])
@@ -948,7 +948,9 @@ class CrackerjackIntegration:
             parsed_data, memory_insights = self.parser.parse_output(
                 command, stdout_text, stderr_text
             )
-            quality_metrics = self._calculate_quality_metrics(parsed_data, exit_code)
+            quality_metrics = self._calculate_quality_metrics(
+                parsed_data, exit_code, stderr_text
+            )
 
             result = CrackerjackResult(
                 command=command,
@@ -1356,6 +1358,7 @@ class CrackerjackIntegration:
         self,
         parsed_data: dict[str, Any],
         exit_code: int,
+        stderr_content: str = "",
     ) -> dict[str, float]:
         """Calculate quality metrics from parsed data."""
         metrics = {}
@@ -1400,8 +1403,46 @@ class CrackerjackIntegration:
                 complexity_rate = (high_complexity / total_files) * 100
                 metrics["complexity_score"] = float(max(0, 100 - complexity_rate))
 
+        # Parse additional quality metrics from stderr structured logging if available
+        if stderr_content:
+            stderr_metrics = self._parse_stderr_metrics(stderr_content)
+            metrics.update(stderr_metrics)
+
         # Overall build status
         metrics["build_status"] = float(100 if exit_code == 0 else 0)
+
+        return metrics
+
+    def _parse_stderr_metrics(self, stderr_content: str) -> dict[str, float]:
+        """Parse quality metrics from structured logging in stderr."""
+        metrics = {}
+
+        # Look for common structured logging patterns in stderr
+        lines = stderr_content.split("\n")
+
+        for line in lines:
+            # Parse structured log entries that might contain quality metrics
+            if '"quality"' in line or '"metric"' in line or '"score"' in line:
+                # This is a simplified approach - would in practice need to
+                # handle the actual structured format
+                import re
+
+                # Look for patterns like: "quality": value or "metric": value
+                quality_pattern = r'"quality"\s*:\s*(\d+\.?\d*)'
+                metric_pattern = r'"metric"\s*:\s*(\d+\.?\d*)'
+                score_pattern = r'"score"\s*:\s*(\d+\.?\d*)'
+
+                quality_match = re.search(quality_pattern, line)
+                if quality_match:
+                    metrics["parsed_quality"] = float(quality_match.group(1))
+
+                metric_match = re.search(metric_pattern, line)
+                if metric_match:
+                    metrics["parsed_metric"] = float(metric_match.group(1))
+
+                score_match = re.search(score_pattern, line)
+                if score_match:
+                    metrics["parsed_score"] = float(score_match.group(1))
 
         return metrics
 

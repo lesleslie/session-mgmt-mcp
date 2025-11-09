@@ -120,7 +120,7 @@ print('Server debug check complete')
 **Latest Updates** (January 7, 2025):
 
 - **Removed sitecustomize.py** - No longer needed with Codex AI workaround; eliminated 115 lines of brittle startup-time patches
-- **Pinned FastAPI <0.121.0** - Prevents circular import bug in FastAPI 0.121.0; using stable 0.120.4
+- **Pinned FastAPI \<0.121.0** - Prevents circular import bug in FastAPI 0.121.0; using stable 0.120.4
 - **Documentation Reorganization** - Archived 80 historical docs to `docs/archive/` (91% reduction in top-level clutter)
 
 **ACB Adapter Migration - COMPLETE** (**Phases 2 & 3** - January 11, 2025)

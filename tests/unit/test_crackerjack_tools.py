@@ -119,7 +119,7 @@ class TestCrackerjackHistory:
         # crackerjack_history just wraps get_crackerjack_results_history
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await crackerjack_history(working_directory=".", days=7)
@@ -133,7 +133,7 @@ class TestCrackerjackHistory:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await get_crackerjack_results_history(working_directory=".", days=7)
@@ -151,7 +151,7 @@ class TestCrackerjackMetrics:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await crackerjack_metrics(working_directory=".", days=30)
@@ -165,7 +165,7 @@ class TestCrackerjackMetrics:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await get_crackerjack_quality_metrics(working_directory=".", days=30)
@@ -183,7 +183,7 @@ class TestCrackerjackPatterns:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await crackerjack_patterns(days=7, working_directory=".")
@@ -197,7 +197,7 @@ class TestCrackerjackPatterns:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await analyze_crackerjack_test_patterns(days=7, working_directory=".")
@@ -230,7 +230,7 @@ class TestQualityTrends:
 
         with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
             mock_db_instance = AsyncMock()
-            mock_db_instance.search_by_file = AsyncMock(return_value=[])
+            mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
             result = await crackerjack_quality_trends(working_directory=".", days=30)
@@ -282,63 +282,6 @@ class TestHelperFunctions:
         assert _suggest_command("tests", valid_commands) == "test"
         assert _suggest_command("linting", valid_commands) in valid_commands
 
-    def test_is_valid_hook_line_detects_hooks(self) -> None:
-        """Should detect valid hook output lines."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _is_valid_hook_line
-
-        assert _is_valid_hook_line("ruff...Passed") is True
-        assert _is_valid_hook_line("mypy...Failed") is True
-        assert _is_valid_hook_line("random output") is False
-
-    def test_is_failed_hook_detects_failures(self) -> None:
-        """Should detect failed hook status."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _is_failed_hook
-
-        # Function checks for emoji ❌ or "Failed" text
-        assert _is_failed_hook("Failed") is True
-        assert _is_failed_hook("❌ Failed") is True
-        assert _is_failed_hook("Passed") is False
-
-    def test_is_passed_hook_detects_success(self) -> None:
-        """Should detect passed hook status."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _is_passed_hook
-
-        # Function checks for emoji ✅ or "Passed" text
-        assert _is_passed_hook("Passed") is True
-        assert _is_passed_hook("✅ Passed") is True
-        assert _is_passed_hook("Failed") is False
-
-    def test_extract_hook_parts_parses_correctly(self) -> None:
-        """Should extract hook name and status."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _extract_hook_parts
-
-        result = _extract_hook_parts("ruff...Passed")
-        assert result == ("ruff", "Passed")
-
-        result = _extract_hook_parts("mypy...Failed")
-        assert result == ("mypy", "Failed")
-
-        result = _extract_hook_parts("invalid")
-        assert result is None
-
-    def test_parse_hook_results_handles_output(self) -> None:
-        """Should parse pre-commit hook output."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _parse_hook_results
-
-        # Function uses fallback parser which keeps full line including emojis
-        stdout = """
-ruff...✅ Passed
-mypy...❌ Failed
-pytest...✅ Passed
-"""
-
-        passed, failed = _parse_hook_results(stdout)
-
-        # Fallback parser returns full lines (hook...emoji)
-        assert any("ruff" in line for line in passed)
-        assert any("pytest" in line for line in passed)
-        assert any("mypy" in line for line in failed)
-
     def test_build_execution_metadata_creates_dict(self) -> None:
         """Should build metadata dictionary."""
         from session_mgmt_mcp.tools.crackerjack_tools import _build_execution_metadata
@@ -372,13 +315,14 @@ class TestFormatting:
         # _format_basic_result expects a result object with .stdout attribute
         mock_result = MagicMock()
         mock_result.exit_code = 0
-        mock_result.stdout = "ruff...✅ Passed\nmypy...✅ Passed\n"
+        mock_result.stdout = "All checks passed\n"
         mock_result.execution_time = 1.5
 
         formatted = _format_basic_result(mock_result, "test")
 
         assert isinstance(formatted, str)
         assert "Crackerjack test" in formatted
+        assert "**Status**: Success" in formatted
         assert len(formatted) > 0
 
 

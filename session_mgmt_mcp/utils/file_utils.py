@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path

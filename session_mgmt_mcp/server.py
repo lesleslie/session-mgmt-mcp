@@ -258,23 +258,47 @@ async def reflect_on_past(
     max_tokens: int = 4000,
 ) -> str:
     """Search past conversations with optional token optimization."""
+    # Check if reflection tools are available
     if not REFLECTION_TOOLS_AVAILABLE:
         return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
+    # Initialize database
+    db = await _initialize_reflection_database()
+    if not db:
+        return "❌ Reflection system not available. Install optional dependencies with `uv sync --extra embeddings`"
+
+    # Search conversations
+    results = await _search_conversations(db, query, project, limit, min_score)
+    if isinstance(results, str):  # Error occurred
+        return results
+
+    # Optimize tokens if requested
+    optimization_info = {}
+    if optimize_tokens and TOKEN_OPTIMIZER_AVAILABLE:
+        results, optimization_info = await _optimize_results(results, max_tokens)
+
+    # Format and return output
+    return _format_reflection_output(query, results, optimization_info)
+
+
+async def _initialize_reflection_database():
+    """Initialize the reflection database with error handling."""
     try:
-        db = await get_reflection_database()
+        return await get_reflection_database()
     except Exception as exc:  # pragma: no cover - defensive logging
         session_logger.exception(
             "Failed to initialize reflection database", exc_info=exc
         )
-        return f"❌ Error searching conversations: {exc}"
+        return None
 
-    if not db:
-        return "❌ Reflection system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
+async def _search_conversations(
+    db, query: str, project: str | None, limit: int, min_score: float
+):
+    """Search conversations and handle errors."""
     try:
         async with db:
-            results = await db.search_conversations(
+            return await db.search_conversations(
                 query=query,
                 project=project or current_project,
                 limit=limit,
@@ -284,36 +308,43 @@ async def reflect_on_past(
         session_logger.exception("Reflection search failed", extra={"query": query})
         return f"❌ Error searching conversations: {exc}"
 
+
+async def _optimize_results(results: list, max_tokens: int) -> tuple[list, dict]:
+    """Optimize results with token optimization."""
+    try:
+        optimized_results, optimization_info = await optimize_search_response(
+            results,
+            strategy="prioritize_recent",
+            max_tokens=max_tokens,
+        )
+        if optimized_results:
+            results = optimized_results
+
+        token_savings = optimization_info.get("token_savings", {})
+        await track_token_usage(
+            operation="reflect_on_past",
+            request_tokens=max_tokens,
+            response_tokens=max_tokens - token_savings.get("tokens_saved", 0),
+            optimization_applied=optimization_info.get("strategy"),
+        )
+        return results, optimization_info
+    except Exception as exc:
+        session_logger.warning(
+            "Token optimization failed for reflect_on_past",
+            extra={"error": str(exc)},
+        )
+        return results, {}
+
+
+def _format_reflection_output(
+    query: str, results: list, optimization_info: dict
+) -> str:
+    """Format the reflection output."""
     if not results:
         return (
             f"🔍 No relevant conversations found for query: '{query}'\n"
             "💡 Try adjusting the search terms or lowering min_score."
         )
-
-    optimization_info: dict[str, Any] = {}
-    if optimize_tokens and TOKEN_OPTIMIZER_AVAILABLE:
-        try:
-            optimized_results, optimization_info = await optimize_search_response(
-                results,
-                strategy="prioritize_recent",
-                max_tokens=max_tokens,
-            )
-            if optimized_results:
-                results = optimized_results
-
-            token_savings = optimization_info.get("token_savings", {})
-            await track_token_usage(
-                operation="reflect_on_past",
-                request_tokens=max_tokens,
-                response_tokens=max_tokens - token_savings.get("tokens_saved", 0),
-                optimization_applied=optimization_info.get("strategy"),
-            )
-        except Exception as exc:
-            session_logger.warning(
-                "Token optimization failed for reflect_on_past",
-                extra={"error": str(exc)},
-            )
-            optimization_info = {}
 
     output_lines = [
         f"🔍 **Search Results for: '{query}'**",
