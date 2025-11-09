@@ -5,6 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-11-08
+
+### Added
+
+- architecture: Phase 2.1 - create server decomposition skeletons
+- architecture: Phase 2.2 - extract 40 utility functions to server_helpers.py
+- architecture: Phase 2.3 - extract quality engine (52 functions, 1,220 LOC)
+- architecture: Phase 2.4 - extract advanced features (17 MCP tools, 621 LOC)
+- architecture: Phase 2.5 - extract core infrastructure (17 functions, 2 classes, 614 LOC)
+- architecture: Phase 2.6 - final cleanup (215 lines saved, 35.4% reduction)
+- Complete Phase 1 ACB config migration
+- Integrate mcp-common adapters and complete DuckPGQ knowledge graph (Week 2 Days 1-3)
+- Migrate to ACB-backed cache adapters
+- Phase 2 Priority 1 completion - add core module tests
+- Phase 2 Priority 2 - comprehensive integration tests
+- testing: Phase 2 - expand test coverage from 5.70% to 13.86% (111 new tests)
+- Week 4 Day 3 - Knowledge Graph tests + Resource cleanup fixes
+- Week 4 Days 1-2 - Health checks & server_core tests complete
+- Week 4 Days 3-4 - Knowledge graph + LLM provider tests complete
+- Week 5 Day 2 - Session Tools & Advanced Features Testing (51 tests, 100% pass rate)
+- Week 5 Day 4 complete - Multi-project and app monitoring tests
+- Week 8 Day 1 - Fix test isolation with before/after cleanup pattern
+
+### Changed
+
+- Complete all remaining complexity refactorings (11/11 done)
+- DI pattern refinement and resource cleanup improvements
+- Migrate serverless_mode.py to use aiocache instead of custom backends
+- Modern Python style improvements (refurb FURB138, FURB107, FURB145, FURB168)
+- Modernize SessionLifecycleManager DI pattern with Inject[] support
+- Reduce cognitive complexity in OllamaProvider and knowledge graph tools
+- Reduce complexity in cleanup and search functions (17→<15)
+- Reduce complexity of highest complexity functions (26, 28 → 10-12)
+- Session-mgmt-mcp (quality: 68/100) - 2025-11-07 22:29:21
+- Session-mgmt-mcp (quality: 68/100) - 2025-11-07 23:46:29
+- Session-mgmt-mcp (quality: 70/100) - 2025-10-26 22:05:19
+- Session-mgmt-mcp (quality: 70/100) - 2025-10-28 04:09:46
+- Session-mgmt-mcp (quality: 70/100) - 2025-10-28 19:36:53
+- Session-mgmt-mcp (quality: 70/100) - 2025-10-29 04:13:30
+- Session-mgmt-mcp (quality: 70/100) - 2025-10-29 06:23:49
+- Session-mgmt-mcp (quality: 70/100) - 2025-11-05 08:28:52
+- Session-mgmt-mcp (quality: 70/100) - 2025-11-05 12:27:17
+- Session-mgmt-mcp (quality: 70/100) - 2025-11-05 13:55:51
+- Session-mgmt-mcp (quality: 71/100) - 2025-10-10 05:26:31
+- Session-mgmt-mcp (quality: 71/100) - 2025-10-11 07:53:57
+- Session-mgmt-mcp (quality: 75/100) - 2025-11-05 19:31:38
+- Update config, core, deps, docs, tests
+- Update depends.get() to depends.get_sync() for synchronous context
+
+### Fixed
+
+- Add safe JSON serialization for non-serializable objects in logging context
+- Code quality improvements - type hints and style fixes
+- Import typing as t to resolve NameError in SessionLifecycleManager
+- PEP8 N806 - rename class variables from Logger/Requests to logger_class/requests_class
+- Register SessionLogger in DI container to prevent checkpoint errors
+- Replace all Any with t.Any and fix Logger DI reference
+- Resolve remaining 7 unit test failures (Phase 2 Priority 2 completion)
+- Resolve test infrastructure crisis - 14→0 collection errors
+- Use depends.get_sync() for synchronous DI container access in server.py
+- Week 4 regression fixes + technical debt documentation
+- Week 6 Day 1 - DI environment handling and placeholder assertion
+
+### Documentation
+
+- Add ACB config migration summary and update README
+- Add comprehensive code review for Week 2 Days 3-5 mcp-common integration
+- Add comprehensive complexity refactoring progress tracker
+- architecture: Add comprehensive server.py decomposition plan
+- Comprehensive test coverage analysis and improvement plan
+- Phase 2 Priority 1 completion summary and analysis
+- phase1: Complete Phase 1 ACB foundation summary
+- phase2: Add comprehensive Phase 2 progress summary
+- Update comprehensive improvement plan with Phase 2 completion
+- Week 3 checkpoint report - test infrastructure restoration complete
+- Week 5 testing phase complete - comprehensive summary
+
+### Testing
+
+- Add comprehensive context manager tests (71 tests, 94.58% coverage)
+- Add comprehensive health_tools tests and fix slow compaction test
+- Add comprehensive tests for llm_providers.py helper functions
+- Add comprehensive tests for memory_tools helper functions
+- Add comprehensive tests for server.py helper functions
+- Add comprehensive tests for Week 5 Day 3 modules (39 tests, 100% pass rate)
+- Add comprehensive validated memory tools tests (38 tests, 80.86% coverage)
+- Add knowledge graph adapter tests (27 tests, 17 passing, 52.16% coverage)
+- Add knowledge_graph helper function tests (26 tests)
+- Complete Week 5 Day 1 - Quality Engine & Crackerjack Tools coverage
+- core: Update 9 files
+- Implement comprehensive logging_utils tests
+
 ## [0.7.4] - 2025-10-08
 
 ### Documentation
