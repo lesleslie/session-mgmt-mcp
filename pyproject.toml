@@ -41,7 +41,7 @@ dependencies = [
     "fastmcp>=2",
     "jinja2>=3.1.6",
     "jinja2-async-environment>=0.14.3",
-    "mcp-common @ file:///Users/les/Projects/mcp-common",
+    "mcp-common>=0.3.2",
     "numpy>=1.24",
     "onnxruntime>=1.15",
     "psutil>=7.0.0",
@@ -481,9 +481,6 @@ check-url = "https://pypi.org/simple/"
 [tool.uv.sources.acb]
 path = "../acb"
 editable = true
-
-[tool.uv.sources.mcp-common]
-path = "../mcp-common"
 
 [dependency-groups]
 test = [

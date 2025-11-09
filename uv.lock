@@ -2301,48 +2301,14 @@ wheels = [
 [[package]]
 name = "mcp-common"
 version = "0.3.2"
-source = { directory = "../mcp-common" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "acb" },
     { name = "pydantic" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "acb", editable = "../acb" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.8.0" },
-    { name = "crackerjack", marker = "extra == 'dev'" },
-    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.122.0" },
-    { name = "mcp-common", extras = ["redis", "metrics", "dev"], marker = "extra == 'all'" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13.0" },
-    { name = "prometheus-client", marker = "extra == 'metrics'", specifier = ">=0.21.0" },
-    { name = "pydantic", specifier = ">=2.10.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
-    { name = "redis", extras = ["hiredis"], marker = "extra == 'redis'", specifier = ">=5.0.0" },
-    { name = "respx", marker = "extra == 'dev'", specifier = ">=0.21.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
-    { name = "safety", marker = "extra == 'dev'", specifier = ">=3.2.0" },
-    { name = "session-mgmt-mcp", marker = "extra == 'dev'" },
-]
-provides-extras = ["redis", "metrics", "dev", "all"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "bandit", specifier = ">=1.8.0" },
-    { name = "crackerjack" },
-    { name = "hypothesis", specifier = ">=6.122.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pytest", specifier = ">=8.3.0" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "respx", specifier = ">=0.21.0" },
-    { name = "ruff", specifier = ">=0.8.0" },
-    { name = "safety", specifier = ">=3.2.0" },
-    { name = "session-mgmt-mcp" },
+sdist = { url = "https://files.pythonhosted.org/packages/db/28/2b0f74aa776a73627ff1227361a4ca9760564a359a942dbf72a1d473be64/mcp_common-0.3.2.tar.gz", hash = "sha256:58a78381e87d7823e996b6e92743c70eb71dda2615887227b0cc003d1215a1c8", size = 270386, upload-time = "2025-11-05T18:48:29.722Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/2a/7071ed4fd93673a7fc36c481e657299dcbeea037d15d10ed419d618d12c3/mcp_common-0.3.2-py3-none-any.whl", hash = "sha256:d5ddbd5a3e7c564740fbcf890f5fbbd7712d7668cfab46bdfd171456fba297fb", size = 33274, upload-time = "2025-11-05T18:48:28.173Z" },
 ]
 
 [[package]]
@@ -3843,7 +3809,7 @@ wheels = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.7.4"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "acb" },
@@ -3910,7 +3876,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "jinja2-async-environment", specifier = ">=0.14.3" },
-    { name = "mcp-common", directory = "../mcp-common" },
+    { name = "mcp-common", specifier = ">=0.3.2" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "onnxruntime", specifier = ">=1.15" },
     { name = "psutil", specifier = ">=7.0.0" },
