@@ -881,4 +881,4 @@ Timestamp: {health_info["timestamp"]}
     @mcp_server.tool()
     async def ping() -> str:
         """Simple ping endpoint to test MCP connectivity."""
-        return "🏓 Pong! MCP server is responding."
+        return "🏓 Pong! MCP server is responding"

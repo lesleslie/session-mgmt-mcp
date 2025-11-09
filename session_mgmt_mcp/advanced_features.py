@@ -165,7 +165,7 @@ async def cancel_user_reminder(reminder_id: str) -> str:
             output.append("🚫 The reminder will no longer trigger")
             output.append("💡 You can create a new reminder if needed")
             return "\n".join(output)
-        return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists."
+        return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists"
 
     except ImportError:
         return "❌ Natural scheduling tools not available"
@@ -589,7 +589,7 @@ async def get_search_metrics(metric_type: str, timeframe: str = "30d") -> str:
             output.append(f"• **{item['key']}:** {item['value']}")
 
         if not metrics["data"]:
-            output.append("No data available for the specified timeframe.")
+            output.append("No data available for the specified timeframe")
 
         return "\n".join(output)
 

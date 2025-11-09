@@ -151,7 +151,7 @@ class KnowledgeGraphDatabase:
 
         """
         if self.conn is None:
-            msg = "Database connection not initialized. Call initialize() first."
+            msg = "Database connection not initialized. Call initialize() first"
             raise RuntimeError(msg)
         return self.conn
 

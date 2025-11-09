@@ -198,9 +198,9 @@ class SessionLifecycleManager:
             recommendations.append("Add test suite to improve code quality")
 
         if score >= 80:
-            recommendations.append("Excellent session setup! Keep up the good work.")
+            recommendations.append("Excellent session setup! Keep up the good work")
         elif score >= 60:
-            recommendations.append("Good session quality with room for optimization.")
+            recommendations.append("Good session quality with room for optimization")
 
         return recommendations[:5]  # Limit to top 5 recommendations
 

@@ -491,7 +491,7 @@ async def _execute_crackerjack_command_impl(
 
     except ImportError:
         logger.warning("Crackerjack integration not available")
-        return "❌ Crackerjack integration not available. Install crackerjack package."
+        return "❌ Crackerjack integration not available. Install crackerjack package"
     except Exception as e:
         logger.exception(f"Crackerjack execution failed: {e}")
         return f"❌ Crackerjack execution failed: {e!s}"
@@ -882,7 +882,7 @@ async def _crackerjack_history_impl(
 
         db = await _get_reflection_db()
         if not db:
-            return "❌ Reflection database not available for crackerjack history."
+            return "❌ Reflection database not available for crackerjack history"
 
         async with db:
             end_date = datetime.now()
@@ -961,7 +961,7 @@ async def _crackerjack_metrics_impl(
     try:
         db = await _get_reflection_db()
         if not db:
-            return "❌ Reflection database not available for quality metrics."
+            return "❌ Reflection database not available for quality metrics"
 
         async with db:
             results = await db.search_conversations(
@@ -1159,7 +1159,7 @@ async def _crackerjack_quality_trends_impl(
     try:
         db = await _get_reflection_db()
         if not db:
-            return "❌ Reflection database not available for trend analysis."
+            return "❌ Reflection database not available for trend analysis"
 
         async with db:
             results = await db.search_conversations(

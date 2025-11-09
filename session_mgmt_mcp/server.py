@@ -106,7 +106,7 @@ else:
         max_age_days: int = 30,
         dry_run: bool = True,
     ) -> str:
-        return "❌ Token optimizer not available."
+        return "❌ Token optimizer not available"
 
 
 # Import FastMCP with test environment fallback
@@ -128,7 +128,7 @@ except ImportError:
         )
     else:
         # Fallback to sys.exit if exceptions unavailable
-        print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
+        print("FastMCP not available Install with: uv add fastmcp", file=sys.stderr)
         sys.exit(1)
 
 # Phase 2.6: Get all feature flags from centralized detector

@@ -103,7 +103,7 @@ def _check_interruption_available() -> bool:
 async def _start_app_monitoring_impl(project_paths: list[str] | None = None) -> str:
     """Start monitoring IDE activity and browser documentation usage."""
     if not _check_app_monitor_available():
-        return "❌ Application monitoring not available. Features may be limited."
+        return "❌ Application monitoring not available. Features may be limited"
 
     try:
         monitor = await _get_app_monitor()

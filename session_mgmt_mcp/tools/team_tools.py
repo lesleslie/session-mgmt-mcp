@@ -42,7 +42,7 @@ async def _create_team_impl(
 
     except ImportError:
         _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies."
+        return "❌ Team collaboration features not available. Install optional dependencies"
     except Exception as e:
         _get_logger().exception(f"Team creation failed: {e}")
         return f"❌ Failed to create team: {e!s}"
@@ -122,7 +122,7 @@ async def _search_team_knowledge_impl(
 
     except ImportError:
         _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies."
+        return "❌ Team collaboration features not available. Install optional dependencies"
     except Exception as e:
         _get_logger().exception(f"Team knowledge search failed: {e}")
         return f"❌ Team knowledge search failed: {e!s}"
@@ -143,7 +143,7 @@ async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
 
     except ImportError:
         _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies."
+        return "❌ Team collaboration features not available. Install optional dependencies"
     except Exception as e:
         _get_logger().exception(f"Error getting team statistics: {e}")
         return f"❌ Error retrieving team statistics: {e}"
@@ -230,7 +230,7 @@ async def _vote_on_reflection_impl(
 
     except ImportError:
         _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies."
+        return "❌ Team collaboration features not available. Install optional dependencies"
     except ValueError as e:
         return f"❌ Vote failed: {e!s}"
     except Exception as e:

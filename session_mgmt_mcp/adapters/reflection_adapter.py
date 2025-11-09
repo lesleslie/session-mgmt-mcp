@@ -164,7 +164,7 @@ class ReflectionDatabaseAdapter:
     def _get_adapter(self) -> Vector:
         """Get vector adapter, raising error if not initialized."""
         if self.vector_adapter is None:
-            msg = "Vector adapter not initialized. Call initialize() first."
+            msg = "Vector adapter not initialized. Call initialize() first"
             raise RuntimeError(msg)
         return self.vector_adapter
 
