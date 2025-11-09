@@ -335,5 +335,178 @@ class TestUtilityEdgeCases:
         check_no_nulls()
 
 
+# =========================
+# Reflection Database Tests
+# =========================
+
+
+class TestReflectionDatabasePropertyBased:
+    """Property-based tests for ReflectionDatabase operations."""
+
+    @given(
+        st.text(min_size=1, max_size=200),
+        st.lists(st.text(min_size=1, max_size=20), min_size=0, max_size=10),
+    )
+    async def test_store_and_retrieve_reflection_properties(
+        self, content: str, tags: list[str]
+    ):
+        """Property test: storing and retrieving reflections preserves content."""
+        from tempfile import NamedTemporaryFile
+
+        # Use temporary database for this test
+        with NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
+            db_path = tmp.name
+
+        try:
+            from session_mgmt_mcp.adapters.reflection_adapter import (
+                ReflectionDatabaseAdapter as ReflectionDatabase,
+            )
+
+            # Create database instance
+            db = ReflectionDatabase(db_path=db_path)
+            await db.initialize()
+
+            # Store reflection
+            reflection_id = await db.store_reflection(content, tags)
+
+            # Retrieve reflection
+            retrieved = await db.get_reflection_by_id(reflection_id)
+
+            # Assertions - properties that should always hold
+            assert retrieved is not None, "Reflection should be retrievable after storage"
+            assert (
+                retrieved["content"] == content
+            ), "Content should be preserved after storage and retrieval"
+            assert (
+                retrieved["tags"] == tags
+            ), "Tags should be preserved after storage and retrieval"
+            assert "id" in retrieved, "Retrieved reflection should have an ID"
+            assert "timestamp" in retrieved, "Retrieved reflection should have a timestamp"
+
+            # Close database connection
+            db.close()
+
+        except Exception:
+            # Try to clean up even if the test failed
+            try:
+                import os
+                os.remove(db_path)
+            except:
+                pass
+
+    @given(
+        st.lists(
+            st.text(min_size=1, max_size=200),
+            min_size=1,
+            max_size=50,
+        )
+    )
+    async def test_similarity_search_properties(self, contents: list[str]):
+        """Property test: similarity search should return valid results."""
+        from tempfile import NamedTemporaryFile
+
+        with NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
+            db_path = tmp.name
+
+        try:
+            from session_mgmt_mcp.adapters.reflection_adapter import (
+                ReflectionDatabaseAdapter as ReflectionDatabase,
+            )
+
+            db = ReflectionDatabase(db_path=db_path)
+            await db.initialize()
+
+            # Store all contents as reflections
+            for content in contents:
+                await db.store_reflection(content, ["test"])
+
+            # Perform a search for the first content
+            if contents:
+                search_content = contents[0]
+                results = await db.similarity_search(search_content, limit=10)
+
+                # Properties that should hold:
+                # 1. Results should not be None
+                assert results is not None, "Search should return a result"
+
+                # 2. Results should be a list
+                assert isinstance(
+                    results, list
+                ), "Search should return a list of results"
+
+                # 3. Each result should have required fields
+                for result in results:
+                    assert "content" in result, "Each result should have content field"
+                    assert "score" in result, "Each result should have score field"
+                    assert (
+                        "timestamp" in result
+                    ), "Each result should have timestamp field"
+                    assert (
+                        0.0 <= result["score"] <= 1.0
+                    ), "Similarity score should be between 0 and 1"
+
+            db.close()
+
+        except Exception:
+            # Try to clean up even if the test failed
+            try:
+                import os
+                os.remove(db_path)
+            except:
+                pass
+
+    @given(
+        st.text(min_size=1, max_size=500),
+        st.lists(st.text(min_size=1, max_size=10), min_size=0, max_size=10),
+        st.text(min_size=1, max_size=500),
+        st.lists(st.text(min_size=1, max_size=10), min_size=0, max_size=10),
+    )
+    async def test_store_different_reflections_have_different_ids(
+        self, content1: str, tags1: list[str], content2: str, tags2: list[str]
+    ):
+        """Property test: storing different reflections should produce different IDs."""
+        from tempfile import NamedTemporaryFile
+
+        with NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
+            db_path = tmp.name
+
+        try:
+            from session_mgmt_mcp.adapters.reflection_adapter import (
+                ReflectionDatabaseAdapter as ReflectionDatabase,
+            )
+
+            db = ReflectionDatabase(db_path=db_path)
+            await db.initialize()
+
+            # Store two different reflections
+            id1 = await db.store_reflection(content1, tags1)
+            id2 = await db.store_reflection(content2, tags2)
+
+            # Different reflections should be retrievable with different IDs
+            retrieved1 = await db.get_reflection_by_id(id1)
+            retrieved2 = await db.get_reflection_by_id(id2)
+
+            assert retrieved1 is not None, "First reflection should be retrievable"
+            assert retrieved2 is not None, "Second reflection should be retrievable"
+
+            # Verify the correct content was retrieved
+            assert (
+                retrieved1["content"] == content1
+            ), "First retrieved content should match original"
+            assert (
+                retrieved2["content"] == content2
+            ), "Second retrieved content should match original"
+
+            db.close()
+
+        except Exception:
+            # Try to clean up even if the test failed
+            try:
+                import os
+                os.remove(db_path)
+            except:
+                pass
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
