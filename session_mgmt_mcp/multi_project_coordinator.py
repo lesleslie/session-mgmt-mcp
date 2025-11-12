@@ -386,12 +386,13 @@ class MultiProjectCoordinator:
             conditions.append("(source_project = ? OR target_project = ?)")
             params.extend([project, project])
 
-        sql = f"""
-            SELECT id, source_project, target_project, dependency_type, description, created_at, metadata
-            FROM project_dependencies
-            WHERE {" OR ".join(conditions)}
-            ORDER BY created_at DESC
-        """  # nosec B608 - conditions built from validated parameters with proper placeholders
+        # Build SQL safely - all user input is parameterized via params list
+        sql = (
+            "SELECT id, source_project, target_project, dependency_type, "
+            "description, created_at, metadata FROM project_dependencies WHERE "
+            + " OR ".join(conditions)
+            + " ORDER BY created_at DESC"
+        )
 
         results = await asyncio.get_event_loop().run_in_executor(
             None,

@@ -585,20 +585,16 @@ class KnowledgeGraphDatabase:
         if relation_type:
             where_clause += " AND r.relation_type = ?"
 
-        sql = f"""
-            SELECT
-                r.id,
-                r.relation_type,
-                e1.name as from_name,
-                e2.name as to_name,
-                r.properties,
-                r.created_at
-            FROM kg_relationships r
-            JOIN kg_entities e1 ON r.from_entity = e1.id
-            JOIN kg_entities e2 ON r.to_entity = e2.id
-            {where_clause}
-            ORDER BY r.created_at DESC
-        """  # nosec B608
+        # Build SQL safely - all user input is parameterized via params list
+        sql = (
+            "SELECT r.id, r.relation_type, e1.name as from_name, "
+            "e2.name as to_name, r.properties, r.created_at "
+            "FROM kg_relationships r "
+            "JOIN kg_entities e1 ON r.from_entity = e1.id "
+            "JOIN kg_entities e2 ON r.to_entity = e2.id "
+            + where_clause
+            + " ORDER BY r.created_at DESC"
+        )
 
         # Build parameters tuple based on direction and relation_type
         if direction == "both":

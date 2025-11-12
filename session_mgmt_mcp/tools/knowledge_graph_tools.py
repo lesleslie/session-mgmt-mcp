@@ -301,7 +301,7 @@ async def _get_entity_relationships_impl(
 
 
 def _build_relationship_output_lines(
-    relationships: list, direction: str, entity_name: str
+    relationships: list[dict[str, Any]], direction: str, entity_name: str
 ) -> list[str]:
     """Build output lines for relationships based on direction."""
     output = []
@@ -315,7 +315,7 @@ def _build_relationship_output_lines(
     return output
 
 
-def _format_relationship(rel: dict, direction: str, entity_name: str) -> str:
+def _format_relationship(rel: dict[str, Any], direction: str, entity_name: str) -> str:
     """Format a single relationship based on direction."""
     if direction == "outgoing" or (
         direction == "both" and rel["from_entity"] == entity_name

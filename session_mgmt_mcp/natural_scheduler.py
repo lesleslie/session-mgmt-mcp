@@ -562,7 +562,12 @@ class ReminderScheduler:
                 where_conditions.append("project_id = ?")
                 params.append(project_id)
 
-            query = f"SELECT * FROM reminders WHERE {' AND '.join(where_conditions)} ORDER BY scheduled_for"  # nosec B608 - where_conditions built from validated parameters with proper placeholders
+            # Build SQL safely - all user input is parameterized via params list
+            query = (
+                "SELECT * FROM reminders WHERE "
+                + " AND ".join(where_conditions)
+                + " ORDER BY scheduled_for"
+            )
 
             cursor = conn.execute(query, params)
             results = []

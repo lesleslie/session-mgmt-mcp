@@ -40,6 +40,55 @@ async def get_token_usage_stats(hours: int = 24):
     return {"status": "token optimizer unavailable", "period_hours": hours}
 
 
+async def get_memory_optimization_policy(strategy: str, max_age_days: int):
+    """Build a policy for memory optimization based on strategy."""
+    if strategy == "aggressive":
+        return {"consolidation_age_days": max_age_days, "importance_threshold": 0.3}
+    elif strategy == "conservative":
+        return {"consolidation_age_days": max_age_days, "importance_threshold": 0.7}
+    else:
+        return {"consolidation_age_days": max_age_days, "importance_threshold": 0.5}
+
+
+async def format_memory_optimization_results(results: dict, dry_run: bool) -> str:
+    """Format the results of memory optimization for display."""
+    lines: list[str] = []
+    header = "🧠 Memory Optimization Results"
+    if dry_run:
+        header += " (DRY RUN)"
+    lines.append(header)
+
+    # Basic stats
+    total = results.get("total_conversations", 0)
+    keep = results.get("conversations_to_keep", 0)
+    consolidate = results.get("conversations_to_consolidate", 0)
+    clusters = results.get("clusters_created", 0)
+    lines.append(f"Total Conversations: {total}")
+    lines.append(f"Conversations to Keep: {keep}")
+    lines.append(f"Conversations to Consolidate: {consolidate}")
+    lines.append(f"Clusters Created: {clusters}")
+
+    # Savings and ratio
+    saved = results.get("space_saved_estimate")
+    if isinstance(saved, (int, float)):
+        lines.append(f"{saved:,.0f} characters saved")
+    ratio = results.get("compression_ratio")
+    if isinstance(ratio, (int, float)):
+        lines.append(f"{ratio * 100:.1f}% compression ratio")
+
+    # Consolidated summaries info
+    summaries = results.get("consolidated_summaries") or []
+    if summaries:
+        first = summaries[0]
+        if isinstance(first, dict) and "original_count" in first:
+            lines.append(f"{first['original_count']} conversations → 1 summary")
+
+    if dry_run:
+        lines.append("Run with dry_run=False to apply changes")
+
+    return "\n".join(lines)
+
+
 async def optimize_memory_usage(
     strategy: str = "auto", max_age_days: int = 30, dry_run: bool = True
 ):
@@ -61,12 +110,7 @@ async def optimize_memory_usage(
         db = await get_reflection_database()
 
         # Build policy based on strategy
-        if strategy == "aggressive":
-            policy = {"consolidation_age_days": max_age_days, "importance_threshold": 0.3}
-        elif strategy == "conservative":
-            policy = {"consolidation_age_days": max_age_days, "importance_threshold": 0.7}
-        else:
-            policy = {"consolidation_age_days": max_age_days, "importance_threshold": 0.5}
+        policy = await get_memory_optimization_policy(strategy, max_age_days)
 
         # Run optimizer
         from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
@@ -79,41 +123,7 @@ async def optimize_memory_usage(
             return f"❌ Memory optimization error: {results['error']}"
 
         # Format human-friendly output
-        lines: list[str] = []
-        header = "🧠 Memory Optimization Results"
-        if dry_run:
-            header += " (DRY RUN)"
-        lines.append(header)
-
-        # Basic stats
-        total = results.get("total_conversations", 0)
-        keep = results.get("conversations_to_keep", 0)
-        consolidate = results.get("conversations_to_consolidate", 0)
-        clusters = results.get("clusters_created", 0)
-        lines.append(f"Total Conversations: {total}")
-        lines.append(f"Conversations to Keep: {keep}")
-        lines.append(f"Conversations to Consolidate: {consolidate}")
-        lines.append(f"Clusters Created: {clusters}")
-
-        # Savings and ratio
-        saved = results.get("space_saved_estimate")
-        if isinstance(saved, (int, float)):
-            lines.append(f"{saved:,.0f} characters saved")
-        ratio = results.get("compression_ratio")
-        if isinstance(ratio, (int, float)):
-            lines.append(f"{ratio * 100:.1f}% compression ratio")
-
-        # Consolidated summaries info
-        summaries = results.get("consolidated_summaries") or []
-        if summaries:
-            first = summaries[0]
-            if isinstance(first, dict) and "original_count" in first:
-                lines.append(f"{first['original_count']} conversations → 1 summary")
-
-        if dry_run:
-            lines.append("Run with dry_run=False to apply changes")
-
-        return "\n".join(lines)
+        return await format_memory_optimization_results(results, dry_run)
 
     except Exception as e:  # defensive: return readable error
         return f"❌ Error optimizing memory: {e}"

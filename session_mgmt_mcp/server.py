@@ -281,7 +281,7 @@ async def reflect_on_past(
     return _format_reflection_output(query, results, optimization_info)
 
 
-async def _initialize_reflection_database():
+async def _initialize_reflection_database() -> Any | None:
     """Initialize the reflection database with error handling."""
     try:
         return await get_reflection_database()
@@ -293,8 +293,8 @@ async def _initialize_reflection_database():
 
 
 async def _search_conversations(
-    db, query: str, project: str | None, limit: int, min_score: float
-):
+    db: Any, query: str, project: str | None, limit: int, min_score: float
+) -> Any | str:
     """Search conversations and handle errors."""
     try:
         async with db:
@@ -309,7 +309,9 @@ async def _search_conversations(
         return f"❌ Error searching conversations: {exc}"
 
 
-async def _optimize_results(results: list, max_tokens: int) -> tuple[list, dict]:
+async def _optimize_results(
+    results: list[dict[str, Any]], max_tokens: int
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Optimize results with token optimization."""
     try:
         optimized_results, optimization_info = await optimize_search_response(
@@ -337,7 +339,7 @@ async def _optimize_results(results: list, max_tokens: int) -> tuple[list, dict]
 
 
 def _format_reflection_output(
-    query: str, results: list, optimization_info: dict
+    query: str, results: list[dict[str, Any]], optimization_info: dict[str, Any]
 ) -> str:
     """Format the reflection output."""
     if not results:

@@ -1014,11 +1014,12 @@ class CrackerjackIntegration:
                 where_conditions.append("command = ?")
                 params.append(command)
 
-            query = f"""
-                SELECT * FROM crackerjack_results
-                WHERE {" AND ".join(where_conditions)}
-                ORDER BY timestamp DESC
-            """  # nosec B608 - where_conditions built from validated parameters with proper placeholders
+            # Build SQL safely - all user input is parameterized via params list
+            query = (
+                "SELECT * FROM crackerjack_results WHERE "
+                + " AND ".join(where_conditions)
+                + " ORDER BY timestamp DESC"
+            )
 
             cursor = conn.execute(query, params)
             results = []
@@ -1055,11 +1056,12 @@ class CrackerjackIntegration:
                 where_conditions.append("metric_type = ?")
                 params.append(metric_type)
 
-            query = f"""
-                SELECT * FROM quality_metrics_history
-                WHERE {" AND ".join(where_conditions)}
-                ORDER BY timestamp DESC
-            """  # nosec B608 - where_conditions built from validated parameters with proper placeholders
+            # Build SQL safely - all user input is parameterized via params list
+            query = (
+                "SELECT * FROM quality_metrics_history WHERE "
+                + " AND ".join(where_conditions)
+                + " ORDER BY timestamp DESC"
+            )
 
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]

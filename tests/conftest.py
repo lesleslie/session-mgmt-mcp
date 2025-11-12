@@ -5,6 +5,7 @@ import asyncio
 import os
 import tempfile
 from collections.abc import AsyncGenerator, Callable, Generator
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
@@ -139,158 +140,101 @@ def reset_di_container():
     cleaning the bevy container instances dictionary. Reset happens both
     before and after test to ensure clean state for monkeypatching.
     """
+
+    def _cleanup_container():
+        """Helper function to clean up the DI container."""
+        try:
+            from bevy import get_container
+            from session_mgmt_mcp.di import SessionPaths
+
+            container = get_container()
+
+            # List of all singleton classes to clean up
+            singleton_classes = [
+                SessionPaths,
+                # Core DI singletons
+                "SessionLogger",
+                "SessionPermissionsManager",
+                "SessionLifecycleManager",
+                # Instance manager singletons
+                "ApplicationMonitor",
+                "LLMManager",
+                "ServerlessSessionManager",
+                "ReflectionDatabase",
+                "InterruptionManager",
+            ]
+
+            # Clean up each singleton from container
+            for cls in singleton_classes:
+                # Handle both direct class and string class names
+                if isinstance(cls, str):
+                    # Import the class dynamically
+                    try:
+                        if cls == "SessionLogger":
+                            from session_mgmt_mcp.utils.logging import SessionLogger
+
+                            cls = SessionLogger
+                        elif cls == "SessionPermissionsManager":
+                            from session_mgmt_mcp.server_core import (
+                                SessionPermissionsManager,
+                            )
+
+                            cls = SessionPermissionsManager
+                        elif cls == "SessionLifecycleManager":
+                            from session_mgmt_mcp.core import SessionLifecycleManager
+
+                            cls = SessionLifecycleManager
+                        elif cls == "ApplicationMonitor":
+                            from session_mgmt_mcp.app_monitor import ApplicationMonitor
+
+                            cls = ApplicationMonitor
+                        elif cls == "LLMManager":
+                            from session_mgmt_mcp.llm_providers import LLMManager
+
+                            cls = LLMManager
+                        elif cls == "ServerlessSessionManager":
+                            from session_mgmt_mcp.serverless_mode import (
+                                ServerlessSessionManager,
+                            )
+
+                            cls = ServerlessSessionManager
+                        elif cls == "ReflectionDatabase":
+                            # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
+                            from session_mgmt_mcp.adapters.reflection_adapter import (
+                                ReflectionDatabaseAdapter as ReflectionDatabase,
+                            )
+
+                            cls = ReflectionDatabase
+                        elif cls == "InterruptionManager":
+                            from session_mgmt_mcp.interruption_manager import (
+                                InterruptionManager,
+                            )
+
+                            cls = InterruptionManager
+                    except ImportError:
+                        continue
+
+                # Remove from container if present
+                with suppress(KeyError, TypeError):
+                    container.instances.pop(cls, None)
+
+            # Reset configuration flag
+            import session_mgmt_mcp.di as di_module
+
+            di_module._configured = False
+
+        except Exception:
+            # If cleanup fails, we'll try again on next test
+            pass
+
     # Clean up BEFORE test to ensure monkeypatch can take effect
-    try:
-        from bevy import get_container
-        from session_mgmt_mcp.di import SessionPaths
-
-        container = get_container()
-
-        # List of all singleton classes to clean up
-        singleton_classes = [
-            SessionPaths,
-            # Core DI singletons
-            "SessionLogger",
-            "SessionPermissionsManager",
-            "SessionLifecycleManager",
-            # Instance manager singletons
-            "ApplicationMonitor",
-            "LLMManager",
-            "ServerlessSessionManager",
-            "ReflectionDatabase",
-            "InterruptionManager",
-        ]
-
-        # Clean up each singleton from container
-        for cls in singleton_classes:
-            # Handle both direct class and string class names
-            if isinstance(cls, str):
-                # Import the class dynamically
-                try:
-                    if cls == "SessionLogger":
-                        from session_mgmt_mcp.utils.logging import SessionLogger
-
-                        cls = SessionLogger
-                    elif cls == "SessionPermissionsManager":
-                        from session_mgmt_mcp.server_core import (
-                            SessionPermissionsManager,
-                        )
-
-                        cls = SessionPermissionsManager
-                    elif cls == "SessionLifecycleManager":
-                        from session_mgmt_mcp.core import SessionLifecycleManager
-
-                        cls = SessionLifecycleManager
-                    elif cls == "ApplicationMonitor":
-                        from session_mgmt_mcp.app_monitor import ApplicationMonitor
-
-                        cls = ApplicationMonitor
-                    elif cls == "LLMManager":
-                        from session_mgmt_mcp.llm_providers import LLMManager
-
-                        cls = LLMManager
-                    elif cls == "ServerlessSessionManager":
-                        from session_mgmt_mcp.serverless_mode import (
-                            ServerlessSessionManager,
-                        )
-
-                        cls = ServerlessSessionManager
-                    elif cls == "ReflectionDatabase":
-                        # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
-                        from session_mgmt_mcp.adapters.reflection_adapter import (
-                            ReflectionDatabaseAdapter as ReflectionDatabase,
-                        )
-
-                        cls = ReflectionDatabase
-                    elif cls == "InterruptionManager":
-                        from session_mgmt_mcp.interruption_manager import (
-                            InterruptionManager,
-                        )
-
-                        cls = InterruptionManager
-                except ImportError:
-                    continue
-
-            # Remove from container if present
-            with suppress(KeyError, TypeError):
-                container.instances.pop(cls, None)
-
-        # Reset configuration flag BEFORE test so monkeypatch can work
-        import session_mgmt_mcp.di as di_module
-
-        di_module._configured = False
-
-    except Exception:
-        # If cleanup fails, we'll try again on next test
-        pass
+    _cleanup_container()
 
     # Test runs here
     yield
 
     # Clean up AFTER test as well for consistency
-    try:
-        from bevy import get_container
-
-        container = get_container()
-
-        # Same cleanup as above
-        for cls in singleton_classes:
-            if isinstance(cls, str):
-                try:
-                    if cls == "SessionLogger":
-                        from session_mgmt_mcp.utils.logging import SessionLogger
-
-                        cls = SessionLogger
-                    elif cls == "SessionPermissionsManager":
-                        from session_mgmt_mcp.server_core import (
-                            SessionPermissionsManager,
-                        )
-
-                        cls = SessionPermissionsManager
-                    elif cls == "SessionLifecycleManager":
-                        from session_mgmt_mcp.core import SessionLifecycleManager
-
-                        cls = SessionLifecycleManager
-                    elif cls == "ApplicationMonitor":
-                        from session_mgmt_mcp.app_monitor import ApplicationMonitor
-
-                        cls = ApplicationMonitor
-                    elif cls == "LLMManager":
-                        from session_mgmt_mcp.llm_providers import LLMManager
-
-                        cls = LLMManager
-                    elif cls == "ServerlessSessionManager":
-                        from session_mgmt_mcp.serverless_mode import (
-                            ServerlessSessionManager,
-                        )
-
-                        cls = ServerlessSessionManager
-                    elif cls == "ReflectionDatabase":
-                        # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
-                        from session_mgmt_mcp.adapters.reflection_adapter import (
-                            ReflectionDatabaseAdapter as ReflectionDatabase,
-                        )
-
-                        cls = ReflectionDatabase
-                    elif cls == "InterruptionManager":
-                        from session_mgmt_mcp.interruption_manager import (
-                            InterruptionManager,
-                        )
-
-                        cls = InterruptionManager
-                except ImportError:
-                    continue
-
-            with suppress(KeyError, TypeError):
-                container.instances.pop(cls, None)
-
-        # Reset configuration flag again
-        import session_mgmt_mcp.di as di_module
-
-        di_module._configured = False
-
-    except Exception:
-        pass
+    _cleanup_container()
 
 
 @pytest.fixture

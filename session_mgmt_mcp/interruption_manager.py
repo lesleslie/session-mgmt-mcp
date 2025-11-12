@@ -39,7 +39,6 @@ except ImportError:
 
 try:
     import gzip
-    import pickle
 
     COMPRESSION_AVAILABLE = True
 except ImportError:
@@ -479,11 +478,11 @@ class InterruptionManager:
                 "environment": self._capture_environment_state(),
             }
 
-            # Compress the data
+            # Compress the data using JSON (safer than pickle)
             compressed_data = None
             if COMPRESSION_AVAILABLE:
                 try:
-                    serialized = pickle.dumps(snapshot_data)
+                    serialized = json.dumps(snapshot_data).encode()
                     compressed_data = gzip.compress(serialized)
                 except Exception as e:
                     logger.warning(f"Compression failed: {e}")
@@ -569,7 +568,7 @@ class InterruptionManager:
                 if metadata.get("compressed", False) and COMPRESSION_AVAILABLE:
                     try:
                         decompressed = gzip.decompress(compressed_data)
-                        snapshot_data = pickle.loads(decompressed)  # nosec B301
+                        snapshot_data = json.loads(decompressed.decode())
                     except Exception as e:
                         logger.warning(f"Decompression failed: {e}")
                         snapshot_data = json.loads(compressed_data.decode())

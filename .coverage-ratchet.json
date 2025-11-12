@@ -1,26 +1,24 @@
 {
   "baseline": 45.60776025578497,
   "current_minimum": 45.60776025578497,
-  "target": 100.0,
-  "last_updated": "2025-11-05T23:04:44.316010",
   "history": [
     {
-      "date": "2025-09-18T14:33:42.314344",
-      "coverage": 11.9518677100251,
       "commit": "baseline",
+      "coverage": 11.9518677100251,
+      "date": "2025-09-18T14:33:42.314344",
       "milestone": false
     },
     {
-      "date": "2025-10-03T01:21:00.000000",
-      "coverage": 14.02,
       "commit": "corrected-baseline-test-reorganization",
+      "coverage": 14.02,
+      "date": "2025-10-03T01:21:00.000000",
       "milestone": false,
       "note": "Corrected baseline after moving test files from tools/ to tests/unit/"
     },
     {
-      "date": "2025-10-03T01:34:30.470120",
-      "coverage": 34.5551996057171,
       "commit": "current",
+      "coverage": 34.5551996057171,
+      "date": "2025-10-03T01:34:30.470120",
       "milestone": true,
       "milestones_hit": [
         15,
@@ -30,22 +28,23 @@
       ]
     },
     {
-      "date": "2025-10-03T01:47:47.406488",
-      "coverage": 34.659931000492854,
       "commit": "current",
+      "coverage": 34.659931000492854,
+      "date": "2025-10-03T01:47:47.406488",
       "milestone": false,
       "milestones_hit": []
     },
     {
-      "date": "2025-11-05T23:04:44.316987",
-      "coverage": 45.60776025578497,
       "commit": "current",
+      "coverage": 45.60776025578497,
+      "date": "2025-11-05T23:04:44.316987",
       "milestone": true,
       "milestones_hit": [
         40
       ]
     }
   ],
+  "last_updated": "2025-11-05T23:04:44.316010",
   "milestones_achieved": [
     15,
     20,
@@ -53,5 +52,6 @@
     30,
     40
   ],
-  "next_milestone": 50
+  "next_milestone": 50,
+  "target": 100.0
 }

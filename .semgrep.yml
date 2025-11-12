@@ -1,0 +1,30 @@
+# Semgrep configuration for session-mgmt-mcp
+# Ensures proper Python 3.13 syntax support
+
+project:
+  name: session-mgmt-mcp
+
+# Python version configuration
+rules:
+  - id: python-version-check
+    pattern: "..."
+    languages: [python]
+    severity: INFO
+    message: "Using Python 3.13+"
+
+# Ignore false positives from parser limitations
+paths:
+  exclude:
+    - "*.pyc"
+    - "__pycache__"
+    - ".venv"
+    - ".git"
+    - "build"
+    - "dist"
+    - "*.egg-info"
+
+# Note: Semgrep's built-in Python parser should support Python 3.10+ including match/case
+# If you see syntax errors for match/case, the Semgrep installation may need to be updated:
+#   brew upgrade semgrep
+# Or reinstall with:
+#   pip install --upgrade semgrep

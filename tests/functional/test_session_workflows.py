@@ -290,51 +290,57 @@ class TestSessionWorkflows:
         ]
 
         for i, test_case in enumerate(test_cases):
-            with tempfile.TemporaryDirectory() as temp_dir:
-                temp_path = Path(temp_dir)
+            await self._run_quality_scoring_test_case(
+                manager, test_case, i, mock_is_git_repo
+            )
 
-                # Create project structure based on context
-                self._setup_test_project(temp_path, test_case["context"])
+    async def _run_quality_scoring_test_case(
+        self, manager, test_case, i, mock_is_git_repo
+    ):
+        """Helper method to run a single quality scoring test case."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
 
-                # Mock git repo check based on context
-                mock_is_git_repo.return_value = test_case["context"].get("has_git_repo", False)
+            # Create project structure based on context
+            self._setup_test_project(temp_path, test_case["context"])
 
-                with patch(
-                    "shutil.which",
-                    return_value="/usr/local/bin/uv"
-                    if test_case["uv_available"]
-                    else None,
-                ):
-                    with patch(
-                        "session_mgmt_mcp.server.permissions_manager"
-                    ) as mock_perms:
-                        mock_perms.trusted_operations = (
-                            {"op1", "op2"} if i < 2 else set()
+            # Mock git repo check based on context
+            mock_is_git_repo.return_value = test_case["context"].get("has_git_repo", False)
+
+            with patch(
+                "shutil.which",
+                return_value="/usr/local/bin/uv"
+                if test_case["uv_available"]
+                else None,
+            ):
+                with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
+                    mock_perms.trusted_operations = (
+                        {"op1", "op2"} if i < 2 else set()
+                    )
+
+                    # Pass temp_dir to quality scoring
+                    quality_result = await manager.calculate_quality_score(
+                        project_dir=temp_path
+                    )
+
+                    assert isinstance(quality_result["total_score"], int)
+                    assert 0 <= quality_result["total_score"] <= 100
+
+                    if "expected_min_score" in test_case:
+                        assert (
+                            quality_result["total_score"]
+                            >= test_case["expected_min_score"]
+                        ), (
+                            f"Test case {i}: Expected min score {test_case['expected_min_score']}, got {quality_result['total_score']}"
                         )
 
-                        # Pass temp_dir to quality scoring
-                        quality_result = await manager.calculate_quality_score(
-                            project_dir=temp_path
+                    if "expected_max_score" in test_case:
+                        assert (
+                            quality_result["total_score"]
+                            <= test_case["expected_max_score"]
+                        ), (
+                            f"Test case {i}: Expected max score {test_case['expected_max_score']}, got {quality_result['total_score']}"
                         )
-
-                        assert isinstance(quality_result["total_score"], int)
-                        assert 0 <= quality_result["total_score"] <= 100
-
-                        if "expected_min_score" in test_case:
-                            assert (
-                                quality_result["total_score"]
-                                >= test_case["expected_min_score"]
-                            ), (
-                                f"Test case {i}: Expected min score {test_case['expected_min_score']}, got {quality_result['total_score']}"
-                            )
-
-                        if "expected_max_score" in test_case:
-                            assert (
-                                quality_result["total_score"]
-                                <= test_case["expected_max_score"]
-                            ), (
-                                f"Test case {i}: Expected max score {test_case['expected_max_score']}, got {quality_result['total_score']}"
-                            )
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
@@ -590,39 +596,47 @@ class TestSessionCrossPlatform:
         ]
 
         for project_type in project_types:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                project_dir = Path(temp_dir)
+            await self._run_project_type_test_case(
+                manager, project_type, mock_is_git_repo
+            )
 
-                # Create files
-                for filename in project_type["files"]:
-                    if "/" in filename:
-                        # Handle nested files
-                        subdir, fname = filename.rsplit("/", 1)
-                        (project_dir / subdir).mkdir(parents=True, exist_ok=True)
-                        (project_dir / subdir / fname).touch()
-                    else:
-                        (project_dir / filename).touch()
+    async def _run_project_type_test_case(
+        self, manager, project_type, mock_is_git_repo
+    ):
+        """Helper method to run a single project type test case."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir)
 
-                # Create directories
-                for dirname in project_type["dirs"]:
-                    (project_dir / dirname).mkdir()
+            # Create files
+            for filename in project_type["files"]:
+                if "/" in filename:
+                    # Handle nested files
+                    subdir, fname = filename.rsplit("/", 1)
+                    (project_dir / subdir).mkdir(parents=True, exist_ok=True)
+                    (project_dir / subdir / fname).touch()
+                else:
+                    (project_dir / filename).touch()
 
-                # Create a basic Python file for detection
-                if "main.py" not in project_type["files"]:
-                    (project_dir / "main.py").write_text("# Python file\n")
+            # Create directories
+            for dirname in project_type["dirs"]:
+                (project_dir / dirname).mkdir()
 
-                # Test project context analysis
-                context_result = await manager.analyze_project_context(project_dir)
+            # Create a basic Python file for detection
+            if "main.py" not in project_type["files"]:
+                (project_dir / "main.py").write_text("# Python file\n")
 
-                # Count True indicators
-                sum(1 for detected in context_result.values() if detected)
+            # Test project context analysis
+            context_result = await manager.analyze_project_context(str(project_dir))
 
-                # For Python projects, we expect to detect Python files
-                if (
-                    any("py" in f for f in project_type["files"])
-                    or "main.py" not in project_type["files"]
-                ):
-                    assert context_result.get("has_python_files", False) is True
+            # Count True indicators
+            sum(1 for detected in context_result.values() if detected)
+
+            # For Python projects, we expect to detect Python files
+            if (
+                any("py" in f for f in project_type["files"])
+                or "main.py" not in project_type["files"]
+            ):
+                assert context_result.get("has_python_files", False) is True
 
 
 if __name__ == "__main__":

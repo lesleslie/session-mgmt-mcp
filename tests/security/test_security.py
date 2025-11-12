@@ -24,7 +24,7 @@ class TestSecurity:
             # Attempt to use path traversal in content
             malicious_content = "../../../etc/passwd"
             tags = ["test"]
-            
+
             # This should either fail safely or handle the path traversal appropriately
             try:
                 reflection_id = await db.store_reflection(malicious_content, tags)
@@ -54,9 +54,9 @@ class TestSecurity:
                 "'; UPDATE reflections SET content='hacked'; --",
                 "'; SELECT * FROM reflections; --",
                 "' OR 1=1; --",
-                "'; SELECT * FROM reflections WHERE content LIKE '%";  # Truncated to test error handling
+                "'; SELECT * FROM reflections WHERE content LIKE '%'",  # Truncated to test error handling
             ]
-            
+
             for query in injection_queries:
                 try:
                     # This should either work safely or fail gracefully
@@ -83,14 +83,14 @@ os.system('rm -rf /')  # Harmless in this context, just testing storage
 def dangerous_function():
     return "Potentially harmful if executed"
 """
-            
+
             tags = ["security", "test"]
-            
+
             # This should store the content safely as text
             try:
                 reflection_id = await db.store_reflection(executable_looking_content, tags)
                 retrieved = await db.get_reflection_by_id(reflection_id)
-                
+
                 # Content should be stored exactly as provided
                 assert retrieved["content"] == executable_looking_content
                 assert retrieved["tags"] == tags
@@ -114,7 +114,7 @@ def dangerous_function():
             try:
                 reflection_id = await db.store_reflection(large_content, tags)
                 retrieved = await db.get_reflection_by_id(reflection_id)
-                
+
                 # Should handle large content appropriately
                 assert retrieved["content"] == large_content
                 assert len(retrieved["content"]) == len(large_content)
@@ -140,18 +140,18 @@ This content includes special chars:
 Null byte: \x00
 Newlines: \n\r
 Tabs: \t
-Quotes: " ' ` 
+Quotes: " ' `
 Backslashes: \\
 Control chars: \x01\x02\x03
 Unicode: ñáéíóú 中文 🚀
 """
-            
+
             tags = ["special-chars", "unicode", "test"]
 
             # Should handle special characters properly
             reflection_id = await db.store_reflection(special_content, tags)
             retrieved = await db.get_reflection_by_id(reflection_id)
-            
+
             assert retrieved["content"] == special_content
             assert retrieved["tags"] == tags
 
@@ -168,11 +168,11 @@ Unicode: ñáéíóú 中文 🚀
             content = "Test content"
             tags = ["test"]
             original_id = await db.store_reflection(content, tags)
-            
+
             # Try to retrieve with a non-existent ID
             non_existent_id = "definitely-not-a-valid-id"
             result = await db.get_reflection_by_id(non_existent_id)
-            
+
             # Should return None for non-existent IDs
             assert result is None
 
@@ -188,20 +188,20 @@ Unicode: ñáéíóú 中文 🚀
         # This test would require access to the session management system
         # For now, we'll just verify that the module loads properly
         from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-        
+
         manager = SessionLifecycleManager()
-        
+
         # Test with a temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
-            
+
             # Mock git repository status
             with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session
                         init_result = await manager.initialize_session(str(project_dir))
-                        
+
                         # Verify success and check that it's secure
                         assert init_result["success"] is True
                         assert "error" not in init_result or init_result["error"] is None
@@ -209,41 +209,41 @@ Unicode: ñáéíóú 中文 🚀
     async def test_environment_variable_injection(self):
         """Test that environment variables are handled safely."""
         import os
-        
+
         # Test with a temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test_env_injection.duckdb"
-            
+
             # This test doesn't actually inject anything malicious,
             # but verifies that the database can be created properly
             db = ReflectionDatabase(db_path=str(db_path))
             await db.initialize()
-            
+
             # Store some content
             await db.store_reflection("Environment test content", ["env", "test"])
-            
+
             # Verify we can retrieve it
             results = await db.similarity_search("environment", limit=10)
             assert len(results) > 0
-            
+
             # Check that our content appears in results
             found = any("environment test content" in result["content"].lower() for result in results)
             assert found
-            
+
             db.close()
 
     async def test_database_file_path_security(self):
         """Test that database file paths are handled securely."""
         with tempfile.TemporaryDirectory() as temp_dir:
             base_dir = Path(temp_dir)
-            
+
             # Regular path (should work)
             normal_db_path = base_dir / "normal_db.duckdb"
             db1 = ReflectionDatabase(db_path=str(normal_db_path))
             await db1.initialize()
             await db1.store_reflection("Normal content", ["test"])
             db1.close()
-            
+
             # Try to check that the file was created (but don't access system directories)
             assert normal_db_path.exists()
 

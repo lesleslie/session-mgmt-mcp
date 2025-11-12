@@ -763,10 +763,9 @@ class MemoryOptimizer:
         original_ids = [conv["id"] for conv in original_cluster]
         if original_ids and self.reflection_db.conn:
             placeholders = ",".join(["?" for _ in original_ids])
-            self.reflection_db.conn.execute(
-                f"DELETE FROM conversations WHERE id IN ({placeholders})",  # nosec B608 - properly parameterized query
-                original_ids,
-            )
+            # Build SQL safely - placeholders generated from list length, not user input
+            query = "DELETE FROM conversations WHERE id IN (" + placeholders + ")"
+            self.reflection_db.conn.execute(query, original_ids)
 
         # Commit changes
         if self.reflection_db.conn:

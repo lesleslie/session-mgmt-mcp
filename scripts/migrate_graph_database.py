@@ -177,20 +177,19 @@ async def _read_old_graph_data(old_db_path, verbose: bool):
 async def _read_entities(old_conn, verbose: bool):
     """Read entities from old database."""
     entity_result = old_conn.execute("SELECT * FROM kg_entities").fetchall()
-    entities = []
-    for row in entity_result:
-        entities.append(
-            {
-                "id": row[0],
-                "name": row[1],
-                "entity_type": row[2],
-                "observations": list(row[3]) if row[3] else [],
-                "properties": row[4] if row[4] else {},
-                "created_at": row[5],
-                "updated_at": row[6],
-                "metadata": row[7] if row[7] else {},
-            }
-        )
+    entities = [
+        {
+            "id": row[0],
+            "name": row[1],
+            "entity_type": row[2],
+            "observations": list(row[3]) if row[3] else [],
+            "properties": row[4] or {},
+            "created_at": row[5],
+            "updated_at": row[6],
+            "metadata": row[7] or {},
+        }
+        for row in entity_result
+    ]
 
     if verbose:
         print(f"  Read {len(entities)} entities")
@@ -200,22 +199,19 @@ async def _read_entities(old_conn, verbose: bool):
 async def _read_relationships(old_conn, verbose: bool):
     """Read relationships from old database."""
     rel_result = old_conn.execute("SELECT * FROM kg_relationships").fetchall()
-    relationships = []
-    for row in rel_result:
-        relationships.append(
-            {
-                "id": row[0],
-                "from_entity": row[1],
-                "to_entity": row[2],
-                "relation_type": row[3],
-                "properties": row[4] if row[4] else {},
-                "created_at": row[5],
-                "updated_at": row[6],
-                "metadata": row[7] if row[7] else {},
-            }
-        )
-
-    return relationships
+    return [
+        {
+            "id": row[0],
+            "from_entity": row[1],
+            "to_entity": row[2],
+            "relation_type": row[3],
+            "properties": row[4] or {},
+            "created_at": row[5],
+            "updated_at": row[6],
+            "metadata": row[7] or {},
+        }
+        for row in rel_result
+    ]
 
 
 async def _handle_dry_run_graph(entities, relationships):

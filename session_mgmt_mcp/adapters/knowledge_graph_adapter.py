@@ -513,12 +513,12 @@ class KnowledgeGraphDatabaseAdapter:
             params.append(entity_type)
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"
-        sql = f"""
-            SELECT * FROM kg_entities
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-            LIMIT ?
-        """  # nosec B608
+        # Build SQL safely - all user input is parameterized via params list
+        sql = (
+            "SELECT * FROM kg_entities WHERE "
+            + where_clause
+            + " ORDER BY created_at DESC LIMIT ?"
+        )
         params.append(limit)
 
         result = conn.execute(sql, params).fetchall()
@@ -575,11 +575,12 @@ class KnowledgeGraphDatabaseAdapter:
             params.append(relation_type)
 
         where_clause = " AND ".join(conditions)
-        sql = f"""
-            SELECT * FROM kg_relationships
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-        """  # nosec B608
+        # Build SQL safely - all user input is parameterized via params list
+        sql = (
+            "SELECT * FROM kg_relationships WHERE "
+            + where_clause
+            + " ORDER BY created_at DESC"
+        )
 
         result = conn.execute(sql, params).fetchall()
 

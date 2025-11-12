@@ -1,0 +1,25 @@
+# Semgrep ignore file
+# Temporarily ignore files with match/case until Semgrep installation is fixed
+
+# Known false positives (Semgrep parser issues with match/case)
+session_mgmt_mcp/serverless_mode.py
+session_mgmt_mcp/llm_providers.py
+
+# Standard ignores
+.venv/
+__pycache__/
+*.pyc
+.git/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Backup files
+*.backup
+*.bak
+server.py.backup

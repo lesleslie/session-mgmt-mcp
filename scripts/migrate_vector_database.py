@@ -145,18 +145,17 @@ async def _read_conversations(old_conn, verbose: bool):
         """
     ).fetchall()
 
-    conversations = []
-    for row in conv_result:
-        conversations.append(
-            {
-                "id": row[0],
-                "content": row[1],
-                "embedding": row[2],
-                "project": row[3],
-                "timestamp": row[4],
-                "metadata": row[5] if row[5] else {},
-            }
-        )
+    conversations = [
+        {
+            "id": row[0],
+            "content": row[1],
+            "embedding": row[2],
+            "project": row[3],
+            "timestamp": row[4],
+            "metadata": row[5] or {},
+        }
+        for row in conv_result
+    ]
 
     print(f"   ✅ Found {len(conversations)} conversations")
     return conversations
@@ -172,17 +171,16 @@ async def _read_reflections(old_conn, verbose: bool):
         """
     ).fetchall()
 
-    reflections = []
-    for row in refl_result:
-        reflections.append(
-            {
-                "id": row[0],
-                "content": row[1],
-                "embedding": row[2],
-                "tags": row[3] if row[3] else [],
-                "timestamp": row[4],
-            }
-        )
+    reflections = [
+        {
+            "id": row[0],
+            "content": row[1],
+            "embedding": row[2],
+            "tags": row[3] or [],
+            "timestamp": row[4],
+        }
+        for row in refl_result
+    ]
 
     print(f"   ✅ Found {len(reflections)} reflections")
     return reflections

@@ -990,7 +990,7 @@ class ACBCacheStorage(SessionStorage):
         """Add session to index for list_sessions()."""
         try:
             result = await self.cache.get(self._index_key)
-            index_data: dict[str, Any] | dict = result or {}
+            index_data: dict[str, Any] = result if isinstance(result, dict) else {}
             index_data[session_id] = {
                 "user_id": user_id,
                 "project_id": project_id,

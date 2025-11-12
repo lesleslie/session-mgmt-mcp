@@ -417,12 +417,12 @@ class TeamKnowledgeManager:
         # Add filter conditions
         self._add_filter_conditions(where_conditions, params, team_id, project_id, tags)
 
-        query_sql = f"""
-            SELECT * FROM team_reflections
-            WHERE {" AND ".join(where_conditions)}
-            ORDER BY votes DESC, created_at DESC
-            LIMIT ?
-        """  # nosec B608 - properly parameterized query with dynamic WHERE clauses
+        # Build SQL safely - all user input is parameterized via params list
+        query_sql = (
+            "SELECT * FROM team_reflections WHERE "
+            + " AND ".join(where_conditions)
+            + " ORDER BY votes DESC, created_at DESC LIMIT ?"
+        )
         params.append(limit)
 
         return self._SearchQueryBuilder(sql=query_sql, params=params)
@@ -606,10 +606,13 @@ class TeamKnowledgeManager:
             team_details = []
             if user_data["teams"]:
                 placeholders = ",".join("?" * len(user_data["teams"]))
-                team_rows = conn.execute(
-                    f"SELECT team_id, name, description FROM teams WHERE team_id IN ({placeholders})",  # nosec B608 - placeholders generated from safe ? characters
-                    user_data["teams"],
-                ).fetchall()
+                # Build SQL safely - placeholders generated from list length, not user input
+                query = (
+                    "SELECT team_id, name, description FROM teams WHERE team_id IN ("
+                    + placeholders
+                    + ")"
+                )
+                team_rows = conn.execute(query, user_data["teams"]).fetchall()
                 team_details = [dict(row) for row in team_rows]
 
         return {

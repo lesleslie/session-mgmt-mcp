@@ -324,16 +324,14 @@ def _format_snapshot_statistics(snapshots: list[dict[str, Any]]) -> list[str]:
 
 def _setup_claude_directory(output: list[str]) -> dict[str, Any]:
     """Setup Claude directory and return validation results."""
-    output.append("
-📋 Phase 1: Claude directory setup...")
+    output.append("\n📋 Phase 1: Claude directory setup...")
     # Placeholder implementation - actual logic should be in server.py
     return {"status": "success", "directories_created": []}
 
 
 def _setup_uv_dependencies(output: list[str], current_dir: Path) -> None:
     """Setup UV dependencies and package management."""
-    output.append("
-🔧 Phase 2: UV dependency management & session setup...")
+    output.append("\n🔧 Phase 2: UV dependency management & session setup...")
 
 
 def _handle_uv_operations(

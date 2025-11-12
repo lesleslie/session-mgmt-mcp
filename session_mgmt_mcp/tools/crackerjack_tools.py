@@ -295,8 +295,8 @@ def _format_execution_status(result: CrackerjackResult) -> str:
 
 def _parse_crackerjack_output(output: str) -> tuple[list[str], list[str]]:
     """Parse crackerjack output to extract passed and failed hooks."""
-    passed_hooks = []
-    failed_hooks = []
+    passed_hooks: list[str] = []
+    failed_hooks: list[str] = []
 
     lines = output.split("\n")
 
@@ -490,10 +490,10 @@ async def _execute_crackerjack_command_impl(
         return output
 
     except ImportError:
-        logger.warning("Crackerjack integration not available")
+        _get_logger().warning("Crackerjack integration not available")
         return "❌ Crackerjack integration not available. Install crackerjack package"
     except Exception as e:
-        logger.exception(f"Crackerjack execution failed: {e}")
+        _get_logger().exception(f"Crackerjack execution failed: {e}")
         return f"❌ Crackerjack execution failed: {e!s}"
 
 
@@ -641,7 +641,7 @@ async def _store_execution_result(
         return "📝 Execution stored in session history\n"
 
     except Exception as e:
-        logger.debug(f"Failed to store crackerjack execution: {e}")
+        _get_logger().debug(f"Failed to store crackerjack execution: {e}")
         return ""
 
 
@@ -772,7 +772,7 @@ async def _crackerjack_run_impl(
         error_msg += _build_error_troubleshooting(e, timeout, working_directory)
         error_msg += "\n**Quick Fix**: Run `python -m crackerjack --help` to verify installation\n"
 
-        logger.exception(
+        _get_logger().exception(
             "Crackerjack execution failed",
             extra={
                 "command": command,
@@ -902,7 +902,7 @@ async def _crackerjack_history_impl(
         return _format_history_output(filtered_results, days)
 
     except Exception as e:
-        logger.exception(f"Crackerjack history failed: {e}")
+        _get_logger().exception(f"Crackerjack history failed: {e}")
         return f"❌ History retrieval failed: {e!s}"
 
 
@@ -981,7 +981,7 @@ async def _crackerjack_metrics_impl(
         return _format_quality_metrics_output(days, summary, keywords)
 
     except Exception as e:
-        logger.exception(f"Metrics analysis failed: {e}")
+        _get_logger().exception(f"Metrics analysis failed: {e}")
         return f"❌ Metrics analysis failed: {e!s}"
 
 
@@ -1108,7 +1108,7 @@ async def _crackerjack_patterns_impl(
         return output
 
     except Exception as e:
-        logger.exception(f"Pattern analysis failed: {e}")
+        _get_logger().exception(f"Pattern analysis failed: {e}")
         return f"❌ Pattern analysis failed: {e!s}"
 
 
@@ -1183,7 +1183,7 @@ async def _crackerjack_quality_trends_impl(
         return output
 
     except Exception as e:
-        logger.exception(f"Trend analysis failed: {e}")
+        _get_logger().exception(f"Trend analysis failed: {e}")
         return f"❌ Trend analysis failed: {e!s}"
 
 
