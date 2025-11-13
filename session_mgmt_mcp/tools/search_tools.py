@@ -3,18 +3,22 @@
 
 Following crackerjack architecture patterns with focused, single-responsibility tools
 for conversation memory, semantic search, and knowledge retrieval.
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
 
-import typing as t
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from acb.adapters import import_adapter
-from acb.depends import depends
-from session_mgmt_mcp.utils.instance_managers import (
-    get_reflection_database as resolve_reflection_database,
+from session_mgmt_mcp.utils.database_helpers import require_reflection_database
+from session_mgmt_mcp.utils.error_handlers import _get_logger, validate_required
+from session_mgmt_mcp.utils.messages import ToolMessages
+from session_mgmt_mcp.utils.tool_wrapper import (
+    execute_database_tool,
+    execute_simple_database_tool,
+    format_reflection_result,
 )
 
 if TYPE_CHECKING:
@@ -23,41 +27,9 @@ if TYPE_CHECKING:
     )
 
 
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
-
-
-async def get_reflection_database() -> ReflectionDatabase | None:
-    """Backward-compatible helper for resolving the reflection database.
-
-    Migration Phase 2.7: Now returns ReflectionDatabaseAdapter which provides
-    the same API as ReflectionDatabase but uses ACB vector adapter.
-
-    Note:
-        Uses instance_managers.get_reflection_database() which returns a
-        properly initialized singleton instance from the DI container.
-
-    """
-    try:
-        from session_mgmt_mcp.adapters.reflection_adapter import (
-            ReflectionDatabaseAdapter,
-        )
-        from session_mgmt_mcp.di import configure
-
-        # Ensure DI is configured
-        configure()
-
-        # Create and initialize adapter
-        db = ReflectionDatabaseAdapter()
-        await db.initialize()
-        return db
-
-    except ImportError:
-        return None
-    except Exception:
-        return None
+# ============================================================================
+# Token Optimization (Standalone - No Database)
+# ============================================================================
 
 
 async def _optimize_search_results_impl(
@@ -93,23 +65,64 @@ async def _optimize_search_results_impl(
         return {"results": results, "optimized": False, "error": str(e)}
 
 
+# ============================================================================
+# Store Reflection
+# ============================================================================
+
+
+async def _store_reflection_operation(
+    db: ReflectionDatabase, content: str, tags: list[str]
+) -> dict[str, Any]:
+    """Execute reflection storage operation."""
+    reflection_id = await db.store_reflection(content, tags)
+    return {"success": True, "id": reflection_id, "content": content, "tags": tags}
+
+
+def _format_store_reflection(result: dict[str, Any]) -> str:
+    """Format reflection storage result."""
+    tag_text = f" (tags: {', '.join(result['tags'])})" if result['tags'] else ""
+    return f"✅ Reflection stored successfully with ID: {result['id']}{tag_text}"
+
+
 async def _store_reflection_impl(content: str, tags: list[str] | None = None) -> str:
     """Store an important insight or reflection for future reference."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Reflection system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            reflection_id = await db.store_reflection(content, tags or [])
-            tag_text = f" (tags: {', '.join(tags)})" if tags else ""
-            return (
-                f"✅ Reflection stored successfully with ID: {reflection_id}{tag_text}"
-            )
+    def validator() -> None:
+        validate_required(content, "content")
 
-    except Exception as e:
-        _get_logger().exception(f"Failed to store reflection: {e}")
-        return f"❌ Error storing reflection: {e!s}"
+    async def operation(db: ReflectionDatabase) -> dict[str, Any]:
+        return await _store_reflection_operation(db, content, tags or [])
+
+    return await execute_database_tool(
+        operation, _format_store_reflection, "Store reflection", validator
+    )
+
+
+# ============================================================================
+# Quick Search
+# ============================================================================
+
+
+async def _quick_search_operation(
+    db: ReflectionDatabase, query: str, project: str | None, min_score: float
+) -> str:
+    """Execute quick search and format results."""
+    total_results = await db.search_conversations(
+        query=query, project=project, min_score=min_score, limit=100
+    )
+
+    if not total_results:
+        return f"🔍 No results found for '{query}'"
+
+    top_result = total_results[0]
+    result = f"🔍 **{len(total_results)} results** for '{query}'\n\n"
+    result += f"**Top Result** (score: {top_result.get('similarity', 'N/A')}):\n"
+    result += f"{top_result.get('content', '')[:200]}..."
+
+    if len(total_results) > 1:
+        result += f"\n\n💡 Use get_more_results to see additional {len(total_results) - 1} results"
+
+    return result
 
 
 async def _quick_search_impl(
@@ -118,34 +131,16 @@ async def _quick_search_impl(
     min_score: float = 0.7,
 ) -> str:
     """Quick search that returns only the count and top result for fast overview."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            total_results = await db.search_conversations(
-                query=query, project=project, min_score=min_score, limit=100
-            )
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _quick_search_operation(db, query, project, min_score)
 
-            if not total_results:
-                return f"🔍 No results found for '{query}'"
+    return await execute_simple_database_tool(operation, "Quick search")
 
-            top_result = total_results[0]
-            result = f"🔍 **{len(total_results)} results** for '{query}'\n\n"
-            result += (
-                f"**Top Result** (score: {top_result.get('similarity', 'N/A')}):\n"
-            )
-            result += f"{top_result.get('content', '')[:200]}..."
 
-            if len(total_results) > 1:
-                result += f"\n\n💡 Use get_more_results to see additional {len(total_results) - 1} results"
-
-            return result
-
-    except Exception as e:
-        _get_logger().exception(f"Quick search failed: {e}")
-        return f"❌ Search error: {e!s}"
+# ============================================================================
+# Search Summary
+# ============================================================================
 
 
 def _extract_key_terms(all_content: str) -> list[str]:
@@ -161,37 +156,40 @@ def _extract_key_terms(all_content: str) -> list[str]:
     return []
 
 
-def _format_search_summary_header(query: str) -> str:
-    """Format the header for search summary results."""
-    return f"🔍 **Search Summary for '{query}'**\\n\\n"
+async def _format_search_summary(query: str, results: list[dict[str, Any]]) -> str:
+    """Format complete search summary."""
+    if not results:
+        return f"🔍 No results found for '{query}'"
 
+    lines = [
+        f"🔍 **Search Summary for '{query}'**\n",
+        f"**Found**: {len(results)} relevant conversations\n",
+    ]
 
-def _format_search_summary_basic_info(results_count: int) -> str:
-    """Format basic information for search summary."""
-    return f"**Found**: {results_count} relevant conversations\\n"
+    # Time distribution
+    dates = [r.get("timestamp", "") for r in results if r.get("timestamp")]
+    if dates:
+        lines.append(f"**Time Range**: {min(dates)} to {max(dates)}\n")
 
-
-def _analyze_time_distribution(results: list[dict[str, Any]]) -> str:
-    """Analyze and format time distribution of search results."""
-    if results:
-        dates = [r.get("timestamp", "") for r in results if r.get("timestamp")]
-        if dates:
-            return f"**Time Range**: {min(dates)} to {max(dates)}\\n"
-    return ""
-
-
-def _extract_key_themes(results: list[dict[str, Any]]) -> str:
-    """Extract and format key themes from search results."""
+    # Key themes
     all_content = " ".join([r.get("content", "")[:100] for r in results])
     key_terms = _extract_key_terms(all_content)
     if key_terms:
-        return f"**Key Terms**: {', '.join(key_terms)}\\n"
-    return ""
+        lines.append(f"**Key Terms**: {', '.join(key_terms)}\n")
+
+    lines.append("\n💡 Use search with same query to see individual results")
+
+    return "".join(lines)
 
 
-def _format_search_summary_footer() -> str:
-    """Format the footer for search summary results."""
-    return "\\n💡 Use search with same query to see individual results"
+async def _search_summary_operation(
+    db: ReflectionDatabase, query: str, project: str | None, min_score: float
+) -> str:
+    """Execute search summary operation."""
+    results = await db.search_conversations(
+        query=query, project=project, min_score=min_score, limit=20
+    )
+    return await _format_search_summary(query, results)
 
 
 async def _search_summary_impl(
@@ -200,73 +198,16 @@ async def _search_summary_impl(
     min_score: float = 0.7,
 ) -> str:
     """Get aggregated insights from search results without individual result details."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            results = await db.search_conversations(
-                query=query, project=project, min_score=min_score, limit=20
-            )
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_summary_operation(db, query, project, min_score)
 
-            if not results:
-                return f"🔍 No results found for '{query}'"
-
-            summary = _format_search_summary_header(query)
-            summary += _format_search_summary_basic_info(len(results))
-
-            # Analyze time distribution
-            summary += _analyze_time_distribution(results)
-
-            # Key themes (basic)
-            summary += _extract_key_themes(results)
-
-            summary += _format_search_summary_footer()
-            return summary
-
-    except Exception as e:
-        _get_logger().exception(f"Search summary failed: {e}")
-        return f"❌ Search summary error: {e!s}"
+    return await execute_simple_database_tool(operation, "Search summary")
 
 
-async def _get_more_results_impl(
-    query: str,
-    offset: int = 3,
-    limit: int = 3,
-    project: str | None = None,
-) -> str:
-    """Get additional search results after an initial search (pagination support)."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
-
-        async with db:
-            results = await db.search_conversations(
-                query=query, project=project, limit=limit + offset
-            )
-
-            paginated_results = results[offset : offset + limit]
-            if not paginated_results:
-                return f"🔍 No more results for '{query}' (offset: {offset})"
-
-            return _build_pagination_output(
-                query, offset, paginated_results, len(results), limit
-            )
-
-    except Exception as e:
-        _get_logger().exception(f"Get more results failed: {e}")
-        return f"❌ Pagination error: {e!s}"
-
-
-def _format_paginated_result(result: dict[str, Any], index: int) -> str:
-    """Format a single paginated search result."""
-    output = f"**{index}.** "
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
-    output += f"{result.get('content', '')[:150]}...\n\n"
-    return output
+# ============================================================================
+# Pagination - Get More Results
+# ============================================================================
 
 
 def _build_pagination_output(
@@ -277,10 +218,17 @@ def _build_pagination_output(
     limit: int,
 ) -> str:
     """Build the complete output for paginated results."""
+    if not paginated_results:
+        return f"🔍 No more results for '{query}' (offset: {offset})"
+
     output = f"🔍 **Results {offset + 1}-{offset + len(paginated_results)}** for '{query}'\n\n"
 
     for i, result in enumerate(paginated_results, offset + 1):
-        output += _format_paginated_result(result, i)
+        if result.get("timestamp"):
+            output += f"**{i}.** ({result['timestamp']}) "
+        else:
+            output += f"**{i}.** "
+        output += f"{result.get('content', '')[:150]}...\n\n"
 
     if offset + limit < total_results:
         remaining = total_results - (offset + limit)
@@ -289,33 +237,77 @@ def _build_pagination_output(
     return output
 
 
+async def _get_more_results_operation(
+    db: ReflectionDatabase,
+    query: str,
+    offset: int,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute pagination operation."""
+    results = await db.search_conversations(
+        query=query, project=project, limit=limit + offset
+    )
+    paginated_results = results[offset : offset + limit]
+    return _build_pagination_output(query, offset, paginated_results, len(results), limit)
+
+
+async def _get_more_results_impl(
+    query: str,
+    offset: int = 3,
+    limit: int = 3,
+    project: str | None = None,
+) -> str:
+    """Get additional search results after an initial search (pagination support)."""
+
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _get_more_results_operation(db, query, offset, limit, project)
+
+    return await execute_simple_database_tool(operation, "Get more results")
+
+
+# ============================================================================
+# Search by File
+# ============================================================================
+
+
 def _extract_file_excerpt(content: str, file_path: str) -> str:
     """Extract a relevant excerpt from content based on the file path."""
     if file_path in content:
         start = max(0, content.find(file_path) - 50)
         end = min(len(content), content.find(file_path) + len(file_path) + 100)
-        excerpt = content[start:end]
-    else:
-        excerpt = content[:150]
-    return excerpt
+        return content[start:end]
+    return content[:150]
 
 
-def _format_file_search_result(result: dict[str, Any], file_path: str) -> str:
-    """Format a single file search result."""
-    output = "**1.** "  # Default numbering will be handled by caller
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
+async def _format_file_search_results(
+    file_path: str, results: list[dict[str, Any]]
+) -> str:
+    """Format file search results."""
+    if not results:
+        return f"🔍 No conversations found about file: {file_path}"
 
-    content = result.get("content", "")
-    excerpt = _extract_file_excerpt(content, file_path)
-    output += f"{excerpt}...\n\n"
+    output = f"🔍 **{len(results)} conversations** about `{file_path}`\n\n"
+
+    for i, result in enumerate(results, 1):
+        output += f"**{i}.** "
+        if result.get("timestamp"):
+            output += f"({result['timestamp']}) "
+
+        excerpt = _extract_file_excerpt(result.get("content", ""), file_path)
+        output += f"{excerpt}...\n\n"
 
     return output
 
 
-def _format_file_search_header(results_count: int, file_path: str) -> str:
-    """Format the header for file search results."""
-    return f"🔍 **{results_count} conversations** about `{file_path}`\n\n"
+async def _search_by_file_operation(
+    db: ReflectionDatabase, file_path: str, limit: int, project: str | None
+) -> str:
+    """Execute file search operation."""
+    results = await db.search_conversations(
+        query=file_path, project=project, limit=limit
+    )
+    return await _format_file_search_results(file_path, results)
 
 
 async def _search_by_file_impl(
@@ -324,37 +316,16 @@ async def _search_by_file_impl(
     project: str | None = None,
 ) -> str:
     """Search for conversations that analyzed a specific file."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            results = await db.search_conversations(
-                query=file_path, project=project, limit=limit
-            )
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_by_file_operation(db, file_path, limit, project)
 
-            if not results:
-                return f"🔍 No conversations found about file: {file_path}"
-
-            output = _format_file_search_header(len(results), file_path)
-
-            for i, result in enumerate(results, 1):
-                single_result = _format_file_search_result(result, file_path)
-                # Replace the default "1." with the correct number
-                single_result = single_result.replace("**1.**", f"**{i}.**")
-                output += single_result
-
-            return output
-
-    except Exception as e:
-        _get_logger().exception(f"File search failed: {e}")
-        return f"❌ File search error: {e!s}"
+    return await execute_simple_database_tool(operation, "Search by file")
 
 
-def _format_concept_result_header(concept: str, results_count: int) -> str:
-    """Format the header for concept search results."""
-    return f"🔍 **{results_count} conversations** about `{concept}`\n\n"
+# ============================================================================
+# Search by Concept
+# ============================================================================
 
 
 def _extract_relevant_excerpt(content: str, concept: str) -> str:
@@ -362,90 +333,72 @@ def _extract_relevant_excerpt(content: str, concept: str) -> str:
     if concept.lower() in content.lower():
         start = max(0, content.lower().find(concept.lower()) - 75)
         end = min(len(content), start + 200)
-        excerpt = content[start:end]
-    else:
-        excerpt = content[:150]
-    return excerpt
-
-
-def _format_single_concept_result(
-    result: dict[str, Any], index: int, concept: str
-) -> str:
-    """Format a single concept search result."""
-    output = f"**{index}.** "
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
-    if result.get("similarity"):
-        output += f"(relevance: {result['similarity']:.2f}) "
-
-    content = result.get("content", "")
-    excerpt = _extract_relevant_excerpt(content, concept)
-    output += f"{excerpt}...\n\n"
-
-    return output
+        return content[start:end]
+    return content[:150]
 
 
 def _extract_mentioned_files(results: list[dict[str, Any]]) -> list[str]:
     """Extract mentioned files from search results."""
-    # Extract mentioned files
-    all_content = " ".join([r.get("content", "") for r in results])
-    from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
+    try:
+        from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
 
-    files = []
-    for pattern_name in (
-        "python_files",
-        "javascript_files",
-        "config_files",
-        "documentation_files",
-    ):
-        pattern = SAFE_PATTERNS[pattern_name]
-        matches = pattern.findall(all_content)
-        files.extend(matches)
+        all_content = " ".join([r.get("content", "") for r in results])
+        files = []
 
-    if files:
-        return list(set(files))[:10]
+        for pattern_name in (
+            "python_files",
+            "javascript_files",
+            "config_files",
+            "documentation_files",
+        ):
+            pattern = SAFE_PATTERNS[pattern_name]
+            matches = pattern.findall(all_content)
+            files.extend(matches)
 
-    return []
-
-
-def _format_related_files(files: list[str]) -> str:
-    """Format related files section."""
-    return f"📁 **Related Files**: {', '.join(files)}"
+        return list(set(files))[:10] if files else []
+    except Exception:
+        return []
 
 
-async def _get_concept_search_database() -> ReflectionDatabase | None:
-    """Get database connection for concept search."""
-    db = await resolve_reflection_database()
-    if not db:
-        return None
-    return db
-
-
-async def _perform_concept_search(
-    db: ReflectionDatabase, concept: str, project: str | None, limit: int
-) -> list[dict[str, Any]]:
-    """Perform the actual concept search query."""
-    async with db:
-        return await db.search_conversations(
-            query=concept, project=project, limit=limit, min_score=0.6
-        )
-
-
-def _build_concept_output(
+async def _format_concept_results(
     concept: str, results: list[dict[str, Any]], include_files: bool
 ) -> str:
-    """Build the formatted output for concept search results."""
-    output = _format_concept_result_header(concept, len(results))
+    """Format concept search results."""
+    if not results:
+        return f"🔍 No conversations found about concept: {concept}"
+
+    output = f"🔍 **{len(results)} conversations** about `{concept}`\n\n"
 
     for i, result in enumerate(results, 1):
-        output += _format_single_concept_result(result, i, concept)
+        output += f"**{i}.** "
+        if result.get("timestamp"):
+            output += f"({result['timestamp']}) "
+        if result.get("similarity"):
+            output += f"(relevance: {result['similarity']:.2f}) "
 
-    if include_files and results:
+        excerpt = _extract_relevant_excerpt(result.get("content", ""), concept)
+        output += f"{excerpt}...\n\n"
+
+    if include_files:
         files = _extract_mentioned_files(results)
         if files:
-            output += _format_related_files(files)
+            output += f"📁 **Related Files**: {', '.join(files)}"
 
     return output
+
+
+async def _search_by_concept_operation(
+    db: ReflectionDatabase,
+    concept: str,
+    include_files: bool,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute concept search operation."""
+    results = await db.search_conversations(
+        query=concept, project=project, limit=limit, min_score=0.6
+    )
+    return await _format_concept_results(concept, results, include_files)
 
 
 async def _search_by_concept_impl(
@@ -455,55 +408,50 @@ async def _search_by_concept_impl(
     project: str | None = None,
 ) -> str:
     """Search for conversations about a specific development concept."""
-    try:
-        db = await _get_concept_search_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        results = await _perform_concept_search(db, concept, project, limit)
-        if not results:
-            return f"🔍 No conversations found about concept: {concept}"
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_by_concept_operation(
+            db, concept, include_files, limit, project
+        )
 
-        return _build_concept_output(concept, results, include_files)
+    return await execute_simple_database_tool(operation, "Search by concept")
 
-    except Exception as e:
-        _get_logger().exception(f"Concept search failed: {e}")
-        return f"❌ Concept search error: {e!s}"
+
+# ============================================================================
+# Database Management
+# ============================================================================
 
 
 async def _reset_reflection_database_impl() -> str:
     """Reset the reflection database connection to fix lock issues."""
     try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Reflection database not available"
-
-        async with db:
-            # Database connection is managed by async context manager
-            return "✅ Reflection database connection verified successfully"
-
+        await require_reflection_database()
+        return "✅ Reflection database connection verified successfully"
     except Exception as e:
-        _get_logger().exception(f"Database reset failed: {e}")
-        return f"❌ Database reset error: {e!s}"
+        return ToolMessages.operation_failed("Database reset", e)
+
+
+async def _reflection_stats_operation(db: ReflectionDatabase) -> str:
+    """Execute reflection stats operation."""
+    stats = await db.get_stats()
+    output = "📊 **Reflection Database Statistics**\n\n"
+    for key, value in stats.items():
+        output += f"**{key.replace('_', ' ').title()}**: {value}\n"
+    return output
 
 
 async def _reflection_stats_impl() -> str:
     """Get statistics about the reflection database."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Reflection database not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        async with db:
-            stats = await db.get_stats()
-            output = "📊 **Reflection Database Statistics**\n\n"
-            for key, value in stats.items():
-                output += f"**{key.replace('_', ' ').title()}**: {value}\n"
-            return output
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _reflection_stats_operation(db)
 
-    except Exception as e:
-        _get_logger().exception(f"Stats collection failed: {e}")
-        return f"❌ Stats error: {e!s}"
+    return await execute_simple_database_tool(operation, "Reflection stats")
+
+
+# ============================================================================
+# Search Code
+# ============================================================================
 
 
 def _extract_code_blocks_from_content(content: str) -> list[str]:
@@ -518,52 +466,57 @@ def _extract_code_blocks_from_content(content: str) -> list[str]:
         return []
 
 
-def _format_code_result(result: dict[str, Any], query: str) -> str:
-    """Format a single code search result."""
-    output = ""
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
+async def _format_code_search_results(
+    query: str, results: list[dict[str, Any]], pattern_type: str | None
+) -> str:
+    """Format code search results."""
+    if not results:
+        return f"🔍 No code patterns found for: {query}"
 
-    content = result.get("content", "")
-    code_blocks = _extract_code_blocks_from_content(content)
+    output = f"🔍 **{len(results)} code patterns** for `{query}`"
+    if pattern_type:
+        output += f" (type: {pattern_type})"
+    output += "\n\n"
 
-    if code_blocks:
-        code = code_blocks[0][:200]
-        output += f"\n```\n{code}...\n```\n\n"
-    else:
-        if query.lower() in content.lower():
-            start = max(0, content.lower().find(query.lower()) - 50)
-            end = min(len(content), start + 150)
-            excerpt = content[start:end]
+    for i, result in enumerate(results, 1):
+        output += f"**{i}.** "
+        if result.get("timestamp"):
+            output += f"({result['timestamp']}) "
+
+        content = result.get("content", "")
+        code_blocks = _extract_code_blocks_from_content(content)
+
+        if code_blocks:
+            code = code_blocks[0][:200]
+            output += f"\n```\n{code}...\n```\n\n"
         else:
-            excerpt = content[:100]
-        output += f"{excerpt}...\n\n"
+            if query.lower() in content.lower():
+                start = max(0, content.lower().find(query.lower()) - 50)
+                end = min(len(content), start + 150)
+                excerpt = content[start:end]
+            else:
+                excerpt = content[:100]
+            output += f"{excerpt}...\n\n"
 
     return output
 
 
-def _build_code_query(query: str, pattern_type: str | None) -> str:
-    """Build the code query string for searching."""
+async def _search_code_operation(
+    db: ReflectionDatabase,
+    query: str,
+    pattern_type: str | None,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute code search operation."""
     code_query = f"code {query}"
     if pattern_type:
         code_query += f" {pattern_type}"
-    return code_query
 
-
-def _format_code_search_header(
-    results_count: int, query: str, pattern_type: str | None
-) -> str:
-    """Format the header for code search results."""
-    output = f"🔍 **{results_count} code patterns** for `{query}`"
-    if pattern_type:
-        output += f" (type: {pattern_type})"
-    output += "\\n\\n"
-    return output
-
-
-def _format_single_code_result(index: int, result: dict[str, Any], query: str) -> str:
-    """Format a single code search result."""
-    return f"**{index}.** " + _format_code_result(result, query)
+    results = await db.search_conversations(
+        query=code_query, project=project, limit=limit, min_score=0.5
+    )
+    return await _format_code_search_results(query, results, pattern_type)
 
 
 async def _search_code_impl(
@@ -573,31 +526,16 @@ async def _search_code_impl(
     project: str | None = None,
 ) -> str:
     """Search for code patterns in conversations using AST parsing."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        code_query = _build_code_query(query, pattern_type)
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_code_operation(db, query, pattern_type, limit, project)
 
-        async with db:
-            results = await db.search_conversations(
-                query=code_query, project=project, limit=limit, min_score=0.5
-            )
+    return await execute_simple_database_tool(operation, "Search code")
 
-            if not results:
-                return f"🔍 No code patterns found for: {query}"
 
-            output = _format_code_search_header(len(results), query, pattern_type)
-
-            for i, result in enumerate(results, 1):
-                output += _format_single_code_result(i, result, query)
-
-            return output
-
-    except Exception as e:
-        _get_logger().exception(f"Code search failed: {e}")
-        return f"❌ Code search error: {e!s}"
+# ============================================================================
+# Search Errors
+# ============================================================================
 
 
 def _find_best_error_excerpt(content: str) -> str:
@@ -616,55 +554,48 @@ def _find_best_error_excerpt(content: str) -> str:
                 best_score = score
                 best_excerpt = excerpt
 
-    if not best_excerpt:
-        best_excerpt = content[:150]
-
-    return best_excerpt
+    return best_excerpt if best_excerpt else content[:150]
 
 
-def _format_error_result(result: dict[str, Any]) -> str:
-    """Format a single error search result."""
-    output = ""
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
-
-    content = result.get("content", "")
-    best_excerpt = _find_best_error_excerpt(content)
-    output += f"{best_excerpt}...\n\n"
-
-    return output
-
-
-def _build_error_query(query: str, error_type: str | None) -> str:
-    """Build the error query string for searching."""
-    error_query = f"error {query}"
-    if error_type:
-        error_query += f" {error_type}"
-    return error_query
-
-
-def _format_error_search_header(
-    results_count: int, query: str, error_type: str | None
+async def _format_error_search_results(
+    query: str, results: list[dict[str, Any]], error_type: str | None
 ) -> str:
-    """Format the header for error search results."""
-    output = f"🔍 **{results_count} error contexts** for `{query}`"
+    """Format error search results."""
+    if not results:
+        return f"🔍 No error patterns found for: {query}"
+
+    output = f"🔍 **{len(results)} error contexts** for `{query}`"
     if error_type:
         output += f" (type: {error_type})"
-    output += "\\n\\n"
-    return output
-
-
-def _process_error_search_results(
-    results: list[dict[str, Any]], query: str, error_type: str | None
-) -> str:
-    """Process and format error search results."""
-    output = _format_error_search_header(len(results), query, error_type)
+    output += "\n\n"
 
     for i, result in enumerate(results, 1):
         output += f"**{i}.** "
-        output += _format_error_result(result)
+        if result.get("timestamp"):
+            output += f"({result['timestamp']}) "
+
+        best_excerpt = _find_best_error_excerpt(result.get("content", ""))
+        output += f"{best_excerpt}...\n\n"
 
     return output
+
+
+async def _search_errors_operation(
+    db: ReflectionDatabase,
+    query: str,
+    error_type: str | None,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute error search operation."""
+    error_query = f"error {query}"
+    if error_type:
+        error_query += f" {error_type}"
+
+    results = await db.search_conversations(
+        query=error_query, project=project, limit=limit, min_score=0.4
+    )
+    return await _format_error_search_results(query, results, error_type)
 
 
 async def _search_errors_impl(
@@ -674,26 +605,16 @@ async def _search_errors_impl(
     project: str | None = None,
 ) -> str:
     """Search for error patterns and debugging contexts in conversations."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        error_query = _build_error_query(query, error_type)
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_errors_operation(db, query, error_type, limit, project)
 
-        async with db:
-            results = await db.search_conversations(
-                query=error_query, project=project, limit=limit, min_score=0.4
-            )
+    return await execute_simple_database_tool(operation, "Search errors")
 
-            if not results:
-                return f"🔍 No error patterns found for: {query}"
 
-            return _process_error_search_results(results, query, error_type)
-
-    except Exception as e:
-        _get_logger().exception(f"Error search failed: {e}")
-        return f"❌ Error search failed: {e!s}"
+# ============================================================================
+# Temporal Search
+# ============================================================================
 
 
 def _parse_time_expression(time_expression: str) -> datetime | None:
@@ -712,28 +633,49 @@ def _parse_time_expression(time_expression: str) -> datetime | None:
     return None
 
 
-def _format_temporal_search_header(
-    results_count: int, time_expression: str, query: str | None
+async def _format_temporal_results(
+    time_expression: str, query: str | None, results: list[dict[str, Any]]
 ) -> str:
-    """Format the header for temporal search results."""
-    output = f"🔍 **{results_count} conversations** from `{time_expression}`"
+    """Format temporal search results."""
+    if not results:
+        return f"🔍 No conversations found for time period: {time_expression}"
+
+    output = f"🔍 **{len(results)} conversations** from `{time_expression}`"
     if query:
         output += f" matching `{query}`"
     output += "\n\n"
-    return output
 
+    for i, result in enumerate(results, 1):
+        output += f"**{i}.** "
+        if result.get("timestamp"):
+            output += f"({result['timestamp']}) "
 
-def _format_single_temporal_result(result: dict[str, Any]) -> str:
-    """Format a single temporal search result."""
-    output = "**1.** "  # Default numbering will be handled by caller
-
-    if result.get("timestamp"):
-        output += f"({result['timestamp']}) "
-
-    content = result.get("content", "")
-    output += f"{content[:150]}...\n\n"
+        content = result.get("content", "")
+        output += f"{content[:150]}...\n\n"
 
     return output
+
+
+async def _search_temporal_operation(
+    db: ReflectionDatabase,
+    time_expression: str,
+    query: str | None,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute temporal search operation."""
+    start_time = _parse_time_expression(time_expression)
+    search_query = query or ""
+    results = await db.search_conversations(
+        query=search_query, project=project, limit=limit * 2
+    )
+
+    if start_time:
+        # Simplified filter - would need proper timestamp parsing
+        filtered_results = results.copy()
+        results = filtered_results[:limit]
+
+    return await _format_temporal_results(time_expression, query, results)
 
 
 async def _search_temporal_impl(
@@ -743,42 +685,18 @@ async def _search_temporal_impl(
     project: str | None = None,
 ) -> str:
     """Search conversations within a specific time range using natural language."""
-    try:
-        db = await resolve_reflection_database()
-        if not db:
-            return "❌ Search system not available. Install optional dependencies with `uv sync --extra embeddings`"
 
-        start_time = _parse_time_expression(time_expression)
+    async def operation(db: ReflectionDatabase) -> str:
+        return await _search_temporal_operation(
+            db, time_expression, query, limit, project
+        )
 
-        async with db:
-            search_query = query or ""
-            results = await db.search_conversations(
-                query=search_query, project=project, limit=limit * 2
-            )
+    return await execute_simple_database_tool(operation, "Temporal search")
 
-            if start_time:
-                # This is a simplified filter - would need proper timestamp parsing
-                filtered_results = results.copy()
-                results = filtered_results[:limit]
 
-            if not results:
-                return f"🔍 No conversations found for time period: {time_expression}"
-
-            output = _format_temporal_search_header(
-                len(results), time_expression, query
-            )
-
-            for i, result in enumerate(results, 1):
-                single_result = _format_single_temporal_result(result)
-                # Replace the default "1." with the correct number
-                single_result = single_result.replace("**1.**", f"**{i}.**")
-                output += single_result
-
-            return output
-
-    except Exception as e:
-        _get_logger().exception(f"Temporal search failed: {e}")
-        return f"❌ Temporal search error: {e!s}"
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_search_tools(mcp: Any) -> None:
@@ -789,8 +707,7 @@ def register_search_tools(mcp: Any) -> None:
 
     """
 
-    # Register tools with proper decorator syntax
-    @mcp.tool()  # type: ignore[misc]  # type: ignore[misc]
+    @mcp.tool()  # type: ignore[misc]
     async def _optimize_search_results(
         results: list[dict[str, Any]],
         optimize_tokens: bool,
@@ -801,7 +718,7 @@ def register_search_tools(mcp: Any) -> None:
             results, optimize_tokens, max_tokens, query
         )
 
-    @mcp.tool()  # type: ignore[misc]  # type: ignore[misc]
+    @mcp.tool()  # type: ignore[misc]
     async def store_reflection(content: str, tags: list[str] | None = None) -> str:
         return await _store_reflection_impl(content, tags)
 
