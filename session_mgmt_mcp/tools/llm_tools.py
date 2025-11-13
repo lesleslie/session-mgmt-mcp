@@ -3,6 +3,8 @@
 
 This module provides tools for managing and interacting with LLM providers
 following crackerjack architecture patterns.
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
@@ -10,24 +12,41 @@ from __future__ import annotations
 import typing as t
 from typing import TYPE_CHECKING, Any
 
-from acb.adapters import import_adapter
-from acb.depends import depends
+from session_mgmt_mcp.utils.error_handlers import _get_logger
 from session_mgmt_mcp.utils.instance_managers import (
     get_llm_manager as resolve_llm_manager,
 )
+from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
-
-
 # Lazy loading flag for optional LLM dependencies
 _llm_available: bool | None = None
+
+LLM_NOT_AVAILABLE_MSG = "LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
+
+
+# ============================================================================
+# Service Resolution and Availability Checks
+# ============================================================================
+
+
+def _check_llm_available() -> bool:
+    """Check if LLM providers are available."""
+    global _llm_available
+
+    if _llm_available is None:
+        try:
+            import importlib.util
+
+            spec = importlib.util.find_spec("session_mgmt_mcp.llm_providers")
+            _llm_available = spec is not None
+        except ImportError:
+            _llm_available = False
+
+    return _llm_available
 
 
 async def _get_llm_manager() -> Any:
@@ -47,58 +66,35 @@ async def _get_llm_manager() -> Any:
     return manager
 
 
-def _check_llm_available() -> bool:
-    """Check if LLM providers are available."""
-    global _llm_available
-
-    if _llm_available is None:
-        try:
-            import importlib.util
-
-            spec = importlib.util.find_spec("session_mgmt_mcp.llm_providers")
-            _llm_available = spec is not None
-        except ImportError:
-            _llm_available = False
-
-    return _llm_available
-
-
-async def _list_llm_providers_impl() -> str:
-    """List all available LLM providers and their models."""
+async def _require_llm_manager() -> Any:
+    """Get LLM manager or raise with helpful error message."""
     if not _check_llm_available():
-        return "❌ LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
+        raise RuntimeError(LLM_NOT_AVAILABLE_MSG)
 
+    manager = await _get_llm_manager()
+    if not manager:
+        raise RuntimeError("Failed to initialize LLM manager")
+
+    return manager
+
+
+async def _execute_llm_operation(
+    operation_name: str, operation: t.Callable[[Any], t.Awaitable[str]]
+) -> str:
+    """Execute an LLM operation with error handling."""
     try:
-        manager = await _get_llm_manager()
-        if not manager:
-            return "❌ Failed to initialize LLM manager"
-
-        provider_data = await _gather_provider_data(manager)
-        return _format_provider_list(provider_data)
-
+        manager = await _require_llm_manager()
+        return await operation(manager)
+    except RuntimeError as e:
+        return f"❌ {str(e)}"
     except Exception as e:
-        _get_logger().exception(f"Error listing LLM providers: {e}")
-        return f"❌ Error listing providers: {e}"
+        _get_logger().exception(f"Error in {operation_name}: {e}")
+        return ToolMessages.operation_failed(operation_name, e)
 
 
-async def _gather_provider_data(manager: Any) -> dict[str, Any]:
-    """Gather provider data from the LLM manager."""
-    return {
-        "available_providers": await manager.get_available_providers(),
-        "provider_info": manager.get_provider_info(),
-    }
-
-
-def _format_provider_list(provider_data: dict[str, Any]) -> str:
-    """Format provider information into a readable list."""
-    available_providers = provider_data["available_providers"]
-    provider_info = provider_data["provider_info"]
-
-    output = ["🤖 Available LLM Providers", ""]
-    _add_provider_details(output, provider_info["providers"], available_providers)
-    _add_config_summary(output, provider_info["config"])
-
-    return "\n".join(output)
+# ============================================================================
+# Output Formatting Helpers
+# ============================================================================
 
 
 def _add_provider_details(
@@ -134,153 +130,46 @@ def _add_config_summary(output: list[str], config: dict[str, Any]) -> None:
     )
 
 
-async def _test_llm_providers_impl() -> str:
-    """Test all LLM providers to check their availability and functionality."""
-    if not _check_llm_available():
-        return "❌ LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
+def _format_provider_list(provider_data: dict[str, Any]) -> str:
+    """Format provider information into a readable list."""
+    available_providers = provider_data["available_providers"]
+    provider_info = provider_data["provider_info"]
 
-    try:
-        manager = await _get_llm_manager()
-        if not manager:
-            return "❌ Failed to initialize LLM manager"
+    output = ["🤖 Available LLM Providers", ""]
+    _add_provider_details(output, provider_info["providers"], available_providers)
+    _add_config_summary(output, provider_info["config"])
 
-        test_results = await manager.test_all_providers()
-
-        output = ["🧪 LLM Provider Test Results", ""]
-
-        for provider, result in test_results.items():
-            status = "✅" if result["success"] else "❌"
-            output.append(f"{status} {provider.title()}")
-
-            if result["success"]:
-                output.append(
-                    f"   ⚡ Response time: {result['response_time_ms']:.0f}ms"
-                )
-                output.append(f"   🎯 Model: {result['model']}")
-            else:
-                output.append(f"   ❌ Error: {result['error']}")
-            output.append("")
-
-        working_count = sum(1 for r in test_results.values() if r["success"])
-        total_count = len(test_results)
-        output.append(f"📊 Summary: {working_count}/{total_count} providers working")
-
-        return "\n".join(output)
-
-    except Exception as e:
-        _get_logger().exception(f"Error testing LLM providers: {e}")
-        return f"❌ Error testing providers: {e}"
+    return "\n".join(output)
 
 
-async def _generate_with_llm_impl(
-    prompt: str,
-    provider: str | None = None,
-    model: str | None = None,
-    temperature: float = 0.7,
-    max_tokens: int | None = None,
-    use_fallback: bool = True,
-) -> str:
-    """Generate text using specified LLM provider.
+def _format_generation_result(result: dict[str, Any]) -> str:
+    """Format LLM generation result."""
+    output = ["✨ LLM Generation Result", ""]
+    output.append(f"🤖 Provider: {result['metadata']['provider']}")
+    output.append(f"🎯 Model: {result['metadata']['model']}")
+    output.append(f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms")
+    output.append(f"📊 Tokens: {result['metadata'].get('tokens_used', 'N/A')}")
+    output.append("")
+    output.append("💬 Generated text:")
+    output.append("─" * 40)
+    output.append(result["text"])
 
-    Args:
-        prompt: The text prompt to generate from
-        provider: LLM provider to use (openai, gemini, ollama)
-        model: Specific model to use
-        temperature: Generation temperature (0.0-1.0)
-        max_tokens: Maximum tokens to generate
-        use_fallback: Whether to use fallback providers if primary fails
-
-    """
-    if not _check_llm_available():
-        return "❌ LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
-
-    try:
-        manager = await _get_llm_manager()
-        if not manager:
-            return "❌ Failed to initialize LLM manager"
-
-        result = await manager.generate_text(
-            prompt=prompt,
-            provider=provider,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            use_fallback=use_fallback,
-        )
-
-        if result["success"]:
-            output = ["✨ LLM Generation Result", ""]
-            output.append(f"🤖 Provider: {result['metadata']['provider']}")
-            output.append(f"🎯 Model: {result['metadata']['model']}")
-            output.append(
-                f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms"
-            )
-            output.append(f"📊 Tokens: {result['metadata'].get('tokens_used', 'N/A')}")
-            output.append("")
-            output.append("💬 Generated text:")
-            output.append("─" * 40)
-            output.append(result["text"])
-
-            return "\n".join(output)
-        return f"❌ Generation failed: {result['error']}"
-
-    except Exception as e:
-        _get_logger().exception(f"Error generating with LLM: {e}")
-        return f"❌ Error generating text: {e}"
+    return "\n".join(output)
 
 
-async def _chat_with_llm_impl(
-    messages: list[dict[str, str]],
-    provider: str | None = None,
-    model: str | None = None,
-    temperature: float = 0.7,
-    max_tokens: int | None = None,
-) -> str:
-    """Have a conversation with an LLM provider.
+def _format_chat_result(result: dict[str, Any], message_count: int) -> str:
+    """Format LLM chat result."""
+    output = ["💬 LLM Chat Result", ""]
+    output.append(f"🤖 Provider: {result['metadata']['provider']}")
+    output.append(f"🎯 Model: {result['metadata']['model']}")
+    output.append(f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms")
+    output.append(f"📊 Messages: {message_count} → 1")
+    output.append("")
+    output.append("🎭 Assistant response:")
+    output.append("─" * 40)
+    output.append(result["response"])
 
-    Args:
-        messages: List of messages in format [{"role": "user/assistant/system", "content": "text"}]
-        provider: LLM provider to use (openai, gemini, ollama)
-        model: Specific model to use
-        temperature: Generation temperature (0.0-1.0)
-        max_tokens: Maximum tokens to generate
-
-    """
-    if not _check_llm_available():
-        return "❌ LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
-
-    try:
-        manager = await _get_llm_manager()
-        if not manager:
-            return "❌ Failed to initialize LLM manager"
-
-        result = await manager.chat(
-            messages=messages,
-            provider=provider,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
-        if result["success"]:
-            output = ["💬 LLM Chat Result", ""]
-            output.append(f"🤖 Provider: {result['metadata']['provider']}")
-            output.append(f"🎯 Model: {result['metadata']['model']}")
-            output.append(
-                f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms"
-            )
-            output.append(f"📊 Messages: {len(messages)} → 1")
-            output.append("")
-            output.append("🎭 Assistant response:")
-            output.append("─" * 40)
-            output.append(result["response"])
-
-            return "\n".join(output)
-        return f"❌ Chat failed: {result['error']}"
-
-    except Exception as e:
-        _get_logger().exception(f"Error chatting with LLM: {e}")
-        return f"❌ Error in chat: {e}"
+    return "\n".join(output)
 
 
 def _format_provider_config_output(
@@ -288,7 +177,7 @@ def _format_provider_config_output(
     api_key: str | None = None,
     base_url: str | None = None,
     default_model: str | None = None,
-) -> list[str]:
+) -> str:
     """Format the provider configuration output."""
     output = ["⚙️ Provider Configuration Updated", ""]
     output.append(f"🤖 Provider: {provider}")
@@ -308,23 +197,111 @@ def _format_provider_config_output(
     output.append("✅ Configuration saved successfully!")
     output.append("💡 Use `test_llm_providers` to verify the configuration")
 
-    return output
+    return "\n".join(output)
 
 
-async def _build_provider_config_data(
-    api_key: str | None = None,
-    base_url: str | None = None,
-    default_model: str | None = None,
-) -> dict[str, Any]:
-    """Build provider configuration data."""
-    config_data = {}
-    if api_key:
-        config_data["api_key"] = api_key
-    if base_url:
-        config_data["base_url"] = base_url
-    if default_model:
-        config_data["default_model"] = default_model
-    return config_data
+# ============================================================================
+# LLM Operation Implementations
+# ============================================================================
+
+
+async def _list_llm_providers_operation(manager: Any) -> str:
+    """List all available LLM providers and their models."""
+    provider_data = {
+        "available_providers": await manager.get_available_providers(),
+        "provider_info": manager.get_provider_info(),
+    }
+    return _format_provider_list(provider_data)
+
+
+async def _list_llm_providers_impl() -> str:
+    """List all available LLM providers and their models."""
+    return await _execute_llm_operation(
+        "List LLM providers", _list_llm_providers_operation
+    )
+
+
+async def _test_llm_providers_operation(manager: Any) -> str:
+    """Test all LLM providers to check their availability and functionality."""
+    test_results = await manager.test_all_providers()
+
+    output = ["🧪 LLM Provider Test Results", ""]
+
+    for provider, result in test_results.items():
+        status = "✅" if result["success"] else "❌"
+        output.append(f"{status} {provider.title()}")
+
+        if result["success"]:
+            output.append(f"   ⚡ Response time: {result['response_time_ms']:.0f}ms")
+            output.append(f"   🎯 Model: {result['model']}")
+        else:
+            output.append(f"   ❌ Error: {result['error']}")
+        output.append("")
+
+    working_count = sum(1 for r in test_results.values() if r["success"])
+    total_count = len(test_results)
+    output.append(f"📊 Summary: {working_count}/{total_count} providers working")
+
+    return "\n".join(output)
+
+
+async def _test_llm_providers_impl() -> str:
+    """Test all LLM providers to check their availability and functionality."""
+    return await _execute_llm_operation(
+        "Test LLM providers", _test_llm_providers_operation
+    )
+
+
+async def _generate_with_llm_impl(
+    prompt: str,
+    provider: str | None = None,
+    model: str | None = None,
+    temperature: float = 0.7,
+    max_tokens: int | None = None,
+    use_fallback: bool = True,
+) -> str:
+    """Generate text using specified LLM provider."""
+
+    async def operation(manager: Any) -> str:
+        result = await manager.generate_text(
+            prompt=prompt,
+            provider=provider,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            use_fallback=use_fallback,
+        )
+
+        if result["success"]:
+            return _format_generation_result(result)
+        return f"❌ Generation failed: {result['error']}"
+
+    return await _execute_llm_operation("Generate with LLM", operation)
+
+
+async def _chat_with_llm_impl(
+    messages: list[dict[str, str]],
+    provider: str | None = None,
+    model: str | None = None,
+    temperature: float = 0.7,
+    max_tokens: int | None = None,
+) -> str:
+    """Have a conversation with an LLM provider."""
+
+    async def operation(manager: Any) -> str:
+        result = await manager.chat(
+            messages=messages,
+            provider=provider,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+        if result["success"]:
+            return _format_chat_result(result, len(messages))
+        return f"❌ Chat failed: {result['error']}"
+
+    return await _execute_llm_operation("Chat with LLM", operation)
 
 
 async def _configure_llm_provider_impl(
@@ -333,38 +310,31 @@ async def _configure_llm_provider_impl(
     base_url: str | None = None,
     default_model: str | None = None,
 ) -> str:
-    """Configure an LLM provider with API credentials and settings.
+    """Configure an LLM provider with API credentials and settings."""
 
-    Args:
-        provider: Provider name (openai, gemini, ollama)
-        api_key: API key for the provider
-        base_url: Base URL for the provider API
-        default_model: Default model to use
+    async def operation(manager: Any) -> str:
+        config_data = {}
+        if api_key:
+            config_data["api_key"] = api_key
+        if base_url:
+            config_data["base_url"] = base_url
+        if default_model:
+            config_data["default_model"] = default_model
 
-    """
-    if not _check_llm_available():
-        return "❌ LLM providers not available. Install dependencies: pip install openai google-generativeai aiohttp"
-
-    try:
-        manager = await _get_llm_manager()
-        if not manager:
-            return "❌ Failed to initialize LLM manager"
-
-        config_data = await _build_provider_config_data(
-            api_key, base_url, default_model
-        )
         result = await manager.configure_provider(provider, config_data)
 
         if result["success"]:
-            output = _format_provider_config_output(
+            return _format_provider_config_output(
                 provider, api_key, base_url, default_model
             )
-            return "\n".join(output)
         return f"❌ Configuration failed: {result['error']}"
 
-    except Exception as e:
-        _get_logger().exception(f"Error configuring LLM provider: {e}")
-        return f"❌ Error configuring provider: {e}"
+    return await _execute_llm_operation("Configure LLM provider", operation)
+
+
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_llm_tools(mcp: FastMCP) -> None:
@@ -372,7 +342,6 @@ def register_llm_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
-
     """
 
     @mcp.tool()
@@ -403,7 +372,6 @@ def register_llm_tools(mcp: FastMCP) -> None:
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
             use_fallback: Whether to use fallback providers if primary fails
-
         """
         return await _generate_with_llm_impl(
             prompt, provider, model, temperature, max_tokens, use_fallback
@@ -425,7 +393,6 @@ def register_llm_tools(mcp: FastMCP) -> None:
             model: Specific model to use
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
-
         """
         return await _chat_with_llm_impl(
             messages, provider, model, temperature, max_tokens
@@ -445,7 +412,6 @@ def register_llm_tools(mcp: FastMCP) -> None:
             api_key: API key for the provider
             base_url: Base URL for the provider API
             default_model: Default model to use
-
         """
         return await _configure_llm_provider_impl(
             provider, api_key, base_url, default_model
