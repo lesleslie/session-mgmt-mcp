@@ -85,12 +85,7 @@ class ReflectionDatabase:
         """Context manager entry."""
         return self
 
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
+    def __exit__(self, *_exc_info) -> None:
         """Context manager exit with cleanup."""
         self.close()
 
@@ -99,12 +94,7 @@ class ReflectionDatabase:
         await self.initialize()
         return self
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
+    async def __aexit__(self, *_exc_info) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 

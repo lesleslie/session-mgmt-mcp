@@ -69,12 +69,7 @@ class KnowledgeGraphDatabase:
         """Context manager entry."""
         return self
 
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: object,
-    ) -> None:
+    def __exit__(self, *_exc_info) -> None:
         """Context manager exit with cleanup."""
         self.close()
 
@@ -83,12 +78,7 @@ class KnowledgeGraphDatabase:
         await self.initialize()
         return self
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: object,
-    ) -> None:
+    async def __aexit__(self, *_exc_info) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 
