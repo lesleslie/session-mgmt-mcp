@@ -3,6 +3,8 @@
 
 Following crackerjack architecture patterns for knowledge sharing,
 team coordination, and collaborative development workflows.
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
@@ -10,42 +12,52 @@ from __future__ import annotations
 import typing as t
 from typing import TYPE_CHECKING, Any
 
-from acb.adapters import import_adapter
-from acb.depends import depends
+from session_mgmt_mcp.utils.error_handlers import _get_logger
+from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
+# Constants for error messages
+TEAM_NOT_AVAILABLE_MSG = "Team collaboration features not available. Install optional dependencies"
 
 
-async def _create_team_impl(
-    team_id: str, name: str, description: str, owner_id: str
-) -> str:
-    """Create a new team for knowledge sharing."""
+# ============================================================================
+# Service Resolution
+# ============================================================================
+
+
+async def _require_team_manager() -> Any:
+    """Get team knowledge manager or raise with helpful error message."""
     try:
         from session_mgmt_mcp.team_knowledge import TeamKnowledgeManager
 
-        manager = TeamKnowledgeManager()
-        await manager.create_team(
-            team_id=team_id,
-            name=name,
-            description=description,
-            owner_id=owner_id,
-        )
-
-        return f"✅ Team created successfully: {name}"
-
+        return TeamKnowledgeManager()
     except ImportError:
         _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies"
+        raise RuntimeError(TEAM_NOT_AVAILABLE_MSG)
+
+
+async def _execute_team_operation(
+    operation_name: str, operation: t.Callable[[Any], t.Awaitable[str]]
+) -> str:
+    """Execute a team operation with error handling."""
+    try:
+        manager = await _require_team_manager()
+        return await operation(manager)
+    except RuntimeError as e:
+        return f"❌ {str(e)}"
+    except ValueError as e:
+        return f"❌ {operation_name} failed: {str(e)}"
     except Exception as e:
-        _get_logger().exception(f"Team creation failed: {e}")
-        return f"❌ Failed to create team: {e!s}"
+        _get_logger().exception(f"Error in {operation_name}: {e}")
+        return ToolMessages.operation_failed(operation_name, e)
+
+
+# ============================================================================
+# Output Formatting Helpers
+# ============================================================================
 
 
 def _format_search_result(result: dict[str, Any], index: int) -> str:
@@ -85,80 +97,6 @@ def _format_search_scope(team_id: str | None, project_id: str | None) -> str:
     if project_id:
         search_scope += f" (project: {project_id})"
     return search_scope
-
-
-async def _search_team_knowledge_impl(
-    query: str,
-    user_id: str,
-    team_id: str | None = None,
-    project_id: str | None = None,
-    tags: list[str] | None = None,
-    limit: int = 20,
-) -> str:
-    """Search team reflections with access control."""
-    try:
-        from session_mgmt_mcp.team_knowledge import TeamKnowledgeManager
-
-        manager = TeamKnowledgeManager()
-        results = await manager.search_team_reflections(
-            query=query,
-            user_id=user_id,
-            team_id=team_id,
-            project_id=project_id,
-            tags=tags,
-            limit=limit,
-        )
-
-        if not results:
-            search_scope = _format_search_scope(team_id, project_id)
-            return f"🔍 No results found in {search_scope} for: {query}"
-
-        output = f"🔍 **{len(results)} team knowledge results** for '{query}'\n\n"
-
-        for i, result in enumerate(results, 1):
-            output += _format_search_result(result, i)
-
-        return output
-
-    except ImportError:
-        _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies"
-    except Exception as e:
-        _get_logger().exception(f"Team knowledge search failed: {e}")
-        return f"❌ Team knowledge search failed: {e!s}"
-
-
-async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
-    """Get team statistics and activity."""
-    try:
-        from session_mgmt_mcp.team_knowledge import TeamKnowledgeManager
-
-        manager = TeamKnowledgeManager()
-        stats = await manager.get_team_stats(team_id=team_id, user_id=user_id)
-
-        if not stats:
-            return "❌ Failed to retrieve team statistics"
-
-        return _format_team_statistics(team_id, stats)
-
-    except ImportError:
-        _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies"
-    except Exception as e:
-        _get_logger().exception(f"Error getting team statistics: {e}")
-        return f"❌ Error retrieving team statistics: {e}"
-
-
-def _format_team_statistics(team_id: str, stats: dict[str, Any]) -> str:
-    """Format team statistics for display."""
-    output = f"📊 **Team Statistics: {team_id}**\n\n"
-
-    output += _format_basic_stats(stats)
-    output += _format_activity_stats(stats)
-    output += _format_contributor_stats(stats)
-    output += _format_popular_tags(stats)
-
-    return output
 
 
 def _format_basic_stats(stats: dict[str, Any]) -> str:
@@ -206,36 +144,144 @@ def _format_popular_tags(stats: dict[str, Any]) -> str:
     return f"\n**Popular Tags**: {tags}\n"
 
 
+def _format_team_statistics(team_id: str, stats: dict[str, Any]) -> str:
+    """Format team statistics for display."""
+    output = f"📊 **Team Statistics: {team_id}**\n\n"
+
+    output += _format_basic_stats(stats)
+    output += _format_activity_stats(stats)
+    output += _format_contributor_stats(stats)
+    output += _format_popular_tags(stats)
+
+    return output
+
+
+# ============================================================================
+# Team Operation Implementations
+# ============================================================================
+
+
+async def _create_team_operation(
+    manager: Any, team_id: str, name: str, description: str, owner_id: str
+) -> str:
+    """Create a new team for knowledge sharing."""
+    await manager.create_team(
+        team_id=team_id,
+        name=name,
+        description=description,
+        owner_id=owner_id,
+    )
+    return f"✅ Team created successfully: {name}"
+
+
+async def _create_team_impl(
+    team_id: str, name: str, description: str, owner_id: str
+) -> str:
+    """Create a new team for knowledge sharing."""
+    return await _execute_team_operation(
+        "Create team",
+        lambda m: _create_team_operation(m, team_id, name, description, owner_id),
+    )
+
+
+async def _search_team_knowledge_operation(
+    manager: Any,
+    query: str,
+    user_id: str,
+    team_id: str | None,
+    project_id: str | None,
+    tags: list[str] | None,
+    limit: int,
+) -> str:
+    """Search team reflections with access control."""
+    results = await manager.search_team_reflections(
+        query=query,
+        user_id=user_id,
+        team_id=team_id,
+        project_id=project_id,
+        tags=tags,
+        limit=limit,
+    )
+
+    if not results:
+        search_scope = _format_search_scope(team_id, project_id)
+        return f"🔍 No results found in {search_scope} for: {query}"
+
+    output = f"🔍 **{len(results)} team knowledge results** for '{query}'\n\n"
+
+    for i, result in enumerate(results, 1):
+        output += _format_search_result(result, i)
+
+    return output
+
+
+async def _search_team_knowledge_impl(
+    query: str,
+    user_id: str,
+    team_id: str | None = None,
+    project_id: str | None = None,
+    tags: list[str] | None = None,
+    limit: int = 20,
+) -> str:
+    """Search team reflections with access control."""
+    return await _execute_team_operation(
+        "Search team knowledge",
+        lambda m: _search_team_knowledge_operation(
+            m, query, user_id, team_id, project_id, tags, limit
+        ),
+    )
+
+
+async def _get_team_statistics_operation(
+    manager: Any, team_id: str, user_id: str
+) -> str:
+    """Get team statistics and activity."""
+    stats = await manager.get_team_stats(team_id=team_id, user_id=user_id)
+
+    if not stats:
+        return "❌ Failed to retrieve team statistics"
+
+    return _format_team_statistics(team_id, stats)
+
+
+async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
+    """Get team statistics and activity."""
+    return await _execute_team_operation(
+        "Get team statistics",
+        lambda m: _get_team_statistics_operation(m, team_id, user_id),
+    )
+
+
+async def _vote_on_reflection_operation(
+    manager: Any, reflection_id: str, user_id: str, vote_delta: int
+) -> str:
+    """Vote on a team reflection (upvote/downvote)."""
+    result = await manager.vote_reflection(
+        reflection_id=reflection_id,
+        user_id=user_id,
+        vote_delta=vote_delta,
+    )
+
+    if result:
+        return "✅ Reflection voted on successfully\n📊 Vote recorded\n"
+    return "❌ Failed to vote on reflection"
+
+
 async def _vote_on_reflection_impl(
     reflection_id: str,
     user_id: str,
     vote_delta: int = 1,
 ) -> str:
     """Vote on a team reflection (upvote/downvote)."""
-    try:
-        from session_mgmt_mcp.team_knowledge import TeamKnowledgeManager
+    return await _execute_team_operation(
+        "Vote on reflection",
+        lambda m: _vote_on_reflection_operation(m, reflection_id, user_id, vote_delta),
+    )
 
-        manager = TeamKnowledgeManager()
-        result = await manager.vote_reflection(
-            reflection_id=reflection_id,
-            user_id=user_id,
-            vote_delta=vote_delta,
-        )
 
-        if result:
-            output = "✅ Reflection voted on successfully\n"
-            output += "📊 Vote recorded\n"
-            return output
-        return "❌ Failed to vote on reflection"
-
-    except ImportError:
-        _get_logger().warning("Team knowledge system not available")
-        return "❌ Team collaboration features not available. Install optional dependencies"
-    except ValueError as e:
-        return f"❌ Vote failed: {e!s}"
-    except Exception as e:
-        _get_logger().exception(f"Voting failed: {e}")
-        return f"❌ Failed to vote on reflection: {e!s}"
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_team_tools(mcp: FastMCP) -> None:
@@ -243,7 +289,6 @@ def register_team_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
-
     """
 
     @mcp.tool()
@@ -280,5 +325,3 @@ def register_team_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Vote on a team reflection (upvote/downvote)."""
         return await _vote_on_reflection_impl(reflection_id, user_id, vote_delta)
-
-    # Additional team utility tools
