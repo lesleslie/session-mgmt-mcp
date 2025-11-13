@@ -8,16 +8,15 @@ Following crackerjack patterns:
 - EVERY LINE IS A LIABILITY: Clean, focused tool implementations
 - DRY: Reusable validation across all tools
 - KISS: Simple integration without over-engineering
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
 
-import typing as t
 from datetime import datetime
 from typing import Any
 
-from acb.adapters import import_adapter
-from acb.depends import depends
 from session_mgmt_mcp.parameter_models import (
     ConceptSearchParams,
     FileSearchParams,
@@ -25,500 +24,293 @@ from session_mgmt_mcp.parameter_models import (
     SearchQueryParams,
     validate_mcp_params,
 )
-from session_mgmt_mcp.utils.instance_managers import (
-    get_reflection_database as resolve_reflection_database,
-)
+from session_mgmt_mcp.utils.database_helpers import require_reflection_database
+from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
+from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
+# ============================================================================
+# Validated Tool Implementations
+# ============================================================================
 
 
-# Lazy detection flag for optional dependencies
-_reflection_tools_available: bool | None = None
-
-
-async def _get_reflection_database() -> Any:
-    """Get reflection database instance via DI."""
-    global _reflection_tools_available
-
-    if _reflection_tools_available is False:
-        msg = "Reflection tools not available"
-        raise ImportError(msg)
-
-    db = await resolve_reflection_database()
-    if db is None:
-        _reflection_tools_available = False
-        msg = "Reflection tools not available. Install dependencies: uv sync --extra embeddings"
-        raise ImportError(msg)
-
-    _reflection_tools_available = True
-    return db
-
-
-def _check_reflection_tools_available() -> bool:
-    """Check if reflection tools are available."""
-    global _reflection_tools_available
-
-    if _reflection_tools_available is None:
-        try:
-            import importlib.util
-
-            spec = importlib.util.find_spec("session_mgmt_mcp.reflection_tools")
-            _reflection_tools_available = spec is not None
-        except ImportError:
-            _reflection_tools_available = False
-
-    return bool(_reflection_tools_available)
-
-
-# Tool implementations with parameter validation
 async def _store_reflection_validated_impl(**params: Any) -> str:
     """Implementation for store_reflection tool with parameter validation."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        # Validate parameters using Pydantic model
-        validated = validate_mcp_params(ReflectionStoreParams, **params)
-        content = validated["content"]
-        tags = validated.get("tags")
+    # Validate parameters using Pydantic model
+    validated = validate_mcp_params(ReflectionStoreParams, params)
+    if not validated.is_valid:
+        raise ValidationError(f"Parameter validation failed: {validated.errors}")
 
-        db = await _get_reflection_database()
-        success = await db.store_reflection(content, tags=tags or [])
+    params_obj = validated.params
 
-        if success:
-            output = []
-            output.append("💾 Reflection stored successfully!")
-            output.append(
-                f"📝 Content: {content[:100]}{'...' if len(content) > 100 else ''}"
-            )
-            if tags:
-                output.append(f"🏷️ Tags: {', '.join(tags)}")
-            output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    async def operation(db: Any) -> dict[str, Any]:
+        """Store reflection operation."""
+        reflection_id = await db.store_reflection(
+            params_obj.content,
+            tags=params_obj.tags,
+        )
+        return {
+            "success": True,
+            "id": reflection_id,
+            "content": params_obj.content,
+            "tags": params_obj.tags,
+            "timestamp": datetime.now().isoformat(),
+        }
 
-            _get_logger().info(
-                "Reflection stored", content_length=len(content), tags=tags
-            )
-            return "\n".join(output)
+    def formatter(result: dict[str, Any]) -> str:
+        """Format reflection storage result."""
+        lines = [
+            "💾 Reflection stored successfully!",
+            f"🆔 ID: {result['id']}",
+            f"📝 Content: {result['content'][:100]}...",
+        ]
+        if result['tags']:
+            lines.append(f"🏷️  Tags: {', '.join(result['tags'])}")
+        lines.append(f"📅 Stored: {result['timestamp']}")
 
-        return "❌ Failed to store reflection"
+        _get_logger().info(
+            "Validated reflection stored",
+            reflection_id=result['id'],
+            content_length=len(result['content']),
+            tags_count=len(result['tags']),
+        )
+        return "\n".join(lines)
 
-    except ValueError as e:
-        _get_logger().warning(f"Parameter validation failed: {e}")
-        return f"❌ Parameter validation error: {e}"
-    except Exception as e:
-        _get_logger().exception(f"Error storing reflection: {e}")
-        return f"❌ Error storing reflection: {e}"
+    return await execute_database_tool(
+        operation,
+        formatter,
+        "Store validated reflection",
+    )
 
 
 async def _quick_search_validated_impl(**params: Any) -> str:
     """Implementation for quick_search tool with parameter validation."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        # Validate parameters using Pydantic model
-        validated = validate_mcp_params(SearchQueryParams, **params)
-        query = validated["query"]
-        min_score = validated["min_score"]
-        project = validated.get("project")
+    # Validate parameters
+    validated = validate_mcp_params(SearchQueryParams, params)
+    if not validated.is_valid:
+        raise ValidationError(f"Parameter validation failed: {validated.errors}")
 
-        db = await _get_reflection_database()
-        results = await db.search_reflections(
-            query=query,
-            project=project,
+    params_obj = validated.params
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """Quick search operation."""
+        results = await db.search_conversations(
+            query=params_obj.query,
+            project=params_obj.project,
+            min_score=params_obj.min_score,
             limit=1,
-            min_score=min_score,
         )
 
-        output = []
-        output.append(f"🔍 Quick search for: '{query}'")
+        return {
+            "query": params_obj.query,
+            "results": results,
+            "total_count": len(results),
+        }
 
-        if results:
-            result = results[0]
-            output.append("📊 Found results (showing top 1)")
-            output.append(
-                f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}"
-            )
-            if result.get("project"):
-                output.append(f"📁 Project: {result['project']}")
-            if result.get("score"):
-                output.append(f"⭐ Relevance: {result['score']:.2f}")
-            output.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
+    def formatter(result: dict[str, Any]) -> str:
+        """Format quick search results."""
+        lines = [f"🔍 Quick search for: '{result['query']}'"]
+
+        if not result['results']:
+            lines.extend([
+                "🔍 No results found",
+                "💡 Try adjusting your search terms or lowering min_score",
+            ])
         else:
-            output.append("🔍 No results found")
-            output.append("💡 Try adjusting your search terms or lowering min_score")
+            top_result = result['results'][0]
+            lines.extend([
+                "📊 Found results (showing top 1)",
+                f"📝 {top_result['content'][:150]}...",
+            ])
+            if top_result.get('project'):
+                lines.append(f"📁 Project: {top_result['project']}")
+            if top_result.get('score') is not None:
+                lines.append(f"⭐ Relevance: {top_result['score']:.2f}")
+            if top_result.get('timestamp'):
+                lines.append(f"📅 Date: {top_result['timestamp']}")
 
         _get_logger().info(
-            "Quick search performed", query=query, results_count=len(results)
+            "Validated quick search executed",
+            query=result['query'],
+            results_count=result['total_count'],
         )
-        return "\n".join(output)
+        return "\n".join(lines)
 
-    except ValueError as e:
-        _get_logger().warning(f"Parameter validation failed: {e}")
-        return f"❌ Parameter validation error: {e}"
-    except Exception as e:
-        _get_logger().exception(f"Error in quick search: {e}")
-        return f"❌ Search error: {e}"
-
-
-def _format_file_search_header(file_path: str) -> list[str]:
-    """Format header for file search results."""
-    output = []
-    output.append(f"📁 Searching conversations about: {file_path}")
-    output.append("=" * 50)
-    return output
-
-
-def _format_file_search_result(result: dict[str, Any], index: int) -> list[str]:
-    """Format a single file search result."""
-    output = []
-    output.append(
-        f"\n{index}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}"
+    return await execute_database_tool(
+        operation,
+        formatter,
+        "Validated quick search",
     )
-    if result.get("project"):
-        output.append(f"   📁 Project: {result['project']}")
-    if result.get("score"):
-        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-    if result.get("timestamp"):
-        output.append(f"   📅 Date: {result['timestamp']}")
-    return output
-
-
-def _format_file_search_results(
-    results: list[dict[str, Any]], file_path: str
-) -> list[str]:
-    """Format the complete file search results."""
-    output = _format_file_search_header(file_path)
-
-    if results:
-        output.append(f"📈 Found {len(results)} relevant conversations:")
-        for i, result in enumerate(results, 1):
-            output.extend(_format_file_search_result(result, i))
-    else:
-        output.append("🔍 No conversations found about this file")
-        output.append("💡 The file might not have been discussed in previous sessions")
-
-    return output
 
 
 async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        # Validate parameters using Pydantic model
-        validated = validate_mcp_params(FileSearchParams, **params)
-        file_path = validated["file_path"]
-        limit = validated["limit"]
-        project = validated.get("project")
+    # Validate parameters
+    validated = validate_mcp_params(FileSearchParams, params)
+    if not validated.is_valid:
+        raise ValidationError(f"Parameter validation failed: {validated.errors}")
 
-        db = await _get_reflection_database()
-        results = await db.search_reflections(
-            query=file_path,
-            project=project,
-            limit=limit,
+    params_obj = validated.params
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """File search operation."""
+        results = await db.search_conversations(
+            query=params_obj.file_path,
+            project=params_obj.project,
+            limit=params_obj.limit,
         )
 
-        output = _format_file_search_results(results, file_path)
+        return {
+            "file_path": params_obj.file_path,
+            "results": results,
+        }
+
+    def formatter(result: dict[str, Any]) -> str:
+        """Format file search results."""
+        file_path = result['file_path']
+        results = result['results']
+
+        lines = [
+            f"📁 Searching conversations about: {file_path}",
+            "=" * 50,
+        ]
+
+        if not results:
+            lines.extend([
+                "🔍 No conversations found about this file",
+                "💡 The file might not have been discussed in previous sessions",
+            ])
+        else:
+            lines.append(f"📈 Found {len(results)} relevant conversations:")
+
+            for i, res in enumerate(results, 1):
+                lines.append(f"\n{i}. 📝 {res['content'][:200]}...")
+                if res.get('project'):
+                    lines.append(f"   📁 Project: {res['project']}")
+                if res.get('score') is not None:
+                    lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+                if res.get('timestamp'):
+                    lines.append(f"   📅 Date: {res['timestamp']}")
 
         _get_logger().info(
-            "File search performed", file_path=file_path, results_count=len(results)
+            "Validated file search executed",
+            file_path=file_path,
+            results_count=len(results),
         )
-        return "\n".join(output)
+        return "\n".join(lines)
 
-    except ValueError as e:
-        _get_logger().warning(f"Parameter validation failed: {e}")
-        return f"❌ Parameter validation error: {e}"
-    except Exception as e:
-        _get_logger().exception(f"Error searching by file: {e}")
-        return f"❌ File search error: {e}"
-
-
-def _format_validated_concept_result(
-    result: dict[str, Any], index: int, include_files: bool
-) -> list[str]:
-    """Format a single validated concept search result."""
-    output = []
-    output.append(
-        f"\n{index}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}"
+    return await execute_database_tool(
+        operation,
+        formatter,
+        "Validated file search",
     )
-    if result.get("project"):
-        output.append(f"   📁 Project: {result['project']}")
-    if result.get("score"):
-        output.append(f"   ⭐ Relevance: {result['score']:.2f}")
-    if result.get("timestamp"):
-        output.append(f"   📅 Date: {result['timestamp']}")
-
-    if include_files and result.get("files"):
-        files = result["files"][:3]
-        if files:
-            output.append(f"   📄 Files: {', '.join(files)}")
-
-    return output
 
 
 async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        # Validate parameters using Pydantic model
-        validated = validate_mcp_params(ConceptSearchParams, **params)
-        concept = validated["concept"]
-        include_files = validated["include_files"]
-        limit = validated["limit"]
-        project = validated.get("project")
+    # Validate parameters
+    validated = validate_mcp_params(ConceptSearchParams, params)
+    if not validated.is_valid:
+        raise ValidationError(f"Parameter validation failed: {validated.errors}")
 
-        db = await _get_reflection_database()
-        results = await db.search_reflections(
-            query=concept,
-            project=project,
-            limit=limit,
+    params_obj = validated.params
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """Concept search operation."""
+        results = await db.search_conversations(
+            query=params_obj.concept,
+            project=params_obj.project,
+            limit=params_obj.limit,
         )
 
-        output = []
-        output.append(f"🧠 Searching for concept: '{concept}'")
-        output.append("=" * 50)
+        return {
+            "concept": params_obj.concept,
+            "include_files": params_obj.include_files,
+            "results": results,
+        }
 
-        if results:
-            output.append(f"📈 Found {len(results)} related conversations:")
+    def formatter(result: dict[str, Any]) -> str:
+        """Format concept search results."""
+        concept = result['concept']
+        results = result['results']
 
-            for i, result in enumerate(results, 1):
-                output.extend(
-                    _format_validated_concept_result(result, i, include_files)
-                )
+        lines = [
+            f"🧠 Searching for concept: '{concept}'",
+            "=" * 50,
+        ]
+
+        if not results:
+            lines.extend([
+                "🔍 No conversations found about this concept",
+                "💡 Try related terms or broader concepts",
+            ])
         else:
-            output.append("🔍 No conversations found about this concept")
-            output.append("💡 Try related terms or broader concepts")
+            lines.append(f"📈 Found {len(results)} related conversations:")
+
+            for i, res in enumerate(results, 1):
+                lines.append(f"\n{i}. 📝 {res['content'][:250]}...")
+                if res.get('project'):
+                    lines.append(f"   📁 Project: {res['project']}")
+                if res.get('score') is not None:
+                    lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+                if res.get('timestamp'):
+                    lines.append(f"   📅 Date: {res['timestamp']}")
+
+                if result['include_files'] and res.get('files'):
+                    files = res['files'][:3]
+                    if files:
+                        lines.append(f"   📄 Files: {', '.join(files)}")
 
         _get_logger().info(
-            "Concept search performed", concept=concept, results_count=len(results)
+            "Validated concept search executed",
+            concept=concept,
+            results_count=len(results),
         )
-        return "\n".join(output)
+        return "\n".join(lines)
 
-    except ValueError as e:
-        _get_logger().warning(f"Parameter validation failed: {e}")
-        return f"❌ Parameter validation error: {e}"
-    except Exception as e:
-        _get_logger().exception(f"Error searching by concept: {e}")
-        return f"❌ Concept search error: {e}"
+    return await execute_database_tool(
+        operation,
+        formatter,
+        "Validated concept search",
+    )
+
+
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_validated_memory_tools(mcp_server: Any) -> None:
-    """Register memory management tools with parameter validation.
+    """Register all validated memory tools with the MCP server.
 
-    This demonstrates how to integrate Pydantic parameter validation
-    with existing MCP tools for improved type safety.
+    These tools demonstrate parameter validation using Pydantic models
+    while using the same utility-based refactoring patterns as other tools.
     """
 
-    @mcp_server.tool()  # type: ignore[misc]  # type: ignore[misc]
-    async def store_reflection_validated(
-        content: str,
-        tags: list[str] | None = None,
-    ) -> str:
-        """Store an important insight or reflection with parameter validation.
+    @mcp_server.tool()  # type: ignore[misc]
+    async def store_reflection_validated(**params: Any) -> str:
+        """Store a reflection with validated parameters.
 
-        Args:
-            content: Content to store as reflection (1-50,000 chars)
-            tags: Optional tags for categorization (alphanumeric, hyphens, underscores only)
-
-        Returns:
-            Success/error message with validation feedback
-
+        This demonstrates how to integrate Pydantic parameter validation
+        with MCP tools for improved type safety.
         """
-        return await _store_reflection_validated_impl(content=content, tags=tags)
+        return await _store_reflection_validated_impl(**params)
 
     @mcp_server.tool()  # type: ignore[misc]
-    async def quick_search_validated(
-        query: str,
-        min_score: float = 0.7,
-        project: str | None = None,
-        limit: int = 10,
-    ) -> str:
-        """Quick search with parameter validation.
-
-        Args:
-            query: Search query text (1-1,000 chars)
-            min_score: Minimum relevance score (0.0-1.0)
-            project: Optional project identifier (1-200 chars)
-            limit: Maximum results to return (1-1,000)
-
-        Returns:
-            Formatted search results with validation feedback
-
-        """
-        return await _quick_search_validated_impl(
-            query=query, min_score=min_score, project=project, limit=limit
-        )
+    async def quick_search_validated(**params: Any) -> str:
+        """Quick search with validated parameters."""
+        return await _quick_search_validated_impl(**params)
 
     @mcp_server.tool()  # type: ignore[misc]
-    async def search_by_file_validated(
-        file_path: str,
-        limit: int = 10,
-        project: str | None = None,
-    ) -> str:
-        """Search for conversations about a specific file with parameter validation.
-
-        Args:
-            file_path: File path to search for (cannot be empty)
-            limit: Maximum results to return (1-1,000)
-            project: Optional project identifier (1-200 chars)
-
-        Returns:
-            File-specific search results with validation feedback
-
-        """
-        return await _search_by_file_validated_impl(
-            file_path=file_path, limit=limit, project=project
-        )
+    async def search_by_file_validated(**params: Any) -> str:
+        """Search by file with validated parameters."""
+        return await _search_by_file_validated_impl(**params)
 
     @mcp_server.tool()  # type: ignore[misc]
-    async def search_by_concept_validated(
-        concept: str,
-        include_files: bool = True,
-        limit: int = 10,
-        project: str | None = None,
-    ) -> str:
-        """Search for conversations about a development concept with parameter validation.
-
-        Args:
-            concept: Development concept to search for (1-200 chars)
-            include_files: Include related files in results
-            limit: Maximum results to return (1-1,000)
-            project: Optional project identifier (1-200 chars)
-
-        Returns:
-            Concept-specific search results with validation feedback
-
-        """
-        return await _search_by_concept_validated_impl(
-            concept=concept,
-            include_files=include_files,
-            limit=limit,
-            project=project,
-        )
-
-
-# Example usage demonstrating error handling and validation feedback
-class ValidationExamples:
-    """Examples showing parameter validation in action."""
-
-    @staticmethod
-    async def example_valid_calls() -> list[str]:
-        """Examples of valid parameter calls."""
-        # Valid reflection storage
-        result1 = await _store_reflection_validated_impl(
-            content="Learned that async/await patterns improve database performance significantly",
-            tags=["python", "async", "database", "performance"],
-        )
-
-        # Valid search with all parameters
-        result2 = await _quick_search_validated_impl(
-            query="python async patterns",
-            min_score=0.8,
-            project="session-mgmt-mcp",
-            limit=5,
-        )
-
-        # Valid file search
-        result3 = await _search_by_file_validated_impl(
-            file_path="src/reflection_tools.py", limit=20, project="session-mgmt-mcp"
-        )
-
-        return [result1, result2, result3]
-
-    @staticmethod
-    async def example_validation_errors() -> None:
-        """Examples that would trigger validation errors."""
-        # Empty content - would fail validation
-        try:
-            await _store_reflection_validated_impl(content="", tags=["test"])
-        except ValueError as e:
-            print(f"Expected validation error: {e}")
-
-        # Invalid score range - would fail validation
-        try:
-            await _quick_search_validated_impl(
-                query="test",
-                min_score=1.5,  # Invalid: > 1.0
-                limit=0,  # Invalid: < 1
-            )
-        except ValueError as e:
-            print(f"Expected validation error: {e}")
-
-        # Invalid tags format - would fail validation
-        try:
-            await _store_reflection_validated_impl(
-                content="Valid content",
-                tags=["valid-tag", "invalid tag with spaces", "another@invalid!tag"],
-            )
-        except ValueError as e:
-            print(f"Expected validation error: {e}")
-
-
-# Migration guide for existing tools
-class MigrationGuide:
-    """Guide for migrating existing MCP tools to use parameter validation."""
-
-    @staticmethod
-    def before_migration() -> None:
-        """Example of tool before parameter validation."""
-        """
-        @mcp.tool()  # type: ignore[misc]
-        async def search_reflections(
-            query: str,
-            limit: int = 10,
-            project: str | None = None,
-            min_score: float = 0.7
-        ) -> str:
-            # No validation - any values could be passed
-            # Could receive empty strings, negative numbers, etc.
-
-            # Manual validation would be needed
-            if not query.strip():
-                return "❌ Query cannot be empty"
-            if limit < 1 or limit > 1000:
-                return "❌ Limit must be between 1 and 1000"
-            # ... more manual validation
-
-            # Implementation...
-        """
-
-    @staticmethod
-    def after_migration() -> None:
-        """Example of tool after parameter validation."""
-        """
-        @mcp.tool()  # type: ignore[misc]
-        async def search_reflections(
-            query: str,
-            limit: int = 10,
-            project: str | None = None,
-            min_score: float = 0.7
-        ) -> str:
-            try:
-                # Validate all parameters at once
-                validated = validate_mcp_params(
-                    SearchQueryParams,
-                    query=query,
-                    limit=limit,
-                    project=project,
-                    min_score=min_score
-                )
-
-                # Use validated parameters (guaranteed to be valid)
-                query = validated['query']  # Non-empty, properly formatted
-                limit = validated['limit']  # 1-1000 range
-                project = validated.get('project')  # None or valid project name
-                min_score = validated['min_score']  # 0.0-1.0 range
-
-                # Implementation with confidence in parameter validity...
-
-            except ValueError as e:
-                return f"❌ Parameter validation error: {e}"
-        """
+    async def search_by_concept_validated(**params: Any) -> str:
+        """Search by concept with validated parameters."""
+        return await _search_by_concept_validated_impl(**params)
