@@ -2,30 +2,27 @@
 """Memory and reflection management MCP tools.
 
 This module provides tools for storing, searching, and managing reflections and conversation memories.
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
 
-import importlib.util
 import typing as t
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from acb.adapters import import_adapter
-from acb.depends import depends
-from session_mgmt_mcp.utils.instance_managers import (
-    get_reflection_database as resolve_reflection_database,
+from session_mgmt_mcp.utils.database_helpers import require_reflection_database
+from session_mgmt_mcp.utils.error_handlers import ValidationError, validate_required
+from session_mgmt_mcp.utils.messages import ToolMessages
+from session_mgmt_mcp.utils.tool_wrapper import (
+    execute_database_tool,
+    execute_simple_database_tool,
+    format_reflection_result,
 )
 
-
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
-
-
-# Lazy detection flag
-_reflection_tools_available: bool | None = None
+if TYPE_CHECKING:
+    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 def _format_score(score: float) -> str:
@@ -33,99 +30,88 @@ def _format_score(score: float) -> str:
     return f"{score:.2f}"
 
 
-if TYPE_CHECKING:
-    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+# ============================================================================
+# Store Reflection Tool
+# ============================================================================
 
 
-async def _get_reflection_database() -> ReflectionDatabaseAdapter:
-    """Resolve reflection database via DI and ensure availability."""
-    global _reflection_tools_available
-
-    if _reflection_tools_available is False:
-        msg = "Reflection tools not available"
-        raise ImportError(msg)
-
-    db = await resolve_reflection_database()
-    if db is None:
-        _reflection_tools_available = False
-        msg = "Reflection tools not available. Install dependencies: uv sync --extra embeddings"
-        raise ImportError(msg)
-
-    _reflection_tools_available = True
-    return db
+async def _store_reflection_operation(
+    db: ReflectionDatabaseAdapter, content: str, tags: list[str]
+) -> dict[str, Any]:
+    """Execute reflection storage operation."""
+    success = await db.store_reflection(content, tags=tags)
+    return {
+        "success": success,
+        "content": content,
+        "tags": tags,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
 
 
-def _check_reflection_tools_available() -> bool:
-    """Check if reflection tools are available."""
-    global _reflection_tools_available
-
-    if _reflection_tools_available is None:
-        try:
-            spec = importlib.util.find_spec("session_mgmt_mcp.reflection_tools")
-            _reflection_tools_available = spec is not None
-        except ImportError:
-            _reflection_tools_available = False
-
-    return bool(_reflection_tools_available)
+def _format_store_reflection_result(result: dict[str, Any]) -> str:
+    """Format reflection storage result."""
+    return format_reflection_result(
+        result["success"],
+        result["content"],
+        result.get("tags"),
+        result.get("timestamp"),
+    )
 
 
-# Tool implementations
 async def _store_reflection_impl(content: str, tags: list[str] | None = None) -> str:
     """Implementation for store_reflection tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        success = await db.store_reflection(content, tags=tags or [])
+    def validator() -> None:
+        validate_required(content, "content")
 
-        if success:
-            output = []
-            output.append("💾 Reflection stored successfully!")
-            output.append(
-                f"📝 Content: {content[:100]}{'...' if len(content) > 100 else ''}",
-            )
-            if tags:
-                output.append(f"🏷️ Tags: {', '.join(tags)}")
-            output.append(f"📅 Stored: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    async def operation(db: ReflectionDatabaseAdapter) -> dict[str, Any]:
+        return await _store_reflection_operation(db, content, tags or [])
 
-            _get_logger().info(
-                "Reflection stored", content_length=len(content), tags=tags
-            )
-            return "\n".join(output)
-        return "❌ Failed to store reflection"
-
-    except Exception as e:
-        # Use regular logging instead of exception logging which isn't available
-        _get_logger().exception(f"Error storing reflection: {e}")
-        return f"❌ Error storing reflection: {e}"
+    return await execute_database_tool(
+        operation,
+        _format_store_reflection_result,
+        "Store reflection",
+        validator,
+    )
 
 
-def _format_quick_search_header(query: str) -> list[str]:
-    """Format the header for quick search results."""
-    return [f"🔍 Quick search for: '{query}'"]
+# ============================================================================
+# Quick Search Tool
+# ============================================================================
 
 
-def _format_quick_search_results(results: list[dict[str, Any]]) -> list[str]:
-    """Format the quick search results."""
-    output = []
+async def _quick_search_operation(
+    db: ReflectionDatabaseAdapter,
+    query: str,
+    project: str | None,
+    min_score: float,
+) -> str:
+    """Execute quick search operation and format results."""
+    results = await db.search_conversations(
+        query=query,
+        project=project,
+        limit=1,
+        min_score=min_score,
+    )
+
+    lines = [f"🔍 Quick search for: '{query}'"]
 
     if results:
         result = results[0]
-        output.append("📊 Found results (showing top 1)")
-        output.append(
-            f"📝 {result['content'][:150]}{'...' if len(result['content']) > 150 else ''}",
+        lines.append("📊 Found results (showing top 1)")
+        lines.append(
+            f"📝 {ToolMessages.truncate_text(result['content'], 150)}",
         )
         if result.get("project"):
-            output.append(f"📁 Project: {result['project']}")
+            lines.append(f"📁 Project: {result['project']}")
         if result.get("score") is not None:
-            output.append(f"⭐ Relevance: {_format_score(result['score'])}")
-        output.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
+            lines.append(f"⭐ Relevance: {_format_score(result['score'])}")
+        lines.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
     else:
-        output.append("🔍 No results found")
-        output.append("💡 Try adjusting your search terms or lowering min_score")
+        lines.append("🔍 No results found")
+        lines.append("💡 Try adjusting your search terms or lowering min_score")
 
-    return output
+    return "\n".join(lines)
 
 
 async def _quick_search_impl(
@@ -134,30 +120,16 @@ async def _quick_search_impl(
     project: str | None = None,
 ) -> str:
     """Implementation for quick_search tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        results = await db.search_conversations(
-            query=query,
-            project=project,
-            limit=1,
-            min_score=min_score,
-        )
+    async def operation(db: ReflectionDatabaseAdapter) -> str:
+        return await _quick_search_operation(db, query, project, min_score)
 
-        output = _format_quick_search_header(query)
-        output.extend(_format_quick_search_results(results))
+    return await execute_simple_database_tool(operation, "Quick search")
 
-        _get_logger().info(
-            "Quick search performed", query=query, results_count=len(results)
-        )
-        return "\n".join(output)
 
-    except Exception as e:
-        # Use regular logging instead of exception logging which isn't available
-        _get_logger().exception(f"Error in quick search: {e}")
-        return f"❌ Search error: {e}"
+# ============================================================================
+# Search Summary Tool
+# ============================================================================
 
 
 async def _analyze_project_distribution(
@@ -169,11 +141,6 @@ async def _analyze_project_distribution(
         proj = result.get("project", "Unknown")
         projects[proj] = projects.get(proj, 0) + 1
     return projects
-
-
-async def _analyze_time_distribution(results: list[dict[str, Any]]) -> list[str]:
-    """Analyze time distribution of search results."""
-    return [r.get("timestamp", "") for r in results if r.get("timestamp")]
 
 
 async def _analyze_relevance_scores(
@@ -202,112 +169,67 @@ async def _extract_common_themes(
     return []
 
 
-def _format_search_header(query: str) -> list[str]:
-    """Format the search summary header."""
-    output = []
-    output.append(f"📊 Search Summary for: '{query}'")
-    output.append("=" * 50)
-    return output
+async def _format_search_summary(
+    query: str,
+    results: list[dict[str, Any]],
+) -> str:
+    """Format complete search summary."""
+    lines = [
+        f"📊 Search Summary for: '{query}'",
+        "=" * 50,
+    ]
 
+    if not results:
+        lines.extend([
+            "🔍 No results found",
+            "💡 Try different search terms or lower the min_score threshold",
+        ])
+        return "\n".join(lines)
 
-def _format_no_results_message() -> list[str]:
-    """Format message for when no results are found."""
-    output = []
-    output.append("🔍 No results found")
-    output.append("💡 Try different search terms or lower the min_score threshold")
-    return output
+    # Basic stats
+    lines.append(f"📈 Total results: {len(results)}")
 
-
-def _format_results_summary(results: list[dict[str, Any]]) -> list[str]:
-    """Format the basic results summary."""
-    output = []
-    output.append(f"📈 Total results: {len(results)}")
-    return output
-
-
-async def _format_project_distribution(results: list[dict[str, Any]]) -> list[str]:
-    """Format project distribution information."""
-    output = []
+    # Project distribution
     projects = await _analyze_project_distribution(results)
     if len(projects) > 1:
-        output.append("📁 Project distribution:")
-        for proj, count in sorted(
-            projects.items(),
-            key=lambda x: x[1],
-            reverse=True,
-        ):
-            output.append(f"   • {proj}: {count} results")
-    return output
+        lines.append("📁 Project distribution:")
+        for proj, count in sorted(projects.items(), key=lambda x: x[1], reverse=True):
+            lines.append(f"   • {proj}: {count} results")
 
-
-async def _format_time_distribution(results: list[dict[str, Any]]) -> list[str]:
-    """Format time distribution information."""
-    output = []
-    timestamps = await _analyze_time_distribution(results)
+    # Time distribution
+    timestamps = [r.get("timestamp") for r in results if r.get("timestamp")]
     if timestamps:
-        output.append(f"📅 Time range: {len(timestamps)} results with dates")
-    return output
+        lines.append(f"📅 Time range: {len(timestamps)} results with dates")
 
-
-async def _format_relevance_scores(results: list[dict[str, Any]]) -> list[str]:
-    """Format relevance scores information."""
-    output = []
+    # Relevance scores
     avg_score, scores = await _analyze_relevance_scores(results)
     if scores:
-        output.append(f"⭐ Average relevance: {_format_score(avg_score)}")
-    return output
+        lines.append(f"⭐ Average relevance: {_format_score(avg_score)}")
 
-
-async def _format_common_themes(results: list[dict[str, Any]]) -> list[str]:
-    """Format common themes information."""
-    output = []
+    # Common themes
     top_words = await _extract_common_themes(results)
     if top_words:
-        output.append("🔤 Common themes:")
+        lines.append("🔤 Common themes:")
         for word, freq in top_words:
-            output.append(f"   • {word}: {freq} mentions")
-    return output
+            lines.append(f"   • {word}: {freq} mentions")
+
+    return "\n".join(lines)
 
 
-def _check_reflection_tools() -> bool:
-    """Check if reflection tools are available."""
-    return _check_reflection_tools_available()
-
-
-async def _get_search_results(
-    db: ReflectionDatabaseAdapter, query: str, project: str | None, min_score: float
-) -> list[dict[str, Any]]:
-    """Get search results from the database."""
-    return await db.search_conversations(
+async def _search_summary_operation(
+    db: ReflectionDatabaseAdapter,
+    query: str,
+    project: str | None,
+    min_score: float,
+) -> str:
+    """Execute search summary operation."""
+    results = await db.search_conversations(
         query=query,
         project=project,
         limit=20,
         min_score=min_score,
     )
-
-
-async def _format_search_results_summary(results: list[dict[str, Any]]) -> list[str]:
-    """Format the search results summary."""
-    output = []
-    output.extend(_format_results_summary(results))
-
-    # Project distribution
-    project_dist = await _format_project_distribution(results)
-    output.extend(project_dist)
-
-    # Time distribution
-    time_dist = await _format_time_distribution(results)
-    output.extend(time_dist)
-
-    # Average relevance score
-    relevance_scores = await _format_relevance_scores(results)
-    output.extend(relevance_scores)
-
-    # Common themes
-    common_themes = await _format_common_themes(results)
-    output.extend(common_themes)
-
-    return output
+    return await _format_search_summary(query, results)
 
 
 async def _search_summary_impl(
@@ -316,45 +238,64 @@ async def _search_summary_impl(
     project: str | None = None,
 ) -> str:
     """Implementation for search_summary tool."""
-    if not _check_reflection_tools():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        results = await _get_search_results(db, query, project, min_score)
+    async def operation(db: ReflectionDatabaseAdapter) -> str:
+        return await _search_summary_operation(db, query, project, min_score)
 
-        output = _format_search_header(query)
+    return await execute_simple_database_tool(operation, "Search summary")
 
-        if results:
-            output.extend(await _format_search_results_summary(results))
-        else:
-            output.extend(_format_no_results_message())
 
-        _get_logger().info(
-            "Search summary generated", query=query, results_count=len(results)
+# ============================================================================
+# Search by File Tool
+# ============================================================================
+
+
+async def _format_file_search_results(
+    file_path: str,
+    results: list[dict[str, Any]],
+) -> str:
+    """Format file search results."""
+    lines = [
+        f"📁 Searching conversations about: {file_path}",
+        "=" * 50,
+    ]
+
+    if not results:
+        lines.extend([
+            "🔍 No conversations found about this file",
+            "💡 The file might not have been discussed in previous sessions",
+        ])
+        return "\n".join(lines)
+
+    lines.append(f"📈 Found {len(results)} relevant conversations:")
+
+    for i, result in enumerate(results, 1):
+        lines.append(
+            f"\n{i}. 📝 {ToolMessages.truncate_text(result['content'], 200)}",
         )
-        return "\n".join(output)
-
-    except Exception as e:
-        # Use regular logging instead of exception logging which isn't available
-        _get_logger().exception(f"Error generating search summary: {e}")
-        return f"❌ Search summary error: {e}"
-
-
-def _format_file_search_result(result: dict[str, Any], index: int) -> list[str]:
-    """Format a single file search result."""
-    output = []
-    output.append(
-        f"\n{index}. 📝 {result['content'][:200]}{'...' if len(result['content']) > 200 else ''}",
-    )
-    if result.get("project"):
-        output.append(f"   📁 Project: {result['project']}")
+        if result.get("project"):
+            lines.append(f"   📁 Project: {result['project']}")
         if result.get("score") is not None:
-            output.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
-    if result.get("timestamp"):
-        output.append(f"   📅 Date: {result['timestamp']}")
+            lines.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
+        if result.get("timestamp"):
+            lines.append(f"   📅 Date: {result['timestamp']}")
 
-    return output
+    return "\n".join(lines)
+
+
+async def _search_by_file_operation(
+    db: ReflectionDatabaseAdapter,
+    file_path: str,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute file search operation."""
+    results = await db.search_conversations(
+        query=file_path,
+        project=project,
+        limit=limit,
+    )
+    return await _format_file_search_results(file_path, results)
 
 
 async def _search_by_file_impl(
@@ -363,67 +304,71 @@ async def _search_by_file_impl(
     project: str | None = None,
 ) -> str:
     """Implementation for search_by_file tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        results = await db.search_conversations(
-            query=file_path,
-            project=project,
-            limit=limit,
+    async def operation(db: ReflectionDatabaseAdapter) -> str:
+        return await _search_by_file_operation(db, file_path, limit, project)
+
+    return await execute_simple_database_tool(operation, "Search by file")
+
+
+# ============================================================================
+# Search by Concept Tool
+# ============================================================================
+
+
+async def _format_concept_search_results(
+    concept: str,
+    results: list[dict[str, Any]],
+    include_files: bool,
+) -> str:
+    """Format concept search results."""
+    lines = [
+        f"🧠 Searching for concept: '{concept}'",
+        "=" * 50,
+    ]
+
+    if not results:
+        lines.extend([
+            "🔍 No conversations found about this concept",
+            "💡 Try related terms or broader concepts",
+        ])
+        return "\n".join(lines)
+
+    lines.append(f"📈 Found {len(results)} related conversations:")
+
+    for i, result in enumerate(results, 1):
+        lines.append(
+            f"\n{i}. 📝 {ToolMessages.truncate_text(result['content'], 250)}",
         )
-
-        output = []
-        output.append(f"📁 Searching conversations about: {file_path}")
-        output.append("=" * 50)
-
-        if results:
-            output.append(f"📈 Found {len(results)} relevant conversations:")
-
-            for i, result in enumerate(results, 1):
-                output.extend(_format_file_search_result(result, i))
-        else:
-            output.append("🔍 No conversations found about this file")
-            output.append(
-                "💡 The file might not have been discussed in previous sessions",
-            )
-
-        _get_logger().info(
-            "File search performed",
-            file_path=file_path,
-            results_count=len(results),
-        )
-        return "\n".join(output)
-
-    except Exception as e:
-        _get_logger().exception(
-            "Error searching by file", error=str(e), file_path=file_path
-        )
-        return f"❌ File search error: {e}"
-
-
-def _format_concept_search_result(
-    result: dict[str, Any], index: int, include_files: bool
-) -> list[str]:
-    """Format a single concept search result."""
-    output = []
-    output.append(
-        f"\n{index}. 📝 {result['content'][:250]}{'...' if len(result['content']) > 250 else ''}",
-    )
-    if result.get("project"):
-        output.append(f"   📁 Project: {result['project']}")
+        if result.get("project"):
+            lines.append(f"   📁 Project: {result['project']}")
         if result.get("score") is not None:
-            output.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
-    if result.get("timestamp"):
-        output.append(f"   📅 Date: {result['timestamp']}")
+            lines.append(f"   ⭐ Relevance: {_format_score(result['score'])}")
+        if result.get("timestamp"):
+            lines.append(f"   📅 Date: {result['timestamp']}")
 
-    if include_files and result.get("files"):
-        files = result["files"][:3]
-        if files:
-            output.append(f"   📄 Files: {', '.join(files)}")
+        if include_files and result.get("files"):
+            files = result["files"][:3]
+            if files:
+                lines.append(f"   📄 Files: {', '.join(files)}")
 
-    return output
+    return "\n".join(lines)
+
+
+async def _search_by_concept_operation(
+    db: ReflectionDatabaseAdapter,
+    concept: str,
+    include_files: bool,
+    limit: int,
+    project: str | None,
+) -> str:
+    """Execute concept search operation."""
+    results = await db.search_conversations(
+        query=concept,
+        project=project,
+        limit=limit,
+    )
+    return await _format_concept_search_results(concept, results, include_files)
 
 
 async def _search_by_concept_impl(
@@ -433,45 +378,21 @@ async def _search_by_concept_impl(
     project: str | None = None,
 ) -> str:
     """Implementation for search_by_concept tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        results = await db.search_conversations(
-            query=concept,
-            project=project,
-            limit=limit,
+    async def operation(db: ReflectionDatabaseAdapter) -> str:
+        return await _search_by_concept_operation(
+            db, concept, include_files, limit, project
         )
 
-        output = []
-        output.append(f"🧠 Searching for concept: '{concept}'")
-        output.append("=" * 50)
-
-        if results:
-            output.append(f"📈 Found {len(results)} related conversations:")
-
-            for i, result in enumerate(results, 1):
-                output.extend(_format_concept_search_result(result, i, include_files))
-        else:
-            output.append("🔍 No conversations found about this concept")
-            output.append("💡 Try related terms or broader concepts")
-
-        _get_logger().info(
-            "Concept search performed",
-            concept=concept,
-            results_count=len(results),
-        )
-        return "\n".join(output)
-
-    except Exception as e:
-        _get_logger().exception(
-            "Error searching by concept", error=str(e), concept=concept
-        )
-        return f"❌ Concept search error: {e}"
+    return await execute_simple_database_tool(operation, "Search by concept")
 
 
-def _format_new_stats(stats: dict[str, t.Any]) -> list[str]:
+# ============================================================================
+# Reflection Stats Tool
+# ============================================================================
+
+
+def _format_stats_new(stats: dict[str, t.Any]) -> list[str]:
     """Format statistics in new format (conversations_count, reflections_count)."""
     conv_count = stats.get("conversations_count", 0)
     refl_count = stats.get("reflections_count", 0)
@@ -485,7 +406,7 @@ def _format_new_stats(stats: dict[str, t.Any]) -> list[str]:
     ]
 
 
-def _format_old_stats(stats: dict[str, t.Any]) -> list[str]:
+def _format_stats_old(stats: dict[str, t.Any]) -> list[str]:
     """Format statistics in old/test format (total_reflections, projects, date_range)."""
     output = [
         f"📈 Total reflections: {stats.get('total_reflections', 0)}",
@@ -512,59 +433,61 @@ def _format_old_stats(stats: dict[str, t.Any]) -> list[str]:
     return output
 
 
+async def _reflection_stats_operation(db: ReflectionDatabaseAdapter) -> str:
+    """Execute reflection stats operation."""
+    stats = await db.get_stats()
+
+    lines = ["📊 Reflection Database Statistics", "=" * 40]
+
+    if stats and "error" not in stats:
+        # Format based on stat structure
+        if "conversations_count" in stats:
+            lines.extend(_format_stats_new(stats))
+        else:
+            lines.extend(_format_stats_old(stats))
+    else:
+        lines.extend([
+            "📊 No statistics available",
+            "💡 Database may be empty or inaccessible",
+        ])
+
+    return "\n".join(lines)
+
+
 async def _reflection_stats_impl() -> str:
     """Implementation for reflection_stats tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
 
-    try:
-        db = await _get_reflection_database()
-        stats = await db.get_stats()
+    async def operation(db: ReflectionDatabaseAdapter) -> str:
+        return await _reflection_stats_operation(db)
 
-        output = ["📊 Reflection Database Statistics", "=" * 40]
+    return await execute_simple_database_tool(operation, "Reflection stats")
 
-        if stats and "error" not in stats:
-            # Format based on stat structure
-            if "conversations_count" in stats:
-                output.extend(_format_new_stats(stats))
-            else:
-                output.extend(_format_old_stats(stats))
-        else:
-            output.extend(
-                [
-                    "📊 No statistics available",
-                    "💡 Database may be empty or inaccessible",
-                ]
-            )
 
-        _get_logger().info("Reflection stats retrieved")
-        return "\n".join(output)
-
-    except Exception as e:
-        _get_logger().exception("Error getting reflection stats", error=str(e))
-        return f"❌ Stats error: {e}"
+# ============================================================================
+# Reset Database Tool
+# ============================================================================
 
 
 async def _reset_reflection_database_impl() -> str:
     """Implementation for reset_reflection_database tool."""
-    if not _check_reflection_tools_available():
-        return "❌ Reflection tools not available. Install dependencies: uv sync --extra embeddings"
-
     try:
         # Try to create a new database connection (DI will handle cleanup)
-        await _get_reflection_database()
+        await require_reflection_database()
 
-        output = []
-        output.append("🔄 Reflection database connection reset")
-        output.append("✅ New connection established successfully")
-        output.append("💡 Database locks should be resolved")
-
-        _get_logger().info("Reflection database reset successfully")
-        return "\n".join(output)
+        lines = [
+            "🔄 Reflection database connection reset",
+            "✅ New connection established successfully",
+            "💡 Database locks should be resolved",
+        ]
+        return "\n".join(lines)
 
     except Exception as e:
-        _get_logger().exception("Error resetting reflection database", error=str(e))
-        return f"❌ Reset error: {e}"
+        return ToolMessages.operation_failed("Reset database", e)
+
+
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_memory_tools(mcp_server: Any) -> None:
