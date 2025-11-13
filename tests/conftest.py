@@ -100,6 +100,100 @@ except ImportError:
             return {"valid_token": "test-token", "operation": "read"}
 
 
+# =====================================
+# OPTIMIZED FIXTURES (Performance)
+# =====================================
+
+
+@pytest.fixture(scope="session")
+def temp_base_dir() -> Generator[Path]:
+    """Session-scoped base directory for all tests (reduces filesystem operations)."""
+    with tempfile.TemporaryDirectory(prefix="session_mgmt_test_") as temp_dir:
+        yield Path(temp_dir)
+
+
+@pytest.fixture
+def temp_test_dir(temp_base_dir: Path) -> Generator[Path]:
+    """Function-scoped test directory within session temp dir."""
+    test_dir = temp_base_dir / f"test_{id(temp_base_dir)}"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    yield test_dir
+
+
+@pytest.fixture(scope="session")
+def mock_logger_factory():
+    """Factory for creating mock loggers - session scoped for reuse."""
+    def create_mock_logger(**kwargs) -> Mock:
+        logger = Mock()
+        logger.info = Mock()
+        logger.debug = Mock()
+        logger.warning = Mock()
+        logger.error = Mock()
+        logger.critical = Mock()
+        for key, value in kwargs.items():
+            setattr(logger, key, value)
+        return logger
+    return create_mock_logger
+
+
+@pytest.fixture
+async def fast_temp_db() -> AsyncGenerator[ReflectionDatabase]:
+    """Optimized in-memory database for faster tests."""
+    db = ReflectionDatabase(db_path=":memory:")
+    await db.initialize()
+    yield db
+    try:
+        db.close()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+async def db_with_sample_data(fast_temp_db: ReflectionDatabase) -> ReflectionDatabase:
+    """Database pre-populated with minimal sample data."""
+    await fast_temp_db.store_conversation("Sample conversation", {"project": "test"})
+    await fast_temp_db.store_reflection("Sample reflection", ["test"])
+    return fast_temp_db
+
+
+@pytest.fixture(scope="session")
+def mock_git_repo_factory():
+    """Factory for creating mock git repository structures."""
+    def create_mock_git_repo(path: Path, **kwargs):
+        git_dir = path / ".git"
+        git_dir.mkdir(parents=True, exist_ok=True)
+        (git_dir / "HEAD").write_text("ref: refs/heads/main\n")
+        refs_dir = git_dir / "refs" / "heads"
+        refs_dir.mkdir(parents=True, exist_ok=True)
+        (refs_dir / "main").write_text("0" * 40 + "\n")
+        return git_dir
+    return create_mock_git_repo
+
+
+@pytest.fixture(scope="session")
+def mock_project_factory():
+    """Factory for creating mock project structures."""
+    def create_mock_project(path: Path, features: dict[str, bool]):
+        if features.get("has_pyproject_toml"):
+            (path / "pyproject.toml").write_text('[project]\nname = "test"\n')
+        if features.get("has_readme"):
+            (path / "README.md").write_text("# Test Project\n")
+        if features.get("has_tests"):
+            tests_dir = path / "tests"
+            tests_dir.mkdir(exist_ok=True)
+            (tests_dir / "test_example.py").write_text("def test_x(): pass\n")
+        if features.get("has_src"):
+            src_dir = path / "src"
+            src_dir.mkdir(exist_ok=True)
+            (src_dir / "__init__.py").touch()
+        if features.get("has_docs"):
+            docs_dir = path / "docs"
+            docs_dir.mkdir(exist_ok=True)
+            (docs_dir / "index.md").write_text("# Docs\n")
+        return path
+    return create_mock_project
+
+
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     """Create session-scoped event loop for async tests."""

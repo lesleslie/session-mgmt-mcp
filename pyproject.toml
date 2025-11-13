@@ -230,6 +230,9 @@ minversion = "7.0"
 addopts = [
     "--cov=session_mgmt_mcp",
     "--cov-report=term",
+    "--tb=short",
+    "--strict-markers",
+    "--durations=20",
 ]
 testpaths = [
     "tests",
@@ -267,6 +270,8 @@ markers = [
     "chaos: marks test as chaos engineering test",
     "ai_generated: marks test as AI-generated test",
     "breakthrough: marks test as breakthrough frontier test",
+    "parallel_safe: mark test as safe for parallel execution",
+    "requires_isolation: mark test as requiring isolated execution",
 ]
 filterwarnings = [
     "error",
