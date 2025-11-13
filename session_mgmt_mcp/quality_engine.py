@@ -32,6 +32,24 @@ from session_mgmt_mcp.utils.file_utils import (
     _cleanup_uv_cache,
 )
 from session_mgmt_mcp.utils.git_utils import _optimize_git_repository
+from session_mgmt_mcp.utils.quality import (
+    check_git_activity as _check_git_activity,
+    count_significant_files as _count_significant_files,
+    create_empty_summary as _create_empty_summary,
+    ensure_summary_defaults as _ensure_summary_defaults,
+    evaluate_git_activity_heuristic as _evaluate_git_activity_heuristic,
+    evaluate_large_project_heuristic as _evaluate_large_project_heuristic,
+    evaluate_python_project_heuristic as _evaluate_python_project_heuristic,
+    extract_decisions_from_content as _extract_decisions_from_content,
+    extract_next_steps_from_content as _extract_next_steps_from_content,
+    extract_topics_from_content as _extract_topics_from_content,
+    generate_quality_recommendations as _generate_quality_recommendations,
+    get_default_compaction_reason as _get_default_compaction_reason,
+    get_error_summary as _get_error_summary,
+    get_fallback_compaction_reason as _get_fallback_compaction_reason,
+    get_fallback_summary as _get_fallback_summary,
+    process_recent_reflections as _process_recent_reflections,
+)
 from session_mgmt_mcp.utils.quality_utils import (
     _analyze_quality_trend,
     _extract_quality_scores,
@@ -42,193 +60,8 @@ from session_mgmt_mcp.utils.quality_utils import (
 from session_mgmt_mcp.utils.quality_utils_v2 import calculate_quality_score_v2
 from session_mgmt_mcp.utils.server_helpers import _add_current_session_context
 
-# ======================
-# Compaction Helper Functions (2)
-# ======================
-
-
-def _get_default_compaction_reason() -> str:
-    """Get the default reason when no strong indicators are found."""
-    return "Context appears manageable - compaction not immediately needed"
-
-
-def _get_fallback_compaction_reason() -> str:
-    """Get fallback reason when evaluation fails."""
-    return "Unable to assess context complexity - compaction may be beneficial as a precaution"
-
-
-# ======================
-# Project Heuristic Helper Functions (5)
-# ======================
-
-
-def _count_significant_files(current_dir: Path) -> int:
-    """Count significant files in project as a complexity indicator."""
-    file_count = 0
-    with suppress(OSError, PermissionError, FileNotFoundError, ValueError):
-        for file_path in current_dir.rglob("*"):
-            if (
-                file_path.is_file()
-                and not any(part.startswith(".") for part in file_path.parts)
-                and file_path.suffix
-                in {
-                    ".py",
-                    ".js",
-                    ".ts",
-                    ".jsx",
-                    ".tsx",
-                    ".go",
-                    ".rs",
-                    ".java",
-                    ".cpp",
-                    ".c",
-                    ".h",
-                }
-            ):
-                file_count += 1
-                if file_count > 50:  # Stop counting after threshold
-                    break
-    return file_count
-
-
-def _check_git_activity(current_dir: Path) -> tuple[int, int] | None:
-    """Check for active development via git and return (recent_commits, modified_files)."""
-    git_dir = current_dir / ".git"
-    if not git_dir.exists():
-        return None
-
-    try:
-        # Check number of recent commits as activity indicator
-        result = subprocess.run(
-            ["git", "log", "--oneline", "-20", "--since='24 hours ago'"],
-            check=False,
-            capture_output=True,
-            text=True,
-            cwd=current_dir,
-            timeout=5,
-        )
-        if result.returncode == 0:
-            recent_commits = len(
-                [line for line in result.stdout.strip().split("\n") if line.strip()],
-            )
-        else:
-            recent_commits = 0
-
-        # Check for large number of modified files
-        status_result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            check=False,
-            capture_output=True,
-            text=True,
-            cwd=current_dir,
-            timeout=5,
-        )
-        if status_result.returncode == 0:
-            modified_files = len(
-                [
-                    line
-                    for line in status_result.stdout.strip().split("\n")
-                    if line.strip()
-                ],
-            )
-        else:
-            modified_files = 0
-
-        return recent_commits, modified_files
-
-    except (subprocess.TimeoutExpired, Exception):
-        return None
-
-
-def _evaluate_large_project_heuristic(file_count: int) -> tuple[bool, str]:
-    """Evaluate if the project is large enough to benefit from compaction."""
-    if file_count > 50:
-        return (
-            True,
-            "Large codebase with 50+ source files detected - context compaction recommended",
-        )
-    return False, ""
-
-
-def _evaluate_git_activity_heuristic(
-    git_activity: tuple[int, int] | None,
-) -> tuple[bool, str]:
-    """Evaluate if git activity suggests compaction would be beneficial."""
-    if git_activity:
-        recent_commits, modified_files = git_activity
-
-        if recent_commits >= 3:
-            return (
-                True,
-                f"High development activity ({recent_commits} commits in 24h) - compaction recommended",
-            )
-
-        if modified_files >= 10:
-            return (
-                True,
-                f"Many modified files ({modified_files}) detected - context optimization beneficial",
-            )
-
-    return False, ""
-
-
-def _evaluate_python_project_heuristic(current_dir: Path) -> tuple[bool, str]:
-    """Evaluate if this is a Python project that might benefit from compaction."""
-    if (current_dir / "tests").exists() and (current_dir / "pyproject.toml").exists():
-        return (
-            True,
-            "Python project with tests detected - compaction may improve focus",
-        )
-    return False, ""
-
-
-# ======================
-# Quality Recommendations (1)
-# ======================
-
-
-def _generate_quality_recommendations(
-    score: int,
-    project_context: dict[str, Any],
-    permissions_count: int,
-    uv_available: bool,
-) -> list[str]:
-    """Generate quality improvement recommendations based on score factors."""
-    recommendations = []
-
-    if score < 50:
-        recommendations.append(
-            "Session needs attention - multiple areas for improvement",
-        )
-    elif score < 75:
-        recommendations.append("Good session health - minor optimizations available")
-    else:
-        recommendations.append("Excellent session quality - maintain current practices")
-
-    # Project-specific recommendations
-    if not project_context.get("has_tests"):
-        recommendations.append("Consider adding tests to improve project structure")
-    if not project_context.get("has_docs"):
-        recommendations.append("Documentation would enhance project maturity")
-
-    # Permissions recommendations
-    if permissions_count == 0:
-        recommendations.append(
-            "No trusted operations yet - permissions will be granted on first use",
-        )
-    elif permissions_count > 5:
-        recommendations.append(
-            "Many trusted operations - consider reviewing for security",
-        )
-
-    # Tools recommendations
-    if not uv_available:
-        recommendations.append(
-            "Install UV package manager for better dependency management",
-        )
-
-    return recommendations
-
+# Extracted functions (compaction, recommendations, summary helpers) have been moved
+# to session_mgmt_mcp.utils.quality module for better modularity and reusability.
 
 # ======================
 # Main Quality Functions (5)
@@ -502,114 +335,6 @@ async def summarize_current_conversation() -> dict[str, Any]:
 
     except Exception as e:
         return _get_error_summary(e)
-
-
-# ======================
-# Summary Helper Functions (6)
-# ======================
-
-
-def _create_empty_summary() -> dict[str, Any]:
-    """Create empty conversation summary structure."""
-    return {
-        "key_topics": [],
-        "decisions_made": [],
-        "next_steps": [],
-        "problems_solved": [],
-        "code_changes": [],
-    }
-
-
-def _extract_topics_from_content(content: str) -> set[str]:
-    """Extract topics from reflection content."""
-    topics = set()
-    if "project context:" in content:
-        context_part = content.split("project context:")[1].split(".")[0]
-        topics.update(word.strip() for word in context_part.split(","))
-    return topics
-
-
-def _extract_decisions_from_content(content: str) -> list[str]:
-    """Extract decisions from reflection content."""
-    decisions = []
-    if "excellent" in content:
-        decisions.append("Maintaining productive workflow patterns")
-    elif "attention" in content:
-        decisions.append("Identified areas needing workflow optimization")
-    elif "good progress" in content:
-        decisions.append("Steady development progress confirmed")
-    return decisions
-
-
-def _extract_next_steps_from_content(content: str) -> list[str]:
-    """Extract next steps from reflection content."""
-    next_steps = []
-    if "priority:" in content:
-        priority_part = content.split("priority:")[1].split(".")[0]
-        if priority_part.strip():
-            next_steps.append(priority_part.strip())
-    return next_steps
-
-
-async def _process_recent_reflections(db: Any, summary: dict[str, Any]) -> None:
-    """Process recent reflections to extract conversation insights."""
-    recent_reflections = await db.search_reflections("checkpoint", limit=5)
-
-    if not recent_reflections:
-        return
-
-    topics = set()
-    decisions = []
-    next_steps = []
-
-    for reflection in recent_reflections:
-        content = reflection["content"].lower()
-
-        topics.update(_extract_topics_from_content(content))
-        decisions.extend(_extract_decisions_from_content(content))
-        next_steps.extend(_extract_next_steps_from_content(content))
-
-    summary["key_topics"] = list(topics)[:5]
-    summary["decisions_made"] = decisions[:3]
-    summary["next_steps"] = next_steps[:3]
-
-
-def _ensure_summary_defaults(summary: dict[str, Any]) -> None:
-    """Ensure summary has default values if empty."""
-    if not summary["key_topics"]:
-        summary["key_topics"] = [
-            "session management",
-            "workflow optimization",
-        ]
-
-    if not summary["decisions_made"]:
-        summary["decisions_made"] = ["Proceeding with current development approach"]
-
-    if not summary["next_steps"]:
-        summary["next_steps"] = ["Continue with regular checkpoint monitoring"]
-
-
-def _get_fallback_summary() -> dict[str, Any]:
-    """Get fallback summary when reflection processing fails."""
-    return {
-        "key_topics": ["development session", "workflow management"],
-        "decisions_made": ["Maintaining current session approach"],
-        "next_steps": ["Continue monitoring session quality"],
-        "problems_solved": ["Session management optimization"],
-        "code_changes": ["Enhanced checkpoint functionality"],
-    }
-
-
-def _get_error_summary(error: Exception) -> dict[str, Any]:
-    """Get error summary when conversation analysis fails."""
-    return {
-        "key_topics": ["session analysis"],
-        "decisions_made": ["Continue current workflow"],
-        "next_steps": ["Regular quality monitoring"],
-        "problems_solved": [],
-        "code_changes": [],
-        "error": str(error),
-    }
 
 
 # ======================
