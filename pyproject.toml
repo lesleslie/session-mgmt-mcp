@@ -225,9 +225,12 @@ skip = "*/data/*,tests/*,test_*.py,*_test.py"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd,nin"
 
-[tool.pytest.ini_options]
+[tool.pytest]
 minversion = "7.0"
-addopts = "--cov=session_mgmt_mcp --cov-report=term"
+addopts = [
+    "--cov=session_mgmt_mcp",
+    "--cov-report=term",
+]
 testpaths = [
     "tests",
     "session_mgmt_mcp",
@@ -272,7 +275,7 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",
     "ignore::pytest.PytestUnknownMarkWarning:pytest_benchmark.*",
 ]
-timeout = 300
+timeout = "300"
 timeout_method = "thread"
 
 [tool.pytest.benchmark]
@@ -479,8 +482,8 @@ publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 
 [tool.uv.sources.acb]
-path = "../acb"
-editable = true
+git = "https://github.com/lesleslie/acb.git"
+branch = "main"
 
 [dependency-groups]
 test = [

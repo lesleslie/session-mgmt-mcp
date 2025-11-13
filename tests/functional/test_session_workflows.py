@@ -13,13 +13,11 @@ class TestSessionWorkflows:
     """Test complete session workflows."""
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_complete_session_workflow(self, mock_logger, mock_is_git_repo):
+    async def test_complete_session_workflow(self, mock_is_git_repo):
         """Test a complete session workflow: init -> checkpoint -> end."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -84,13 +82,11 @@ class TestSessionWorkflows:
                     assert handoff_file.suffix == ".md"
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_with_git_operations(self, mock_logger, mock_is_git_repo):
+    async def test_session_with_git_operations(self, mock_is_git_repo):
         """Test session workflow with git operations."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -146,13 +142,11 @@ class TestSessionWorkflows:
                 assert end_result["success"] is True
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_status_check(self, mock_logger, mock_is_git_repo):
+    async def test_session_status_check(self, mock_is_git_repo):
         """Test session status checking."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -229,12 +223,10 @@ class TestSessionWorkflows:
             (temp_dir / "uv.lock").write_text("# UV lockfile\n")
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_quality_scoring(self, mock_logger, mock_is_git_repo):
+    async def test_session_quality_scoring(self, mock_is_git_repo):
         """Test session quality scoring logic with V2 algorithm."""
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         test_cases = [
             # High quality project - V2 scores ~50 (project_health:20 + session:20 + code:13 + security:9)
@@ -343,13 +335,11 @@ class TestSessionWorkflows:
                         )
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_with_previous_handoff(self, mock_logger, mock_is_git_repo):
+    async def test_session_with_previous_handoff(self, mock_is_git_repo):
         """Test session initialization with previous handoff file."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -411,12 +401,10 @@ class TestSessionWorkflows:
 class TestSessionErrorHandling:
     """Test session error handling scenarios."""
 
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_with_invalid_directory(self, mock_logger):
+    async def test_session_with_invalid_directory(self):
         """Test session initialization with invalid directory."""
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         # Try to initialize with non-existent directory
         result = await manager.initialize_session("/non/existent/directory")
@@ -425,13 +413,11 @@ class TestSessionErrorHandling:
         assert "error" in result
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
-    async def test_session_with_permissions_error(self, mock_logger, mock_is_git_repo):
+    async def test_session_with_permissions_error(self, mock_is_git_repo):
         """Test session handling of permissions errors."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -449,15 +435,13 @@ class TestSessionErrorHandling:
                 assert "error" in result
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
     async def test_session_with_handoff_write_error(
-        self, mock_logger, mock_is_git_repo
+        self, mock_is_git_repo
     ):
         """Test session handling of handoff file write errors."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -494,15 +478,13 @@ class TestSessionCrossPlatform:
     """Test session functionality across different environments."""
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
     async def test_session_in_different_environments(
-        self, mock_logger, mock_is_git_repo
+        self, mock_is_git_repo
     ):
         """Test session behavior with different environment configurations (V2 algorithm)."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         test_environments = [
             # Environment with UV available - V2 doesn't score UV separately anymore
@@ -558,15 +540,13 @@ class TestSessionCrossPlatform:
                             assert 0 <= quality_result["total_score"] <= 100
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    @patch("session_mgmt_mcp.core.session_manager.get_session_logger")
     async def test_session_with_different_project_types(
-        self, mock_logger, mock_is_git_repo
+        self, mock_is_git_repo
     ):
         """Test session with different types of projects."""
         mock_is_git_repo.return_value = True
-        mock_logger.return_value = Mock()
 
-        manager = SessionLifecycleManager()
+        manager = SessionLifecycleManager(logger=Mock())
 
         project_types = [
             # Python project with full structure
