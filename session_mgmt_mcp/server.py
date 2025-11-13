@@ -69,8 +69,6 @@ TOKEN_OPTIMIZER_AVAILABLE = (
 
 if TOKEN_OPTIMIZER_AVAILABLE:
     from session_mgmt_mcp.token_optimizer import (
-        get_cached_chunk,
-        get_token_usage_stats,
         optimize_search_response,
         track_token_usage,
     )

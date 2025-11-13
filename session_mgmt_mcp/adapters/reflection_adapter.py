@@ -76,12 +76,7 @@ class ReflectionDatabaseAdapter:
         msg = "Use 'async with' instead of 'with' for ReflectionDatabaseAdapter"
         raise RuntimeError(msg)
 
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
+    def __exit__(self, *_exc_info) -> None:
         """Sync context manager exit."""
 
     async def __aenter__(self) -> t.Self:
@@ -89,12 +84,7 @@ class ReflectionDatabaseAdapter:
         await self.initialize()
         return self
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
+    async def __aexit__(self, *_exc_info) -> None:
         """Async context manager exit with cleanup."""
         self.close()  # Sync close is sufficient, ACB handles async cleanup
 
