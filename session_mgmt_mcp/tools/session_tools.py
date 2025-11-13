@@ -3,6 +3,8 @@
 
 This module provides tools for managing Claude session lifecycle including
 initialization, checkpoints, and cleanup.
+
+Refactored to use utility modules for reduced code duplication.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
 
 from acb.adapters import import_adapter
 from session_mgmt_mcp.core import SessionLifecycleManager
+from session_mgmt_mcp.utils.error_handlers import _get_logger
 
 
 @dataclass
@@ -68,14 +71,17 @@ class SessionSetupResults:
     recommendations: list[str] = field(default_factory=list)
 
 
-# Global session manager
+# ============================================================================
+# Service Resolution
+# ============================================================================
+
+
 def _get_session_manager() -> SessionLifecycleManager:
     """Get or create SessionLifecycleManager instance.
 
     Note:
         Checks bevy container directly instead of using depends.get_sync()
         to avoid async event loop issues during module import.
-
     """
     # Check if already registered without triggering async machinery
     container = get_container()
@@ -89,10 +95,9 @@ def _get_session_manager() -> SessionLifecycleManager:
     return manager
 
 
-def _get_logger() -> t.Any:
-    """Lazy logger resolution using ACB's logger adapter from DI container."""
-    logger_class = import_adapter("logger")
-    return depends.get_sync(logger_class)
+# ============================================================================
+# Session Shortcuts Management
+# ============================================================================
 
 
 def _create_session_shortcuts() -> dict[str, Any]:
@@ -103,7 +108,6 @@ def _create_session_shortcuts() -> dict[str, Any]:
 
     Returns:
         Dict with 'created' bool, 'existed' bool, and 'shortcuts' list
-
     """
     claude_home = Path.home() / ".claude"
     commands_dir = claude_home / "commands"
@@ -190,7 +194,124 @@ This will:
     }
 
 
-# Tool implementations
+# ============================================================================
+# Working Directory Detection
+# ============================================================================
+
+
+def _check_environment_variables() -> str | None:
+    """Check for Claude Code environment variables."""
+    import os
+
+    for env_var in ("CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"):
+        if env_var in os.environ:
+            client_dir = os.environ[env_var]
+            if client_dir and Path(client_dir).exists():
+                return client_dir
+    return None
+
+
+def _check_working_dir_file() -> str | None:
+    """Check for the temporary file used by Claude's auto-start scripts."""
+    import tempfile
+
+    working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
+    if working_dir_file.exists():
+        with suppress(OSError, PermissionError, ValueError, UnicodeDecodeError):
+            stored_dir = working_dir_file.read_text().strip()
+            # Only use if it's NOT the session-mgmt-mcp server directory
+            if (
+                stored_dir
+                and Path(stored_dir).exists()
+                and not stored_dir.endswith("session-mgmt-mcp")
+            ):
+                return stored_dir
+    return None
+
+
+def _check_parent_process_cwd() -> str | None:
+    """Check parent process working directory (advanced)."""
+    with suppress(ImportError, Exception):
+        import psutil
+
+        parent_process = psutil.Process().parent()
+        if parent_process:
+            parent_cwd = parent_process.cwd()
+            # Only use if it's a different directory and exists
+            if (
+                parent_cwd
+                and Path(parent_cwd).exists()
+                and parent_cwd != str(Path.cwd())
+                and not parent_cwd.endswith("session-mgmt-mcp")
+            ):
+                return parent_cwd
+    return None
+
+
+def _is_git_repository(repo_path: Path) -> bool:
+    """Check if a path is a git repository."""
+    return repo_path.is_dir() and (repo_path / ".git").exists()
+
+
+def _safe_get_mtime(repo_path: Path) -> float | None:
+    """Safely get modification time of a repository."""
+    try:
+        return repo_path.stat().st_mtime
+    except Exception:
+        return None
+
+
+def _find_recent_git_repository() -> str | None:
+    """Look for recent git repositories in common project directories."""
+    for projects_dir in ("/Users/les/Projects", str(Path.home() / "Projects")):
+        projects_path = Path(projects_dir)
+        if not projects_path.exists():
+            continue
+
+        # Collect all git repositories with modification times
+        git_repos = []
+        for repo_path in projects_path.iterdir():
+            if _is_git_repository(repo_path):
+                mtime = _safe_get_mtime(repo_path)
+                if mtime is not None:
+                    git_repos.append((mtime, str(repo_path)))
+
+        if git_repos:
+            # Sort by modification time and find most recent non-server repo
+            git_repos.sort(reverse=True)
+            for _mtime, repo_path in git_repos:
+                if not repo_path.endswith("session-mgmt-mcp"):
+                    return repo_path
+
+    return None
+
+
+def _get_client_working_directory() -> str | None:
+    """Auto-detect the client's working directory using multiple detection methods."""
+    # Method 1: Check for Claude Code environment variables
+    if client_dir := _check_environment_variables():
+        return client_dir
+
+    # Method 2: Check for the temporary file used by Claude's auto-start scripts
+    if client_dir := _check_working_dir_file():
+        return client_dir
+
+    # Method 3: Check parent process working directory (advanced)
+    if client_dir := _check_parent_process_cwd():
+        return client_dir
+
+    # Method 4: Look for recent git repositories in common project directories
+    if client_dir := _find_recent_git_repository():
+        return client_dir
+
+    return None
+
+
+# ============================================================================
+# Environment Setup Operations
+# ============================================================================
+
+
 async def _perform_environment_setup(result: dict[str, Any]) -> SessionSetupResults:
     """Perform all environment setup tasks. Target complexity: ≤5."""
     working_dir = Path(result["working_directory"])
@@ -204,6 +325,58 @@ async def _perform_environment_setup(result: dict[str, Any]) -> SessionSetupResu
         shortcuts_result=shortcuts_result,
         recommendations=recommendations,
     )
+
+
+def _setup_uv_dependencies(current_dir: Path) -> list[str]:
+    """Set up UV dependencies and requirements.txt generation."""
+    output = []
+    output.append("\n" + "=" * 50)
+    output.append("📦 UV Package Management Setup")
+    output.append("=" * 50)
+
+    # Check if uv is available
+    uv_available = shutil.which("uv") is not None
+    if not uv_available:
+        output.append("⚠️ UV not found in PATH")
+        output.append("💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh")
+        return output
+
+    # Check for pyproject.toml
+    pyproject_path = current_dir / "pyproject.toml"
+    if pyproject_path.exists():
+        output.append("✅ Found pyproject.toml - UV project detected")
+
+        # Run uv sync if dependencies need updating
+        try:
+            sync_result = subprocess.run(
+                ["uv", "sync"],
+                check=False,
+                cwd=current_dir,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+            if sync_result.returncode == 0:
+                output.append("✅ UV dependencies synchronized")
+            else:
+                output.append(f"⚠️ UV sync had issues: {sync_result.stderr}")
+        except subprocess.TimeoutExpired:
+            output.append(
+                "⚠️ UV sync timed out - dependencies may need manual attention",
+            )
+        except Exception as e:
+            output.append(f"⚠️ UV sync error: {e}")
+    else:
+        output.append("ℹ️ No pyproject.toml found")
+        output.append("💡 Consider running 'uv init' to create a new UV project")
+
+    return output
+
+
+# ============================================================================
+# Output Formatting Helpers
+# ============================================================================
 
 
 def _add_session_info_to_output(
@@ -252,201 +425,63 @@ def _add_environment_info_to_output(
         output_builder.add_simple_item("\n✅ Session shortcuts already exist")
 
 
-async def _start_impl(working_directory: str | None = None) -> str:
-    """Initialize session with comprehensive setup. Target complexity: ≤8."""
-    output_builder = SessionOutputBuilder()
-    output_builder.add_header("🚀 Claude Session Initialization via MCP Server")
-
-    try:
-        result = await _get_session_manager().initialize_session(working_directory)
-
-        if result["success"]:
-            _add_session_info_to_output(output_builder, result)
-            setup_results = await _perform_environment_setup(result)
-            _add_environment_info_to_output(output_builder, setup_results)
-            output_builder.add_simple_item(
-                "\n✅ Session initialization completed successfully!"
-            )
-        else:
-            output_builder.add_simple_item(
-                f"❌ Session initialization failed: {result['error']}"
-            )
-
-    except Exception as e:
-        _get_logger().exception("Session initialization error", error=str(e))
-        output_builder.add_simple_item(
-            f"❌ Unexpected error during initialization: {e}"
-        )
-
-    return output_builder.build()
+def _add_project_section_to_output(
+    output_builder: SessionOutputBuilder, result: dict[str, Any]
+) -> None:
+    """Add project information to output. Target complexity: ≤3."""
+    output_builder.add_simple_item(f"📁 Project: {result['project']}")
+    output_builder.add_simple_item(
+        f"📂 Working directory: {result['working_directory']}"
+    )
+    output_builder.add_simple_item(f"📊 Quality score: {result['quality_score']}/100")
 
 
-def _check_environment_variables() -> str | None:
-    """Check for Claude Code environment variables."""
-    import os
-
-    # Method 1: Check for Claude Code environment variables
-    for env_var in ("CLAUDE_WORKING_DIR", "CLIENT_PWD", "CLAUDE_PROJECT_DIR"):
-        if env_var in os.environ:
-            client_dir = os.environ[env_var]
-            if client_dir:
-                from pathlib import Path
-
-                if Path(client_dir).exists():
-                    return client_dir
-    return None
+def _add_quality_section_to_output(
+    output_builder: SessionOutputBuilder, breakdown: dict[str, Any]
+) -> None:
+    """Add quality breakdown to output. Target complexity: ≤5."""
+    quality_items = [
+        f"   • Code quality: {breakdown['code_quality']:.1f}/40",
+        f"   • Project health: {breakdown['project_health']:.1f}/30",
+        f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20",
+        f"   • Security: {breakdown['security']:.1f}/10",
+    ]
+    output_builder.add_section("📈 Quality breakdown", quality_items)
 
 
-def _check_working_dir_file() -> str | None:
-    """Check for the temporary file used by Claude's auto-start scripts."""
-    import tempfile
-    from pathlib import Path
-
-    working_dir_file = Path(tempfile.gettempdir()) / "claude-git-working-dir"
-    if working_dir_file.exists():
-        with suppress(OSError, PermissionError, ValueError, UnicodeDecodeError):
-            stored_dir = working_dir_file.read_text().strip()
-            # Only use if it's NOT the session-mgmt-mcp server directory
-            if (
-                stored_dir
-                and Path(stored_dir).exists()
-                and not stored_dir.endswith("session-mgmt-mcp")
-            ):
-                return stored_dir
-    return None
+def _add_health_section_to_output(
+    output_builder: SessionOutputBuilder, health: dict[str, Any]
+) -> None:
+    """Add system health to output. Target complexity: ≤5."""
+    output_builder.add_section("🏥 System health", [])
+    output_builder.add_status_item("UV package manager", health["uv_available"])
+    output_builder.add_status_item("Git repository", health["git_repository"])
+    output_builder.add_status_item("Claude directory", health["claude_directory"])
 
 
-def _check_parent_process_cwd() -> str | None:
-    """Check parent process working directory (advanced)."""
-    from pathlib import Path
+def _add_project_context_to_output(
+    output_builder: SessionOutputBuilder, context: dict[str, Any]
+) -> None:
+    """Add project context to output. Target complexity: ≤5."""
+    context_items = sum(1 for detected in context.values() if detected)
+    output_builder.add_simple_item(
+        f"\n🎯 Project context: {context_items}/{len(context)} indicators"
+    )
 
-    with suppress(ImportError, Exception):
-        import psutil
+    key_indicators = [
+        ("pyproject.toml", context.get("has_pyproject_toml", False)),
+        ("Git repository", context.get("has_git_repo", False)),
+        ("Test suite", context.get("has_tests", False)),
+        ("Documentation", context.get("has_docs", False)),
+    ]
 
-        parent_process = psutil.Process().parent()
-        if parent_process:
-            parent_cwd = parent_process.cwd()
-            # Only use if it's a different directory and exists
-            if (
-                parent_cwd
-                and Path(parent_cwd).exists()
-                and parent_cwd != str(Path.cwd())
-                and not parent_cwd.endswith("session-mgmt-mcp")
-            ):
-                return parent_cwd
-    return None
-
-
-def _find_recent_git_repository() -> str | None:
-    """Look for recent git repositories in common project directories."""
-    from pathlib import Path
-
-    for projects_dir in ("/Users/les/Projects", str(Path.home() / "Projects")):
-        projects_path = Path(projects_dir)
-        if projects_path.exists():
-            repo_path = _scan_directory_for_recent_repo(projects_path)
-            if repo_path:
-                return repo_path
-    return None
+    for name, detected in key_indicators:
+        output_builder.add_status_item(name, detected)
 
 
-def _scan_directory_for_recent_repo(projects_path: Path) -> str | None:
-    """Scan a directory for the most recent git repository."""
-    git_repos = _collect_git_repos(projects_path)
-    return _find_most_recent_non_server_repo(git_repos)
-
-
-def _collect_git_repos(projects_path: Path) -> list[tuple[float, str]]:
-    """Collect all git repositories with their modification times."""
-    git_repos = []
-    for repo_path in projects_path.iterdir():
-        if _is_git_repository(repo_path):
-            mtime = _safe_get_mtime(repo_path)
-            if mtime is not None:
-                git_repos.append((mtime, str(repo_path)))
-    return git_repos
-
-
-def _is_git_repository(repo_path: Path) -> bool:
-    """Check if a path is a git repository."""
-    return repo_path.is_dir() and (repo_path / ".git").exists()
-
-
-def _safe_get_mtime(repo_path: Path) -> float | None:
-    """Safely get modification time of a repository."""
-    try:
-        return repo_path.stat().st_mtime
-    except Exception:
-        return None
-
-
-def _find_most_recent_non_server_repo(git_repos: list[tuple[float, str]]) -> str | None:
-    """Find the most recent repository that isn't the server directory."""
-    if not git_repos:
-        return None
-
-    git_repos.sort(reverse=True)
-    for mtime, repo_path in git_repos:
-        if not repo_path.endswith("session-mgmt-mcp"):
-            return repo_path
-    return None
-
-
-def _try_get_from_environment_variables() -> str | None:
-    """Try to get client working directory from environment variables."""
-    client_dir = _check_environment_variables()
-    if client_dir:
-        return client_dir
-    return None
-
-
-def _try_get_from_working_dir_file() -> str | None:
-    """Try to get client working directory from temporary file."""
-    client_dir = _check_working_dir_file()
-    if client_dir:
-        return client_dir
-    return None
-
-
-def _try_get_from_parent_process_cwd() -> str | None:
-    """Try to get client working directory from parent process."""
-    client_dir = _check_parent_process_cwd()
-    if client_dir:
-        return client_dir
-    return None
-
-
-def _try_find_recent_git_repository() -> str | None:
-    """Try to find recent git repository in common project directories."""
-    client_dir = _find_recent_git_repository()
-    if client_dir:
-        return client_dir
-    return None
-
-
-def _get_client_working_directory() -> str | None:
-    """Auto-detect the client's working directory using multiple detection methods."""
-    # Method 1: Check for Claude Code environment variables
-    client_dir = _try_get_from_environment_variables()
-    if client_dir:
-        return client_dir
-
-    # Method 2: Check for the temporary file used by Claude's auto-start scripts
-    client_dir = _try_get_from_working_dir_file()
-    if client_dir:
-        return client_dir
-
-    # Method 3: Check parent process working directory (advanced)
-    client_dir = _try_get_from_parent_process_cwd()
-    if client_dir:
-        return client_dir
-
-    # Method 4: Look for recent git repositories in common project directories
-    client_dir = _try_find_recent_git_repository()
-    if client_dir:
-        return client_dir
-
-    return None
+# ============================================================================
+# Checkpoint-Specific Helpers
+# ============================================================================
 
 
 async def _handle_auto_store_reflection(
@@ -521,6 +556,93 @@ async def _handle_auto_compaction(output: list[str]) -> None:
         output.append("✅ Context appears well-optimized for current session")
 
 
+# ============================================================================
+# End Session Formatting Helpers
+# ============================================================================
+
+
+def _format_successful_end(summary: dict[str, Any]) -> list[str]:
+    """Format successful session end output."""
+    output = [
+        f"📁 Project: {summary['project']}",
+        f"📊 Final quality score: {summary['final_quality_score']}/100",
+        f"⏰ Session ended: {summary['session_end_time']}",
+    ]
+
+    output.extend(_format_recommendations(summary.get("recommendations", [])))
+    output.extend(_format_session_summary(summary))
+
+    output.extend(
+        [
+            "\n✅ Session ended successfully!",
+            "💡 Use the session data to improve future development workflows.",
+        ]
+    )
+
+    return output
+
+
+def _format_recommendations(recommendations: list[str]) -> list[str]:
+    """Format recommendations section."""
+    if not recommendations:
+        return []
+
+    output = ["\n🎯 Final recommendations for future sessions:"]
+    output.extend(f"   • {rec}" for rec in recommendations[:5])
+    return output
+
+
+def _format_session_summary(summary: dict[str, Any]) -> list[str]:
+    """Format session summary section."""
+    output = [
+        "\n📝 Session Summary:",
+        f"   • Working directory: {summary['working_directory']}",
+        "   • Session data has been logged for future reference",
+        "   • All temporary resources have been cleaned up",
+    ]
+
+    # Add handoff documentation info
+    handoff_doc = summary.get("handoff_documentation")
+    if handoff_doc:
+        output.append(f"   • Handoff documentation: {handoff_doc}")
+
+    return output
+
+
+# ============================================================================
+# Tool Implementations
+# ============================================================================
+
+
+async def _start_impl(working_directory: str | None = None) -> str:
+    """Initialize session with comprehensive setup. Target complexity: ≤8."""
+    output_builder = SessionOutputBuilder()
+    output_builder.add_header("🚀 Claude Session Initialization via MCP Server")
+
+    try:
+        result = await _get_session_manager().initialize_session(working_directory)
+
+        if result["success"]:
+            _add_session_info_to_output(output_builder, result)
+            setup_results = await _perform_environment_setup(result)
+            _add_environment_info_to_output(output_builder, setup_results)
+            output_builder.add_simple_item(
+                "\n✅ Session initialization completed successfully!"
+            )
+        else:
+            output_builder.add_simple_item(
+                f"❌ Session initialization failed: {result['error']}"
+            )
+
+    except Exception as e:
+        _get_logger().exception("Session initialization error", error=str(e))
+        output_builder.add_simple_item(
+            f"❌ Unexpected error during initialization: {e}"
+        )
+
+    return output_builder.build()
+
+
 async def _checkpoint_impl(working_directory: str | None = None) -> str:
     """Implementation for checkpoint tool."""
     # Auto-detect client working directory if not provided
@@ -572,133 +694,24 @@ async def _end_impl(working_directory: str | None = None) -> str:
     if not working_directory:
         working_directory = _get_client_working_directory()
 
-    output = _initialize_end_output()
+    output = [
+        "🏁 Claude Session End - Cleanup and Handoff",
+        "=" * 50,
+    ]
 
     try:
         result = await _get_session_manager().end_session(working_directory)
-        output.extend(_process_end_result(result))
+
+        if result["success"]:
+            output.extend(_format_successful_end(result["summary"]))
+        else:
+            output.append(f"❌ Session end failed: {result['error']}")
+
     except Exception as e:
         _get_logger().exception("Session end error", error=str(e))
         output.append(f"❌ Unexpected error during session end: {e}")
 
     return "\n".join(output)
-
-
-def _initialize_end_output() -> list[str]:
-    """Initialize the end session output."""
-    return [
-        "🏁 Claude Session End - Cleanup and Handoff",
-        "=" * 50,
-    ]
-
-
-def _process_end_result(result: dict[str, Any]) -> list[str]:
-    """Process the end session result and format output."""
-    if result["success"]:
-        return _format_successful_end(result["summary"])
-    return [f"❌ Session end failed: {result['error']}"]
-
-
-def _format_successful_end(summary: dict[str, Any]) -> list[str]:
-    """Format successful session end output."""
-    output = [
-        f"📁 Project: {summary['project']}",
-        f"📊 Final quality score: {summary['final_quality_score']}/100",
-        f"⏰ Session ended: {summary['session_end_time']}",
-    ]
-
-    output.extend(_format_recommendations(summary.get("recommendations", [])))
-    output.extend(_format_session_summary(summary))
-
-    output.extend(
-        [
-            "\n✅ Session ended successfully!",
-            "💡 Use the session data to improve future development workflows.",
-        ]
-    )
-
-    return output
-
-
-def _format_recommendations(recommendations: list[str]) -> list[str]:
-    """Format recommendations section."""
-    if not recommendations:
-        return []
-
-    output = ["\n🎯 Final recommendations for future sessions:"]
-    output.extend(f"   • {rec}" for rec in recommendations[:5])
-    return output
-
-
-def _format_session_summary(summary: dict[str, Any]) -> list[str]:
-    """Format session summary section."""
-    output = [
-        "\n📝 Session Summary:",
-        f"   • Working directory: {summary['working_directory']}",
-        "   • Session data has been logged for future reference",
-        "   • All temporary resources have been cleaned up",
-    ]
-
-    # Add handoff documentation info
-    handoff_doc = summary.get("handoff_documentation")
-    if handoff_doc:
-        output.append(f"   • Handoff documentation: {handoff_doc}")
-
-    return output
-
-
-def _add_project_section_to_output(
-    output_builder: SessionOutputBuilder, result: dict[str, Any]
-) -> None:
-    """Add project information to output. Target complexity: ≤3."""
-    output_builder.add_simple_item(f"📁 Project: {result['project']}")
-    output_builder.add_simple_item(
-        f"📂 Working directory: {result['working_directory']}"
-    )
-    output_builder.add_simple_item(f"📊 Quality score: {result['quality_score']}/100")
-
-
-def _add_quality_section_to_output(
-    output_builder: SessionOutputBuilder, breakdown: dict[str, Any]
-) -> None:
-    """Add quality breakdown to output. Target complexity: ≤5."""
-    quality_items = [
-        f"   • Code quality: {breakdown['code_quality']:.1f}/40",
-        f"   • Project health: {breakdown['project_health']:.1f}/30",
-        f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20",
-        f"   • Security: {breakdown['security']:.1f}/10",
-    ]
-    output_builder.add_section("📈 Quality breakdown", quality_items)
-
-
-def _add_health_section_to_output(
-    output_builder: SessionOutputBuilder, health: dict[str, Any]
-) -> None:
-    """Add system health to output. Target complexity: ≤5."""
-    output_builder.add_section("🏥 System health", [])
-    output_builder.add_status_item("UV package manager", health["uv_available"])
-    output_builder.add_status_item("Git repository", health["git_repository"])
-    output_builder.add_status_item("Claude directory", health["claude_directory"])
-
-
-def _add_project_context_to_output(
-    output_builder: SessionOutputBuilder, context: dict[str, Any]
-) -> None:
-    """Add project context to output. Target complexity: ≤5."""
-    context_items = sum(1 for detected in context.values() if detected)
-    output_builder.add_simple_item(
-        f"\n🎯 Project context: {context_items}/{len(context)} indicators"
-    )
-
-    key_indicators = [
-        ("pyproject.toml", context.get("has_pyproject_toml", False)),
-        ("Git repository", context.get("has_git_repo", False)),
-        ("Test suite", context.get("has_tests", False)),
-        ("Documentation", context.get("has_docs", False)),
-    ]
-
-    for name, detected in key_indicators:
-        output_builder.add_status_item(name, detected)
 
 
 async def _status_impl(working_directory: str | None = None) -> str:
@@ -736,51 +749,9 @@ async def _status_impl(working_directory: str | None = None) -> str:
     return output_builder.build()
 
 
-def _setup_uv_dependencies(current_dir: Path) -> list[str]:
-    """Set up UV dependencies and requirements.txt generation."""
-    output = []
-    output.append("\n" + "=" * 50)
-    output.append("📦 UV Package Management Setup")
-    output.append("=" * 50)
-
-    # Check if uv is available
-    uv_available = shutil.which("uv") is not None
-    if not uv_available:
-        output.append("⚠️ UV not found in PATH")
-        output.append("💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh")
-        return output
-
-    # Check for pyproject.toml
-    pyproject_path = current_dir / "pyproject.toml"
-    if pyproject_path.exists():
-        output.append("✅ Found pyproject.toml - UV project detected")
-
-        # Run uv sync if dependencies need updating
-        try:
-            sync_result = subprocess.run(
-                ["uv", "sync"],
-                check=False,
-                cwd=current_dir,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-
-            if sync_result.returncode == 0:
-                output.append("✅ UV dependencies synchronized")
-            else:
-                output.append(f"⚠️ UV sync had issues: {sync_result.stderr}")
-        except subprocess.TimeoutExpired:
-            output.append(
-                "⚠️ UV sync timed out - dependencies may need manual attention",
-            )
-        except Exception as e:
-            output.append(f"⚠️ UV sync error: {e}")
-    else:
-        output.append("ℹ️ No pyproject.toml found")
-        output.append("💡 Consider running 'uv init' to create a new UV project")
-
-    return output
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
 
 
 def register_session_tools(mcp_server: FastMCP) -> None:
@@ -792,7 +763,6 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
-
         """
         return await _start_impl(working_directory)
 
@@ -802,7 +772,6 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
-
         """
         return await _checkpoint_impl(working_directory)
 
@@ -812,7 +781,6 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
-
         """
         return await _end_impl(working_directory)
 
@@ -822,7 +790,6 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
-
         """
         return await _status_impl(working_directory)
 
@@ -857,7 +824,6 @@ Timestamp: {health_info["timestamp"]}
     async def server_info() -> str:
         """Get basic server information without requiring session context."""
         import time
-        from pathlib import Path
 
         try:
             # Check if we can access basic file system info
