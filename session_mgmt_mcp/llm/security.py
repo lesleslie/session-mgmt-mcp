@@ -1,0 +1,171 @@
+"""LLM provider API key security and validation utilities.
+
+This module provides security utilities for validating and masking LLM provider
+API keys during server startup (Phase 3 Security Hardening).
+"""
+
+from __future__ import annotations
+
+import os
+
+# Import mcp-common security utilities for API key validation (Phase 3 Security Hardening)
+try:
+    from mcp_common.security import APIKeyValidator
+
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+
+
+def get_masked_api_key(provider: str = "openai") -> str:
+    """Get masked API key for safe logging.
+
+    Args:
+        provider: Provider name ('openai', 'gemini', 'ollama')
+
+    Returns:
+        Masked API key string (e.g., "sk-...abc1") for safe display in logs
+
+    """
+    api_key = None
+
+    if provider == "openai":
+        api_key = os.getenv("OPENAI_API_KEY")
+    elif provider == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    elif provider == "ollama":
+        # Ollama is local, no API key needed
+        return "N/A (local service)"
+
+    if not api_key:
+        return "***"
+
+    if SECURITY_AVAILABLE:
+        return APIKeyValidator.mask_key(api_key, visible_chars=4)
+
+    # Fallback masking without security module
+    if len(api_key) <= 4:
+        return "***"
+    return f"...{api_key[-4:]}"
+
+
+def _get_provider_api_key_and_env(provider: str) -> tuple[str | None, str | None]:
+    """Get API key and environment variable name for provider."""
+    if provider == "openai":
+        return os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY"
+    if provider == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        env_var_name = (
+            "GEMINI_API_KEY" if os.getenv("GEMINI_API_KEY") else "GOOGLE_API_KEY"
+        )
+        return api_key, env_var_name
+    return None, None
+
+
+def _validate_provider_with_security(provider: str, api_key: str) -> tuple[bool, str]:
+    """Validate provider API key using mcp-common security module.
+
+    Returns:
+        Tuple of (success, status_message)
+
+    """
+    import sys
+
+    validator = APIKeyValidator(provider=provider)
+    try:
+        validator.validate(api_key, raise_on_invalid=True)
+        masked_key = get_masked_api_key(provider)
+        print(
+            f"✅ {provider.title()} API Key validated: {masked_key}",
+            file=sys.stderr,
+        )
+        return True, "valid"
+    except ValueError as e:
+        print(
+            f"\n❌ {provider.title()} API Key Validation Failed",
+            file=sys.stderr,
+        )
+        print(f"   {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _validate_provider_basic(provider: str, api_key: str) -> str:
+    """Basic API key validation without security module.
+
+    Returns:
+        Status message
+
+    """
+    import sys
+
+    if len(api_key) < 16:
+        print(f"\n⚠️  {provider.title()} API Key Warning", file=sys.stderr)
+        print(
+            f"   API key appears very short ({len(api_key)} characters)",
+            file=sys.stderr,
+        )
+        print(
+            "   Minimum 32 characters recommended for security",
+            file=sys.stderr,
+        )
+    return "basic_check"
+
+
+def _get_configured_providers() -> list[str]:
+    """Get list of configured LLM providers."""
+    providers = []
+    if os.getenv("OPENAI_API_KEY"):
+        providers.append("openai")
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+        providers.append("gemini")
+    return providers
+
+
+def validate_llm_api_keys_at_startup() -> dict[str, str]:
+    """Validate LLM provider API keys at server startup (Phase 3 Security Hardening).
+
+    Validates API keys for all configured LLM providers (OpenAI, Gemini).
+    Ollama is skipped as it's a local service without API key requirements.
+
+    Returns:
+        Dictionary mapping provider names to validation status messages
+
+    Raises:
+        SystemExit: If required API keys are invalid or missing
+
+    """
+    import sys
+
+    validated_providers: dict[str, str] = {}
+    providers_configured = _get_configured_providers()
+
+    # If no providers configured, warn but allow startup (Ollama might be used)
+    if not providers_configured:
+        print("\n⚠️  No LLM Provider API Keys Configured", file=sys.stderr)
+        print(
+            "   OpenAI or Gemini API keys not set in environment variables",
+            file=sys.stderr,
+        )
+        print(
+            "   LLM features will be unavailable unless using local Ollama",
+            file=sys.stderr,
+        )
+        return validated_providers
+
+    # Validate each configured provider
+    for provider in providers_configured:
+        api_key, env_var_name = _get_provider_api_key_and_env(provider)
+
+        if not api_key or not api_key.strip():
+            print(f"\n❌ {provider.title()} API Key Validation Failed", file=sys.stderr)
+            print(f"   {env_var_name} environment variable is not set", file=sys.stderr)
+            sys.exit(1)
+
+        if SECURITY_AVAILABLE:
+            _, status = _validate_provider_with_security(provider, api_key)
+            validated_providers[provider] = status
+        else:
+            status = _validate_provider_basic(provider, api_key)
+            validated_providers[provider] = status
+
+    return validated_providers
