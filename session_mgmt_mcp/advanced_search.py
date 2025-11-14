@@ -9,7 +9,6 @@ import hashlib
 import json
 import time
 from contextlib import suppress
-from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -17,41 +16,16 @@ from .reflection_tools import ReflectionDatabase
 from .search_enhanced import EnhancedSearchEngine
 from .types import SQLCondition, TimeRange
 from .utils.regex_patterns import SAFE_PATTERNS
-
-
-@dataclass
-class SearchFilter:
-    """Represents a search filter criterion."""
-
-    field: str
-    operator: str  # 'eq', 'ne', 'in', 'not_in', 'contains', 'starts_with', 'ends_with', 'range'
-    value: str | list[str] | tuple[Any, Any]
-    negate: bool = False
-
-
-@dataclass
-class SearchFacet:
-    """Represents a search facet with possible values."""
-
-    name: str
-    values: list[tuple[str, int]]  # (value, count) tuples
-    facet_type: str = "terms"  # 'terms', 'range', 'date'
-
-
-@dataclass
-class SearchResult:
-    """Enhanced search result with metadata."""
-
-    content_id: str
-    content_type: str
-    title: str
-    content: str
-    score: float
-    project: str | None = None
-    timestamp: datetime | None = None
-    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
-    highlights: list[str] = field(default_factory=list[Any])
-    facets: dict[str, Any] = field(default_factory=dict[str, Any])
+from .utils.search import (
+    SearchFacet,
+    SearchFilter,
+    SearchResult,
+    ensure_timezone,
+    extract_technical_terms,
+    parse_timeframe,
+    parse_timeframe_single,
+    truncate_content,
+)
 
 
 class AdvancedSearchEngine:
@@ -246,7 +220,7 @@ class AdvancedSearchEngine:
     ) -> list[dict[str, Any]]:
         """Search within a specific timeframe."""
         # Parse timeframe
-        time_range = self._parse_timeframe(timeframe)
+        time_range = parse_timeframe(timeframe)
         start_time, end_time = time_range.start, time_range.end
 
         # Build time filter
@@ -294,7 +268,7 @@ class AdvancedSearchEngine:
         filters: list[SearchFilter] | None = None,
     ) -> dict[str, Any]:
         """Calculate aggregate metrics from search data."""
-        time_range = self._parse_timeframe(timeframe)
+        time_range = parse_timeframe(timeframe)
         start_time, end_time = time_range.start, time_range.end
 
         # Use predefined parameterized queries to prevent SQL injection
@@ -438,7 +412,7 @@ class AdvancedSearchEngine:
         if project:
             indexed_content += f" project:{project}"
 
-        tech_terms = self._extract_technical_terms(content)
+        tech_terms = extract_technical_terms(content)
         if tech_terms:
             indexed_content += " " + " ".join(tech_terms)
 
@@ -452,7 +426,7 @@ class AdvancedSearchEngine:
         indexed_content: str,
     ) -> dict[str, Any]:
         """Build search metadata for conversation."""
-        tech_terms = self._extract_technical_terms(content)
+        tech_terms = extract_technical_terms(content)
         return {
             "project": project,
             "timestamp": timestamp.isoformat() if timestamp else None,
@@ -647,45 +621,6 @@ class AdvancedSearchEngine:
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
-    def _extract_technical_terms(self, content: str) -> list[str]:
-        """Extract technical terms and patterns from content."""
-        terms = []
-
-        # Programming language detection
-        lang_pattern_names = [
-            "python_code",
-            "javascript_code",
-            "sql_code",
-            "error_keywords",
-        ]
-        lang_mapping = {
-            "python_code": "python",
-            "javascript_code": "javascript",
-            "sql_code": "sql",
-            "error_keywords": "error",
-        }
-
-        for pattern_name in lang_pattern_names:
-            pattern = SAFE_PATTERNS[pattern_name]
-            if pattern.search(content):
-                terms.append(lang_mapping[pattern_name])
-
-        # Extract function names
-        func_pattern = SAFE_PATTERNS["function_definition"]
-        func_matches = func_pattern.findall(content)
-        terms.extend([f"function:{func}" for func in func_matches[:5]])  # Limit to 5
-
-        # Extract class names
-        class_pattern = SAFE_PATTERNS["class_definition"]
-        class_matches = class_pattern.findall(content)
-        terms.extend([f"class:{cls}" for cls in class_matches[:5]])
-
-        # Extract file extensions
-        ext_pattern = SAFE_PATTERNS["file_extension"]
-        file_matches = ext_pattern.findall(content)
-        terms.extend([f"filetype:{ext}" for ext in set(file_matches[:10])])
-
-        return terms[:20]  # Limit total terms
 
     def _build_search_query(
         self,
@@ -847,35 +782,10 @@ class AdvancedSearchEngine:
         if (
             timeframe and content_type
         ):  # Only add timeframe if content_type is also specified
-            cutoff_date = self._parse_timeframe_single(timeframe)
+            cutoff_date = parse_timeframe_single(timeframe)
             if cutoff_date:
                 sql += " AND last_indexed >= ?"
                 params.append(cutoff_date.isoformat())
-        return SQLCondition(condition=sql, params=params)
-
-    def _parse_timeframe_single(self, timeframe: str) -> datetime | None:
-        """Parse timeframe string into datetime."""
-        with suppress(ValueError):
-            if timeframe.endswith("d"):
-                days = int(timeframe[:-1])
-                return datetime.now(UTC) - timedelta(days=days)
-            if timeframe.endswith("h"):
-                hours = int(timeframe[:-1])
-                return datetime.now(UTC) - timedelta(hours=hours)
-        return None
-
-    def _add_filter_conditions_to_sql(
-        self, sql: str, params: list[str | datetime], filters: list[SearchFilter] | None
-    ) -> SQLCondition:
-        """Add filter conditions to SQL query."""
-        if filters:
-            filter_result = self._build_filter_conditions(filters)
-            if filter_result.condition:
-                sql += " AND " + filter_result.condition
-                # Ensure filter_params contains only strings and datetimes
-                for param in filter_result.params:
-                    if isinstance(param, str | datetime):
-                        params.append(param)
         return SQLCondition(condition=sql, params=params)
 
     def _add_sorting_to_sql(self, sql: str, sort_by: str) -> str:
@@ -917,22 +827,14 @@ class AdvancedSearchEngine:
                     content_id=content_id,
                     content_type=content_type or "unknown",
                     title=f"{(content_type or 'unknown').title()} from {metadata.get('project', 'Unknown')}",
-                    content=self._truncate_content(indexed_content),
+                    content=truncate_content(indexed_content),
                     score=0.8,  # Simple scoring for now
                     project=metadata.get("project"),
-                    timestamp=self._ensure_timezone(last_indexed),
+                    timestamp=ensure_timezone(last_indexed),
                     metadata=metadata,
                 ),
             )
         return search_results
-
-    def _truncate_content(self, content: str, max_length: int = 500) -> str:
-        """Truncate content to maximum length."""
-        return content[:max_length] + "..." if len(content) > max_length else content
-
-    def _ensure_timezone(self, timestamp: datetime) -> datetime:
-        """Ensure timestamp has timezone information."""
-        return timestamp.replace(tzinfo=UTC) if timestamp.tzinfo is None else timestamp
 
     async def _add_highlights(
         self,
@@ -1003,21 +905,3 @@ class AdvancedSearchEngine:
 
         return facets
 
-    def _parse_timeframe(self, timeframe: str) -> TimeRange:
-        """Parse timeframe string into start and end times."""
-        now = datetime.now(UTC)
-
-        # Mapping of timeframe strings to timedelta
-        timeframe_map = {
-            "1h": timedelta(hours=1),
-            "1d": timedelta(days=1),
-            "1w": timedelta(weeks=1),
-            "1m": timedelta(days=30),
-            "1y": timedelta(days=365),
-        }
-
-        # Get delta from map, default to 30 days
-        delta = timeframe_map.get(timeframe, timedelta(days=30))
-        start_time = now - delta
-
-        return TimeRange(start=start_time, end=now)
