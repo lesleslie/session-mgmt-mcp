@@ -44,9 +44,7 @@ async def require_reflection_database() -> ReflectionDatabaseAdapter:
     db = await resolve_reflection_database()
     if not db:
         msg = "Reflection database not available. Install dependencies: uv sync --extra embeddings"
-        raise DatabaseUnavailableError(
-            msg
-        )
+        raise DatabaseUnavailableError(msg)
     return db
 
 

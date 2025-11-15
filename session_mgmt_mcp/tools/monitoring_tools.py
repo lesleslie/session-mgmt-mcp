@@ -34,9 +34,7 @@ async def _require_app_monitor() -> Any:
     monitor = await resolve_app_monitor()
     if monitor is None:
         msg = "Application monitoring not available. Features may be limited"
-        raise RuntimeError(
-            msg
-        )
+        raise RuntimeError(msg)
     return monitor
 
 
@@ -45,9 +43,7 @@ async def _require_interruption_manager() -> Any:
     manager = await resolve_interruption_manager()
     if manager is None:
         msg = "Interruption management not available. Features may be limited"
-        raise RuntimeError(
-            msg
-        )
+        raise RuntimeError(msg)
     return manager
 
 

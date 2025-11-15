@@ -31,9 +31,7 @@ async def _require_serverless_manager() -> Any:
     manager = await resolve_serverless_manager()
     if manager is None:
         msg = "Serverless mode not available. Install dependencies: pip install redis boto3"
-        raise RuntimeError(
-            msg
-        )
+        raise RuntimeError(msg)
     return manager
 
 

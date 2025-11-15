@@ -14,8 +14,8 @@ from typing import Any
 
 # Try to import dateutil for better date handling
 try:
-    from dateutil.relativedelta import relativedelta
     from dateutil import parser as date_parser
+    from dateutil.relativedelta import relativedelta
 
     DATEUTIL_AVAILABLE = True
 except ImportError:

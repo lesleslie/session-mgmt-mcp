@@ -29,15 +29,12 @@ class ToolError(Exception):
     """Base exception for tool errors."""
 
 
-
 class DatabaseUnavailableError(ToolError):
     """Exception raised when database is not available."""
 
 
-
 class ValidationError(ToolError):
     """Exception raised when input validation fails."""
-
 
 
 async def handle_tool_errors[T](
@@ -161,10 +158,10 @@ def validate_type(value: Any, expected_type: type, field_name: str) -> None:
 
     """
     if not isinstance(value, expected_type):
-        msg = f"{field_name} must be {expected_type.__name__}, got {type(value).__name__}"
-        raise ValidationError(
-            msg
+        msg = (
+            f"{field_name} must be {expected_type.__name__}, got {type(value).__name__}"
         )
+        raise ValidationError(msg)
 
 
 def validate_range(
@@ -188,6 +185,4 @@ def validate_range(
 
     if value < min_val or value > max_val:
         msg = f"{field_name} must be between {min_val} and {max_val}, got {value}"
-        raise ValidationError(
-            msg
-        )
+        raise ValidationError(msg)
