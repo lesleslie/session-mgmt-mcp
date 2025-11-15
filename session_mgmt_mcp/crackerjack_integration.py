@@ -166,9 +166,14 @@ class CrackerjackIntegration:
         This is a synchronous wrapper around execute_crackerjack_command for
         compatibility with crackerjack's CommandRunner protocol.
         """
+        import os
         import subprocess  # nosec B404
 
         try:
+            # Set ACB_LIBRARY_MODE for synchronous Settings initialization
+            env = kwargs.get("env", os.environ.copy())
+            env["ACB_LIBRARY_MODE"] = "true"
+
             # Execute the command directly using subprocess
             result = subprocess.run(
                 cmd,
@@ -177,7 +182,8 @@ class CrackerjackIntegration:
                 text=True,
                 timeout=kwargs.get("timeout", 300),
                 cwd=kwargs.get("cwd", "."),
-                **{k: v for k, v in kwargs.items() if k not in ("timeout", "cwd")},
+                env=env,
+                **{k: v for k, v in kwargs.items() if k not in ("timeout", "cwd", "env")},
             )
 
             return {
@@ -304,13 +310,20 @@ class CrackerjackIntegration:
         self, full_command: list[str], working_directory: str, timeout: int
     ) -> tuple[int, str, str, float]:
         """Execute the subprocess and return exit code, stdout, stderr, and execution time."""
+        import os
+
         start_time = time.time()
+
+        # Set ACB_LIBRARY_MODE for synchronous Settings initialization
+        env = os.environ.copy()
+        env["ACB_LIBRARY_MODE"] = "true"
 
         process = await asyncio.create_subprocess_exec(
             *full_command,
             cwd=working_directory,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=env,
         )
 
         stdout, stderr = await asyncio.wait_for(
