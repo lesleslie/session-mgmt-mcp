@@ -14,22 +14,18 @@ Extracted Components:
 
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
 import os
 import shutil
 import subprocess  # nosec B404
-import sys
 import warnings
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+    from session_mgmt_mcp.core.permissions import SessionPermissionsManager
     from session_mgmt_mcp.utils.logging import SessionLogger
 
 # Suppress transformers warnings
@@ -50,8 +46,6 @@ except ImportError:
     tomli = None  # type: ignore[assignment]
 
 # Import extracted modules
-from session_mgmt_mcp.core.features import FeatureDetector, get_feature_flags
-from session_mgmt_mcp.core.permissions import SessionPermissionsManager
 
 
 # =====================================
@@ -130,7 +124,8 @@ def _load_mcp_config() -> dict[str, Any]:
             "http_port": session_config.get("mcp_http_port", 8678),
             "http_host": session_config.get("mcp_http_host", "127.0.0.1"),
             "websocket_monitor_port": session_config.get(
-                "websocket_monitor_port", 8677
+                "websocket_monitor_port",
+                8677,
             ),
             "http_enabled": session_config.get("http_enabled", False),
         }
@@ -142,10 +137,7 @@ def _load_mcp_config() -> dict[str, Any]:
                 details=[str(e), "Using default configuration values"],
             )
         else:
-            print(
-                f"Warning: Failed to load MCP config from pyproject.toml: {e}",
-                file=sys.stderr,
-            )
+            pass
         return {
             "http_port": 8678,
             "http_host": "127.0.0.1",
@@ -161,7 +153,9 @@ def _load_mcp_config() -> dict[str, Any]:
 
 @asynccontextmanager
 async def session_lifecycle(
-    app: Any, lifecycle_manager: Any, session_logger: SessionLogger
+    app: Any,
+    lifecycle_manager: Any,
+    session_logger: SessionLogger,
 ) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only.
 
@@ -200,7 +194,8 @@ async def session_lifecycle(
                     "quality_score": result["quality_score"],
                     "previous_session": result.get("previous_session"),
                     "recommendations": result["quality_data"].get(
-                        "recommendations", []
+                        "recommendations",
+                        [],
                     ),
                 }
                 set_connection_info(connection_info)
@@ -252,7 +247,7 @@ async def auto_setup_git_working_directory(session_logger: SessionLogger) -> Non
             # Log the auto-setup action for Claude to see
             session_logger.info(f"🔧 Auto-detected git repository: {git_root}")
             session_logger.info(
-                f"💡 Recommend: Use `mcp__git__git_set_working_dir` with path='{git_root}'"
+                f"💡 Recommend: Use `mcp__git__git_set_working_dir` with path='{git_root}'",
             )
 
             # Also log to stderr for immediate visibility
@@ -266,14 +261,10 @@ async def auto_setup_git_working_directory(session_logger: SessionLogger) -> Non
                     },
                 )
             else:
-                print(f"📍 Git repository detected: {git_root}", file=sys.stderr)
-                print(
-                    f"💡 Tip: Auto-setup git working directory with: git_set_working_dir('{git_root}')",
-                    file=sys.stderr,
-                )
+                pass
         else:
             session_logger.debug(
-                "No git repository detected in current directory - skipping auto-setup"
+                "No git repository detected in current directory - skipping auto-setup",
             )
 
     except Exception as e:
@@ -391,10 +382,7 @@ async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
                 ],
             )
         else:
-            print(
-                f"Warning: Could not analyze project context for {project_dir}: {e}",
-                file=sys.stderr,
-            )
+            pass
         return {
             "python_project": False,
             "git_repo": False,
@@ -493,7 +481,9 @@ async def health_check(
 
 
 async def _add_basic_status_info(
-    output: list[str], current_dir: Path, current_project_ref: Any
+    output: list[str],
+    current_dir: Path,
+    current_project_ref: Any,
 ) -> None:
     """Add basic status information to output."""
     current_project_ref = current_dir.name
@@ -511,7 +501,9 @@ async def _add_health_status_info(
 ) -> None:
     """Add health check information to output."""
     health_status = await health_check(
-        session_logger, permissions_manager, validate_claude_directory
+        session_logger,
+        permissions_manager,
+        validate_claude_directory,
     )
 
     output.append(
@@ -562,11 +554,11 @@ async def _format_quality_results(
     version = quality_data.get("version", "1.0")
     if quality_score >= 80:
         output.append(
-            f"✅ Session quality: EXCELLENT (Score: {quality_score}/100) [V{version}]"
+            f"✅ Session quality: EXCELLENT (Score: {quality_score}/100) [V{version}]",
         )
     elif quality_score >= 60:
         output.append(
-            f"✅ Session quality: GOOD (Score: {quality_score}/100) [V{version}]"
+            f"✅ Session quality: GOOD (Score: {quality_score}/100) [V{version}]",
         )
     else:
         output.append(
@@ -586,13 +578,13 @@ async def _format_quality_results(
         trust = quality_data["trust_score"]
         output.append(f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)")
         output.append(
-            f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40"
+            f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40",
         )
         output.append(
-            f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30"
+            f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30",
         )
         output.append(
-            f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30"
+            f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30",
         )
 
     # Recommendations
@@ -627,7 +619,9 @@ async def _format_quality_results(
 
 
 async def _perform_git_checkpoint(
-    current_dir: Path, quality_score: int, project_name: str
+    current_dir: Path,
+    quality_score: int,
+    project_name: str,
 ) -> list[str]:
     """Handle git operations for checkpoint commit."""
     output = []
@@ -639,7 +633,9 @@ async def _perform_git_checkpoint(
     from session_mgmt_mcp.utils.git_operations import create_checkpoint_commit
 
     success, result, commit_output = create_checkpoint_commit(
-        current_dir, project_name, quality_score
+        current_dir,
+        project_name,
+        quality_score,
     )
 
     # Add the commit output to our output
@@ -657,7 +653,11 @@ async def _format_conversation_summary() -> list[str]:
     """Format the conversation summary section."""
     output = []
     with suppress(
-        ImportError, ModuleNotFoundError, RuntimeError, AttributeError, ValueError
+        ImportError,
+        ModuleNotFoundError,
+        RuntimeError,
+        AttributeError,
+        ValueError,
     ):
         from session_mgmt_mcp.quality_engine import summarize_current_conversation
 
@@ -696,5 +696,3 @@ def _should_retry_search(error: Exception) -> bool:
 # =====================================
 # Feature Detection (Phase 2.6)
 # =====================================
-
-

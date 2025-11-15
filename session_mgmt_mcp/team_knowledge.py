@@ -367,7 +367,13 @@ class TeamKnowledgeManager:
             conn.row_factory = sqlite3.Row
 
             query_builder = self._build_search_query(
-                user_teams, user_id, query, team_id, project_id, tags, limit
+                user_teams,
+                user_id,
+                query,
+                team_id,
+                project_id,
+                tags,
+                limit,
             )
             cursor = conn.execute(query_builder.sql, query_builder.params)
             results = self._process_search_results(cursor.fetchall())
@@ -404,7 +410,8 @@ class TeamKnowledgeManager:
 
         # Add access control conditions
         access_condition, access_params = self._build_access_condition(
-            user_teams, user_id
+            user_teams,
+            user_id,
         )
         where_conditions.append(access_condition)
         params.extend(access_params)
@@ -428,7 +435,9 @@ class TeamKnowledgeManager:
         return self._SearchQueryBuilder(sql=query_sql, params=params)
 
     def _build_access_condition(
-        self, user_teams: list[str], user_id: str
+        self,
+        user_teams: list[str],
+        user_id: str,
     ) -> tuple[str, list[str]]:
         """Build access control condition for query."""
         placeholders = ",".join("?" * len(user_teams))
@@ -773,7 +782,7 @@ class TeamKnowledgeManager:
                     or permissions.get(
                         "moderate_content",
                         False,
-                    )
+                    ),
                 )
 
         return False

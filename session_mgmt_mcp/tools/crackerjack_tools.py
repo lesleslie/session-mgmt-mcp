@@ -100,7 +100,11 @@ async def execute_crackerjack_command(
 
     # Proceed with validated inputs
     return await _execute_crackerjack_command_impl(
-        command, args, working_directory, timeout, ai_agent_mode
+        command,
+        args,
+        working_directory,
+        timeout,
+        ai_agent_mode,
     )
 
 
@@ -179,7 +183,11 @@ async def crackerjack_run(
 
     # Proceed with validated inputs
     return await _crackerjack_run_impl(
-        command, args, working_directory, timeout, ai_agent_mode
+        command,
+        args,
+        working_directory,
+        timeout,
+        ai_agent_mode,
     )
 
 
@@ -262,7 +270,7 @@ async def _get_reflection_db() -> Any | None:
     db = await resolve_reflection_database()
     if db is None:
         _get_logger().warning(
-            "Reflection database not available for crackerjack operations."
+            "Reflection database not available for crackerjack operations.",
         )
     return db
 
@@ -329,7 +337,10 @@ def _extract_hook_name(line: str) -> str | None:
 
 
 def _categorize_hook(
-    hook_name: str, line: str, passed_hooks: list[str], failed_hooks: list[str]
+    hook_name: str,
+    line: str,
+    passed_hooks: list[str],
+    failed_hooks: list[str],
 ) -> None:
     """Categorize hook as passed or failed based on the line content."""
     if "❌" in line or "Failed" in line:
@@ -387,7 +398,7 @@ def _parse_hook_stage_results(output: str) -> str:
             all_stage_results.extend(stage_results)
             # Skip past the extracted results to avoid reprocessing
             i += len(
-                stage_results
+                stage_results,
             )  # This might not be accurate, so let's continue normally
         i += 1
 
@@ -536,7 +547,8 @@ def _format_basic_result(result: Any, command: str) -> str:
 
 
 async def _get_ai_recommendations_with_history(
-    result: Any, working_directory: str
+    result: Any,
+    working_directory: str,
 ) -> tuple[str, list[Any], dict[str, Any]]:
     """Get AI recommendations adjusted by historical effectiveness."""
     from .agent_analyzer import AgentAnalyzer
@@ -544,7 +556,9 @@ async def _get_ai_recommendations_with_history(
 
     # Get base recommendations
     recommendations = AgentAnalyzer.analyze(
-        result.stdout, result.stderr, result.exit_code
+        result.stdout,
+        result.stderr,
+        result.exit_code,
     )
 
     # Analyze history and adjust
@@ -554,12 +568,15 @@ async def _get_ai_recommendations_with_history(
     if db:
         async with db:
             history_analysis = await RecommendationEngine.analyze_history(
-                db, Path(working_directory).name, days=30
+                db,
+                Path(working_directory).name,
+                days=30,
             )
 
             if history_analysis["agent_effectiveness"]:
                 recommendations = RecommendationEngine.adjust_confidence(
-                    recommendations, history_analysis["agent_effectiveness"]
+                    recommendations,
+                    history_analysis["agent_effectiveness"],
                 )
 
     output = AgentAnalyzer.format_recommendations(recommendations)
@@ -622,7 +639,11 @@ async def _store_execution_result(
     """Store execution result in history."""
     try:
         metadata = _build_execution_metadata(
-            working_directory, result, metrics, recommendations, history_analysis
+            working_directory,
+            result,
+            metrics,
+            recommendations,
+            history_analysis,
         )
 
         content = f"Crackerjack {command} execution: {formatted_result[:500]}..."
@@ -663,7 +684,9 @@ def _suggest_command(invalid: str, valid: set[str]) -> str:
 
 
 def _build_error_troubleshooting(
-    error: Exception, timeout: int, working_directory: str
+    error: Exception,
+    timeout: int,
+    working_directory: str,
 ) -> str:
     """Build error-specific troubleshooting steps."""
     if isinstance(error, ImportError):
@@ -840,7 +863,8 @@ def _parse_result_timestamp(result: dict[str, Any]) -> Any | None:
 
 
 def _filter_results_by_date(
-    results: list[dict[str, Any]], start_date: Any
+    results: list[dict[str, Any]],
+    start_date: Any,
 ) -> list[dict[str, Any]]:
     """Filter results by date range."""
     filtered_results = []
@@ -933,7 +957,9 @@ def _extract_quality_keywords(results: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def _format_quality_metrics_output(
-    days: int, summary: dict[str, Any], keywords: dict[str, int]
+    days: int,
+    summary: dict[str, Any],
+    keywords: dict[str, int],
 ) -> str:
     """Format quality metrics output."""
     output = f"📊 **Crackerjack Quality Metrics** (last {days} days)\n\n"
@@ -946,7 +972,9 @@ def _format_quality_metrics_output(
     if keywords:
         output += "**Quality Focus Areas**:\n"
         for keyword, count in sorted(
-            keywords.items(), key=lambda x: x[1], reverse=True
+            keywords.items(),
+            key=lambda x: x[1],
+            reverse=True,
         ):
             output += f"- {keyword.title()}: {count} mentions\n"
 
@@ -955,7 +983,8 @@ def _format_quality_metrics_output(
 
 
 async def _crackerjack_metrics_impl(
-    working_directory: str = ".", days: int = 30
+    working_directory: str = ".",
+    days: int = 30,
 ) -> str:
     """Get quality metrics trends from crackerjack execution history."""
     try:
@@ -999,7 +1028,9 @@ def _find_keyword_matches(content: str, keyword: str) -> list[tuple[int, int]]:
 
 
 def _extract_context_around_keyword(
-    content: str, keyword: str, context_size: int = 30
+    content: str,
+    keyword: str,
+    context_size: int = 30,
 ) -> list[str]:
     """Extract context around keyword occurrences."""
     matches = _find_keyword_matches(content, keyword)
@@ -1015,7 +1046,8 @@ def _extract_context_around_keyword(
 
 
 def _extract_failure_patterns(
-    results: list[dict[str, Any]], failure_keywords: list[str]
+    results: list[dict[str, Any]],
+    failure_keywords: list[str],
 ) -> dict[str, int]:
     """Extract common failure patterns from test results."""
     patterns: dict[str, int] = {}
@@ -1062,7 +1094,8 @@ def _get_failure_keywords() -> list[str]:
 
 
 async def _get_failure_pattern_results(
-    working_directory: str, limit: int = 50
+    working_directory: str,
+    limit: int = 50,
 ) -> list[dict[str, Any]]:
     """Get failure pattern results from the reflection database."""
     db = await _get_reflection_db()
@@ -1089,7 +1122,8 @@ def _format_patterns_header(days: int, results_count: int) -> str:
 
 
 async def _crackerjack_patterns_impl(
-    days: int = 7, working_directory: str = "."
+    days: int = 7,
+    working_directory: str = ".",
 ) -> str:
     """Analyze test failure patterns and trends."""
     try:
@@ -1214,7 +1248,8 @@ def _analyze_quality_trend_results(
 
 
 def _calculate_trend_success_rate(
-    success_trend: list[str], failure_trend: list[str]
+    success_trend: list[str],
+    failure_trend: list[str],
 ) -> float:
     """Calculate success rate from trend data."""
     total_runs = len(success_trend) + len(failure_trend)
@@ -1222,7 +1257,9 @@ def _calculate_trend_success_rate(
 
 
 def _format_trend_overview(
-    success_trend: list[str], failure_trend: list[str], success_rate: float
+    success_trend: list[str],
+    failure_trend: list[str],
+    success_rate: float,
 ) -> str:
     """Format overall trends section."""
     total_runs = len(success_trend) + len(failure_trend)

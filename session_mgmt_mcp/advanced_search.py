@@ -8,14 +8,12 @@ and intelligent result ranking.
 import hashlib
 import json
 import time
-from contextlib import suppress
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from .reflection_tools import ReflectionDatabase
 from .search_enhanced import EnhancedSearchEngine
-from .types import SQLCondition, TimeRange
-from .utils.regex_patterns import SAFE_PATTERNS
+from .types import SQLCondition
 from .utils.search import (
     SearchFacet,
     SearchFilter,
@@ -70,7 +68,13 @@ class AdvancedSearchEngine:
         # Build and execute search
         search_query = self._build_search_query(query, filters)
         results = await self._execute_search(
-            search_query, sort_by, limit, offset, filters, content_type, timeframe
+            search_query,
+            sort_by,
+            limit,
+            offset,
+            filters,
+            content_type,
+            timeframe,
         )
 
         # Process results with optional features
@@ -80,7 +84,10 @@ class AdvancedSearchEngine:
         return self._format_search_response(results, facet_results, query, filters)
 
     async def _process_search_results(
-        self, results: list[Any], query: str, include_highlights: bool
+        self,
+        results: list[Any],
+        query: str,
+        include_highlights: bool,
     ) -> list[Any]:
         """Process search results with optional highlighting."""
         if include_highlights:
@@ -88,7 +95,10 @@ class AdvancedSearchEngine:
         return results
 
     async def _process_facets(
-        self, query: str, filters: list[SearchFilter] | None, facets: list[str] | None
+        self,
+        query: str,
+        filters: list[SearchFilter] | None,
+        facets: list[str] | None,
     ) -> dict[str, Any]:
         """Process facets if requested."""
         if facets:
@@ -316,7 +326,7 @@ class AdvancedSearchEngine:
 
         if not self.reflection_db.conn:
             return {
-                "error": f"Database connection not available for metric type: {metric_type}"
+                "error": f"Database connection not available for metric type: {metric_type}",
             }
 
         # Use simplified parameters for the base time range
@@ -394,11 +404,16 @@ class AdvancedSearchEngine:
         self._parse_conversation_metadata(metadata_json)
         indexed_content = self._build_indexed_content(content, project)
         search_metadata = self._build_conversation_search_metadata(
-            project, timestamp, content, indexed_content
+            project,
+            timestamp,
+            content,
+            indexed_content,
         )
 
         self._insert_conversation_into_search_index(
-            conv_id, indexed_content, search_metadata
+            conv_id,
+            indexed_content,
+            search_metadata,
         )
 
     def _parse_conversation_metadata(self, metadata_json: str | None) -> dict[str, Any]:
@@ -435,7 +450,10 @@ class AdvancedSearchEngine:
         }
 
     def _insert_conversation_into_search_index(
-        self, conv_id: str, indexed_content: str, search_metadata: dict[str, Any]
+        self,
+        conv_id: str,
+        indexed_content: str,
+        search_metadata: dict[str, Any],
     ) -> None:
         """Insert conversation into search index."""
         if not self.reflection_db.conn:
@@ -621,7 +639,6 @@ class AdvancedSearchEngine:
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
-
     def _build_search_query(
         self,
         query: str,
@@ -658,7 +675,8 @@ class AdvancedSearchEngine:
         return None
 
     def _build_timestamp_range_condition(
-        self, filt: SearchFilter
+        self,
+        filt: SearchFilter,
     ) -> SQLCondition | None:
         """Build timestamp range condition."""
         if not isinstance(filt.value, tuple | list) or len(filt.value) != 2:
@@ -718,14 +736,21 @@ class AdvancedSearchEngine:
     ) -> list[SearchResult]:
         """Execute the actual search."""
         sql_result = self._build_search_sql(
-            query, content_type, timeframe, filters, sort_by, limit, offset
+            query,
+            content_type,
+            timeframe,
+            filters,
+            sort_by,
+            limit,
+            offset,
         )
 
         if not self.reflection_db.conn:
             return []
 
         results = self.reflection_db.conn.execute(
-            sql_result.condition, self._prepare_sql_params(sql_result.params)
+            sql_result.condition,
+            self._prepare_sql_params(sql_result.params),
         ).fetchall()
         return self._convert_sql_results_to_search_results(results)
 
@@ -763,7 +788,10 @@ class AdvancedSearchEngine:
         return SQLCondition(condition=sql, params=params)
 
     def _add_content_type_filter(
-        self, sql: str, params: list[str | datetime], content_type: str | None
+        self,
+        sql: str,
+        params: list[str | datetime],
+        content_type: str | None,
     ) -> SQLCondition:
         """Add content type filter to SQL query."""
         if content_type:
@@ -806,7 +834,8 @@ class AdvancedSearchEngine:
         ]
 
     def _convert_sql_results_to_search_results(
-        self, results: list[tuple[Any, ...]]
+        self,
+        results: list[tuple[Any, ...]],
     ) -> list[SearchResult]:
         """Convert SQL results to SearchResult objects."""
         search_results = []
@@ -904,4 +933,3 @@ class AdvancedSearchEngine:
                 )
 
         return facets
-

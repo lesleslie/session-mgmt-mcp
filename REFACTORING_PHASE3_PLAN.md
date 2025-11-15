@@ -1,6 +1,7 @@
 # Refactoring Phase 3: Code Duplication Elimination - Implementation Plan
 
 ## Overview
+
 Phase 3 focuses on eliminating duplicate code patterns identified across the codebase, particularly in the tools directory where significant repetition exists.
 
 ## Analysis Results
@@ -21,27 +22,32 @@ Phase 3 focuses on eliminating duplicate code patterns identified across the cod
 ### Files with Highest Duplication
 
 1. **search_tools.py** (874 lines)
+
    - 12 async impl functions
    - 12 exception handlers
    - 11 database resolution patterns
    - 11 error messages
 
-2. **monitoring_tools.py** (669 lines)
+1. **monitoring_tools.py** (669 lines)
+
    - 11 async impl functions
    - 11 exception handlers
    - 11 error messages
 
-3. **knowledge_graph_tools.py** (782 lines)
+1. **knowledge_graph_tools.py** (782 lines)
+
    - 11 exception handlers
    - 9 async impl functions
    - 9 error messages
 
-4. **memory_tools.py** (626 lines)
+1. **memory_tools.py** (626 lines)
+
    - 7 async impl functions
    - 7 exception handlers
    - 7 error messages
 
-5. **serverless_tools.py** (521 lines)
+1. **serverless_tools.py** (521 lines)
+
    - 8 async impl functions
    - 8 exception handlers
    - 8 error messages
@@ -51,6 +57,7 @@ Phase 3 focuses on eliminating duplicate code patterns identified across the cod
 ### Pattern A: Generic Error Handling Wrapper
 
 **Current Pattern** (repeated 80 times):
+
 ```python
 try:
     # Some operation
@@ -62,13 +69,11 @@ except Exception as e:
 ```
 
 **Proposed Solution**: Create error handling decorator/wrapper
+
 ```python
 # New utility in utils/error_handlers.py
 async def handle_tool_errors(
-    operation: Callable,
-    error_prefix: str = "Operation",
-    *args,
-    **kwargs
+    operation: Callable, error_prefix: str = "Operation", *args, **kwargs
 ) -> Any:
     """Generic error handler for tool operations."""
     try:
@@ -79,6 +84,7 @@ async def handle_tool_errors(
 ```
 
 **Usage**:
+
 ```python
 # Before (5-8 lines)
 async def some_tool():
@@ -88,6 +94,7 @@ async def some_tool():
     except Exception as e:
         _get_logger().exception(f"Error: {e}")
         return f"❌ Failed: {str(e)}"
+
 
 # After (2 lines)
 async def some_tool():
@@ -99,6 +106,7 @@ async def some_tool():
 ### Pattern B: Database Resolution Pattern
 
 **Current Pattern** (repeated 15 times):
+
 ```python
 db = await resolve_reflection_database()
 if not db:
@@ -106,6 +114,7 @@ if not db:
 ```
 
 **Proposed Solution**: Create database resolution utility
+
 ```python
 # New utility in utils/database_helpers.py
 async def require_reflection_database() -> ReflectionDatabase:
@@ -117,9 +126,9 @@ async def require_reflection_database() -> ReflectionDatabase:
         )
     return db
 
+
 async def safe_database_operation(
-    operation: Callable,
-    error_message: str = "Database operation"
+    operation: Callable, error_message: str = "Database operation"
 ) -> str:
     """Execute database operation with error handling."""
     try:
@@ -137,6 +146,7 @@ async def safe_database_operation(
 ### Pattern C: Consistent Error Message Formatting
 
 **Current Pattern** (repeated 63 times):
+
 ```python
 return "❌ Feature not available. Install dependencies: ..."
 return "❌ Operation failed: {error}"
@@ -144,6 +154,7 @@ return "❌ Invalid input: {details}"
 ```
 
 **Proposed Solution**: Create error message formatter
+
 ```python
 # New utility in utils/messages.py
 class ToolMessages:
@@ -177,6 +188,7 @@ class ToolMessages:
 ### Pattern D: Async Wrapper Consolidation
 
 **Current Pattern** (repeated 72 times):
+
 ```python
 async def _some_operation_impl(...) -> str:
     """Implementation for some_operation tool."""
@@ -202,6 +214,7 @@ async def _some_operation_impl(...) -> str:
 ```
 
 **Proposed Solution**: Create generic tool wrapper
+
 ```python
 # New utility in utils/tool_wrapper.py
 async def execute_database_tool(
@@ -239,6 +252,7 @@ async def execute_database_tool(
 ### Step 1: Create Utility Modules (Day 1)
 
 Create new utility modules:
+
 - `session_mgmt_mcp/utils/error_handlers.py` - Generic error handling
 - `session_mgmt_mcp/utils/database_helpers.py` - Database resolution utilities
 - `session_mgmt_mcp/utils/messages.py` - Consistent message formatting
@@ -251,22 +265,23 @@ Create new utility modules:
 Refactor files with highest duplication first:
 
 **Priority 1** (Day 2):
+
 1. `tools/search_tools.py` (874 lines → ~700 lines, save ~174 lines)
-2. `tools/memory_tools.py` (626 lines → ~500 lines, save ~126 lines)
+1. `tools/memory_tools.py` (626 lines → ~500 lines, save ~126 lines)
 
 **Priority 2** (Day 3):
-3. `tools/monitoring_tools.py` (669 lines → ~550 lines, save ~119 lines)
-4. `tools/knowledge_graph_tools.py` (782 lines → ~660 lines, save ~122 lines)
+3\. `tools/monitoring_tools.py` (669 lines → ~550 lines, save ~119 lines)
+4\. `tools/knowledge_graph_tools.py` (782 lines → ~660 lines, save ~122 lines)
 
 ### Step 3: Refactor Remaining Files (Day 4)
 
 **Priority 3**:
-5. `tools/serverless_tools.py` (521 lines → ~430 lines, save ~91 lines)
-6. `tools/validated_memory_tools.py` (524 lines → ~450 lines, save ~74 lines)
-7. `tools/session_tools.py` (884 lines → ~800 lines, save ~84 lines)
-8. `tools/llm_tools.py` (452 lines → ~400 lines, save ~52 lines)
-9. `tools/team_tools.py` (284 lines → ~250 lines, save ~34 lines)
-10. `tools/crackerjack_tools.py` (1,340 lines → defer to Phase 4)
+5\. `tools/serverless_tools.py` (521 lines → ~430 lines, save ~91 lines)
+6\. `tools/validated_memory_tools.py` (524 lines → ~450 lines, save ~74 lines)
+7\. `tools/session_tools.py` (884 lines → ~800 lines, save ~84 lines)
+8\. `tools/llm_tools.py` (452 lines → ~400 lines, save ~52 lines)
+9\. `tools/team_tools.py` (284 lines → ~250 lines, save ~34 lines)
+10\. `tools/crackerjack_tools.py` (1,340 lines → defer to Phase 4)
 
 ### Step 4: Testing & Validation (Day 5)
 
@@ -288,10 +303,10 @@ Refactor files with highest duplication first:
 ### Code Quality Improvements
 
 1. **DRY Compliance**: Eliminate 80+ instances of duplicated error handling
-2. **Maintainability**: Centralized error messages and patterns
-3. **Consistency**: Uniform error handling across all tools
-4. **Testability**: Utilities can be tested independently
-5. **Readability**: Tool implementations become more focused on business logic
+1. **Maintainability**: Centralized error messages and patterns
+1. **Consistency**: Uniform error handling across all tools
+1. **Testability**: Utilities can be tested independently
+1. **Readability**: Tool implementations become more focused on business logic
 
 ### Metrics
 
@@ -310,21 +325,24 @@ Progress:           1.85% of reduction goal
 **Risk Level**: 🟡 MEDIUM
 
 ### Risks
+
 - More invasive changes than Phases 1-2
 - Modifying business logic flow (error handling)
 - Potential for introducing subtle bugs
 - Higher test burden
 
 ### Mitigations
+
 1. **Incremental Approach**: Refactor one file at a time
-2. **Test After Each File**: Run tests immediately after each refactoring
-3. **Preserve Behavior**: Ensure utilities produce identical output
-4. **Code Review**: Careful review of each refactored function
-5. **Rollback Plan**: Git commits per file for easy reversion
+1. **Test After Each File**: Run tests immediately after each refactoring
+1. **Preserve Behavior**: Ensure utilities produce identical output
+1. **Code Review**: Careful review of each refactored function
+1. **Rollback Plan**: Git commits per file for easy reversion
 
 ## Testing Strategy
 
 ### Per-File Testing
+
 ```bash
 # After refactoring each file
 pytest tests/unit/ tests/functional/ -v -x
@@ -337,6 +355,7 @@ pytest tests/unit/test_memory_tools.py -v
 ```
 
 ### Full Validation
+
 ```bash
 # Run complete test suite
 pytest
@@ -360,6 +379,7 @@ pytest --durations=20
 ## Next Steps After Phase 3
 
 Phase 4 will tackle the largest files with more aggressive refactoring:
+
 - `crackerjack_tools.py` (1,340 lines)
 - `session_tools.py` (884 lines)
 - `crackerjack_integration.py` (1,632 lines)

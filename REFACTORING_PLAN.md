@@ -3,27 +3,31 @@
 ## Analysis Summary
 
 ### Largest Files (Lines of Code)
+
 1. crackerjack_integration.py - 1,632 lines
-2. tools/crackerjack_tools.py - 1,340 lines
-3. serverless_mode.py - 1,285 lines
-4. quality_engine.py - 1,256 lines
-5. llm_providers.py - 1,254 lines
+1. tools/crackerjack_tools.py - 1,340 lines
+1. serverless_mode.py - 1,285 lines
+1. quality_engine.py - 1,256 lines
+1. llm_providers.py - 1,254 lines
 
 ### Quick Wins Identified
 
 #### 1. Unused Code (from vulture)
+
 - **Unused exception variables**: Use `_` instead of `exc_type, exc_val, exc_tb`
 - **Unused imports**: `get_cached_chunk`, `get_token_usage_stats` in server.py
 - **Unused variables**: `frame`, `max_age_hours`, `uv_trusted`, `claude_validation`
 - **Unreachable code**: After return in crackerjack_integration.py:1481
 
 #### 2. Code Duplication Patterns
+
 - Exception handling patterns (can be consolidated)
 - Similar validation logic across files
 - Repeated dictionary building patterns
 - Common async/await patterns
 
 #### 3. Complexity Reduction Opportunities
+
 - Long functions that can be split
 - Nested if statements (use early returns)
 - Repeated conditional logic
@@ -32,24 +36,28 @@
 ## Refactoring Strategy
 
 ### Phase 1: Quick Wins (5-10% reduction)
+
 - [x] Remove unused imports
 - [x] Replace unused exception variables with `_`
 - [x] Remove dead/unreachable code
 - [x] Simplify exception handling patterns
 
 ### Phase 2: Code Consolidation (15-20% reduction)
+
 - [ ] Extract common patterns to utilities
 - [ ] Consolidate duplicate validation logic
 - [ ] Merge similar functions
 - [ ] Use decorators for common patterns
 
 ### Phase 3: Structural Improvements (10-15% reduction)
+
 - [ ] Simplify complex functions
 - [ ] Use dataclasses instead of dicts
 - [ ] Apply functional patterns
 - [ ] Use early returns to reduce nesting
 
 ### Phase 4: Tool-Specific Refactoring (20-25% reduction)
+
 - [ ] Consolidate crackerjack integration code
 - [ ] Simplify serverless mode
 - [ ] Streamline quality engine
@@ -64,11 +72,11 @@
 ## Refactoring Principles
 
 1. **DRY (Don't Repeat Yourself)**: Extract common patterns
-2. **KISS (Keep It Simple, Stupid)**: Simplify complex logic
-3. **YAGNI (You Ain't Gonna Need It)**: Remove unused features
-4. **Single Responsibility**: One function, one purpose
-5. **Early Returns**: Reduce nesting with guard clauses
-6. **Type Safety**: Use type hints and dataclasses
+1. **KISS (Keep It Simple, Stupid)**: Simplify complex logic
+1. **YAGNI (You Ain't Gonna Need It)**: Remove unused features
+1. **Single Responsibility**: One function, one purpose
+1. **Early Returns**: Reduce nesting with guard clauses
+1. **Type Safety**: Use type hints and dataclasses
 
 ## Testing Strategy
 

@@ -100,7 +100,9 @@ def _cleanup_temp_files(current_dir: Path) -> str:
     cleaned_items: list[str] = []
 
     total_size_mb = _process_cleanup_patterns(
-        current_dir, cleanup_patterns, cleaned_items
+        current_dir,
+        cleanup_patterns,
+        cleaned_items,
     )
 
     if not cleaned_items:

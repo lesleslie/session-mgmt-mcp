@@ -120,7 +120,8 @@ def _get_console_handler(
 ) -> logging.StreamHandler[t.TextIO] | None:
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler) and not isinstance(
-            handler, logging.FileHandler
+            handler,
+            logging.FileHandler,
         ):
             return handler
     return None
@@ -154,6 +155,6 @@ def _safe_json_serialize(obj: t.Any) -> str:
                     if v is not None and not isinstance(v, (str, int, float, bool))
                     else v
                     for k, v in obj.items()
-                }
+                },
             )
         return json.dumps(str(obj))

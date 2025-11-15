@@ -5,10 +5,9 @@ Enables request-scoped sessions with external storage backends (Redis, S3, Dynam
 Allows the session management server to operate in cloud/serverless environments.
 """
 
-import asyncio
 import hashlib
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +30,8 @@ class ServerlessSessionManager:
         self.storage = storage_backend
         self.logger = logging.getLogger("serverless.session_manager")
         self.session_cache: dict[
-            str, SessionState
+            str,
+            SessionState,
         ] = {}  # In-memory cache for current request
 
     async def create_session(
@@ -230,7 +230,7 @@ class ServerlessConfigManager:
             except ImportError as e:
                 CONFIG_LOGGER.warning(
                     f"aiocache not available ({e}), falling back to local file storage. "
-                    "Install with: pip install aiocache[redis]"
+                    "Install with: pip install aiocache[redis]",
                 )
                 # Fallback to local storage if aiocache not available
                 return LocalFileStorage(backend_config)
@@ -239,14 +239,14 @@ class ServerlessConfigManager:
         if backend_type == "redis":
             CONFIG_LOGGER.warning(
                 "RedisStorage is deprecated. Use 'acb' backend for better "
-                "connection pooling, SSL/TLS support, and automatic compression."
+                "connection pooling, SSL/TLS support, and automatic compression.",
             )
             return RedisStorage(backend_config)
 
         if backend_type == "s3":
             CONFIG_LOGGER.warning(
                 "S3Storage is deprecated. Consider using ACB cache backends "
-                "with Redis for production deployments."
+                "with Redis for production deployments.",
             )
             return S3Storage(backend_config)
 

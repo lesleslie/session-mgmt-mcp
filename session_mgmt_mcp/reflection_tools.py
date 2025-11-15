@@ -26,9 +26,9 @@ import json
 import os
 import time
 import warnings
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
-from types import TracebackType
 from typing import Any, Self
 
 # Database and embedding imports
@@ -138,16 +138,14 @@ class ReflectionDatabase:
                     "~/.claude/all-MiniLM-L6-v2/onnx/model.onnx",
                 )
                 if not Path(model_path).exists():
-                    print("ONNX model not found, will use text search fallback")
                     self.onnx_session = None
                 else:
                     self.onnx_session = ort.InferenceSession(model_path)
                     self.embedding_dim = 384
-            except Exception as e:
-                print(f"ONNX model loading failed, using text search: {e}")
+            except Exception:
                 self.onnx_session = None
         else:
-            print("ONNX not available, using text search fallback")
+            pass
 
         # Create tables if they don't exist
         await self._ensure_tables()
@@ -275,11 +273,9 @@ class ReflectionDatabase:
         ]
 
         for index_sql in indices:
-            try:
-                self._get_conn().execute(index_sql)
-            except Exception as e:
+            with suppress(Exception):
                 # Some indices might not be supported in all DuckDB versions, continue
-                print(f"Index creation skipped: {e}")
+                self._get_conn().execute(index_sql)
 
     async def get_embedding(self, text: str) -> list[float]:
         """Get embedding for text using ONNX model."""
@@ -330,7 +326,8 @@ class ReflectionDatabase:
     async def store_conversation(self, content: str, metadata: dict[str, Any]) -> str:
         """Store conversation with optional embedding."""
         conversation_id = hashlib.md5(
-            f"{content}_{time.time()}".encode(), usedforsecurity=False
+            f"{content}_{time.time()}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         embedding: list[float] | None = None
@@ -416,7 +413,7 @@ class ReflectionDatabase:
         """Search conversations by text similarity (fallback to text search if no embeddings)."""
         if ONNX_AVAILABLE and self.onnx_session:
             # Use semantic search with embeddings
-            try:
+            with suppress(Exception):
                 query_embedding = await self.get_embedding(query)
 
                 sql = """
@@ -454,9 +451,6 @@ class ReflectionDatabase:
                     for row in results
                     if float(row[6]) >= min_score
                 ]
-            except Exception as e:
-                print(f"Semantic search failed, falling back to text search: {e}")
-                # Fall through to text search
 
         # Fallback to text search (if ONNX failed or not available)
         search_terms = query.lower().split()
@@ -506,7 +500,7 @@ class ReflectionDatabase:
         """Search stored reflections by semantic similarity with text fallback."""
         if ONNX_AVAILABLE and self.onnx_session:
             # Try semantic search first
-            try:
+            with suppress(Exception):
                 query_embedding = await self.get_embedding(query)
 
                 sql = """
@@ -541,9 +535,6 @@ class ReflectionDatabase:
                 # If semantic search found results, return them
                 if semantic_results:
                     return semantic_results
-
-            except Exception as e:
-                print(f"Semantic search failed, falling back to text search: {e}")
 
         # Fallback to text search for reflections
         search_terms = query.lower().split()

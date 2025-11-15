@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.utils.database_helpers import require_reflection_database
-from session_mgmt_mcp.utils.error_handlers import ValidationError, validate_required
+from session_mgmt_mcp.utils.error_handlers import validate_required
 from session_mgmt_mcp.utils.messages import ToolMessages
 from session_mgmt_mcp.utils.tool_wrapper import (
     execute_database_tool,
@@ -36,7 +36,9 @@ def _format_score(score: float) -> str:
 
 
 async def _store_reflection_operation(
-    db: ReflectionDatabaseAdapter, content: str, tags: list[str]
+    db: ReflectionDatabaseAdapter,
+    content: str,
+    tags: list[str],
 ) -> dict[str, Any]:
     """Execute reflection storage operation."""
     success = await db.store_reflection(content, tags=tags)
@@ -180,10 +182,12 @@ async def _format_search_summary(
     ]
 
     if not results:
-        lines.extend([
-            "🔍 No results found",
-            "💡 Try different search terms or lower the min_score threshold",
-        ])
+        lines.extend(
+            [
+                "🔍 No results found",
+                "💡 Try different search terms or lower the min_score threshold",
+            ],
+        )
         return "\n".join(lines)
 
     # Basic stats
@@ -261,10 +265,12 @@ async def _format_file_search_results(
     ]
 
     if not results:
-        lines.extend([
-            "🔍 No conversations found about this file",
-            "💡 The file might not have been discussed in previous sessions",
-        ])
+        lines.extend(
+            [
+                "🔍 No conversations found about this file",
+                "💡 The file might not have been discussed in previous sessions",
+            ],
+        )
         return "\n".join(lines)
 
     lines.append(f"📈 Found {len(results)} relevant conversations:")
@@ -328,10 +334,12 @@ async def _format_concept_search_results(
     ]
 
     if not results:
-        lines.extend([
-            "🔍 No conversations found about this concept",
-            "💡 Try related terms or broader concepts",
-        ])
+        lines.extend(
+            [
+                "🔍 No conversations found about this concept",
+                "💡 Try related terms or broader concepts",
+            ],
+        )
         return "\n".join(lines)
 
     lines.append(f"📈 Found {len(results)} related conversations:")
@@ -381,7 +389,11 @@ async def _search_by_concept_impl(
 
     async def operation(db: ReflectionDatabaseAdapter) -> str:
         return await _search_by_concept_operation(
-            db, concept, include_files, limit, project
+            db,
+            concept,
+            include_files,
+            limit,
+            project,
         )
 
     return await execute_simple_database_tool(operation, "Search by concept")
@@ -417,7 +429,7 @@ def _format_stats_old(stats: dict[str, t.Any]) -> list[str]:
     date_range = stats.get("date_range")
     if isinstance(date_range, dict):
         output.append(
-            f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}"
+            f"📅 Date range: {date_range.get('start')} to {date_range.get('end')}",
         )
 
     # Add recent activity if present
@@ -446,10 +458,12 @@ async def _reflection_stats_operation(db: ReflectionDatabaseAdapter) -> str:
         else:
             lines.extend(_format_stats_old(stats))
     else:
-        lines.extend([
-            "📊 No statistics available",
-            "💡 Database may be empty or inaccessible",
-        ])
+        lines.extend(
+            [
+                "📊 No statistics available",
+                "💡 Database may be empty or inaccessible",
+            ],
+        )
 
     return "\n".join(lines)
 

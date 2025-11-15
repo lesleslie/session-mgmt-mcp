@@ -24,10 +24,8 @@ from session_mgmt_mcp.parameter_models import (
     SearchQueryParams,
     validate_mcp_params,
 )
-from session_mgmt_mcp.utils.database_helpers import require_reflection_database
-from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
+from session_mgmt_mcp.utils.error_handlers import _get_logger
 from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
-
 
 # ============================================================================
 # Validated Tool Implementations
@@ -36,13 +34,10 @@ from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 async def _store_reflection_validated_impl(**params: Any) -> str:
     """Implementation for store_reflection tool with parameter validation."""
-
     # Validate parameters using Pydantic model
-    validated = validate_mcp_params(ReflectionStoreParams, params)
-    if not validated.is_valid:
-        raise ValidationError(f"Parameter validation failed: {validated.errors}")
-
-    params_obj = validated.params
+    # The function will raise ValidationError if validation fails
+    validated_params = validate_mcp_params(ReflectionStoreParams, **params)
+    params_obj = ReflectionStoreParams(**validated_params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Store reflection operation."""
@@ -65,15 +60,15 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
             f"🆔 ID: {result['id']}",
             f"📝 Content: {result['content'][:100]}...",
         ]
-        if result['tags']:
+        if result["tags"]:
             lines.append(f"🏷️  Tags: {', '.join(result['tags'])}")
         lines.append(f"📅 Stored: {result['timestamp']}")
 
         _get_logger().info(
             "Validated reflection stored",
-            reflection_id=result['id'],
-            content_length=len(result['content']),
-            tags_count=len(result['tags']),
+            reflection_id=result["id"],
+            content_length=len(result["content"]),
+            tags_count=len(result["tags"]),
         )
         return "\n".join(lines)
 
@@ -86,13 +81,10 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
 
 async def _quick_search_validated_impl(**params: Any) -> str:
     """Implementation for quick_search tool with parameter validation."""
-
     # Validate parameters
-    validated = validate_mcp_params(SearchQueryParams, params)
-    if not validated.is_valid:
-        raise ValidationError(f"Parameter validation failed: {validated.errors}")
-
-    params_obj = validated.params
+    # The function will raise ValidationError if validation fails
+    validated_params = validate_mcp_params(SearchQueryParams, **params)
+    params_obj = SearchQueryParams(**validated_params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Quick search operation."""
@@ -113,28 +105,32 @@ async def _quick_search_validated_impl(**params: Any) -> str:
         """Format quick search results."""
         lines = [f"🔍 Quick search for: '{result['query']}'"]
 
-        if not result['results']:
-            lines.extend([
-                "🔍 No results found",
-                "💡 Try adjusting your search terms or lowering min_score",
-            ])
+        if not result["results"]:
+            lines.extend(
+                [
+                    "🔍 No results found",
+                    "💡 Try adjusting your search terms or lowering min_score",
+                ],
+            )
         else:
-            top_result = result['results'][0]
-            lines.extend([
-                "📊 Found results (showing top 1)",
-                f"📝 {top_result['content'][:150]}...",
-            ])
-            if top_result.get('project'):
+            top_result = result["results"][0]
+            lines.extend(
+                [
+                    "📊 Found results (showing top 1)",
+                    f"📝 {top_result['content'][:150]}...",
+                ],
+            )
+            if top_result.get("project"):
                 lines.append(f"📁 Project: {top_result['project']}")
-            if top_result.get('score') is not None:
+            if top_result.get("score") is not None:
                 lines.append(f"⭐ Relevance: {top_result['score']:.2f}")
-            if top_result.get('timestamp'):
+            if top_result.get("timestamp"):
                 lines.append(f"📅 Date: {top_result['timestamp']}")
 
         _get_logger().info(
             "Validated quick search executed",
-            query=result['query'],
-            results_count=result['total_count'],
+            query=result["query"],
+            results_count=result["total_count"],
         )
         return "\n".join(lines)
 
@@ -147,13 +143,10 @@ async def _quick_search_validated_impl(**params: Any) -> str:
 
 async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
-
     # Validate parameters
-    validated = validate_mcp_params(FileSearchParams, params)
-    if not validated.is_valid:
-        raise ValidationError(f"Parameter validation failed: {validated.errors}")
-
-    params_obj = validated.params
+    # The function will raise ValidationError if validation fails
+    validated_params = validate_mcp_params(FileSearchParams, **params)
+    params_obj = FileSearchParams(**validated_params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """File search operation."""
@@ -170,8 +163,8 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
 
     def formatter(result: dict[str, Any]) -> str:
         """Format file search results."""
-        file_path = result['file_path']
-        results = result['results']
+        file_path = result["file_path"]
+        results = result["results"]
 
         lines = [
             f"📁 Searching conversations about: {file_path}",
@@ -179,20 +172,22 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
         ]
 
         if not results:
-            lines.extend([
-                "🔍 No conversations found about this file",
-                "💡 The file might not have been discussed in previous sessions",
-            ])
+            lines.extend(
+                [
+                    "🔍 No conversations found about this file",
+                    "💡 The file might not have been discussed in previous sessions",
+                ],
+            )
         else:
             lines.append(f"📈 Found {len(results)} relevant conversations:")
 
             for i, res in enumerate(results, 1):
                 lines.append(f"\n{i}. 📝 {res['content'][:200]}...")
-                if res.get('project'):
+                if res.get("project"):
                     lines.append(f"   📁 Project: {res['project']}")
-                if res.get('score') is not None:
+                if res.get("score") is not None:
                     lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
-                if res.get('timestamp'):
+                if res.get("timestamp"):
                     lines.append(f"   📅 Date: {res['timestamp']}")
 
         _get_logger().info(
@@ -211,13 +206,10 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
 
 async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
-
     # Validate parameters
-    validated = validate_mcp_params(ConceptSearchParams, params)
-    if not validated.is_valid:
-        raise ValidationError(f"Parameter validation failed: {validated.errors}")
-
-    params_obj = validated.params
+    # The function will raise ValidationError if validation fails
+    validated_params = validate_mcp_params(ConceptSearchParams, **params)
+    params_obj = ConceptSearchParams(**validated_params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Concept search operation."""
@@ -235,8 +227,8 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
 
     def formatter(result: dict[str, Any]) -> str:
         """Format concept search results."""
-        concept = result['concept']
-        results = result['results']
+        concept = result["concept"]
+        results = result["results"]
 
         lines = [
             f"🧠 Searching for concept: '{concept}'",
@@ -244,24 +236,26 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
         ]
 
         if not results:
-            lines.extend([
-                "🔍 No conversations found about this concept",
-                "💡 Try related terms or broader concepts",
-            ])
+            lines.extend(
+                [
+                    "🔍 No conversations found about this concept",
+                    "💡 Try related terms or broader concepts",
+                ],
+            )
         else:
             lines.append(f"📈 Found {len(results)} related conversations:")
 
             for i, res in enumerate(results, 1):
                 lines.append(f"\n{i}. 📝 {res['content'][:250]}...")
-                if res.get('project'):
+                if res.get("project"):
                     lines.append(f"   📁 Project: {res['project']}")
-                if res.get('score') is not None:
+                if res.get("score") is not None:
                     lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
-                if res.get('timestamp'):
+                if res.get("timestamp"):
                     lines.append(f"   📅 Date: {res['timestamp']}")
 
-                if result['include_files'] and res.get('files'):
-                    files = res['files'][:3]
+                if result["include_files"] and res.get("files"):
+                    files = res["files"][:3]
                     if files:
                         lines.append(f"   📄 Files: {', '.join(files)}")
 

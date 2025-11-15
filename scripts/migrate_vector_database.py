@@ -66,13 +66,7 @@ async def migrate_vector_database(
     paths = depends.get_sync(SessionPaths)
     old_db_path = paths.data_dir / "reflection.duckdb"
 
-    print("=" * 70)
-    print("VECTOR DATABASE MIGRATION (Phase 2.7)")
-    print("=" * 70)
-    print(f"\n📂 Old database: {old_db_path}")
-
     if not old_db_path.exists():
-        print("\n⚠️  Old database not found - nothing to migrate")
         return _create_empty_migration_result()
 
     # Create backup if requested
@@ -84,7 +78,6 @@ async def migrate_vector_database(
 
     total_items = len(conversations) + len(reflections)
     if total_items == 0:
-        print("\n⚠️  No data found to migrate")
         return _create_empty_migration_result()
 
     # Handle dry run
@@ -95,28 +88,25 @@ async def migrate_vector_database(
     return await _perform_migration(conversations, reflections, verbose)
 
 
-async def _create_backup(old_db_path):
+async def _create_backup(old_db_path) -> None:
     """Create backup of old database if requested."""
     backup_path = old_db_path.with_suffix(".duckdb.backup")
-    print(f"\n💾 Creating backup: {backup_path}")
     shutil.copy2(old_db_path, backup_path)
-    print("✅ Backup created")
 
 
 async def _read_old_data(old_db_path, verbose: bool):
     """Read conversations and reflections from old database."""
-    print("\n🔍 Reading data from old schema...")
     old_conn = duckdb.connect(str(old_db_path), read_only=True)
 
     try:
         # Check if old tables exist
         tables_result = old_conn.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'"
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'",
         ).fetchall()
         tables = {row[0] for row in tables_result}
 
         if verbose:
-            print(f"   Found tables: {tables}")
+            pass
 
         conversations = []
         reflections = []
@@ -142,10 +132,10 @@ async def _read_conversations(old_conn, verbose: bool):
         SELECT id, content, embedding, project, timestamp, metadata
         FROM conversations
         ORDER BY timestamp DESC
-        """
+        """,
     ).fetchall()
 
-    conversations = [
+    return [
         {
             "id": row[0],
             "content": row[1],
@@ -157,9 +147,6 @@ async def _read_conversations(old_conn, verbose: bool):
         for row in conv_result
     ]
 
-    print(f"   ✅ Found {len(conversations)} conversations")
-    return conversations
-
 
 async def _read_reflections(old_conn, verbose: bool):
     """Read reflections from old database."""
@@ -168,10 +155,10 @@ async def _read_reflections(old_conn, verbose: bool):
         SELECT id, content, embedding, tags, timestamp
         FROM reflections
         ORDER BY timestamp DESC
-        """
+        """,
     ).fetchall()
 
-    reflections = [
+    return [
         {
             "id": row[0],
             "content": row[1],
@@ -182,18 +169,10 @@ async def _read_reflections(old_conn, verbose: bool):
         for row in refl_result
     ]
 
-    print(f"   ✅ Found {len(reflections)} reflections")
-    return reflections
-
 
 async def _handle_dry_run(conversations, reflections):
     """Handle dry run scenario."""
-    total_items = len(conversations) + len(reflections)
-    print("\n🔍 DRY RUN - No changes will be made")
-    print("\nWould migrate:")
-    print(f"   - {len(conversations)} conversations")
-    print(f"   - {len(reflections)} reflections")
-    print(f"   - {total_items} total items")
+    len(conversations) + len(reflections)
     return {
         "conversations_migrated": 0,
         "reflections_migrated": 0,
@@ -217,7 +196,6 @@ async def _perform_migration(conversations, reflections, verbose: bool):
     from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
     total_items = len(conversations) + len(reflections)
-    print(f"\n📥 Migrating {total_items} items to new ACB schema...")
 
     errors = 0
     conv_migrated = 0
@@ -231,14 +209,20 @@ async def _perform_migration(conversations, reflections, verbose: bool):
         # Migrate conversations
         if conversations:
             conv_migrated, conv_errors = await _migrate_conversations(
-                conversations, db, adapter, verbose
+                conversations,
+                db,
+                adapter,
+                verbose,
             )
             errors += conv_errors
 
         # Migrate reflections
         if reflections:
             refl_migrated, refl_errors = await _migrate_reflections(
-                reflections, db, adapter, verbose
+                reflections,
+                db,
+                adapter,
+                verbose,
             )
             errors += refl_errors
 
@@ -247,7 +231,11 @@ async def _perform_migration(conversations, reflections, verbose: bool):
 
     total_migrated = conv_migrated + refl_migrated
     await _print_migration_summary(
-        conv_migrated, refl_migrated, total_migrated, total_items, errors
+        conv_migrated,
+        refl_migrated,
+        total_migrated,
+        total_items,
+        errors,
     )
 
     return {
@@ -260,14 +248,13 @@ async def _perform_migration(conversations, reflections, verbose: bool):
 
 async def _migrate_conversations(conversations, db, adapter, verbose: bool):
     """Migrate conversations to the new schema."""
-    print(f"\n   Migrating {len(conversations)} conversations...")
     errors = 0
     migrated = 0
 
     for i, conv in enumerate(conversations, 1):
         try:
             if verbose and i % 10 == 0:
-                print(f"      Progress: {i}/{len(conversations)}")
+                pass
 
             # Prepare metadata
             metadata = {
@@ -293,24 +280,21 @@ async def _migrate_conversations(conversations, db, adapter, verbose: bool):
             await adapter.insert(collection=db.collection_name, documents=[doc])
             migrated += 1
 
-        except Exception as e:
+        except Exception:
             errors += 1
-            print(f"      ❌ Error migrating conversation {conv['id'][:8]}: {e}")
 
-    print(f"   ✅ Migrated {migrated}/{len(conversations)} conversations")
     return migrated, errors
 
 
 async def _migrate_reflections(reflections, db, adapter, verbose: bool):
     """Migrate reflections to the new schema."""
-    print(f"\n   Migrating {len(reflections)} reflections...")
     errors = 0
     migrated = 0
 
     for i, refl in enumerate(reflections, 1):
         try:
             if verbose and i % 10 == 0:
-                print(f"      Progress: {i}/{len(reflections)}")
+                pass
 
             # Prepare metadata
             metadata = {
@@ -335,47 +319,35 @@ async def _migrate_reflections(reflections, db, adapter, verbose: bool):
             await adapter.insert(collection=db.collection_name, documents=[doc])
             migrated += 1
 
-        except Exception as e:
+        except Exception:
             errors += 1
-            print(f"      ❌ Error migrating reflection {refl['id'][:8]}: {e}")
 
-    print(f"   ✅ Migrated {migrated}/{len(reflections)} reflections")
     return migrated, errors
 
 
-async def _validate_migration():
+async def _validate_migration() -> None:
     """Validate the migration by checking database stats."""
     from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
-    print("\n🔍 Validating migration...")
     async with ReflectionDatabaseAdapter() as db:
-        stats = await db.get_stats()
-        print("   New database stats:")
-        print(f"      - Total vectors: {stats.get('total_vectors')}")
-        print(f"      - Conversations: {stats.get('conversations')}")
-        print(f"      - Reflections: {stats.get('reflections')}")
+        await db.get_stats()
 
 
 async def _print_migration_summary(
-    conv_migrated, refl_migrated, total_migrated, total_items, errors
-):
+    conv_migrated,
+    refl_migrated,
+    total_migrated,
+    total_items,
+    errors,
+) -> None:
     """Print migration summary."""
-    print("\n" + "=" * 70)
-    print("MIGRATION COMPLETE")
-    print("=" * 70)
-    print("\n📊 Summary:")
-    print(f"   - Conversations migrated: {conv_migrated}/{total_migrated}")
-    print(f"   - Reflections migrated: {refl_migrated}/{total_migrated}")
-    print(f"   - Total migrated: {total_migrated}/{total_items}")
     if errors > 0:
-        print(f"   - Errors: {errors}")
+        pass
 
-    if errors == 0 and total_migrated == total_items:
-        print("\n✅ Migration successful!")
-    elif errors > 0:
-        print(f"\n⚠️  Migration completed with {errors} errors")
+    if (errors == 0 and total_migrated == total_items) or errors > 0:
+        pass
     else:
-        print("\n⚠️  Migration incomplete - some items were not migrated")
+        pass
 
 
 def main() -> int:
@@ -398,7 +370,10 @@ def main() -> int:
     )
 
     parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Show detailed migration progress"
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Show detailed migration progress",
     )
 
     args = parser.parse_args()
@@ -409,17 +384,15 @@ def main() -> int:
                 dry_run=args.dry_run,
                 backup=args.backup,
                 verbose=args.verbose,
-            )
+            ),
         )
 
         # Return 0 if successful, 1 if errors
         return 0 if result["errors"] == 0 else 1
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Migration cancelled by user")
         return 130
-    except Exception as e:
-        print(f"\n\n❌ Migration failed: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()

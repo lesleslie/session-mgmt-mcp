@@ -374,7 +374,9 @@ class InterruptionManager:
             )
 
     def start_monitoring(
-        self, working_directory: str = ".", watch_files: bool = True
+        self,
+        working_directory: str = ".",
+        watch_files: bool = True,
     ) -> None:
         """Start interruption monitoring."""
         # Start focus tracking

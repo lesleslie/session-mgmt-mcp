@@ -665,7 +665,6 @@ class ApplicationMonitor:
     async def _handle_monitoring_error(self, error: Exception) -> None:
         """Handle monitoring errors with appropriate logging and delay."""
         # Log error but continue monitoring
-        print(f"Monitoring error: {error}")
         await asyncio.sleep(60)
 
     def get_activity_summary(self, hours: int = 2) -> dict[str, Any]:
@@ -679,7 +678,9 @@ class ApplicationMonitor:
         return self._finalize_summary(summary)
 
     def _create_activity_summary_template(
-        self, hours: int, events: list[Any]
+        self,
+        hours: int,
+        events: list[Any],
     ) -> dict[str, Any]:
         """Create the base summary template."""
         return {
@@ -746,7 +747,9 @@ class ApplicationMonitor:
         }
 
     def _analyze_events(
-        self, events: list[Any], insights: dict[str, Any]
+        self,
+        events: list[Any],
+        insights: dict[str, Any],
     ) -> dict[str, int]:
         """Analyze events and extract insights data."""
         app_time: dict[str, int] = defaultdict(int)
@@ -786,7 +789,9 @@ class ApplicationMonitor:
             insights["active_projects"].add(event.project_path)
 
     def _extract_documentation_topics(
-        self, event: Any, insights: dict[str, Any]
+        self,
+        event: Any,
+        insights: dict[str, Any],
     ) -> None:
         """Extract documentation topics from browser navigation events."""
         if event.event_type == "browser_nav":
@@ -796,14 +801,18 @@ class ApplicationMonitor:
                 insights["documentation_topics"].append(f"{technology}: {topic}")
 
     def _determine_primary_focus(
-        self, app_time: dict[str, int], insights: dict[str, Any]
+        self,
+        app_time: dict[str, int],
+        insights: dict[str, Any],
     ) -> None:
         """Determine the primary application focus."""
         if app_time:
             insights["primary_focus"] = max(app_time.items(), key=lambda x: x[1])[0]
 
     def _calculate_productivity_score(
-        self, events: list[Any], insights: dict[str, Any]
+        self,
+        events: list[Any],
+        insights: dict[str, Any],
     ) -> None:
         """Calculate productivity score based on relevant activity."""
         relevant_events = [e for e in events if e.relevance_score > 0.5]

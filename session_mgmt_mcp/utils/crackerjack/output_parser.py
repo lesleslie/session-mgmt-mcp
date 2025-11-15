@@ -289,7 +289,10 @@ class CrackerjackOutputParser:
         }
 
     def _process_progress_line(
-        self, line: str, data: dict[str, Any], progress_state: dict[str, Any]
+        self,
+        line: str,
+        data: dict[str, Any],
+        progress_state: dict[str, Any],
     ) -> None:
         """Process a single line for progress indicators."""
         self._extract_current_task(line, data)
@@ -312,7 +315,9 @@ class CrackerjackOutputParser:
             progress_state["current_percentage"] = float(percentage_match.group(1))
 
     def _extract_completed_tasks(
-        self, line: str, progress_state: dict[str, Any]
+        self,
+        line: str,
+        progress_state: dict[str, Any],
     ) -> None:
         """Extract completed tasks from line."""
         completion_pattern = SAFE_PATTERNS[self.patterns["task_completion"]]
@@ -336,7 +341,9 @@ class CrackerjackOutputParser:
         return match.group(1) or match.group(2) or match.group(3)  # type: ignore[no-any-return]
 
     def _finalize_progress_data(
-        self, data: dict[str, Any], progress_state: dict[str, Any]
+        self,
+        data: dict[str, Any],
+        progress_state: dict[str, Any],
     ) -> None:
         """Update final progress data with collected state."""
         data["progress_info"].update(
@@ -344,7 +351,7 @@ class CrackerjackOutputParser:
                 "percentage": progress_state["current_percentage"],
                 "completed_tasks": progress_state["completed_tasks"],
                 "failed_tasks": progress_state["failed_tasks"],
-            }
+            },
         )
 
     def _extract_test_insights(self, parsed_data: dict[str, Any]) -> list[str]:

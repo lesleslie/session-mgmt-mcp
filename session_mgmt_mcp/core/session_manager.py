@@ -13,14 +13,6 @@ from pathlib import Path
 
 from acb.adapters import import_adapter
 from acb.depends import Inject, depends
-from session_mgmt_mcp.core.lifecycle import (
-    SessionInfo,
-    analyze_project_context,
-    find_latest_handoff_file,
-    generate_handoff_documentation,
-    read_previous_session_info,
-    save_handoff_documentation,
-)
 from session_mgmt_mcp.utils.git_operations import (
     create_checkpoint_commit,
     is_git_repository,
@@ -59,7 +51,8 @@ class SessionLifecycleManager:
             templates_dir = Path(__file__).parent.parent.parent / "templates"
             self.templates = TemplatesAdapter(template_dir=templates_dir)
             self.logger.info(
-                "Templates adapter initialized", templates_dir=str(templates_dir)
+                "Templates adapter initialized",
+                templates_dir=str(templates_dir),
             )
         except Exception as e:
             self.logger.warning(
@@ -69,7 +62,8 @@ class SessionLifecycleManager:
             self.templates = None
 
     async def calculate_quality_score(
-        self, project_dir: Path | None = None
+        self,
+        project_dir: Path | None = None,
     ) -> dict[str, t.Any]:
         """Calculate session quality score using V2 algorithm.
 
@@ -103,7 +97,8 @@ class SessionLifecycleManager:
             if hasattr(permissions_manager, "trusted_operations"):
                 trusted_count = len(permissions_manager.trusted_operations)
                 return min(
-                    trusted_count * 4, 20
+                    trusted_count * 4,
+                    20,
                 )  # 4 points per trusted operation, max 20
             return 10  # Basic score if we can't access trusted operations
         except (ImportError, AttributeError):
@@ -138,7 +133,9 @@ class SessionLifecycleManager:
                 "tools": tool_score,
             },
             "recommendations": self._generate_quality_recommendations(
-                total_score, project_context, uv_available
+                total_score,
+                project_context,
+                uv_available,
             ),
         }
 
@@ -180,7 +177,8 @@ class SessionLifecycleManager:
         return recommendations[:5]  # Limit to top 5 recommendations
 
     async def perform_quality_assessment(
-        self, project_dir: Path | None = None
+        self,
+        project_dir: Path | None = None,
     ) -> tuple[int, dict[str, t.Any]]:
         """Perform quality assessment and return score and data."""
         quality_data = await self.calculate_quality_score(project_dir=project_dir)
@@ -211,13 +209,13 @@ class SessionLifecycleManager:
             # Only show breakdown if available
             if details:
                 output.append(
-                    f"   • Trusted operations: {details.get('permissions_count', 0)}/40"
+                    f"   • Trusted operations: {details.get('permissions_count', 0)}/40",
                 )
                 output.append(
-                    f"   • Session features: {details.get('session_available', False)} (available)"
+                    f"   • Session features: {details.get('session_available', False)} (available)",
                 )
                 output.append(
-                    f"   • Tool ecosystem: {details.get('tool_count', 0)} tools"
+                    f"   • Tool ecosystem: {details.get('tool_count', 0)} tools",
                 )
         return output
 
@@ -338,8 +336,40 @@ class SessionLifecycleManager:
         (claude_dir / "logs").mkdir(exist_ok=True)
         return claude_dir
 
+    def _discover_session_files(self, current_dir: Path) -> list[Path]:
+        """Discover session files in the current directory and subdirectories."""
+        return [
+            file_path
+            for file_path in current_dir.rglob("*.session.json")
+            if file_path.is_file()
+        ]
+
+    async def _read_previous_session_info(
+        self, file_path: Path
+    ) -> dict[str, t.Any] | None:
+        """Read previous session information from a file."""
+        try:
+            content = file_path.read_text()
+            import json
+
+            data = json.loads(content)
+            # Ensure the return type is properly typed as dict[str, t.Any] | None
+            if isinstance(data, dict):
+                return data  # type: ignore[return-value]
+            return None
+        except (OSError, ValueError):
+            return None
+
+    def _find_latest_handoff_file(self, current_dir: Path) -> Path | None:
+        """Find the latest handoff file in the project."""
+        handoff_files = list(current_dir.rglob("*.handoff.json"))
+        if not handoff_files:
+            return None
+        return max(handoff_files, key=lambda f: f.stat().st_mtime)
+
     async def _get_previous_session_info(
-        self, current_dir: Path
+        self,
+        current_dir: Path,
     ) -> dict[str, t.Any] | None:
         """Get previous session information if available. Target complexity: ≤5."""
         session_files = self._discover_session_files(current_dir)
@@ -356,6 +386,50 @@ class SessionLifecycleManager:
 
         return None
 
+    async def analyze_project_context(self, current_dir: Path) -> dict[str, bool]:
+        """Analyze project context and return relevant information."""
+        # This is a basic implementation; could be expanded based on requirements
+        git_exists = (current_dir / ".git").exists()
+        has_readme = any(current_dir.glob("README*"))
+        has_requirements = (current_dir / "requirements.txt").is_file() or (
+            current_dir / "pyproject.toml"
+        ).is_file()
+        has_src_dir = (current_dir / "src").is_dir()
+        has_tests = any(current_dir.glob("test*")) or any(current_dir.glob("**/test*"))
+
+        return {
+            "git_exists": git_exists,
+            "has_readme": has_readme,
+            "has_requirements": has_requirements,
+            "has_src_dir": has_src_dir,
+            "has_tests": has_tests,
+            "is_python_project": has_requirements,
+        }
+
+    async def _generate_handoff_documentation(
+        self, summary: dict[str, t.Any], quality_data: dict[str, t.Any]
+    ) -> str:
+        """Generate handoff documentation based on session summary and quality data."""
+        import json
+        from datetime import datetime
+
+        handoff_doc = {
+            "session_summary": summary,
+            "quality_data": quality_data,
+            "generated_at": datetime.now().isoformat(),
+            "handoff_type": "session_handoff",
+        }
+        return json.dumps(handoff_doc, indent=2)
+
+    def _save_handoff_documentation(self, content: str, current_dir: Path) -> Path:
+        """Save handoff documentation to a file."""
+        from datetime import datetime
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        handoff_file = current_dir / f"session_handoff_{timestamp}.json"
+        handoff_file.write_text(content)
+        return handoff_file
+
     async def initialize_session(
         self,
         working_directory: str | None = None,
@@ -369,7 +443,7 @@ class SessionLifecycleManager:
             # Analyze project and assess quality
             project_context = await self.analyze_project_context(current_dir)
             quality_score, quality_data = await self.perform_quality_assessment(
-                project_dir=current_dir
+                project_dir=current_dir,
             )
 
             # Get previous session info
@@ -433,7 +507,7 @@ class SessionLifecycleManager:
 
             # Quality assessment
             quality_score, quality_data = await self.perform_quality_assessment(
-                project_dir=current_dir
+                project_dir=current_dir,
             )
 
             # Get previous score for trend analysis
@@ -484,7 +558,8 @@ class SessionLifecycleManager:
             return {"success": False, "error": str(e)}
 
     async def end_session(
-        self, working_directory: str | None = None
+        self,
+        working_directory: str | None = None,
     ) -> dict[str, t.Any]:
         """End the current session with cleanup and summary."""
         try:
@@ -493,7 +568,7 @@ class SessionLifecycleManager:
 
             # Final quality assessment
             quality_score, quality_data = await self.perform_quality_assessment(
-                project_dir=current_dir
+                project_dir=current_dir,
             )
 
             # Create session summary
@@ -507,12 +582,14 @@ class SessionLifecycleManager:
 
             # Generate handoff documentation
             handoff_content = await self._generate_handoff_documentation(
-                summary, quality_data
+                summary,
+                quality_data,
             )
 
             # Save handoff documentation
             handoff_path = self._save_handoff_documentation(
-                handoff_content, current_dir
+                handoff_content,
+                current_dir,
             )
 
             self.logger.info(
@@ -546,7 +623,7 @@ class SessionLifecycleManager:
             # Get comprehensive status
             project_context = await self.analyze_project_context(current_dir)
             quality_score, quality_data = await self.perform_quality_assessment(
-                project_dir=current_dir
+                project_dir=current_dir,
             )
 
             # Check system health

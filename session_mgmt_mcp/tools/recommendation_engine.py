@@ -47,7 +47,9 @@ class RecommendationEngine:
 
     @classmethod
     def _filter_results_by_date(
-        cls, results: list[dict[str, Any]], start_date: datetime
+        cls,
+        results: list[dict[str, Any]],
+        start_date: datetime,
     ) -> list[dict[str, Any]]:
         """Filter results by date range."""
         filtered_results = []
@@ -68,7 +70,10 @@ class RecommendationEngine:
 
     @classmethod
     async def _cache_result(
-        cls, project: str, days: int, result: dict[str, Any]
+        cls,
+        project: str,
+        days: int,
+        result: dict[str, Any],
     ) -> None:
         """Cache analysis result."""
         from .history_cache import get_cache
@@ -191,7 +196,7 @@ class RecommendationEngine:
                 "successful_fixes": [],
                 "failed_fixes": [],
                 "fix_times": [],
-            }
+            },
         )
 
         for i, result in enumerate(results):
@@ -209,7 +214,10 @@ class RecommendationEngine:
             if recommendations and i + 1 < len(results):
                 next_metadata = results[i + 1].get("metadata", {})
                 cls._track_agent_fixes(
-                    pattern_data, signature, recommendations, next_metadata
+                    pattern_data,
+                    signature,
+                    recommendations,
+                    next_metadata,
                 )
 
         # Convert to FailurePattern objects
@@ -255,7 +263,9 @@ class RecommendationEngine:
 
     @classmethod
     def _create_effectiveness(
-        cls, agent: AgentType, stats: dict[str, Any]
+        cls,
+        agent: AgentType,
+        stats: dict[str, Any],
     ) -> AgentEffectiveness | None:
         """Create AgentEffectiveness from stats dict."""
         total = stats["total_recommendations"]
@@ -281,7 +291,8 @@ class RecommendationEngine:
 
     @classmethod
     def _calculate_agent_effectiveness(
-        cls, results: list[dict[str, Any]]
+        cls,
+        results: list[dict[str, Any]],
     ) -> list[AgentEffectiveness]:
         """Calculate effectiveness metrics for each agent."""
         agent_stats: dict[AgentType, dict[str, Any]] = defaultdict(
@@ -290,7 +301,7 @@ class RecommendationEngine:
                 "successful_fixes": 0,
                 "failed_fixes": 0,
                 "confidences": [],
-            }
+            },
         )
 
         for i, result in enumerate(results):
@@ -353,7 +364,8 @@ class RecommendationEngine:
 
         for pattern in error_patterns:
             matches = re.findall(  # REGEX OK: error code extraction from patterns
-                pattern, content
+                pattern,
+                content,
             )
             if matches:
                 signature_parts.extend(sorted(set(matches))[:3])  # Top 3 unique codes
@@ -370,7 +382,7 @@ class RecommendationEngine:
         most_common = patterns[0]
         insights.append(
             f"🔄 Most common failure: '{most_common.pattern_signature}' "
-            f"({most_common.occurrences} occurrences)"
+            f"({most_common.occurrences} occurrences)",
         )
 
         recent_patterns = [
@@ -379,14 +391,15 @@ class RecommendationEngine:
         if len(recent_patterns) > 3:
             insights.append(
                 f"⚠️ {len(recent_patterns)} different failure patterns in last 7 days - "
-                f"consider addressing root causes"
+                f"consider addressing root causes",
             )
 
         return insights
 
     @classmethod
     def _get_effectiveness_insights(
-        cls, effectiveness: list[AgentEffectiveness]
+        cls,
+        effectiveness: list[AgentEffectiveness],
     ) -> list[str]:
         """Generate insights from agent effectiveness."""
         if not effectiveness:
@@ -397,7 +410,7 @@ class RecommendationEngine:
         if top_agent.success_rate >= 0.8:
             insights.append(
                 f"⭐ {top_agent.agent.value} has {top_agent.success_rate:.0%} success rate - "
-                f"highly effective!"
+                f"highly effective!",
             )
 
         low_performers = [e for e in effectiveness if e.success_rate < 0.3]
@@ -405,7 +418,7 @@ class RecommendationEngine:
             agents = ", ".join(e.agent.value for e in low_performers[:2])
             insights.append(
                 f"📉 Low success rate for: {agents} - "
-                f"review recommendations or patterns"
+                f"review recommendations or patterns",
             )
 
         return insights
@@ -429,7 +442,7 @@ class RecommendationEngine:
         if reliable_fixes:
             return [
                 f"✅ {len(reliable_fixes)} patterns have consistent successful fixes - "
-                f"good agent-pattern matching"
+                f"good agent-pattern matching",
             ]
         return []
 
@@ -448,7 +461,7 @@ class RecommendationEngine:
 
         if not insights:
             insights.append(
-                "📊 Insufficient data - continue using AI mode to build history"
+                "📊 Insufficient data - continue using AI mode to build history",
             )
 
         return insights
@@ -465,7 +478,8 @@ class RecommendationEngine:
 
         # Blend original and learned confidence (60% learned, 40% original)
         adjusted_confidence = min(
-            (0.6 * agent_eff.success_rate) + (0.4 * rec.confidence), 1.0
+            (0.6 * agent_eff.success_rate) + (0.4 * rec.confidence),
+            1.0,
         )
 
         return AgentRecommendation(

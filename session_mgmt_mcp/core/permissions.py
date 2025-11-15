@@ -6,12 +6,17 @@ trusted operations and permission scopes during sessions.
 
 from __future__ import annotations
 
+import datetime
+import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from typing import Self
 
 
 class SessionPermissionsManager:
@@ -112,5 +117,3 @@ class SessionPermissionsManager:
 # =====================================
 # Configuration Functions
 # =====================================
-
-

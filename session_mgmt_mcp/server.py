@@ -92,7 +92,8 @@ else:
         return None
 
     async def get_cached_chunk(
-        cache_key: str, chunk_index: int
+        cache_key: str,
+        chunk_index: int,
     ) -> dict[str, Any] | None:
         return None
 
@@ -126,7 +127,6 @@ except ImportError:
         )
     else:
         # Fallback to sys.exit if exceptions unavailable
-        print("FastMCP not available Install with: uv add fastmcp", file=sys.stderr)
         sys.exit(1)
 
 # Phase 2.6: Get all feature flags from centralized detector
@@ -285,13 +285,18 @@ async def _initialize_reflection_database() -> Any | None:
         return await get_reflection_database()
     except Exception as exc:  # pragma: no cover - defensive logging
         session_logger.exception(
-            "Failed to initialize reflection database", exc_info=exc
+            "Failed to initialize reflection database",
+            exc_info=exc,
         )
         return None
 
 
 async def _search_conversations(
-    db: Any, query: str, project: str | None, limit: int, min_score: float
+    db: Any,
+    query: str,
+    project: str | None,
+    limit: int,
+    min_score: float,
 ) -> Any | str:
     """Search conversations and handle errors."""
     try:
@@ -308,7 +313,8 @@ async def _search_conversations(
 
 
 async def _optimize_results(
-    results: list[dict[str, Any]], max_tokens: int
+    results: list[dict[str, Any]],
+    max_tokens: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Optimize results with token optimization."""
     try:
@@ -337,7 +343,9 @@ async def _optimize_results(
 
 
 def _format_reflection_output(
-    query: str, results: list[dict[str, Any]], optimization_info: dict[str, Any]
+    query: str,
+    results: list[dict[str, Any]],
+    optimization_info: dict[str, Any],
 ) -> str:
     """Format the reflection output."""
     if not results:
@@ -360,7 +368,7 @@ def _format_reflection_output(
     )
     if token_savings and token_savings.get("savings_percentage") is not None:
         output_lines.append(
-            f"⚡ Token optimization: {token_savings.get('savings_percentage')}% saved"
+            f"⚡ Token optimization: {token_savings.get('savings_percentage')}% saved",
         )
         output_lines.append("")
 
@@ -416,7 +424,9 @@ async def calculate_quality_score(project_dir: Path | None = None) -> dict[str, 
 async def health_check() -> dict[str, Any]:
     """Comprehensive health check for MCP server and toolkit availability (wrapper)."""
     return await _health_check_impl(
-        session_logger, permissions_manager, validate_claude_directory
+        session_logger,
+        permissions_manager,
+        validate_claude_directory,
     )
 
 
@@ -476,7 +486,7 @@ def _perform_startup_validation() -> None:
         validate_llm_api_keys_at_startup()
     except (ImportError, ValueError) as e:
         session_logger.warning(
-            f"LLM API key validation skipped (optional feature): {e}"
+            f"LLM API key validation skipped (optional feature): {e}",
         )
     except Exception:
         session_logger.exception("Unexpected error during LLM validation")
@@ -523,14 +533,7 @@ def _display_http_startup(host: str, port: int, features: list[str]) -> None:
         )
     else:
         # Fallback to simple print
-        print(
-            f"Starting Session Management MCP HTTP Server on http://{host}:{port}/mcp",
-            file=sys.stderr,
-        )
-        print(
-            f"WebSocket Monitor: {_mcp_config.get('websocket_monitor_port', 8677)}",
-            file=sys.stderr,
-        )
+        pass
 
 
 def _display_stdio_startup(features: list[str]) -> None:
@@ -547,7 +550,7 @@ def _display_stdio_startup(features: list[str]) -> None:
         )
     else:
         # Fallback to simple print
-        print("Starting Session Management MCP Server in STDIO mode", file=sys.stderr)
+        pass
 
 
 def main(http_mode: bool = False, http_port: int | None = None) -> None:

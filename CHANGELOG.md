@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modern Python style improvements (refurb FURB138, FURB107, FURB145, FURB168)
 - Modernize SessionLifecycleManager DI pattern with Inject[] support
 - Reduce cognitive complexity in OllamaProvider and knowledge graph tools
-- Reduce complexity in cleanup and search functions (17→<15)
+- Reduce complexity in cleanup and search functions (17→\<15)
 - Reduce complexity of highest complexity functions (26, 28 → 10-12)
 - Session-mgmt-mcp (quality: 68/100) - 2025-11-07 22:29:21
 - Session-mgmt-mcp (quality: 68/100) - 2025-11-07 23:46:29

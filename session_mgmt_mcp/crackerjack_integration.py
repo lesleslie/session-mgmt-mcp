@@ -22,9 +22,7 @@ from typing import Any
 
 from session_mgmt_mcp.utils.crackerjack import (
     CrackerjackOutputParser,
-    PatternMappingsBuilder,
 )
-from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +299,10 @@ class CrackerjackIntegration:
         return flags
 
     async def _execute_process(
-        self, full_command: list[str], working_directory: str, timeout: int
+        self,
+        full_command: list[str],
+        working_directory: str,
+        timeout: int,
     ) -> tuple[int, str, str, float]:
         """Execute the subprocess and return exit code, stdout, stderr, and execution time."""
         start_time = time.time()
@@ -374,10 +375,14 @@ class CrackerjackIntegration:
             ) = await self._execute_process(full_command, working_directory, timeout)
 
             parsed_data, memory_insights = self.parser.parse_output(
-                command, stdout_text, stderr_text
+                command,
+                stdout_text,
+                stderr_text,
             )
             quality_metrics = self._calculate_quality_metrics(
-                parsed_data, exit_code, stderr_text
+                parsed_data,
+                exit_code,
+                stderr_text,
             )
 
             result = CrackerjackResult(
@@ -549,7 +554,9 @@ class CrackerjackIntegration:
             }
 
     def _filter_metrics_by_type(
-        self, metrics_history: list[dict[str, Any]], metric_type: str
+        self,
+        metrics_history: list[dict[str, Any]],
+        metric_type: str,
     ) -> list[dict[str, Any]]:
         """Filter metrics history by type and sort by timestamp."""
         metric_values = [m for m in metrics_history if m["metric_type"] == metric_type]
@@ -581,7 +588,7 @@ class CrackerjackIntegration:
 
         if not (recent and older):
             current_avg = sum(m["metric_value"] for m in metric_values) / len(
-                metric_values
+                metric_values,
             )
             return {
                 "direction": "insufficient_data",
@@ -610,7 +617,9 @@ class CrackerjackIntegration:
         }
 
     def _calculate_overall_assessment(
-        self, trends: dict[str, Any], days: int
+        self,
+        trends: dict[str, Any],
+        days: int,
     ) -> dict[str, Any]:
         """Calculate overall trend assessment from individual trend data."""
         improving_metrics = sum(
@@ -642,7 +651,9 @@ class CrackerjackIntegration:
     ) -> dict[str, Any]:
         """Analyze quality trends over time."""
         metrics_history = await self.get_quality_metrics_history(
-            project_path, None, days
+            project_path,
+            None,
+            days,
         )
 
         metric_types = (
@@ -668,7 +679,9 @@ class CrackerjackIntegration:
         }
 
     def _get_declining_recommendation(
-        self, metric_type: str, change: float
+        self,
+        metric_type: str,
+        change: float,
     ) -> str | None:
         """Get recommendation for declining metrics."""
         recommendations_map = {
@@ -681,7 +694,9 @@ class CrackerjackIntegration:
         return recommendations_map.get(metric_type)
 
     def _get_improving_recommendation(
-        self, metric_type: str, recent_avg: float
+        self,
+        metric_type: str,
+        recent_avg: float,
     ) -> str | None:
         """Get recommendation for improving metrics with high averages."""
         if metric_type == "test_pass_rate" and recent_avg > 95:
@@ -706,14 +721,15 @@ class CrackerjackIntegration:
                     recommendations.append(recommendation)
             elif direction == "improving" and strength == "strong":
                 recommendation = self._get_improving_recommendation(
-                    metric_type, recent_avg
+                    metric_type,
+                    recent_avg,
                 )
                 if recommendation:
                     recommendations.append(recommendation)
 
         if not recommendations:
             recommendations.append(
-                "📈 Quality metrics are stable - continue current practices"
+                "📈 Quality metrics are stable - continue current practices",
             )
 
         return recommendations
@@ -741,11 +757,11 @@ class CrackerjackIntegration:
 
             if health["crackerjack_available"]:
                 health["recommendations"].append(
-                    "✅ Crackerjack is available and responding"
+                    "✅ Crackerjack is available and responding",
                 )
             else:
                 health["recommendations"].append(
-                    "❌ Crackerjack not available - install with 'uv add crackerjack'"
+                    "❌ Crackerjack not available - install with 'uv add crackerjack'",
                 )
 
             # Check database accessibility
@@ -760,11 +776,11 @@ class CrackerjackIntegration:
 
                 if result_count > 0:
                     health["recommendations"].append(
-                        f"📊 {result_count} execution records available"
+                        f"📊 {result_count} execution records available",
                     )
                 else:
                     health["recommendations"].append(
-                        "📝 No execution history - run some crackerjack commands"
+                        "📝 No execution history - run some crackerjack commands",
                     )
 
             # Overall status
@@ -799,7 +815,7 @@ class CrackerjackIntegration:
             passed = sum(1 for t in test_results if t["status"] == "passed")
             total = len(test_results)
             metrics["test_pass_rate"] = float(
-                (passed / total) * 100 if total > 0 else 0
+                (passed / total) * 100 if total > 0 else 0,
             )
 
         # Coverage metrics
@@ -813,7 +829,7 @@ class CrackerjackIntegration:
             # Invert to make higher scores better
             total_issues = lint_summary["total_issues"]
             metrics["lint_score"] = float(
-                max(0, 100 - total_issues) if total_issues < 100 else 0
+                max(0, 100 - total_issues) if total_issues < 100 else 0,
             )
 
         # Security metrics
@@ -821,7 +837,7 @@ class CrackerjackIntegration:
         if "total_issues" in security_summary:
             total_issues = security_summary["total_issues"]
             metrics["security_score"] = float(
-                max(0, 100 - (total_issues * 10)) if total_issues < 10 else 0
+                max(0, 100 - (total_issues * 10)) if total_issues < 10 else 0,
             )
 
         # Complexity metrics

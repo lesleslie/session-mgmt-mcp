@@ -24,11 +24,6 @@ try:
 except ImportError:
     # Check if we're in a test environment
     if "pytest" in sys.modules or "test" in sys.argv[0].lower():
-        print(
-            "Warning: FastMCP not available in test environment, using mock",
-            file=sys.stderr,
-        )
-
         # Create a minimal mock FastMCP for testing
         class MockFastMCP:
             def __init__(self, name: str) -> None:
@@ -37,7 +32,9 @@ except ImportError:
                 self.prompts: dict[str, Any] = {}
 
             def tool(
-                self, *args: Any, **kwargs: Any
+                self,
+                *args: Any,
+                **kwargs: Any,
             ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
                 def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
@@ -45,7 +42,9 @@ except ImportError:
                 return decorator
 
             def prompt(
-                self, *args: Any, **kwargs: Any
+                self,
+                *args: Any,
+                **kwargs: Any,
             ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
                 def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
                     return func
@@ -58,7 +57,6 @@ except ImportError:
         FastMCP = MockFastMCP  # type: ignore[no-redef]
         MCP_AVAILABLE = False
     else:
-        print("FastMCP not available. Install with: uv add fastmcp", file=sys.stderr)
         sys.exit(1)
 
 # Initialize logging
@@ -104,7 +102,8 @@ async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
                     "quality_score": result["quality_score"],
                     "previous_session": result.get("previous_session"),
                     "recommendations": result["quality_data"].get(
-                        "recommendations", []
+                        "recommendations",
+                        [],
                     ),
                 }
             else:

@@ -7,12 +7,14 @@ adapter for connection pooling and aiohttp fallback for HTTP communications.
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.llm.base import LLMProvider
 from session_mgmt_mcp.llm.models import LLMMessage, LLMResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 # ACB Requests adapter (httpx/niquests based on config)
 try:
@@ -69,13 +71,15 @@ class OllamaProvider(LLMProvider):
         try:
             import aiohttp
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
                     url,
                     json=data,
                     timeout=aiohttp.ClientTimeout(total=300),
-                ) as response:
-                    return await response.json()  # type: ignore[no-any-return]
+                ) as response,
+            ):
+                return await response.json()  # type: ignore[no-any-return]
         except ImportError:
             msg = (
                 "aiohttp package not installed and ACB Requests adapter not available. "
@@ -180,7 +184,9 @@ class OllamaProvider(LLMProvider):
                 yield content
 
     async def _stream_with_mcp_common(
-        self, url: str, data: dict[str, Any]
+        self,
+        url: str,
+        data: dict[str, Any],
     ) -> AsyncGenerator[str]:
         """Stream using MCP-common HTTP adapter."""
         # Note: http_adapter access requires mcp-common integration setup
@@ -193,20 +199,24 @@ class OllamaProvider(LLMProvider):
                 yield chunk
 
     async def _stream_with_aiohttp(
-        self, url: str, data: dict[str, Any]
+        self,
+        url: str,
+        data: dict[str, Any],
     ) -> AsyncGenerator[str]:
         """Stream using aiohttp fallback."""
         try:
             import aiohttp
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
                     url,
                     json=data,
                     timeout=aiohttp.ClientTimeout(total=300),
-                ) as response:
-                    async for chunk in self._stream_from_response_aiohttp(response):
-                        yield chunk
+                ) as response,
+            ):
+                async for chunk in self._stream_from_response_aiohttp(response):
+                    yield chunk
         except ImportError:
             msg = "aiohttp not installed and mcp-common not available"
             raise ImportError(msg)
@@ -251,17 +261,19 @@ class OllamaProvider(LLMProvider):
         try:
             import aiohttp
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     url,
                     timeout=aiohttp.ClientTimeout(total=10),
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        self._available_models = [
-                            model["name"] for model in data.get("models", [])
-                        ]
-                        return True
+                ) as response,
+            ):
+                if response.status == 200:
+                    data = await response.json()
+                    self._available_models = [
+                        model["name"] for model in data.get("models", [])
+                    ]
+                    return True
             return False
         except Exception:
             return False

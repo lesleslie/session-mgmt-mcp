@@ -53,12 +53,12 @@ class QualityMetrics:
         if self.complexity_violations:
             plural = "s" if self.complexity_violations != 1 else ""
             lines.append(
-                f"- ⚠️ Complexity Violations: {self.complexity_violations} function{plural}"
+                f"- ⚠️ Complexity Violations: {self.complexity_violations} function{plural}",
             )
         if self.security_issues:
             plural = "s" if self.security_issues != 1 else ""
             lines.append(
-                f"- 🔒 Security Issues: {self.security_issues} (Bandit finding{plural})"
+                f"- 🔒 Security Issues: {self.security_issues} (Bandit finding{plural})",
             )
         return "\n".join(lines) + ("\n" if lines else "")
 
@@ -124,14 +124,16 @@ class QualityMetricsExtractor:
 
         # Coverage
         if match := re.search(  # REGEX OK: coverage pattern from PATTERNS dict
-            cls.PATTERNS["coverage"], combined
+            cls.PATTERNS["coverage"],
+            combined,
         ):
             metrics.coverage_percent = float(match.group(1))
 
         # Complexity
         complexity_matches = (
             re.findall(  # REGEX OK: complexity pattern from PATTERNS dict
-                cls.PATTERNS["complexity"], stderr
+                cls.PATTERNS["complexity"],
+                stderr,
             )
         )
         if complexity_matches:
@@ -142,13 +144,15 @@ class QualityMetricsExtractor:
         # Security (Bandit codes like B108, B603, etc.)
         metrics.security_issues = len(
             re.findall(  # REGEX OK: security pattern from PATTERNS dict
-                cls.PATTERNS["security"], stderr
-            )
+                cls.PATTERNS["security"],
+                stderr,
+            ),
         )
 
         # Tests
         if match := re.search(  # REGEX OK: test results pattern from PATTERNS dict
-            cls.PATTERNS["tests"], stdout
+            cls.PATTERNS["tests"],
+            stdout,
         ):
             metrics.tests_passed = int(match.group(1))
             if match.group(2):
@@ -156,21 +160,23 @@ class QualityMetricsExtractor:
 
         # Type errors
         type_error_match = re.search(  # REGEX OK: type error count extraction
-            r"Found (\d+) error", stderr
+            r"Found (\d+) error",
+            stderr,
         )
         if type_error_match:
             metrics.type_errors = int(type_error_match.group(1))
         else:
             # Count error lines
             metrics.type_errors = len(
-                [line for line in stderr.split("\n") if "error:" in line.lower()]
+                [line for line in stderr.split("\n") if "error:" in line.lower()],
             )
 
         # Formatting
         metrics.formatting_issues = len(
             re.findall(  # REGEX OK: formatting pattern from PATTERNS dict
-                cls.PATTERNS["formatting"], combined
-            )
+                cls.PATTERNS["formatting"],
+                combined,
+            ),
         )
 
         return metrics

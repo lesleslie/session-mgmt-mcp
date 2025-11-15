@@ -254,7 +254,8 @@ class TokenOptimizer:
             normalize_pattern = SAFE_PATTERNS["whitespace_normalize"]
             normalized_content = normalize_pattern.apply(content.lower().strip())
             content_hash = hashlib.md5(
-                normalized_content.encode(), usedforsecurity=False
+                normalized_content.encode(),
+                usedforsecurity=False,
             ).hexdigest()
 
             if content_hash not in seen_hashes:
@@ -382,7 +383,8 @@ class TokenOptimizer:
         return summary
 
     async def _create_chunk_cache_entry(
-        self, chunks: list[list[dict[str, Any]]]
+        self,
+        chunks: list[list[dict[str, Any]]],
     ) -> str:
         """Create cache entry for chunked results."""
         cache_key = hashlib.md5(
@@ -405,7 +407,9 @@ class TokenOptimizer:
         return cache_key
 
     async def get_chunk(
-        self, cache_key: str, chunk_index: int
+        self,
+        cache_key: str,
+        chunk_index: int,
     ) -> dict[str, Any] | None:
         """Get a specific chunk from cache.
 
@@ -455,7 +459,7 @@ class TokenOptimizer:
                 round(
                     ((original_tokens - optimized_tokens) / original_tokens) * 100,
                     1,
-                )
+                ),
             )
             if original_tokens > 0
             else 0,

@@ -150,7 +150,7 @@ class ConversationSummarizer:
                 [
                     match[0] if isinstance(match, tuple) else match
                     for match in exc_matches[:2]
-                ]
+                ],
             )
 
         # Check for Python tracebacks
@@ -385,10 +385,10 @@ class ConversationClusterer:
         # Content similarity (simple keyword overlap)
         word_boundary_pattern = SAFE_PATTERNS["word_boundary"]
         content1_words = set(
-            word_boundary_pattern.findall(conv1.get("content", "").lower())
+            word_boundary_pattern.findall(conv1.get("content", "").lower()),
         )
         content2_words = set(
-            word_boundary_pattern.findall(conv2.get("content", "").lower())
+            word_boundary_pattern.findall(conv2.get("content", "").lower()),
         )
 
         if content1_words and content2_words:
@@ -565,7 +565,7 @@ class MemoryOptimizer:
 
         cursor = self.reflection_db.conn.execute(
             "SELECT id, content, project, timestamp, metadata FROM conversations "
-            "ORDER BY timestamp DESC"
+            "ORDER BY timestamp DESC",
         )
 
         return [
@@ -598,7 +598,9 @@ class MemoryOptimizer:
         consolidated_summaries: list[dict[str, Any]] = []
 
         total_original_size, total_compressed_size = await self._process_clusters(
-            clusters, consolidated_summaries, dry_run
+            clusters,
+            consolidated_summaries,
+            dry_run,
         )
 
         results = self._create_compression_results(
@@ -650,12 +652,14 @@ class MemoryOptimizer:
         return total_original_size, total_compressed_size
 
     def _create_consolidated_conversation(
-        self, cluster: list[dict[str, Any]]
+        self,
+        cluster: list[dict[str, Any]],
     ) -> ConsolidatedConversation:
         """Create a consolidated conversation from a cluster."""
         combined_content = "\n\n---\n\n".join(conv["content"] for conv in cluster)
         summary = self.summarizer.summarize_conversation(
-            combined_content, "template_based"
+            combined_content,
+            "template_based",
         )
 
         projects = [conv["project"] for conv in cluster if conv.get("project")]
@@ -716,7 +720,7 @@ class MemoryOptimizer:
                 ),
                 "space_saved_bytes": results.space_saved_estimate,
                 "compression_ratio": results.compression_ratio,
-            }
+            },
         )
 
     async def _persist_consolidated_conversation(

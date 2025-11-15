@@ -86,7 +86,8 @@ def _format_worktree_count_info(all_worktrees: list[Any]) -> list[str]:
 
 
 def _format_other_branches_info(
-    all_worktrees: list[Any], worktree_info: Any
+    all_worktrees: list[Any],
+    worktree_info: Any,
 ) -> list[str]:
     """Format information about other branches."""
     output = []
@@ -136,7 +137,9 @@ def _format_no_reminders_message(user_id: str, project_id: str | None) -> list[s
 
 
 def _format_reminders_header(
-    reminders: list[dict[str, Any]], user_id: str, project_id: str | None
+    reminders: list[dict[str, Any]],
+    user_id: str,
+    project_id: str | None,
 ) -> list[str]:
     """Format header for reminders list."""
     output = []
@@ -158,7 +161,9 @@ def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
 
 
 def _format_reminders_list(
-    reminders: list[dict[str, Any]], user_id: str, project_id: str | None
+    reminders: list[dict[str, Any]],
+    user_id: str,
+    project_id: str | None,
 ) -> list[str]:
     """Format the complete reminders list."""
     return _format_reminders_header(reminders, user_id, project_id)
@@ -183,7 +188,7 @@ def _format_project_activity_section(project_activity: dict[str, Any]) -> list[s
     output = ["**📈 Project Activity:**"]
     for project, stats in project_activity.items():
         output.append(
-            f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}"
+            f"• **{project}:** {stats['conversation_count']} conversations, last active: {stats.get('last_activity', 'Unknown')}",
         )
     output.append("")
     return output
@@ -195,7 +200,7 @@ def _format_common_patterns_section(common_patterns: list[dict[str, Any]]) -> li
     for pattern in common_patterns[:5]:  # Top 5
         projects_str = ", ".join(pattern["projects"])
         output.append(
-            f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})"
+            f"• **{pattern['pattern']}** across {projects_str} (frequency: {pattern['frequency']})",
         )
     output.append("")
     return output
@@ -221,7 +226,9 @@ def _format_worktree_status(wt: dict[str, Any]) -> str:
 
 
 def _format_worktree_list_header(
-    total_count: int, repo_name: str, current_worktree: str
+    total_count: int,
+    repo_name: str,
+    current_worktree: str,
 ) -> list[str]:
     """Format the header for the worktree list output."""
     return [
@@ -256,7 +263,8 @@ def _format_session_summary(result: dict[str, Any]) -> list[str]:
 
 
 def _format_worktree_status_display(
-    status_info: dict[str, Any], working_dir: Path
+    status_info: dict[str, Any],
+    working_dir: Path,
 ) -> str:
     """Format worktree status information for display."""
     output = _format_basic_worktree_info(status_info, working_dir)
@@ -266,7 +274,8 @@ def _format_worktree_status_display(
 
 
 def _format_basic_worktree_info(
-    status_info: dict[str, Any], working_dir: Path
+    status_info: dict[str, Any],
+    working_dir: Path,
 ) -> list[str]:
     """Format basic worktree information."""
     return [
@@ -298,7 +307,7 @@ def _format_interruption_statistics(interruptions: list[dict[str, Any]]) -> list
     ]
     for i, interruption in enumerate(interruptions[:5], 1):
         output.append(
-            f"  {i}. {interruption.get('type', 'unknown')}: {interruption.get('timestamp', 'N/A')}"
+            f"  {i}. {interruption.get('type', 'unknown')}: {interruption.get('timestamp', 'N/A')}",
         )
     return output
 
@@ -312,7 +321,7 @@ def _format_snapshot_statistics(snapshots: list[dict[str, Any]]) -> list[str]:
     ]
     for i, snapshot in enumerate(snapshots[:5], 1):
         output.append(
-            f"  {i}. {snapshot.get('type', 'unknown')}: {snapshot.get('timestamp', 'N/A')}"
+            f"  {i}. {snapshot.get('type', 'unknown')}: {snapshot.get('timestamp', 'N/A')}",
         )
     return output
 
@@ -347,7 +356,10 @@ def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
     """Run UV sync and compile operations."""
     # Sync dependencies
     sync_result = subprocess.run(
-        ["uv", "sync"], check=False, capture_output=True, text=True
+        ["uv", "sync"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     if sync_result.returncode == 0:
         output.append("✅ UV sync completed successfully")
@@ -375,7 +387,9 @@ def _add_final_summary(
 
 
 def _add_permissions_and_tools_summary(
-    output: list[str], current_project: str, permissions_manager: Any | None = None
+    output: list[str],
+    current_project: str,
+    permissions_manager: Any | None = None,
 ) -> None:
     """Add permissions summary and available tools."""
     # Permissions Summary
@@ -410,7 +424,8 @@ def _add_current_session_context(summary: dict[str, Any]) -> None:
 
 
 def _add_permissions_info(
-    output: list[str], permissions_manager: Any | None = None
+    output: list[str],
+    permissions_manager: Any | None = None,
 ) -> None:
     """Add permissions information to output."""
     if permissions_manager is not None:
@@ -424,7 +439,7 @@ def _add_permissions_info(
                 output.append(f"   ✅ {op.replace('_', ' ').title()}")
         else:
             output.append(
-                "   ⚠️ No trusted operations yet - will prompt for permissions"
+                "   ⚠️ No trusted operations yet - will prompt for permissions",
             )
     else:
         output.append("\n🔐 Session Permissions:")

@@ -20,7 +20,9 @@ if TYPE_CHECKING:
 
 
 # Constants for error messages
-TEAM_NOT_AVAILABLE_MSG = "Team collaboration features not available. Install optional dependencies"
+TEAM_NOT_AVAILABLE_MSG = (
+    "Team collaboration features not available. Install optional dependencies"
+)
 
 
 # ============================================================================
@@ -40,16 +42,17 @@ async def _require_team_manager() -> Any:
 
 
 async def _execute_team_operation(
-    operation_name: str, operation: t.Callable[[Any], t.Awaitable[str]]
+    operation_name: str,
+    operation: t.Callable[[Any], t.Awaitable[str]],
 ) -> str:
     """Execute a team operation with error handling."""
     try:
         manager = await _require_team_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except ValueError as e:
-        return f"❌ {operation_name} failed: {str(e)}"
+        return f"❌ {operation_name} failed: {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -162,7 +165,11 @@ def _format_team_statistics(team_id: str, stats: dict[str, Any]) -> str:
 
 
 async def _create_team_operation(
-    manager: Any, team_id: str, name: str, description: str, owner_id: str
+    manager: Any,
+    team_id: str,
+    name: str,
+    description: str,
+    owner_id: str,
 ) -> str:
     """Create a new team for knowledge sharing."""
     await manager.create_team(
@@ -175,12 +182,21 @@ async def _create_team_operation(
 
 
 async def _create_team_impl(
-    team_id: str, name: str, description: str, owner_id: str
+    team_id: str,
+    name: str,
+    description: str,
+    owner_id: str,
 ) -> str:
     """Create a new team for knowledge sharing."""
+
+    async def operation(manager: Any) -> str:
+        return await _create_team_operation(
+            manager, team_id, name, description, owner_id
+        )
+
     return await _execute_team_operation(
         "Create team",
-        lambda m: _create_team_operation(m, team_id, name, description, owner_id),
+        operation,
     )
 
 
@@ -224,16 +240,28 @@ async def _search_team_knowledge_impl(
     limit: int = 20,
 ) -> str:
     """Search team reflections with access control."""
+
+    async def operation(manager: Any) -> str:
+        return await _search_team_knowledge_operation(
+            manager,
+            query,
+            user_id,
+            team_id,
+            project_id,
+            tags,
+            limit,
+        )
+
     return await _execute_team_operation(
         "Search team knowledge",
-        lambda m: _search_team_knowledge_operation(
-            m, query, user_id, team_id, project_id, tags, limit
-        ),
+        operation,
     )
 
 
 async def _get_team_statistics_operation(
-    manager: Any, team_id: str, user_id: str
+    manager: Any,
+    team_id: str,
+    user_id: str,
 ) -> str:
     """Get team statistics and activity."""
     stats = await manager.get_team_stats(team_id=team_id, user_id=user_id)
@@ -246,14 +274,21 @@ async def _get_team_statistics_operation(
 
 async def _get_team_statistics_impl(team_id: str, user_id: str) -> str:
     """Get team statistics and activity."""
+
+    async def operation(manager: Any) -> str:
+        return await _get_team_statistics_operation(manager, team_id, user_id)
+
     return await _execute_team_operation(
         "Get team statistics",
-        lambda m: _get_team_statistics_operation(m, team_id, user_id),
+        operation,
     )
 
 
 async def _vote_on_reflection_operation(
-    manager: Any, reflection_id: str, user_id: str, vote_delta: int
+    manager: Any,
+    reflection_id: str,
+    user_id: str,
+    vote_delta: int,
 ) -> str:
     """Vote on a team reflection (upvote/downvote)."""
     result = await manager.vote_reflection(
@@ -273,9 +308,15 @@ async def _vote_on_reflection_impl(
     vote_delta: int = 1,
 ) -> str:
     """Vote on a team reflection (upvote/downvote)."""
+
+    async def operation(manager: Any) -> str:
+        return await _vote_on_reflection_operation(
+            manager, reflection_id, user_id, vote_delta
+        )
+
     return await _execute_team_operation(
         "Vote on reflection",
-        lambda m: _vote_on_reflection_operation(m, reflection_id, user_id, vote_delta),
+        operation,
     )
 
 
@@ -289,11 +330,15 @@ def register_team_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
+
     """
 
     @mcp.tool()
     async def create_team(
-        team_id: str, name: str, description: str, owner_id: str
+        team_id: str,
+        name: str,
+        description: str,
+        owner_id: str,
     ) -> str:
         """Create a new team for knowledge sharing."""
         return await _create_team_impl(team_id, name, description, owner_id)
@@ -309,7 +354,12 @@ def register_team_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Search team reflections with access control."""
         return await _search_team_knowledge_impl(
-            query, user_id, team_id, project_id, tags, limit
+            query,
+            user_id,
+            team_id,
+            project_id,
+            tags,
+            limit,
         )
 
     @mcp.tool()

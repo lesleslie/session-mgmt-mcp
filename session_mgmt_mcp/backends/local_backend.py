@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import gzip
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
+
 
 class LocalFileStorage(SessionStorage):
     """Local file-based session storage (for development/testing)."""
@@ -110,7 +111,10 @@ class LocalFileStorage(SessionStorage):
         return session_file.stem.replace(".json", "")
 
     async def _should_include_session(
-        self, session_id: str, user_id: str | None, project_id: str | None
+        self,
+        session_id: str,
+        user_id: str | None,
+        project_id: str | None,
     ) -> bool:
         """Check if session should be included based on filters."""
         if not user_id and not project_id:
@@ -123,7 +127,10 @@ class LocalFileStorage(SessionStorage):
         return self._matches_filters(session_state, user_id, project_id)
 
     def _matches_filters(
-        self, session_state: SessionState, user_id: str | None, project_id: str | None
+        self,
+        session_state: SessionState,
+        user_id: str | None,
+        project_id: str | None,
     ) -> bool:
         """Check if session matches the given filters."""
         if user_id and session_state.user_id != user_id:
@@ -153,5 +160,3 @@ class LocalFileStorage(SessionStorage):
     async def is_available(self) -> bool:
         """Check if local storage is available."""
         return self.storage_dir.exists() and self.storage_dir.is_dir()
-
-

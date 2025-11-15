@@ -40,7 +40,11 @@ class CodeSearcher:
         }
 
     def _extract_pattern_info(
-        self, node: ast.AST, pattern_type: str, code: str, block_index: int
+        self,
+        node: ast.AST,
+        pattern_type: str,
+        code: str,
+        block_index: int,
     ) -> dict[str, Any]:
         """Extract pattern information from AST node."""
         pattern_info = {
@@ -79,7 +83,10 @@ class CodeSearcher:
                     )
                     if isinstance(node, type_check):
                         pattern_info = self._extract_pattern_info(
-                            node, pattern_type, code, block_index
+                            node,
+                            pattern_type,
+                            code,
+                            block_index,
                         )
                         patterns.append(pattern_info)
         return patterns
@@ -278,7 +285,10 @@ class TemporalSearchParser:
             if isinstance(parsed_date, datetime):
                 # Return day range (start of day to end of day)
                 start_time = parsed_date.replace(
-                    hour=0, minute=0, second=0, microsecond=0
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    microsecond=0,
                 )
                 end_time = start_time + timedelta(days=1)
                 return TimeRange(start=start_time, end=end_time)
@@ -331,7 +341,9 @@ class EnhancedSearchEngine:
         results = []
         for conv in conversations:
             conv_results = self._process_conversation_for_code_patterns(
-                conv, query, pattern_type
+                conv,
+                query,
+                pattern_type,
             )
             results.extend(conv_results)
 
@@ -348,7 +360,10 @@ class EnhancedSearchEngine:
         return cast("list[tuple[str, str, str, str, str]]", cursor.fetchall())
 
     def _process_conversation_for_code_patterns(
-        self, conv: tuple[str, str, str, str, str], query: str, pattern_type: str | None
+        self,
+        conv: tuple[str, str, str, str, str],
+        query: str,
+        pattern_type: str | None,
     ) -> list[dict[str, Any]]:
         """Process a single conversation for code patterns."""
         conv_id, content, project, timestamp, _metadata = conv
@@ -371,13 +386,15 @@ class EnhancedSearchEngine:
                         "snippet": content[:500] + "..."
                         if len(content) > 500
                         else content,
-                    }
+                    },
                 )
 
         return results
 
     def _sort_and_limit_results(
-        self, results: list[dict[str, Any]], limit: int
+        self,
+        results: list[dict[str, Any]],
+        limit: int,
     ) -> list[dict[str, Any]]:
         """Sort results by relevance and limit."""
         results.sort(key=lambda x: x["relevance"], reverse=True)
@@ -397,14 +414,19 @@ class EnhancedSearchEngine:
         results = []
         for conv in conversations:
             conv_results = self._process_conversation_for_error_patterns(
-                conv, query, error_type
+                conv,
+                query,
+                error_type,
             )
             results.extend(conv_results)
 
         return self._sort_and_limit_results(results, limit)
 
     def _process_conversation_for_error_patterns(
-        self, conv: tuple[str, str, str, str, str], query: str, error_type: str | None
+        self,
+        conv: tuple[str, str, str, str, str],
+        query: str,
+        error_type: str | None,
     ) -> list[dict[str, Any]]:
         """Process a single conversation for error patterns."""
         conv_id, content, project, timestamp, _metadata = conv
@@ -427,7 +449,7 @@ class EnhancedSearchEngine:
                         "snippet": content[:500] + "..."
                         if len(content) > 500
                         else content,
-                    }
+                    },
                 )
 
         return results

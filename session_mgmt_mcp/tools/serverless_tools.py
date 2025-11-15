@@ -18,6 +18,8 @@ from session_mgmt_mcp.utils.instance_managers import (
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from fastmcp import FastMCP
 
 
@@ -30,21 +32,23 @@ async def _require_serverless_manager() -> Any:
     """Get serverless manager instance or raise error."""
     manager = await resolve_serverless_manager()
     if manager is None:
+        msg = "Serverless mode not available. Install dependencies: pip install redis boto3"
         raise RuntimeError(
-            "Serverless mode not available. Install dependencies: pip install redis boto3"
+            msg,
         )
     return manager
 
 
 async def _execute_serverless_operation(
-    operation_name: str, operation: callable
+    operation_name: str,
+    operation: Callable[[Any], Awaitable[str]],
 ) -> str:
     """Execute a serverless operation with error handling."""
     try:
         manager = await _require_serverless_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -79,11 +83,19 @@ async def _create_serverless_session_impl(
     ttl_hours: int = 24,
 ) -> str:
     """Create a new serverless session with external storage."""
+
+    async def operation(manager: Any) -> str:
+        return await _create_serverless_session_operation(
+            manager,
+            user_id,
+            project_id,
+            session_data,
+            ttl_hours,
+        )
+
     return await _execute_serverless_operation(
         "Create serverless session",
-        lambda m: _create_serverless_session_operation(
-            m, user_id, project_id, session_data, ttl_hours
-        ),
+        operation,
     )
 
 
@@ -114,9 +126,13 @@ async def _get_serverless_session_operation(manager: Any, session_id: str) -> st
 
 async def _get_serverless_session_impl(session_id: str) -> str:
     """Get serverless session state."""
+
+    async def operation(manager: Any) -> str:
+        return await _get_serverless_session_operation(manager, session_id)
+
     return await _execute_serverless_operation(
         "Get serverless session",
-        lambda m: _get_serverless_session_operation(m, session_id),
+        operation,
     )
 
 
@@ -148,11 +164,18 @@ async def _update_serverless_session_impl(
     extend_ttl_hours: int | None = None,
 ) -> str:
     """Update serverless session data."""
+
+    async def operation(manager: Any) -> str:
+        return await _update_serverless_session_operation(
+            manager,
+            session_id,
+            session_data,
+            extend_ttl_hours,
+        )
+
     return await _execute_serverless_operation(
         "Update serverless session",
-        lambda m: _update_serverless_session_operation(
-            m, session_id, session_data, extend_ttl_hours
-        ),
+        operation,
     )
 
 
@@ -168,9 +191,13 @@ async def _delete_serverless_session_operation(manager: Any, session_id: str) ->
 
 async def _delete_serverless_session_impl(session_id: str) -> str:
     """Delete a serverless session."""
+
+    async def operation(manager: Any) -> str:
+        return await _delete_serverless_session_operation(manager, session_id)
+
     return await _execute_serverless_operation(
         "Delete serverless session",
-        lambda m: _delete_serverless_session_operation(m, session_id),
+        operation,
     )
 
 
@@ -207,13 +234,15 @@ async def _list_serverless_sessions_operation(
     ]
 
     for session in sessions:
-        lines.extend([
-            f"• Session ID: {session['session_id']}",
-            f"  User: {session['user_id']}",
-            f"  Project: {session['project_id']}",
-            f"  Expires: {session['expires_at']}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"• Session ID: {session['session_id']}",
+                f"  User: {session['user_id']}",
+                f"  Project: {session['project_id']}",
+                f"  Expires: {session['expires_at']}",
+                "",
+            ],
+        )
 
     return "\n".join(lines)
 
@@ -224,11 +253,18 @@ async def _list_serverless_sessions_impl(
     include_expired: bool = False,
 ) -> str:
     """List serverless sessions with optional filtering."""
+
+    async def operation(manager: Any) -> str:
+        return await _list_serverless_sessions_operation(
+            manager,
+            user_id,
+            project_id,
+            include_expired,
+        )
+
     return await _execute_serverless_operation(
         "List serverless sessions",
-        lambda m: _list_serverless_sessions_operation(
-            m, user_id, project_id, include_expired
-        ),
+        operation,
     )
 
 
@@ -240,9 +276,13 @@ async def _cleanup_serverless_sessions_operation(manager: Any) -> str:
 
 async def _cleanup_serverless_sessions_impl() -> str:
     """Clean up expired serverless sessions."""
+
+    async def operation(manager: Any) -> str:
+        return await _cleanup_serverless_sessions_operation(manager)
+
     return await _execute_serverless_operation(
         "Cleanup serverless sessions",
-        _cleanup_serverless_sessions_operation,
+        operation,
     )
 
 
@@ -283,7 +323,11 @@ async def _test_serverless_storage_operation(manager: Any) -> str:
     available = [name for name, res in results.items() if res["available"]]
     if available:
         fastest = min(
-            [(name, res["latency_ms"]) for name, res in results.items() if res["available"]],
+            [
+                (name, res["latency_ms"])
+                for name, res in results.items()
+                if res["available"]
+            ],
             key=lambda x: x[1],
         )
         lines.append(f"💡 Recommended: {fastest[0].upper()} (lowest latency)")
@@ -295,9 +339,13 @@ async def _test_serverless_storage_operation(manager: Any) -> str:
 
 async def _test_serverless_storage_impl() -> str:
     """Test all configured storage backends."""
+
+    async def operation(manager: Any) -> str:
+        return await _test_serverless_storage_operation(manager)
+
     return await _execute_serverless_operation(
         "Test serverless storage",
-        _test_serverless_storage_operation,
+        operation,
     )
 
 
@@ -312,12 +360,14 @@ async def _configure_serverless_storage_operation(
     if not success:
         return f"❌ Failed to configure {backend} storage"
 
-    return "\n".join([
-        f"✅ Configured {backend.upper()} storage backend",
-        "",
-        "⚙️ Configuration:",
-        *[f"   • {key}: {value}" for key, value in config.items()],
-    ])
+    return "\n".join(
+        [
+            f"✅ Configured {backend.upper()} storage backend",
+            "",
+            "⚙️ Configuration:",
+            *[f"   • {key}: {value}" for key, value in config.items()],
+        ],
+    )
 
 
 async def _configure_serverless_storage_impl(
@@ -325,9 +375,13 @@ async def _configure_serverless_storage_impl(
     config: dict[str, Any],
 ) -> str:
     """Configure storage backend for serverless sessions."""
+
+    async def operation(manager: Any) -> str:
+        return await _configure_serverless_storage_operation(manager, backend, config)
+
     return await _execute_serverless_operation(
         "Configure serverless storage",
-        lambda m: _configure_serverless_storage_operation(m, backend, config),
+        operation,
     )
 
 
@@ -348,7 +402,10 @@ def register_serverless_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Create a new serverless session with external storage."""
         return await _create_serverless_session_impl(
-            user_id, project_id, session_data, ttl_hours
+            user_id,
+            project_id,
+            session_data,
+            ttl_hours,
         )
 
     @mcp.tool()  # type: ignore[misc]
@@ -364,7 +421,9 @@ def register_serverless_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Update serverless session data and optionally extend TTL."""
         return await _update_serverless_session_impl(
-            session_id, session_data, extend_ttl_hours
+            session_id,
+            session_data,
+            extend_ttl_hours,
         )
 
     @mcp.tool()  # type: ignore[misc]
@@ -380,7 +439,9 @@ def register_serverless_tools(mcp: FastMCP) -> None:
     ) -> str:
         """List serverless sessions with optional filtering."""
         return await _list_serverless_sessions_impl(
-            user_id, project_id, include_expired
+            user_id,
+            project_id,
+            include_expired,
         )
 
     @mcp.tool()  # type: ignore[misc]

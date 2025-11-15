@@ -144,7 +144,9 @@ class DatabaseConnectionPool:
         return self._executor
 
     async def execute_query(
-        self, query: str, parameters: tuple[Any, ...] | None = None
+        self,
+        query: str,
+        parameters: tuple[Any, ...] | None = None,
     ) -> Any:
         """Execute a query using a pooled connection."""
         async with self.get_async_connection() as conn:

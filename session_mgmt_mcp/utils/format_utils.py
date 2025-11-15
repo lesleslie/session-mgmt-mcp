@@ -80,7 +80,9 @@ def _format_snapshot_statistics(snapshots: dict[str, Any]) -> list[str]:
 
 
 def _calculate_efficiency_rates(
-    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
+    sessions: dict[str, Any],
+    interruptions: dict[str, Any],
+    snapshots: dict[str, Any],
 ) -> dict[str, float]:
     """Calculate efficiency metrics from statistics."""
     efficiency = {
@@ -101,14 +103,17 @@ def _calculate_efficiency_rates(
 
     # Simple productivity score (inverse of interruption rate, scaled)
     efficiency["productivity_score"] = max(
-        0, 100 - (efficiency["interruption_rate"] * 20)
+        0,
+        100 - (efficiency["interruption_rate"] * 20),
     )
 
     return efficiency
 
 
 def _format_efficiency_metrics(
-    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
+    sessions: dict[str, Any],
+    interruptions: dict[str, Any],
+    snapshots: dict[str, Any],
 ) -> list[str]:
     """Format efficiency and productivity metrics."""
     efficiency = _calculate_efficiency_rates(sessions, interruptions, snapshots)
@@ -123,13 +128,15 @@ def _format_efficiency_metrics(
 
 
 def _has_statistics_data(
-    sessions: dict[str, Any], interruptions: dict[str, Any], snapshots: dict[str, Any]
+    sessions: dict[str, Any],
+    interruptions: dict[str, Any],
+    snapshots: dict[str, Any],
 ) -> bool:
     """Check if any meaningful statistics data exists."""
     return bool(
         sessions.get("total", 0) > 0
         or interruptions.get("total", 0) > 0
-        or snapshots.get("total", 0) > 0
+        or snapshots.get("total", 0) > 0,
     )
 
 
@@ -162,14 +169,14 @@ def _build_search_header(
             [
                 f"📊 Found {total_found} results (Page {current}/{total})",
                 "",
-            ]
+            ],
         )
     else:
         header.extend(
             [
                 f"📊 Found {total_found} results",
                 "",
-            ]
+            ],
         )
 
     return header
@@ -196,7 +203,7 @@ def _format_search_results(results: list[Any]) -> list[str]:
                 f"**{i}. [{project}]** {timestamp}",
                 f"   {content}",
                 "",
-            ]
+            ],
         )
 
     return formatted
@@ -215,14 +222,14 @@ def _format_monitoring_status(quality_data: dict[str, Any]) -> list[str]:
                 "✅ Quality monitoring is active",
                 f"• Last check: {quality_data.get('last_check', 'Unknown')}",
                 f"• Checks performed: {quality_data.get('total_checks', 0)}",
-            ]
+            ],
         )
     else:
         lines.extend(
             [
                 "⏸️ Quality monitoring is inactive",
                 "• Use quality_monitor tool to start monitoring",
-            ]
+            ],
         )
 
     lines.append("")

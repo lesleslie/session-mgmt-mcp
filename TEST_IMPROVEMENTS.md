@@ -3,6 +3,7 @@
 ## Current State Assessment
 
 ### Test Statistics
+
 - **Total Tests**: 1,525 tests collected
 - **Current Coverage**: 15.49% (Target: 35%)
 - **Passing**: ~1,500+ tests
@@ -11,18 +12,22 @@
 ### Key Issues Identified
 
 1. **Configuration Issues** ✅ FIXED
+
    - Fixed pytest 9.0+ incompatibility (converted to `[tool.pytest]` with native TOML types)
    - Fixed ACB dependency resolution (switched from local path to GitHub source)
 
-2. **Outdated Test Patterns** ✅ FIXED
+1. **Outdated Test Patterns** ✅ FIXED
+
    - Removed obsolete `get_session_logger` patches after DI migration
    - Updated all functional tests to pass logger via constructor
 
-3. **Failing Tests** 🔧 IN PROGRESS
+1. **Failing Tests** 🔧 IN PROGRESS
+
    - 4 database initialization tests failing
    - Related to `ReflectionDatabase` vs `ReflectionDatabaseAdapter` confusion
 
-4. **Coverage Gaps** 📊
+1. **Coverage Gaps** 📊
+
    - Many modules at 0% coverage
    - Core functionality needs more test coverage:
      - `worktree_manager.py`: 0%
@@ -35,6 +40,7 @@
 ### 1. Fixed Pytest Configuration
 
 **File**: `pyproject.toml`
+
 - Converted `[tool.pytest.ini_options]` → `[tool.pytest]` for pytest 9.0+
 - Changed `addopts` from string to list: `["--cov=session_mgmt_mcp", "--cov-report=term"]`
 - Changed `timeout` from int to string: `"300"`
@@ -42,6 +48,7 @@
 ### 2. Fixed ACB Dependency
 
 **File**: `pyproject.toml`
+
 ```toml
 [tool.uv.sources.acb]
 git = "https://github.com/lesleslie/acb.git"
@@ -51,6 +58,7 @@ branch = "main"
 ### 3. Updated Test Patterns
 
 **File**: `tests/functional/test_session_workflows.py`
+
 - Removed all `@patch("session_mgmt_mcp.core.session_manager.get_session_logger")` decorators
 - Updated `SessionLifecycleManager()` → `SessionLifecycleManager(logger=Mock())`
 - Applied to 11 test methods across 3 test classes
@@ -60,6 +68,7 @@ branch = "main"
 ### 1. Fix Database Test Failures
 
 **Priority**: HIGH
+
 - Update `test_simple_validation.py` to use correct `ReflectionDatabaseAdapter`
 - Ensure consistent database import patterns across all tests
 - Fix `__del__` AttributeError in `ReflectionDatabase`
@@ -67,6 +76,7 @@ branch = "main"
 ### 2. Improve Test Fixtures
 
 **Priority**: MEDIUM
+
 - Add more reusable fixtures for common test scenarios
 - Create database fixtures with proper ACB adapter setup
 - Add fixtures for common mock scenarios (git, permissions, logger)
@@ -74,6 +84,7 @@ branch = "main"
 ### 3. Add Property-Based Tests
 
 **Priority**: MEDIUM
+
 - Use Hypothesis for testing quality scoring algorithms
 - Test token optimization with random inputs
 - Test search functionality with varied data
@@ -81,6 +92,7 @@ branch = "main"
 ### 4. Enhance Async Test Patterns
 
 **Priority**: MEDIUM
+
 - Add better async/await test patterns
 - Test concurrent operations
 - Add timeout and cancellation tests
@@ -88,6 +100,7 @@ branch = "main"
 ### 5. Increase Coverage
 
 **Priority**: HIGH
+
 - Target 35% minimum coverage
 - Focus on high-value modules:
   - `quality_utils_v2.py`: 15.74% → 40%+
@@ -97,6 +110,7 @@ branch = "main"
 ### 6. Add Edge Case Tests
 
 **Priority**: MEDIUM
+
 - Test error conditions
 - Test boundary values
 - Test resource exhaustion scenarios
@@ -105,6 +119,7 @@ branch = "main"
 ### 7. Update Test Documentation
 
 **Priority**: LOW
+
 - Add docstrings to all test methods
 - Update test markers
 - Create testing guide
@@ -112,6 +127,7 @@ branch = "main"
 ## Test Organization
 
 ### Current Structure
+
 ```
 tests/
 ├── conftest.py (global fixtures)
@@ -124,6 +140,7 @@ tests/
 ```
 
 ### Recommended Additions
+
 - `tests/property/` - Property-based tests with Hypothesis
 - `tests/regression/` - Regression test suite
 - `tests/helpers.py` - Enhanced test helper utilities
@@ -131,13 +148,13 @@ tests/
 ## Next Steps
 
 1. ✅ Fix failing database tests
-2. ✅ Add comprehensive test fixtures
-3. ✅ Implement property-based tests
-4. ✅ Increase coverage to 35%+
-5. ✅ Add edge case tests
-6. ✅ Update documentation
-7. ✅ Run full test suite
-8. ✅ Commit and push changes
+1. ✅ Add comprehensive test fixtures
+1. ✅ Implement property-based tests
+1. ✅ Increase coverage to 35%+
+1. ✅ Add edge case tests
+1. ✅ Update documentation
+1. ✅ Run full test suite
+1. ✅ Commit and push changes
 
 ## Notes
 

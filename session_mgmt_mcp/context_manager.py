@@ -172,7 +172,9 @@ class ContextDetector:
         return Path(working_dir) if working_dir else Path.cwd()
 
     def _gather_project_context(
-        self, working_path: Path, context: dict[str, Any]
+        self,
+        working_path: Path,
+        context: dict[str, Any],
     ) -> None:
         """Gather project-specific context information."""
         self._detect_languages_and_tools(working_path, context)
@@ -185,14 +187,17 @@ class ContextDetector:
         self._add_worktree_context(working_path, context)
 
     def _add_worktree_context(
-        self, working_path: Path, context: dict[str, Any]
+        self,
+        working_path: Path,
+        context: dict[str, Any],
     ) -> None:
         """Add worktree information to context."""
         worktree_info = get_worktree_info(working_path)
         if worktree_info:
             context["worktree_info"] = self._format_worktree_info(worktree_info)
             context["all_worktrees"] = self._get_all_worktrees_info(
-                working_path, worktree_info
+                working_path,
+                worktree_info,
             )
 
     def _format_worktree_info(self, worktree_info: Any) -> dict[str, Any]:
@@ -208,7 +213,9 @@ class ContextDetector:
         }
 
     def _get_all_worktrees_info(
-        self, working_path: Path, current_worktree: Any
+        self,
+        working_path: Path,
+        current_worktree: Any,
     ) -> list[dict[str, Any]]:
         """Get information about all worktrees."""
         all_worktrees = list_worktrees(working_path)
@@ -263,7 +270,10 @@ class ContextDetector:
         return git_info
 
     def _extract_branch_info(
-        self, git_dir: Path, git_info: dict[str, Any], working_path: Path
+        self,
+        git_dir: Path,
+        git_info: dict[str, Any],
+        working_path: Path,
     ) -> None:
         """Extract git branch information using worktree-aware detection."""
         worktree_info = get_worktree_info(working_path)
@@ -273,7 +283,9 @@ class ContextDetector:
             self._fallback_branch_detection(git_dir, git_info)
 
     def _populate_worktree_info(
-        self, git_info: dict[str, Any], worktree_info: Any
+        self,
+        git_info: dict[str, Any],
+        worktree_info: Any,
     ) -> None:
         """Populate git info from worktree information."""
         git_info["current_branch"] = worktree_info.branch
@@ -282,7 +294,9 @@ class ContextDetector:
         git_info["worktree_path"] = str(worktree_info.path)
 
     def _fallback_branch_detection(
-        self, git_dir: Path, git_info: dict[str, Any]
+        self,
+        git_dir: Path,
+        git_info: dict[str, Any],
     ) -> None:
         """Fallback method for branch detection when worktree info unavailable."""
         head_file = git_dir / "HEAD"

@@ -223,7 +223,7 @@ async def cleanup_background_tasks() -> None:
 
             if pending_tasks:
                 logger.debug(
-                    f"Cancelling {len(pending_tasks)} pending background tasks"
+                    f"Cancelling {len(pending_tasks)} pending background tasks",
                 )
                 for task in pending_tasks:
                     task.cancel()
@@ -269,7 +269,8 @@ async def cleanup_logging_handlers() -> None:
 
 
 def register_all_cleanup_handlers(
-    shutdown_manager: t.Any, temp_dir: Path | None = None
+    shutdown_manager: t.Any,
+    temp_dir: Path | None = None,
 ) -> None:
     """Register all resource cleanup handlers with shutdown manager.
 
@@ -361,7 +362,7 @@ def register_all_cleanup_handlers(
     )
 
     logger.info(
-        f"Registered {len(shutdown_manager._cleanup_tasks)} resource cleanup handlers"
+        f"Registered {len(shutdown_manager._cleanup_tasks)} resource cleanup handlers",
     )
 
 

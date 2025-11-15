@@ -73,20 +73,22 @@ async def _require_llm_manager() -> Any:
 
     manager = await _get_llm_manager()
     if not manager:
-        raise RuntimeError("Failed to initialize LLM manager")
+        msg = "Failed to initialize LLM manager"
+        raise RuntimeError(msg)
 
     return manager
 
 
 async def _execute_llm_operation(
-    operation_name: str, operation: t.Callable[[Any], t.Awaitable[str]]
+    operation_name: str,
+    operation: t.Callable[[Any], t.Awaitable[str]],
 ) -> str:
     """Execute an LLM operation with error handling."""
     try:
         manager = await _require_llm_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -98,7 +100,9 @@ async def _execute_llm_operation(
 
 
 def _add_provider_details(
-    output: list[str], providers: dict[str, Any], available_providers: set[str]
+    output: list[str],
+    providers: dict[str, Any],
+    available_providers: set[str],
 ) -> None:
     """Add provider details to the output list."""
     for provider_name, info in providers.items():
@@ -126,7 +130,7 @@ def _add_config_summary(output: list[str], config: dict[str, Any]) -> None:
         [
             f"🎯 Default Provider: {config['default_provider']}",
             f"🔄 Fallback Providers: {', '.join(config['fallback_providers'])}",
-        ]
+        ],
     )
 
 
@@ -217,7 +221,8 @@ async def _list_llm_providers_operation(manager: Any) -> str:
 async def _list_llm_providers_impl() -> str:
     """List all available LLM providers and their models."""
     return await _execute_llm_operation(
-        "List LLM providers", _list_llm_providers_operation
+        "List LLM providers",
+        _list_llm_providers_operation,
     )
 
 
@@ -248,7 +253,8 @@ async def _test_llm_providers_operation(manager: Any) -> str:
 async def _test_llm_providers_impl() -> str:
     """Test all LLM providers to check their availability and functionality."""
     return await _execute_llm_operation(
-        "Test LLM providers", _test_llm_providers_operation
+        "Test LLM providers",
+        _test_llm_providers_operation,
     )
 
 
@@ -325,7 +331,10 @@ async def _configure_llm_provider_impl(
 
         if result["success"]:
             return _format_provider_config_output(
-                provider, api_key, base_url, default_model
+                provider,
+                api_key,
+                base_url,
+                default_model,
             )
         return f"❌ Configuration failed: {result['error']}"
 
@@ -342,6 +351,7 @@ def register_llm_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
+
     """
 
     @mcp.tool()
@@ -372,9 +382,15 @@ def register_llm_tools(mcp: FastMCP) -> None:
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
             use_fallback: Whether to use fallback providers if primary fails
+
         """
         return await _generate_with_llm_impl(
-            prompt, provider, model, temperature, max_tokens, use_fallback
+            prompt,
+            provider,
+            model,
+            temperature,
+            max_tokens,
+            use_fallback,
         )
 
     @mcp.tool()
@@ -393,9 +409,14 @@ def register_llm_tools(mcp: FastMCP) -> None:
             model: Specific model to use
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
+
         """
         return await _chat_with_llm_impl(
-            messages, provider, model, temperature, max_tokens
+            messages,
+            provider,
+            model,
+            temperature,
+            max_tokens,
         )
 
     @mcp.tool()
@@ -412,7 +433,11 @@ def register_llm_tools(mcp: FastMCP) -> None:
             api_key: API key for the provider
             base_url: Base URL for the provider API
             default_model: Default model to use
+
         """
         return await _configure_llm_provider_impl(
-            provider, api_key, base_url, default_model
+            provider,
+            api_key,
+            base_url,
+            default_model,
         )

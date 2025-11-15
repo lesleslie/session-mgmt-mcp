@@ -84,7 +84,12 @@ class KnowledgeGraphDatabaseAdapter:
         msg = "Use 'async with' instead of 'with' for KnowledgeGraphDatabaseAdapter"
         raise RuntimeError(msg)
 
-    def __exit__(self, *_exc_info) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Sync context manager exit."""
 
     async def __aenter__(self) -> t.Self:
@@ -92,7 +97,12 @@ class KnowledgeGraphDatabaseAdapter:
         await self.initialize()
         return self
 
-    async def __aexit__(self, *_exc_info) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 
@@ -220,22 +230,22 @@ class KnowledgeGraphDatabaseAdapter:
 
         # Create indexes for performance
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_entities_name ON kg_entities(name)"
+            "CREATE INDEX IF NOT EXISTS idx_entities_name ON kg_entities(name)",
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_entities_type ON kg_entities(entity_type)"
+            "CREATE INDEX IF NOT EXISTS idx_entities_type ON kg_entities(entity_type)",
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_relationships_from "
-            "ON kg_relationships(from_entity)"
+            "ON kg_relationships(from_entity)",
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_relationships_to "
-            "ON kg_relationships(to_entity)"
+            "ON kg_relationships(to_entity)",
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_relationships_type "
-            "ON kg_relationships(relation_type)"
+            "ON kg_relationships(relation_type)",
         )
 
     async def create_entity(
@@ -316,7 +326,8 @@ class KnowledgeGraphDatabaseAdapter:
         conn = self._get_conn()
 
         result = conn.execute(
-            "SELECT * FROM kg_entities WHERE id = ?", (entity_id,)
+            "SELECT * FROM kg_entities WHERE id = ?",
+            (entity_id,),
         ).fetchone()
 
         if not result:
@@ -346,7 +357,8 @@ class KnowledgeGraphDatabaseAdapter:
         conn = self._get_conn()
 
         result = conn.execute(
-            "SELECT * FROM kg_entities WHERE name = ?", (name,)
+            "SELECT * FROM kg_entities WHERE name = ?",
+            (name,),
         ).fetchone()
 
         if not result:
@@ -433,7 +445,9 @@ class KnowledgeGraphDatabaseAdapter:
         }
 
     async def add_observation(
-        self, entity_name: str, observation: str
+        self,
+        entity_name: str,
+        observation: str,
     ) -> dict[str, t.Any]:
         """Add an observation to an entity.
 
@@ -590,7 +604,10 @@ class KnowledgeGraphDatabaseAdapter:
         ]
 
     async def find_path(
-        self, from_entity: str, to_entity: str, max_depth: int = 5
+        self,
+        from_entity: str,
+        to_entity: str,
+        max_depth: int = 5,
     ) -> list[dict[str, t.Any]]:
         """Find paths between two entities using breadth-first search.
 
@@ -607,7 +624,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         # Get all relationships in one query (sync, fast local operation)
         result = conn.execute(
-            "SELECT from_entity, to_entity, relation_type FROM kg_relationships"
+            "SELECT from_entity, to_entity, relation_type FROM kg_relationships",
         ).fetchall()
 
         # Build adjacency list
@@ -625,7 +642,7 @@ class KnowledgeGraphDatabaseAdapter:
         from collections import deque
 
         queue: deque[tuple[str, list[str], list[str]]] = deque(
-            [(from_entity, [from_entity], [])]
+            [(from_entity, [from_entity], [])],
         )
         visited = {from_entity}
 
@@ -642,7 +659,7 @@ class KnowledgeGraphDatabaseAdapter:
                         "path": path,
                         "relations": relations,
                         "hops": len(path) - 1,
-                    }
+                    },
                 )
                 break
 
@@ -667,7 +684,7 @@ class KnowledgeGraphDatabaseAdapter:
 
         # Relationship count
         relationship_count = conn.execute(
-            "SELECT COUNT(*) FROM kg_relationships"
+            "SELECT COUNT(*) FROM kg_relationships",
         ).fetchone()[0]
 
         # Entity types distribution
@@ -676,7 +693,7 @@ class KnowledgeGraphDatabaseAdapter:
             SELECT entity_type, COUNT(*) as count
             FROM kg_entities
             GROUP BY entity_type
-        """
+        """,
         ).fetchall()
         entity_types = {row[0]: row[1] for row in entity_types_result}
 
@@ -686,7 +703,7 @@ class KnowledgeGraphDatabaseAdapter:
             SELECT relation_type, COUNT(*) as count
             FROM kg_relationships
             GROUP BY relation_type
-        """
+        """,
         ).fetchall()
         relationship_types = {row[0]: row[1] for row in relationship_types_result}
 

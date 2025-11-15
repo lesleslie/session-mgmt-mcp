@@ -133,20 +133,24 @@ class AgentAnalyzer:
 
     @classmethod
     def _should_skip_coverage_recommendation(
-        cls, pattern_config: dict[str, t.Any], combined: str
+        cls,
+        pattern_config: dict[str, t.Any],
+        combined: str,
     ) -> bool:
         """Check if coverage recommendation should be skipped."""
         if pattern_config["agent"] != AgentType.TEST_SPECIALIST:
             return False
 
         coverage_match = re.search(  # REGEX OK: coverage extraction
-            r"coverage:?\s*(\d+(?:\.\d+)?)%", combined
+            r"coverage:?\s*(\d+(?:\.\d+)?)%",
+            combined,
         )
         return bool(coverage_match and float(coverage_match.group(1)) >= 42)
 
     @classmethod
     def _deduplicate_recommendations(
-        cls, recommendations: list[AgentRecommendation]
+        cls,
+        recommendations: list[AgentRecommendation],
     ) -> list[AgentRecommendation]:
         """Remove duplicate recommendations, keeping highest confidence."""
         unique: dict[AgentType, AgentRecommendation] = {}
@@ -158,7 +162,10 @@ class AgentAnalyzer:
 
     @classmethod
     def analyze(
-        cls, stdout: str, stderr: str, exit_code: int
+        cls,
+        stdout: str,
+        stderr: str,
+        exit_code: int,
     ) -> list[AgentRecommendation]:
         """Analyze crackerjack output and recommend agents.
 
@@ -181,12 +188,15 @@ class AgentAnalyzer:
             pattern = pattern_config["pattern"]
             matches = (
                 re.findall(  # REGEX OK: error pattern matching from PATTERNS config
-                    pattern, combined, re.IGNORECASE
+                    pattern,
+                    combined,
+                    re.IGNORECASE,
                 )
             )
 
             if matches and not cls._should_skip_coverage_recommendation(
-                pattern_config, combined
+                pattern_config,
+                combined,
             ):
                 recommendation = AgentRecommendation(
                     agent=pattern_config["agent"],

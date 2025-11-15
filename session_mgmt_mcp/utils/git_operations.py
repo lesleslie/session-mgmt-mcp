@@ -132,35 +132,46 @@ def list_worktrees(directory: Path) -> list[WorktreeInfo]:
     if not is_git_repository(directory):
         return []
 
+    result = _run_git_worktree_list(directory)
+    if result is None:
+        return []
+
+    return _parse_worktree_list_output(result.stdout)
+
+
+def _run_git_worktree_list(directory: Path) -> subprocess.CompletedProcess[str] | None:
+    """Run git worktree list command and return result or None on error."""
     try:
-        result = subprocess.run(
+        return subprocess.run(
             ["git", "worktree", "list", "--porcelain"],
             capture_output=True,
             text=True,
             cwd=directory,
             check=True,
         )
-
-        worktrees = []
-        current_worktree: dict[str, Any] = {}
-
-        for line in result.stdout.strip().split("\n"):
-            if not line:
-                if current_worktree:
-                    worktrees.append(_parse_worktree_entry(current_worktree))
-                    current_worktree = {}
-                continue
-
-            _process_worktree_line(line, current_worktree)
-
-        # Handle last worktree if exists
-        if current_worktree:
-            worktrees.append(_parse_worktree_entry(current_worktree))
-
-        return worktrees
-
     except subprocess.CalledProcessError:
-        return []
+        return None
+
+
+def _parse_worktree_list_output(output: str) -> list[WorktreeInfo]:
+    """Parse the output of git worktree list command."""
+    worktrees = []
+    current_worktree: dict[str, Any] = {}
+
+    for line in output.strip().split("\n"):
+        if not line:
+            if current_worktree:
+                worktrees.append(_parse_worktree_entry(current_worktree))
+                current_worktree = {}
+            continue
+
+        _process_worktree_line(line, current_worktree)
+
+    # Handle last worktree if exists
+    if current_worktree:
+        worktrees.append(_parse_worktree_entry(current_worktree))
+
+    return worktrees
 
 
 def _parse_worktree_entry(entry: dict[str, Any]) -> WorktreeInfo:
@@ -241,9 +252,8 @@ def stage_files(directory: Path, files: list[str]) -> bool:
             check=True,
         )
         return True
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         # Debug: Print the actual error
-        print(f"DEBUG: Git add -A failed: {e.stderr}")
         return False
 
 
@@ -368,7 +378,7 @@ def _check_for_changes(directory: Path) -> tuple[list[str], list[str], list[str]
 
     _add_worktree_context_output(worktree_info, output)
     output.append(
-        f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files"
+        f"📝 Found {len(modified_files)} modified files and {len(untracked_files)} untracked files",
     )
 
     if untracked_files:
@@ -378,7 +388,9 @@ def _check_for_changes(directory: Path) -> tuple[list[str], list[str], list[str]
 
 
 def _perform_staging_and_commit(
-    directory: Path, project: str, quality_score: int
+    directory: Path,
+    project: str,
+    quality_score: int,
 ) -> tuple[bool, str, list[str]]:
     """Stage changes and create commit."""
     output = []
@@ -460,7 +472,9 @@ def create_checkpoint_commit(
         # Handle modified files
         if modified_files:
             success, result, commit_output = _perform_staging_and_commit(
-                directory, project, quality_score
+                directory,
+                project,
+                quality_score,
             )
             output.extend(commit_output)
             return success, result, output
@@ -469,7 +483,7 @@ def create_checkpoint_commit(
         if untracked_files:
             output.append("ℹ️ No staged changes to commit")
             output.append(
-                "   💡 Add untracked files with 'git add' if you want to include them"
+                "   💡 Add untracked files with 'git add' if you want to include them",
             )
             return False, "No staged changes", output
 

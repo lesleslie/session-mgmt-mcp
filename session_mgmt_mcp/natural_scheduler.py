@@ -8,20 +8,15 @@ This module provides intelligent scheduling capabilities including:
 """
 
 import asyncio
-import contextlib
 import importlib.util
 import json
 import logging
-import re
 import sqlite3
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
-from re import Match
 from typing import Any
 
 DATEUTIL_AVAILABLE = importlib.util.find_spec("dateutil") is not None
@@ -29,7 +24,6 @@ CRONTAB_AVAILABLE = importlib.util.find_spec("python_crontab") is not None
 SCHEDULE_AVAILABLE = importlib.util.find_spec("schedule") is not None
 
 if DATEUTIL_AVAILABLE:
-    from dateutil import parser as date_parser
     from dateutil.relativedelta import relativedelta
 
 from .types import RecurrenceInterval
@@ -38,11 +32,9 @@ from .utils.scheduler import (
     NaturalReminder,
     ReminderStatus,
     ReminderType,
-    SchedulingContext,
 )
 
 logger = logging.getLogger(__name__)
-
 
 
 class ReminderScheduler:
@@ -381,7 +373,9 @@ class ReminderScheduler:
             return False
 
     def register_notification_callback(
-        self, method: str, callback: Callable[..., Any]
+        self,
+        method: str,
+        callback: Callable[..., Any],
     ) -> None:
         """Register callback for notification method."""
         if method not in self._callbacks:
@@ -442,7 +436,9 @@ class ReminderScheduler:
         return RecurrenceInterval(frequency=freq, interval=interval)
 
     def _calculate_simple_occurrence(
-        self, last_time: datetime, recurrence_rule: str
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
     ) -> datetime | None:
         """Calculate simple recurrence occurrences (daily, weekly, monthly)."""
         if recurrence_rule.startswith("FREQ=DAILY"):
@@ -454,7 +450,9 @@ class ReminderScheduler:
         return None
 
     def _calculate_interval_occurrence(
-        self, last_time: datetime, recurrence_rule: str
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
     ) -> datetime | None:
         """Calculate interval-based recurrence occurrences."""
         if "INTERVAL=" in recurrence_rule:
@@ -475,7 +473,9 @@ class ReminderScheduler:
         return DATEUTIL_AVAILABLE
 
     def _attempt_simple_calculation(
-        self, last_time: datetime, recurrence_rule: str
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
     ) -> datetime | None:
         """Attempt to calculate using simple occurrence rules."""
         try:
@@ -484,7 +484,9 @@ class ReminderScheduler:
             return None
 
     def _attempt_interval_calculation(
-        self, last_time: datetime, recurrence_rule: str
+        self,
+        last_time: datetime,
+        recurrence_rule: str,
     ) -> datetime | None:
         """Attempt to calculate using interval occurrence rules."""
         try:

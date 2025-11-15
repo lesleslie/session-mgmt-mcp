@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from session_mgmt_mcp.llm.models import LLMMessage, LLMResponse
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    from session_mgmt_mcp.llm.models import LLMMessage, LLMResponse
 
 
 class LLMProvider(ABC):

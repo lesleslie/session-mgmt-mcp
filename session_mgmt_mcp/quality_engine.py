@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess  # nosec B404
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
@@ -34,20 +33,38 @@ from session_mgmt_mcp.utils.file_utils import (
 from session_mgmt_mcp.utils.git_utils import _optimize_git_repository
 from session_mgmt_mcp.utils.quality import (
     check_git_activity as _check_git_activity,
+)
+from session_mgmt_mcp.utils.quality import (
     count_significant_files as _count_significant_files,
+)
+from session_mgmt_mcp.utils.quality import (
     create_empty_summary as _create_empty_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     ensure_summary_defaults as _ensure_summary_defaults,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_git_activity_heuristic as _evaluate_git_activity_heuristic,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_large_project_heuristic as _evaluate_large_project_heuristic,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_python_project_heuristic as _evaluate_python_project_heuristic,
-    extract_decisions_from_content as _extract_decisions_from_content,
-    extract_next_steps_from_content as _extract_next_steps_from_content,
-    extract_topics_from_content as _extract_topics_from_content,
-    generate_quality_recommendations as _generate_quality_recommendations,
+)
+from session_mgmt_mcp.utils.quality import (
     get_default_compaction_reason as _get_default_compaction_reason,
+)
+from session_mgmt_mcp.utils.quality import (
     get_error_summary as _get_error_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     get_fallback_compaction_reason as _get_fallback_compaction_reason,
+)
+from session_mgmt_mcp.utils.quality import (
     get_fallback_summary as _get_fallback_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     process_recent_reflections as _process_recent_reflections,
 )
 from session_mgmt_mcp.utils.quality_utils import (
@@ -551,7 +568,7 @@ async def analyze_project_workflow_patterns(current_dir: Path) -> dict[str, Any]
     try:
         project_characteristics = _detect_project_characteristics(current_dir)
         workflow_recommendations = _generate_workflow_recommendations(
-            project_characteristics
+            project_characteristics,
         )
 
         return {
@@ -575,7 +592,7 @@ def _generate_workflow_recommendations(characteristics: dict[str, bool]) -> list
             [
                 "Use targeted test commands for specific test scenarios",
                 "Consider test-driven development workflow with regular testing",
-            ]
+            ],
         )
 
     if characteristics["has_git"]:
@@ -583,28 +600,28 @@ def _generate_workflow_recommendations(characteristics: dict[str, bool]) -> list
             [
                 "Leverage git context for branch-specific development",
                 "Use commit messages to track progress patterns",
-            ]
+            ],
         )
 
     if characteristics["has_python"] and characteristics["has_tests"]:
         recommendations.append(
-            "Python+Testing: Consider pytest workflows with coverage analysis"
+            "Python+Testing: Consider pytest workflows with coverage analysis",
         )
 
     if characteristics["has_node"]:
         recommendations.append(
-            "Node.js project: Leverage npm/yarn scripts in development workflow"
+            "Node.js project: Leverage npm/yarn scripts in development workflow",
         )
 
     if characteristics["has_docker"]:
         recommendations.append(
-            "Containerized project: Consider container-based development workflows"
+            "Containerized project: Consider container-based development workflows",
         )
 
     # Default recommendations if no specific patterns detected
     if not recommendations:
         recommendations.append(
-            "Establish project-specific workflow patterns through regular checkpoints"
+            "Establish project-specific workflow patterns through regular checkpoints",
         )
 
     return recommendations
@@ -946,7 +963,7 @@ async def calculate_quality_score(project_dir: Path | None = None) -> dict[str, 
     # Convert dataclass to dict to maintain compatibility and include breakdown
     result_dict = {
         "total_score": int(
-            quality_result.total_score
+            quality_result.total_score,
         ),  # Convert to int for backward compatibility
         "version": quality_result.version,
         "project_health": {
@@ -958,7 +975,7 @@ async def calculate_quality_score(project_dir: Path | None = None) -> dict[str, 
         "permissions_health": quality_result.trust_score.details,  # Using trust_score details for permissions
         "session_health": {"status": "active"},  # Placeholder for session health
         "tool_health": {
-            "count": quality_result.trust_score.tool_ecosystem
+            "count": quality_result.trust_score.tool_ecosystem,
         },  # Using trust_score for tool health
         "recommendations": quality_result.recommendations,
         "timestamp": quality_result.timestamp,

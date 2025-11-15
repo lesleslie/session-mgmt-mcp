@@ -33,7 +33,10 @@ class AgentAnalyzerProtocol(Protocol):
 
     @classmethod
     def analyze(
-        cls, stdout: str, stderr: str, exit_code: int
+        cls,
+        stdout: str,
+        stderr: str,
+        exit_code: int,
     ) -> list[AgentRecommendation]:
         """Analyze crackerjack output and recommend agents.
 

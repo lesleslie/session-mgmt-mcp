@@ -236,7 +236,7 @@ class ShutdownManager:
         """
         _get_logger().debug(
             f"Executing cleanup task: {task.name} "
-            f"(priority: {task.priority}, timeout: {task.timeout_seconds}s)"
+            f"(priority: {task.priority}, timeout: {task.timeout_seconds}s)",
         )
 
         # Execute with timeout
@@ -262,11 +262,11 @@ class ShutdownManager:
         """
         self._stats.tasks_timeout += 1
         _get_logger().error(
-            f"Cleanup task timed out after {task.timeout_seconds}s: {task.name}"
+            f"Cleanup task timed out after {task.timeout_seconds}s: {task.name}",
         )
         if task.critical:
             _get_logger().critical(
-                f"Critical task failed: {task.name}, stopping cleanup"
+                f"Critical task failed: {task.name}, stopping cleanup",
             )
             return True
         return False
@@ -284,17 +284,20 @@ class ShutdownManager:
         """
         self._stats.tasks_failed += 1
         _get_logger().error(
-            f"Cleanup task failed: {task.name} - {error}", exc_info=True
+            f"Cleanup task failed: {task.name} - {error}",
+            exc_info=True,
         )
         if task.critical:
             _get_logger().critical(
-                f"Critical task failed: {task.name}, stopping cleanup"
+                f"Critical task failed: {task.name}, stopping cleanup",
             )
             return True
         return False
 
     def _finalize_shutdown(
-        self, sorted_tasks: list[CleanupTask], start_time: float
+        self,
+        sorted_tasks: list[CleanupTask],
+        start_time: float,
     ) -> None:
         """Finalize shutdown and log results.
 
@@ -310,13 +313,13 @@ class ShutdownManager:
 
         _get_logger().info(
             f"Shutdown complete: {self._stats.tasks_executed}/{len(sorted_tasks)} tasks succeeded "
-            f"in {self._stats.total_duration_ms:.2f}ms"
+            f"in {self._stats.total_duration_ms:.2f}ms",
         )
 
         if self._stats.tasks_failed > 0 or self._stats.tasks_timeout > 0:
             _get_logger().warning(
                 f"Shutdown had issues: {self._stats.tasks_failed} failed, "
-                f"{self._stats.tasks_timeout} timed out"
+                f"{self._stats.tasks_timeout} timed out",
             )
 
     async def shutdown(self) -> ShutdownStats:
@@ -345,12 +348,14 @@ class ShutdownManager:
 
             self._shutdown_initiated = True
             _get_logger().info(
-                f"Starting graceful shutdown with {len(self._cleanup_tasks)} tasks"
+                f"Starting graceful shutdown with {len(self._cleanup_tasks)} tasks",
             )
 
             # Sort by priority (highest first)
             sorted_tasks = sorted(
-                self._cleanup_tasks, key=lambda t: t.priority, reverse=True
+                self._cleanup_tasks,
+                key=lambda t: t.priority,
+                reverse=True,
             )
 
             for task in sorted_tasks:

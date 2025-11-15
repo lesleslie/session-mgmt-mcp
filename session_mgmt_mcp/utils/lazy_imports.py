@@ -145,7 +145,8 @@ numpy = lazy_loader.add_import(
 
 
 def require_dependency(
-    dependency_name: str, install_hint: str | None = None
+    dependency_name: str,
+    install_hint: str | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to require a specific dependency for a function."""
 
@@ -166,7 +167,8 @@ def require_dependency(
 
 
 def optional_dependency(
-    dependency_name: str, fallback_result: Any = None
+    dependency_name: str,
+    fallback_result: Any = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to handle optional dependencies gracefully."""
 
@@ -210,7 +212,10 @@ def create_embedding_mock() -> Any:
             pass
 
         def encode(
-            self, texts: str | list[str], *args: Any, **kwargs: Any
+            self,
+            texts: str | list[str],
+            *args: Any,
+            **kwargs: Any,
         ) -> list[list[float]]:
             # Return random-like embeddings for testing (using secrets for security)
             import secrets

@@ -100,9 +100,7 @@ async def migrate_graph_database(
     await _validate_graph_migration(entities, relationships, verbose)
 
     if verbose:
-        print()
-        print("✅ Migration completed successfully!")
-        print()
+        pass
 
     return {
         "entities_migrated": len(entities),
@@ -111,26 +109,19 @@ async def migrate_graph_database(
     }
 
 
-def _print_migration_config(old_db_path, dry_run: bool, backup: bool):
+def _print_migration_config(old_db_path, dry_run: bool, backup: bool) -> None:
     """Print migration configuration."""
-    new_db_path = get_new_db_path()
-    print("📊 Migration Configuration:")
-    print(f"  Old DB: {old_db_path}")
-    print(f"  New DB: {new_db_path}")
-    print(f"  Dry Run: {dry_run}")
-    print(f"  Backup: {backup}")
-    print()
+    get_new_db_path()
 
 
-async def _create_backup_graph(old_db_path, verbose: bool):
+async def _create_backup_graph(old_db_path, verbose: bool) -> None:
     """Create backup of old database if requested."""
     backup_path = get_backup_path()
     if verbose:
-        print(f"💾 Creating backup at {backup_path}...")
+        pass
     shutil.copy2(old_db_path, backup_path)
     if verbose:
-        print("✅ Backup created successfully")
-        print()
+        pass
 
 
 async def _read_old_graph_data(old_db_path, verbose: bool):
@@ -138,7 +129,7 @@ async def _read_old_graph_data(old_db_path, verbose: bool):
     import duckdb
 
     if verbose:
-        print("📖 Reading from old database...")
+        pass
 
     old_conn = duckdb.connect(str(old_db_path), read_only=True)
 
@@ -148,12 +139,12 @@ async def _read_old_graph_data(old_db_path, verbose: bool):
             """
             SELECT name FROM sqlite_master
             WHERE type='table' AND name IN ('kg_entities', 'kg_relationships')
-        """
+        """,
         ).fetchall()
         tables = [row[0] for row in tables_result]
 
         if verbose:
-            print(f"  Found tables: {', '.join(tables)}")
+            pass
 
         # Read entities
         entities = []
@@ -166,8 +157,7 @@ async def _read_old_graph_data(old_db_path, verbose: bool):
             relationships = await _read_relationships(old_conn, verbose)
 
         if verbose:
-            print(f"  Read {len(relationships)} relationships")
-            print()
+            pass
 
         return entities, relationships
     finally:
@@ -192,7 +182,7 @@ async def _read_entities(old_conn, verbose: bool):
     ]
 
     if verbose:
-        print(f"  Read {len(entities)} entities")
+        pass
     return entities
 
 
@@ -216,16 +206,10 @@ async def _read_relationships(old_conn, verbose: bool):
 
 async def _handle_dry_run_graph(entities, relationships):
     """Handle dry run scenario."""
-    print("🔍 DRY RUN - No changes will be made")
-    print()
-    print("Would migrate:")
-    print(f"  📦 {len(entities)} entities")
-    print(f"  🔗 {len(relationships)} relationships")
-    print()
     return {"entities": len(entities), "relationships": len(relationships)}
 
 
-async def _migrate_to_new_database(entities, relationships, verbose: bool):
+async def _migrate_to_new_database(entities, relationships, verbose: bool) -> None:
     """Write data to the new database using the adapter."""
     from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter,
@@ -234,12 +218,12 @@ async def _migrate_to_new_database(entities, relationships, verbose: bool):
     new_db_path = get_new_db_path()
 
     if verbose:
-        print("✍️  Writing to new ACB-managed database...")
+        pass
 
     async with KnowledgeGraphDatabaseAdapter(db_path=new_db_path) as new_db:
         # Migrate entities (preserve IDs and timestamps)
         if verbose:
-            print(f"  Migrating {len(entities)} entities...")
+            pass
 
         for entity in entities:
             # Direct insert to preserve IDs and timestamps
@@ -263,11 +247,11 @@ async def _migrate_to_new_database(entities, relationships, verbose: bool):
             )
 
         if verbose:
-            print(f"  ✅ Migrated {len(entities)} entities")
+            pass
 
         # Migrate relationships (preserve IDs and timestamps)
         if verbose:
-            print(f"  Migrating {len(relationships)} relationships...")
+            pass
 
         for rel in relationships:
             conn = new_db._get_conn()
@@ -290,10 +274,10 @@ async def _migrate_to_new_database(entities, relationships, verbose: bool):
             )
 
         if verbose:
-            print(f"  ✅ Migrated {len(relationships)} relationships")
+            pass
 
 
-async def _validate_graph_migration(entities, relationships, verbose: bool):
+async def _validate_graph_migration(entities, relationships, verbose: bool) -> None:
     """Validate the graph migration."""
     from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter,
@@ -303,8 +287,7 @@ async def _validate_graph_migration(entities, relationships, verbose: bool):
 
     # Validate migration
     if verbose:
-        print()
-        print("🔍 Validating migration...")
+        pass
 
     async with KnowledgeGraphDatabaseAdapter(db_path=new_db_path) as new_db:
         stats = await new_db.get_stats()
@@ -314,14 +297,7 @@ async def _validate_graph_migration(entities, relationships, verbose: bool):
         relationships_match = stats["total_relationships"] == len(relationships)
 
         if verbose:
-            print(
-                f"  Entities: {stats['total_entities']} (expected {len(entities)}) "
-                f"{'✅' if entities_match else '❌'}"
-            )
-            print(
-                f"  Relationships: {stats['total_relationships']} (expected {len(relationships)}) "
-                f"{'✅' if relationships_match else '❌'}"
-            )
+            pass
 
         if not (entities_match and relationships_match):
             msg = "Migration validation failed - record counts don't match"
@@ -351,7 +327,9 @@ Examples:
         help="Preview changes without modifying data",
     )
     parser.add_argument(
-        "--backup", action="store_true", help="Create backup before migration"
+        "--backup",
+        action="store_true",
+        help="Create backup before migration",
     )
     parser.add_argument(
         "--verbose",
@@ -363,36 +341,21 @@ Examples:
     args = parser.parse_args()
 
     try:
-        result = asyncio.run(
+        asyncio.run(
             migrate_graph_database(
                 dry_run=args.dry_run,
                 backup=args.backup,
                 verbose=args.verbose,
-            )
+            ),
         )
 
-        if not args.dry_run:
-            print()
-            print("Migration Summary:")
-            print(f"  Entities: {result['entities_migrated']} migrated")
-            print(f"  Relationships: {result['relationships_migrated']} migrated")
-            print(f"  Total: {result['total_records']} records")
-            print()
-            print("✅ Migration complete!")
-            print()
-            print(f"Old database: {get_old_db_path()}")
-            print(f"New database: {get_new_db_path()}")
-            if args.backup:
-                print(f"Backup: {get_backup_path()}")
+        if not args.dry_run and args.backup:
+            pass
 
-    except FileNotFoundError as e:
-        print(f"❌ Error: {e}")
-        print()
-        print("No migration needed - old database doesn't exist.")
+    except FileNotFoundError:
         sys.exit(0)  # Not an error, just nothing to migrate
 
-    except Exception as e:
-        print(f"❌ Migration failed: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()

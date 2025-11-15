@@ -76,7 +76,12 @@ class ReflectionDatabaseAdapter:
         msg = "Use 'async with' instead of 'with' for ReflectionDatabaseAdapter"
         raise RuntimeError(msg)
 
-    def __exit__(self, *_exc_info) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Sync context manager exit."""
 
     async def __aenter__(self) -> t.Self:
@@ -84,7 +89,12 @@ class ReflectionDatabaseAdapter:
         await self.initialize()
         return self
 
-    async def __aexit__(self, *_exc_info) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Async context manager exit with cleanup."""
         self.close()  # Sync close is sufficient, ACB handles async cleanup
 
@@ -140,16 +150,14 @@ class ReflectionDatabaseAdapter:
                 # Try to load ONNX model
                 model_path = Path.home() / ".claude/all-MiniLM-L6-v2/onnx/model.onnx"
                 if not model_path.exists():
-                    print("ONNX model not found, will use text search fallback")
                     self.onnx_session = None
                 else:
                     self.onnx_session = ort.InferenceSession(str(model_path))
                     self.embedding_dim = 384
-            except Exception as e:
-                print(f"ONNX model loading failed, using text search: {e}")
+            except Exception:
                 self.onnx_session = None
         else:
-            print("ONNX not available, using text search fallback")
+            pass
 
     def _get_adapter(self) -> Vector:
         """Get vector adapter, raising error if not initialized."""
@@ -364,7 +372,7 @@ class ReflectionDatabaseAdapter:
         """
         if ONNX_AVAILABLE and self.onnx_session:
             # Use semantic search with embeddings
-            try:
+            with suppress(Exception):
                 query_embedding = await self.get_embedding(query)
                 adapter = self._get_adapter()
 
@@ -400,14 +408,10 @@ class ReflectionDatabaseAdapter:
                                     if isinstance(meta.get("metadata"), str)
                                     else meta.get("metadata", {})
                                 ),
-                            }
+                            },
                         )
 
                 return results
-
-            except Exception as e:
-                print(f"Semantic search failed, falling back to text search: {e}")
-                # Fall through to text search
 
         # Fallback to text search (when ONNX unavailable or search failed)
         # This is a simplified version - in production you'd want to use
@@ -428,7 +432,6 @@ class ReflectionDatabaseAdapter:
         """
         # TODO: Implement full text search fallback using ACB adapter's raw SQL access
         # For now, return empty results with a warning
-        print("Text search fallback not yet implemented in ACB adapter")
         return []
 
     async def search_reflections(
@@ -449,7 +452,7 @@ class ReflectionDatabaseAdapter:
 
         """
         if ONNX_AVAILABLE and self.onnx_session:
-            try:
+            with suppress(Exception):
                 query_embedding = await self.get_embedding(query)
                 adapter = self._get_adapter()
 
@@ -476,17 +479,12 @@ class ReflectionDatabaseAdapter:
                                 "timestamp": meta.get("timestamp"),
                                 "tags": meta.get("tags", []),
                                 "metadata": {"type": "reflection"},
-                            }
+                            },
                         )
 
                 return results
 
-            except Exception as e:
-                print(f"Semantic search failed, falling back to text search: {e}")
-                # Fall through to text search
-
         # Fallback to text search
-        print("Text search fallback not yet implemented for reflections")
         return []
 
     async def get_stats(self) -> dict[str, t.Any]:
@@ -517,7 +515,7 @@ class ReflectionDatabaseAdapter:
             # Get total count
             # Build SQL safely - table_name is internal constant, not user input
             total_result = client.execute(
-                "SELECT COUNT(*) FROM " + table_name
+                "SELECT COUNT(*) FROM " + table_name,
             ).fetchone()
             total_count = total_result[0] if total_result else 0
 
@@ -525,14 +523,14 @@ class ReflectionDatabaseAdapter:
             conv_result = client.execute(
                 "SELECT COUNT(*) FROM "
                 + table_name
-                + " WHERE json_extract_string(metadata, '$.type') = 'conversation'"
+                + " WHERE json_extract_string(metadata, '$.type') = 'conversation'",
             ).fetchone()
             conv_count = conv_result[0] if conv_result else 0
 
             refl_result = client.execute(
                 "SELECT COUNT(*) FROM "
                 + table_name
-                + " WHERE json_extract_string(metadata, '$.type') = 'reflection'"
+                + " WHERE json_extract_string(metadata, '$.type') = 'reflection'",
             ).fetchone()
             refl_count = refl_result[0] if refl_result else 0
 
@@ -545,7 +543,6 @@ class ReflectionDatabaseAdapter:
             }
 
         except Exception as e:
-            print(f"Failed to get stats: {e}")
             return {"error": str(e)}
 
     async def reset_database(self) -> None:

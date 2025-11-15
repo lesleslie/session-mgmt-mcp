@@ -6,12 +6,14 @@ for storing and retrieving session state in S3-compatible object storage.
 
 from __future__ import annotations
 
+import asyncio
 import gzip
 import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
+
 
 class S3Storage(SessionStorage):
     """S3-based session storage."""
@@ -165,7 +167,10 @@ class S3Storage(SessionStorage):
                 session_id = self._extract_session_id_from_key(key)
 
                 if await self._should_include_s3_session(
-                    s3_client, key, user_id, project_id
+                    s3_client,
+                    key,
+                    user_id,
+                    project_id,
                 ):
                     session_ids.append(session_id)
 
@@ -275,5 +280,3 @@ class S3Storage(SessionStorage):
             return True
         except Exception:
             return False
-
-

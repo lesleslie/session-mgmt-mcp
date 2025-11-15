@@ -11,15 +11,18 @@ Phase 5 targets the remaining large files identified in Phase 4 planning. These 
 ## Target Files
 
 ### 1. advanced_search.py (1,023 lines)
+
 **Estimated Reduction:** -300-400 lines (30-40%)
 
 **Potential Extractions:**
+
 - Faceted search utilities → `utils/search/facets.py`
 - Aggregation functions → `utils/search/aggregations.py`
 - Full-text indexing → `utils/search/indexing.py`
 - Search result ranking → `utils/search/ranking.py`
 
 **Expected Structure:**
+
 ```
 session_mgmt_mcp/utils/search/
 ├── facets.py          # Faceted search filtering
@@ -29,18 +32,21 @@ session_mgmt_mcp/utils/search/
 └── __init__.py        # Module exports
 ```
 
----
+______________________________________________________________________
 
 ### 2. server_core.py (983 lines)
+
 **Estimated Reduction:** -250-350 lines (25-35%)
 
 **Potential Extractions:**
+
 - Tool registration utilities → `core/tools/registration.py`
 - Server initialization → `core/initialization.py`
 - Configuration management → `core/config.py`
 - Health check utilities → `core/health.py`
 
 **Expected Structure:**
+
 ```
 session_mgmt_mcp/core/tools/
 ├── registration.py    # Tool registration logic
@@ -52,18 +58,21 @@ session_mgmt_mcp/core/
 ├── health.py          # Health checks
 ```
 
----
+______________________________________________________________________
 
 ### 3. natural_scheduler.py (964 lines)
+
 **Estimated Reduction:** -200-300 lines (20-30%)
 
 **Potential Extractions:**
+
 - Time parsing utilities → `utils/scheduler/time_parser.py`
 - Reminder system → `utils/scheduler/reminders.py`
 - Task queue management → `utils/scheduler/queue.py`
 - Schedule serialization → `utils/scheduler/serialization.py`
 
 **Expected Structure:**
+
 ```
 session_mgmt_mcp/utils/scheduler/
 ├── time_parser.py     # Natural language time parsing
@@ -73,16 +82,18 @@ session_mgmt_mcp/utils/scheduler/
 └── __init__.py        # Module exports
 ```
 
----
+______________________________________________________________________
 
 ## Goals
 
 ### Minimum Goal
+
 - **Line Reduction:** 750 lines (25% average reduction)
 - **New Modules:** 12-15 focused modules
 - **API Compatibility:** 100% maintained
 
 ### Maximum Goal
+
 - **Line Reduction:** 1,050 lines (35% average reduction)
 - **New Modules:** 15-18 focused modules
 - **Architectural Improvements:** Clear separation of concerns
@@ -90,56 +101,63 @@ session_mgmt_mcp/utils/scheduler/
 ## Implementation Strategy
 
 ### Day 1: advanced_search.py
+
 1. Analyze file structure and identify extraction candidates
-2. Create `utils/search/` directory structure
-3. Extract faceted search utilities
-4. Extract aggregation functions
-5. Extract indexing and ranking utilities
-6. Update main file imports
-7. Test all imports
-8. Commit and push
+1. Create `utils/search/` directory structure
+1. Extract faceted search utilities
+1. Extract aggregation functions
+1. Extract indexing and ranking utilities
+1. Update main file imports
+1. Test all imports
+1. Commit and push
 
 ### Day 2: server_core.py
+
 1. Analyze file structure and identify extraction candidates
-2. Create necessary directory structures
-3. Extract tool registration logic
-4. Extract initialization and configuration
-5. Extract health check utilities
-6. Update main file imports
-7. Test all imports
-8. Commit and push
+1. Create necessary directory structures
+1. Extract tool registration logic
+1. Extract initialization and configuration
+1. Extract health check utilities
+1. Update main file imports
+1. Test all imports
+1. Commit and push
 
 ### Day 3: natural_scheduler.py
+
 1. Analyze file structure and identify extraction candidates
-2. Create `utils/scheduler/` directory structure
-3. Extract time parsing utilities
-4. Extract reminder system
-5. Extract queue management and serialization
-6. Update main file imports
-7. Test all imports
-8. Commit and push
+1. Create `utils/scheduler/` directory structure
+1. Extract time parsing utilities
+1. Extract reminder system
+1. Extract queue management and serialization
+1. Update main file imports
+1. Test all imports
+1. Commit and push
 
 ## Principles
 
 Following the established refactoring patterns from Phases 1-4:
 
 1. **Module Extraction Pattern:**
+
    - Create focused utility modules
    - Extract classes/functions verbatim
    - Update imports before removing code
    - Test immediately after extraction
 
-2. **Zero Breaking Changes:**
+1. **Zero Breaking Changes:**
+
    - Maintain 100% API compatibility
    - Re-export for backwards compatibility when needed
    - No functional changes, pure refactoring
 
-3. **Testing Strategy:**
+1. **Testing Strategy:**
+
    - Test imports after each extraction
    - Verify no circular dependencies
    - Ensure all functionality preserved
 
-4. **Git Workflow:**
+1. **Git Workflow:**
+
    - One commit per file refactoring
    - Detailed commit messages with metrics
    - Push after each successful refactoring
@@ -172,11 +190,13 @@ Following the established refactoring patterns from Phases 1-4:
 ## Expected Outcomes
 
 ### Quantitative
+
 - 750-1,050 lines eliminated
 - 12-18 new focused modules
 - 25-35% average file size reduction
 
 ### Qualitative
+
 - Improved code organization
 - Better testability
 - Enhanced maintainability
@@ -186,18 +206,20 @@ Following the established refactoring patterns from Phases 1-4:
 ## Notes
 
 Phase 5 is optional but recommended for:
+
 - Completing the large file modularization effort
 - Improving advanced feature maintainability
 - Establishing consistent architectural patterns
 
 **Previous Phases:**
+
 - Phase 3: Tool files (-758 lines)
 - Phase 4: Large core files (-3,064 lines)
 - **Phase 5:** Advanced features (-750-1,050 lines target)
 
 **Cumulative Impact:** -4,572-4,872 lines across all phases!
 
----
+______________________________________________________________________
 
 **Status:** 🚀 IN PROGRESS
 **Next Step:** Analyze advanced_search.py and begin Day 1 refactoring

@@ -21,16 +21,22 @@ class ProjectGroup(BaseModel):
 
     id: str = Field(description="Unique identifier for the project group")
     name: str = Field(
-        min_length=1, max_length=200, description="Name of the project group"
+        min_length=1,
+        max_length=200,
+        description="Name of the project group",
     )
     description: str = Field(
-        default="", max_length=1000, description="Description of the project group"
+        default="",
+        max_length=1000,
+        description="Description of the project group",
     )
     projects: list[str] = Field(
-        min_length=1, description="List of project identifiers in this group"
+        min_length=1,
+        description="List of project identifiers in this group",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for the project group"
+        default_factory=dict,
+        description="Additional metadata for the project group",
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
@@ -56,13 +62,15 @@ class ProjectDependency(BaseModel):
 
     id: str = Field(description="Unique identifier for the project dependency")
     source_project: str = Field(
-        min_length=1, description="The project that depends on another"
+        min_length=1,
+        description="The project that depends on another",
     )
     target_project: str = Field(
-        min_length=1, description="The project that is depended upon"
+        min_length=1,
+        description="The project that is depended upon",
     )
     dependency_type: Literal["uses", "extends", "references", "shares_code"] = Field(
-        description="Type of dependency relationship"
+        description="Type of dependency relationship",
     )
     description: str = Field(
         default="",
@@ -70,7 +78,8 @@ class ProjectDependency(BaseModel):
         description="Description of the dependency relationship",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for the dependency"
+        default_factory=dict,
+        description="Additional metadata for the dependency",
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
@@ -101,13 +110,15 @@ class SessionLink(BaseModel):
 
     id: str = Field(description="Unique identifier for the session link")
     source_session_id: str = Field(
-        min_length=1, description="The session that links to another"
+        min_length=1,
+        description="The session that links to another",
     )
     target_session_id: str = Field(
-        min_length=1, description="The session that is linked to"
+        min_length=1,
+        description="The session that is linked to",
     )
     link_type: Literal["related", "continuation", "reference", "dependency"] = Field(
-        description="Type of relationship between sessions"
+        description="Type of relationship between sessions",
     )
     context: str = Field(
         default="",
@@ -115,7 +126,8 @@ class SessionLink(BaseModel):
         description="Context or reason for the session link",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for the session link"
+        default_factory=dict,
+        description="Additional metadata for the session link",
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
@@ -175,7 +187,8 @@ class MultiProjectCoordinator:
     ) -> ProjectGroup:
         """Create a new project group."""
         group_id = hashlib.md5(
-            f"{name}_{time.time()}".encode(), usedforsecurity=False
+            f"{name}_{time.time()}".encode(),
+            usedforsecurity=False,
         ).hexdigest()
 
         group = ProjectGroup(
@@ -500,10 +513,12 @@ class MultiProjectCoordinator:
 
         insights = self._initialize_insights_structure()
         insights["project_activity"] = await self._analyze_project_activity(
-            projects, since_date
+            projects,
+            since_date,
         )
         insights["common_patterns"] = await self._find_common_patterns(
-            projects, since_date
+            projects,
+            since_date,
         )
 
         return insights
@@ -518,7 +533,9 @@ class MultiProjectCoordinator:
         }
 
     async def _analyze_project_activity(
-        self, projects: list[str], since_date: datetime
+        self,
+        projects: list[str],
+        since_date: datetime,
     ) -> dict[str, Any]:
         """Analyze activity across projects."""
         activity_data = {}
@@ -531,7 +548,9 @@ class MultiProjectCoordinator:
         return activity_data
 
     async def _get_project_stats(
-        self, project: str, since_date: datetime
+        self,
+        project: str,
+        since_date: datetime,
     ) -> dict[str, Any] | None:
         """Get statistics for a single project."""
         sql = """
@@ -566,7 +585,9 @@ class MultiProjectCoordinator:
         return self._identify_common_patterns(project_keywords)
 
     async def _get_conversation_data(
-        self, projects: list[str], since_date: datetime
+        self,
+        projects: list[str],
+        since_date: datetime,
     ) -> list[tuple[str, str]]:
         """Get conversation data for pattern analysis."""
         sql = """
@@ -581,7 +602,8 @@ class MultiProjectCoordinator:
         )
 
     def _extract_project_keywords(
-        self, conversation_data: list[tuple[str, str]]
+        self,
+        conversation_data: list[tuple[str, str]],
     ) -> dict[str, dict[str, int]]:
         """Extract keywords from project conversations."""
         project_keywords: dict[str, dict[str, int]] = {}
@@ -600,7 +622,8 @@ class MultiProjectCoordinator:
         return project_keywords
 
     def _identify_common_patterns(
-        self, project_keywords: dict[str, dict[str, int]]
+        self,
+        project_keywords: dict[str, dict[str, int]],
     ) -> list[dict[str, Any]]:
         """Identify patterns common across multiple projects."""
         common_keywords: dict[str, list[tuple[str, int]]] = {}
@@ -621,7 +644,7 @@ class MultiProjectCoordinator:
                         "pattern": word,
                         "projects": [p[0] for p in project_counts],
                         "frequency": sum(p[1] for p in project_counts),
-                    }
+                    },
                 )
 
         # Sort by frequency

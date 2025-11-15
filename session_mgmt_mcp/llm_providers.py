@@ -24,10 +24,6 @@ from session_mgmt_mcp.llm import (
 )
 
 # Re-export security utilities for backwards compatibility
-from session_mgmt_mcp.llm.security import (
-    get_masked_api_key,
-    validate_llm_api_keys_at_startup,
-)
 
 
 class LLMManager:
@@ -114,7 +110,10 @@ class LLMManager:
 
         # Try primary provider
         result = await self._try_primary_provider_generate(
-            target_provider, messages, model, **kwargs
+            target_provider,
+            messages,
+            model,
+            **kwargs,
         )
         if result is not None:
             return result
@@ -122,7 +121,10 @@ class LLMManager:
         # Try fallback providers if enabled
         if use_fallback:
             result = await self._try_fallback_providers_generate(
-                target_provider, messages, model, **kwargs
+                target_provider,
+                messages,
+                model,
+                **kwargs,
             )
             if result is not None:
                 return result
@@ -164,11 +166,13 @@ class LLMManager:
                     if await provider_instance.is_available():
                         self.logger.info(f"Falling back to {fallback_name}")
                         return await provider_instance.generate(
-                            messages, model, **kwargs
+                            messages,
+                            model,
+                            **kwargs,
                         )
                 except Exception as e:
                     self.logger.warning(
-                        f"Fallback provider {fallback_name} failed: {e}"
+                        f"Fallback provider {fallback_name} failed: {e}",
                     )
         return None
 
@@ -194,7 +198,9 @@ class LLMManager:
         """Get stream from provider (assumes provider is available)."""
         provider_instance = self.providers[provider_name]
         async for chunk in provider_instance.stream_generate(  # type: ignore[attr-defined]
-            messages, model, **kwargs
+            messages,
+            model,
+            **kwargs,
         ):
             yield chunk
 
@@ -210,7 +216,10 @@ class LLMManager:
             provider_instance = self.providers[provider_name]
             if await provider_instance.is_available():
                 async for chunk in self._get_provider_stream(
-                    provider_name, messages, model, **kwargs
+                    provider_name,
+                    messages,
+                    model,
+                    **kwargs,
                 ):
                     yield chunk
         except Exception as e:
@@ -259,12 +268,14 @@ class LLMManager:
         """Stream from primary provider. Target complexity: ≤4."""
         has_content = False
         async for chunk in self._try_streaming_from_provider(
-            primary_provider, messages, options
+            primary_provider,
+            messages,
+            options,
         ):
             if chunk.is_error:
                 if not has_content:  # Log errors only if no content received
                     self.logger.warning(
-                        f"Primary provider error: {chunk.metadata.get('error', 'Unknown')}"
+                        f"Primary provider error: {chunk.metadata.get('error', 'Unknown')}",
                     )
                 continue
 
@@ -273,7 +284,7 @@ class LLMManager:
 
         if not has_content:
             self.logger.debug(
-                f"Primary provider {primary_provider} produced no content"
+                f"Primary provider {primary_provider} produced no content",
             )
 
     async def _stream_from_fallback_providers(
@@ -291,7 +302,9 @@ class LLMManager:
             self.logger.info(f"Falling back to {fallback_name}")
             has_content = False
             async for chunk in self._try_streaming_from_provider(
-                fallback_name, messages, options
+                fallback_name,
+                messages,
+                options,
             ):
                 if chunk.is_error:
                     continue
@@ -321,14 +334,18 @@ class LLMManager:
             # Try primary provider first
             primary_provider = await self._select_primary_provider(options)
             async for chunk_content in self._stream_from_primary_provider(
-                primary_provider, messages, options
+                primary_provider,
+                messages,
+                options,
             ):
                 yield chunk_content
                 return  # Success - exit early
 
             # Try fallback providers if primary failed
             async for chunk_content in self._stream_from_fallback_providers(
-                primary_provider, messages, options
+                primary_provider,
+                messages,
+                options,
             ):
                 yield chunk_content
                 return  # Success - exit early

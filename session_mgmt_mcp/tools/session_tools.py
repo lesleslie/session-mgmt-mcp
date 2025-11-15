@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess  # nosec B404
-import typing as t
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,7 +22,6 @@ from bevy import get_container
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-from acb.adapters import import_adapter
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.error_handlers import _get_logger
 
@@ -82,6 +80,7 @@ def _get_session_manager() -> SessionLifecycleManager:
     Note:
         Checks bevy container directly instead of using depends.get_sync()
         to avoid async event loop issues during module import.
+
     """
     # Check if already registered without triggering async machinery
     container = get_container()
@@ -108,6 +107,7 @@ def _create_session_shortcuts() -> dict[str, Any]:
 
     Returns:
         Dict with 'created' bool, 'existed' bool, and 'shortcuts' list
+
     """
     claude_home = Path.home() / ".claude"
     commands_dir = claude_home / "commands"
@@ -184,7 +184,7 @@ This will:
                 _get_logger().info(f"Created slash command shortcut: /{shortcut_name}")
             except Exception as e:
                 _get_logger().exception(
-                    f"Failed to create shortcut /{shortcut_name}: {e}"
+                    f"Failed to create shortcut /{shortcut_name}: {e}",
                 )
 
     return {
@@ -269,7 +269,7 @@ def _find_recent_git_repository() -> str | None:
             continue
 
         # Collect all git repositories with modification times
-        git_repos = []
+        git_repos: list[tuple[float, str]] = []
         for repo_path in projects_path.iterdir():
             if _is_git_repository(repo_path):
                 mtime = _safe_get_mtime(repo_path)
@@ -279,9 +279,9 @@ def _find_recent_git_repository() -> str | None:
         if git_repos:
             # Sort by modification time and find most recent non-server repo
             git_repos.sort(reverse=True)
-            for _mtime, repo_path in git_repos:
-                if not repo_path.endswith("session-mgmt-mcp"):
-                    return repo_path
+            for _mtime, repo_path_str in git_repos:
+                if not repo_path_str.endswith("session-mgmt-mcp"):
+                    return repo_path_str
 
     return None
 
@@ -380,28 +380,30 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
 
 
 def _add_session_info_to_output(
-    output_builder: SessionOutputBuilder, result: dict[str, Any]
+    output_builder: SessionOutputBuilder,
+    result: dict[str, Any],
 ) -> None:
     """Add session information to output. Target complexity: ≤5."""
     output_builder.add_simple_item(f"📁 Current project: {result['project']}")
     output_builder.add_simple_item(
-        f"📂 Working directory: {result['working_directory']}"
+        f"📂 Working directory: {result['working_directory']}",
     )
     output_builder.add_simple_item(f"🏠 Claude directory: {result['claude_directory']}")
     output_builder.add_simple_item(
-        f"📊 Initial quality score: {result['quality_score']}/100"
+        f"📊 Initial quality score: {result['quality_score']}/100",
     )
 
     # Add project context info
     context = result["project_context"]
     context_items = sum(1 for detected in context.values() if detected)
     output_builder.add_simple_item(
-        f"🎯 Project context: {context_items}/{len(context)} indicators detected"
+        f"🎯 Project context: {context_items}/{len(context)} indicators detected",
     )
 
 
 def _add_environment_info_to_output(
-    output_builder: SessionOutputBuilder, setup_results: SessionSetupResults
+    output_builder: SessionOutputBuilder,
+    setup_results: SessionSetupResults,
 ) -> None:
     """Add environment setup info to output. Target complexity: ≤5."""
     # Add UV setup
@@ -426,18 +428,20 @@ def _add_environment_info_to_output(
 
 
 def _add_project_section_to_output(
-    output_builder: SessionOutputBuilder, result: dict[str, Any]
+    output_builder: SessionOutputBuilder,
+    result: dict[str, Any],
 ) -> None:
     """Add project information to output. Target complexity: ≤3."""
     output_builder.add_simple_item(f"📁 Project: {result['project']}")
     output_builder.add_simple_item(
-        f"📂 Working directory: {result['working_directory']}"
+        f"📂 Working directory: {result['working_directory']}",
     )
     output_builder.add_simple_item(f"📊 Quality score: {result['quality_score']}/100")
 
 
 def _add_quality_section_to_output(
-    output_builder: SessionOutputBuilder, breakdown: dict[str, Any]
+    output_builder: SessionOutputBuilder,
+    breakdown: dict[str, Any],
 ) -> None:
     """Add quality breakdown to output. Target complexity: ≤5."""
     quality_items = [
@@ -450,7 +454,8 @@ def _add_quality_section_to_output(
 
 
 def _add_health_section_to_output(
-    output_builder: SessionOutputBuilder, health: dict[str, Any]
+    output_builder: SessionOutputBuilder,
+    health: dict[str, Any],
 ) -> None:
     """Add system health to output. Target complexity: ≤5."""
     output_builder.add_section("🏥 System health", [])
@@ -460,12 +465,13 @@ def _add_health_section_to_output(
 
 
 def _add_project_context_to_output(
-    output_builder: SessionOutputBuilder, context: dict[str, Any]
+    output_builder: SessionOutputBuilder,
+    context: dict[str, Any],
 ) -> None:
     """Add project context to output. Target complexity: ≤5."""
     context_items = sum(1 for detected in context.values() if detected)
     output_builder.add_simple_item(
-        f"\n🎯 Project context: {context_items}/{len(context)} indicators"
+        f"\n🎯 Project context: {context_items}/{len(context)} indicators",
     )
 
     key_indicators = [
@@ -485,7 +491,8 @@ def _add_project_context_to_output(
 
 
 async def _handle_auto_store_reflection(
-    result: dict[str, Any], output: list[str]
+    result: dict[str, Any],
+    output: list[str],
 ) -> None:
     """Handle selective auto-store reflection logic."""
     auto_store_decision = result.get("auto_store_decision")
@@ -576,7 +583,7 @@ def _format_successful_end(summary: dict[str, Any]) -> list[str]:
         [
             "\n✅ Session ended successfully!",
             "💡 Use the session data to improve future development workflows.",
-        ]
+        ],
     )
 
     return output
@@ -627,17 +634,17 @@ async def _start_impl(working_directory: str | None = None) -> str:
             setup_results = await _perform_environment_setup(result)
             _add_environment_info_to_output(output_builder, setup_results)
             output_builder.add_simple_item(
-                "\n✅ Session initialization completed successfully!"
+                "\n✅ Session initialization completed successfully!",
             )
         else:
             output_builder.add_simple_item(
-                f"❌ Session initialization failed: {result['error']}"
+                f"❌ Session initialization failed: {result['error']}",
             )
 
     except Exception as e:
         _get_logger().exception("Session initialization error", error=str(e))
         output_builder.add_simple_item(
-            f"❌ Unexpected error during initialization: {e}"
+            f"❌ Unexpected error during initialization: {e}",
         )
 
     return output_builder.build()
@@ -658,7 +665,8 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
     try:
         # Determine if this is a manual checkpoint (always true for explicit tool calls)
         result = await _get_session_manager().checkpoint_session(
-            working_directory, is_manual=True
+            working_directory,
+            is_manual=True,
         )
 
         if result["success"]:
@@ -732,11 +740,12 @@ async def _status_impl(working_directory: str | None = None) -> str:
             recommendations = result["recommendations"]
             if recommendations:
                 output_builder.add_section(
-                    "💡 Recommendations", [f"   • {rec}" for rec in recommendations[:3]]
+                    "💡 Recommendations",
+                    [f"   • {rec}" for rec in recommendations[:3]],
                 )
 
             output_builder.add_simple_item(
-                f"\n⏰ Status generated: {result['timestamp']}"
+                f"\n⏰ Status generated: {result['timestamp']}",
             )
 
         else:
@@ -763,6 +772,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _start_impl(working_directory)
 
@@ -772,6 +782,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _checkpoint_impl(working_directory)
 
@@ -781,6 +792,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _end_impl(working_directory)
 
@@ -790,6 +802,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _status_impl(working_directory)
 

@@ -506,7 +506,9 @@ async def advanced_search(
 
 
 def _build_advanced_search_filters(
-    content_type: str | None, project: str | None, timeframe: str | None
+    content_type: str | None,
+    project: str | None,
+    timeframe: str | None,
 ) -> list[t.Any]:
     """Build search filters from parameters."""
     filters = []
@@ -515,7 +517,7 @@ def _build_advanced_search_filters(
         from session_mgmt_mcp.advanced_search import SearchFilter
 
         filters.append(
-            SearchFilter(field="content_type", operator="eq", value=content_type)
+            SearchFilter(field="content_type", operator="eq", value=content_type),
         )
 
     if project:
@@ -532,8 +534,10 @@ def _build_advanced_search_filters(
             start_time, end_time = advanced_search_engine._parse_timeframe(timeframe)
             filters.append(
                 SearchFilter(
-                    field="timestamp", operator="range", value=(start_time, end_time)
-                )
+                    field="timestamp",
+                    operator="range",
+                    value=(start_time, end_time),
+                ),
             )
 
     return filters
@@ -757,7 +761,7 @@ async def git_worktree_switch(from_path: str, to_path: str) -> str:
                 output.append(" Session state restored for target worktree")
         else:
             output.append(
-                " Session context preservation failed (basic switch performed)"
+                " Session context preservation failed (basic switch performed)",
             )
             if result.get("session_error"):
                 output.append(f"   Error: {result['session_error']}")

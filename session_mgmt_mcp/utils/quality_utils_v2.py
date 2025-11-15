@@ -131,7 +131,9 @@ async def calculate_quality_score_v2(
     dev_velocity = await _calculate_dev_velocity(project_dir)
     security = await _calculate_security(project_dir)
     trust_score = _calculate_trust_score(
-        permissions_count, session_available, tool_count
+        permissions_count,
+        session_available,
+        tool_count,
     )
 
     # Calculate total
@@ -141,12 +143,16 @@ async def calculate_quality_score_v2(
 
     # Generate recommendations
     recommendations = _generate_recommendations_v2(
-        code_quality, project_health, dev_velocity, security, total
+        code_quality,
+        project_health,
+        dev_velocity,
+        security,
+        total,
     )
 
     return QualityScoreV2(
         total_score=round(
-            total
+            total,
         ),  # Convert to int for backward compatibility with tests
         version="2.0",
         code_quality=code_quality,
@@ -364,7 +370,7 @@ def _calculate_maturity_score(project_dir: Path) -> dict[str, Any]:
 
     if github_workflows.exists():
         workflow_files = list(github_workflows.glob("*.yml")) + list(
-            github_workflows.glob("*.yaml")
+            github_workflows.glob("*.yaml"),
         )
         if len(workflow_files) >= 2:
             score += 5
@@ -450,7 +456,8 @@ def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
                 1
                 for msg in commits
                 if re.match(  # REGEX OK: conventional commits pattern validation
-                    r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg
+                    r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:",
+                    msg,
                 )
             )
 
@@ -606,7 +613,11 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
 
     # Check for hardcoded secrets (basic patterns)
     with suppress(
-        OSError, PermissionError, FileNotFoundError, UnicodeDecodeError, ValueError
+        OSError,
+        PermissionError,
+        FileNotFoundError,
+        UnicodeDecodeError,
+        ValueError,
     ):
         py_files = list(project_dir.rglob("*.py"))[:50]  # Limit to 50 files
         secret_patterns = [
@@ -619,7 +630,9 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
             content = py_file.read_text()
             for pattern in secret_patterns:
                 if re.search(
-                    pattern, content, re.IGNORECASE
+                    pattern,
+                    content,
+                    re.IGNORECASE,
                 ):  # REGEX OK: security pattern detection
                     score -= 2
                     details["hardcoded_secrets"] = f"found in {py_file.name}"
@@ -629,7 +642,9 @@ def _check_security_hygiene(project_dir: Path) -> dict[str, Any]:
 
 
 def _calculate_trust_score(
-    permissions_count: int, session_available: bool, tool_count: int
+    permissions_count: int,
+    session_available: bool,
+    tool_count: int,
 ) -> TrustScore:
     """Calculate trust score (separate from quality, 0-100).
 
@@ -747,7 +762,9 @@ async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
     with suppress(ImportError, RuntimeError, ValueError, AttributeError, OSError):
         # Get recent metrics from Crackerjack history
         metrics_history = await get_quality_metrics_history(
-            str(project_dir), None, days=1
+            str(project_dir),
+            None,
+            days=1,
         )
 
         if metrics_history:
@@ -772,7 +789,8 @@ async def _get_crackerjack_metrics(project_dir: Path) -> dict[str, Any]:
 
 
 async def _get_type_coverage(
-    project_dir: Path, crackerjack_metrics: dict[str, Any]
+    project_dir: Path,
+    crackerjack_metrics: dict[str, Any],
 ) -> float:
     """Get type coverage percentage.
 
@@ -819,11 +837,11 @@ def _generate_recommendations_v2(
     # Code quality recommendations
     if code_quality.test_coverage < 10:  # <67% coverage
         recommendations.append(
-            f"🧪 Critical: Increase test coverage ({code_quality.details['coverage_pct']:.1f}% → target 80%+)"
+            f"🧪 Critical: Increase test coverage ({code_quality.details['coverage_pct']:.1f}% → target 80%+)",
         )
     elif code_quality.test_coverage < 13:  # <87% coverage
         recommendations.append(
-            f"🧪 Add more tests ({code_quality.details['coverage_pct']:.1f}% coverage)"
+            f"🧪 Add more tests ({code_quality.details['coverage_pct']:.1f}% coverage)",
         )
 
     if code_quality.lint_score < 8:  # <80% lint score
@@ -838,7 +856,7 @@ def _generate_recommendations_v2(
     # Project health recommendations
     if project_health.tooling_score < 10:
         recommendations.append(
-            "🔨 Improve tooling setup (add lockfile, update dependencies)"
+            "🔨 Improve tooling setup (add lockfile, update dependencies)",
         )
 
     if project_health.maturity_score < 10:

@@ -100,7 +100,7 @@ def get_server_status() -> dict[str, Any]:
                     "memory_mb": proc.memory_info().rss / 1024 / 1024,
                     "cpu_percent": proc.cpu_percent(),
                     "create_time": proc.create_time(),
-                }
+                },
             )
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -178,11 +178,11 @@ def start_mcp_server(
         # Check if process is still running
         if process.poll() is not None:  # Process has exited
             console.print(
-                f"[red]❌ Server process exited with code {process.returncode}[/red]"
+                f"[red]❌ Server process exited with code {process.returncode}[/red]",
             )
             if not verbose:
                 console.print(
-                    "[yellow]💡 Try --verbose flag to see startup errors[/yellow]"
+                    "[yellow]💡 Try --verbose flag to see startup errors[/yellow]",
                 )
             raise typer.Exit(1)
 
@@ -247,13 +247,13 @@ def stop_mcp_server() -> bool:
             try:
                 proc.wait(timeout=5)
                 console.print(
-                    f"[green]✅ Process {proc.pid} terminated gracefully[/green]"
+                    f"[green]✅ Process {proc.pid} terminated gracefully[/green]",
                 )
                 stopped_count += 1
             except psutil.TimeoutExpired:
                 # Force kill if graceful shutdown failed
                 console.print(
-                    f"[yellow]⚡ Force killing process {proc.pid}...[/yellow]"
+                    f"[yellow]⚡ Force killing process {proc.pid}...[/yellow]",
                 )
                 proc.kill()
                 proc.wait()
@@ -335,7 +335,8 @@ def show_logs(lines: int = 50, follow: bool = False) -> None:
     try:
         if follow:
             subprocess.run(
-                ["tail", "-f", "-n", str(lines), str(latest_log)], check=False
+                ["tail", "-f", "-n", str(lines), str(latest_log)],
+                check=False,
             )
         else:
             subprocess.run(["tail", "-n", str(lines), str(latest_log)], check=False)
@@ -442,7 +443,9 @@ def main(
 
     if restart_mcp_server:
         restart_mcp_server_func(
-            port=port, websocket_port=websocket_port, verbose=verbose
+            port=port,
+            websocket_port=websocket_port,
+            verbose=verbose,
         )
         return
 
@@ -465,7 +468,7 @@ def main(
 
     # If no options provided, show help
     console.print(
-        "[yellow]No command specified. Use --help for available options.[/yellow]"
+        "[yellow]No command specified. Use --help for available options.[/yellow]",
     )
 
 

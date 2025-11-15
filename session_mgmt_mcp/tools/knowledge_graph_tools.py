@@ -10,13 +10,14 @@ Refactored to use utility modules for reduced code duplication.
 from __future__ import annotations
 
 import re
-import typing as t
 from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.utils.error_handlers import _get_logger
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
     )
@@ -40,16 +41,19 @@ async def _require_knowledge_graph() -> KnowledgeGraphDatabase:
         await kg.initialize()
         return kg
     except Exception as e:
-        raise RuntimeError(f"Knowledge graph not available: {e}") from e
+        msg = f"Knowledge graph not available: {e}"
+        raise RuntimeError(msg) from e
 
 
-async def _execute_kg_operation(operation_name: str, operation: t.Callable) -> str:
+async def _execute_kg_operation(
+    operation_name: str, operation: Callable[[Any], Awaitable[str]]
+) -> str:
     """Execute a knowledge graph operation with error handling."""
     try:
         async with await _require_knowledge_graph() as kg:
             return await operation(kg)
     except RuntimeError as e:
-        return f"❌ {str(e)}. Install dependencies: uv sync"
+        return f"❌ {e!s}. Install dependencies: uv sync"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -115,15 +119,27 @@ async def _create_entity_impl(
     properties: dict[str, Any] | None = None,
 ) -> str:
     """Create an entity in the knowledge graph."""
+
+    async def operation(kg: Any) -> str:
+        return await _create_entity_operation(
+            kg,
+            name,
+            entity_type,
+            observations or [],
+            properties or {},
+        )
+
     return await _execute_kg_operation(
         "Create entity",
-        lambda kg: _create_entity_operation(
-            kg, name, entity_type, observations or [], properties or {}
-        ),
+        operation,
     )
 
 
-async def _add_observation_operation(kg: Any, entity_name: str, observation: str) -> str:
+async def _add_observation_operation(
+    kg: Any,
+    entity_name: str,
+    observation: str,
+) -> str:
     """Add an observation (fact) to an existing entity."""
     success = await kg.add_observation(entity_name, observation)
 
@@ -135,17 +151,23 @@ async def _add_observation_operation(kg: Any, entity_name: str, observation: str
         entity_name=entity_name,
         observation=observation[:100],
     )
-    return "\n".join([
-        f"✅ Observation added to '{entity_name}'",
-        f"📝 Observation: {observation}",
-    ])
+    return "\n".join(
+        [
+            f"✅ Observation added to '{entity_name}'",
+            f"📝 Observation: {observation}",
+        ],
+    )
 
 
 async def _add_observation_impl(entity_name: str, observation: str) -> str:
     """Add an observation (fact) to an existing entity."""
+
+    async def operation(kg: Any) -> str:
+        return await _add_observation_operation(kg, entity_name, observation)
+
     return await _execute_kg_operation(
         "Add observation",
-        lambda kg: _add_observation_operation(kg, entity_name, observation),
+        operation,
     )
 
 
@@ -196,11 +218,19 @@ async def _create_relation_impl(
     properties: dict[str, Any] | None = None,
 ) -> str:
     """Create a relationship between two entities."""
+
+    async def operation(kg: Any) -> str:
+        return await _create_relation_operation(
+            kg,
+            from_entity,
+            to_entity,
+            relation_type,
+            properties or {},
+        )
+
     return await _execute_kg_operation(
         "Create relation",
-        lambda kg: _create_relation_operation(
-            kg, from_entity, to_entity, relation_type, properties or {}
-        ),
+        operation,
     )
 
 
@@ -225,7 +255,10 @@ def _format_entity_result(entity: dict[str, Any]) -> list[str]:
 
 
 async def _search_entities_operation(
-    kg: Any, query: str, entity_type: str | None, limit: int
+    kg: Any,
+    query: str,
+    entity_type: str | None,
+    limit: int,
 ) -> str:
     """Search for entities by name or observations."""
     results = await kg.search_entities(
@@ -257,9 +290,13 @@ async def _search_entities_impl(
     limit: int = 10,
 ) -> str:
     """Search for entities by name or observations."""
+
+    async def operation(kg: Any) -> str:
+        return await _search_entities_operation(kg, query, entity_type, limit)
+
     return await _execute_kg_operation(
         "Search entities",
-        lambda kg: _search_entities_operation(kg, query, entity_type, limit),
+        operation,
     )
 
 
@@ -268,12 +305,17 @@ def _format_relationship(rel: dict[str, Any], direction: str, entity_name: str) 
     if direction == "outgoing" or (
         direction == "both" and rel["from_entity"] == entity_name
     ):
-        return f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
+        return (
+            f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
+        )
     return f"  {rel['from_entity']} <--[{rel['relation_type']}]-- {rel['to_entity']}"
 
 
 async def _get_entity_relationships_operation(
-    kg: Any, entity_name: str, relation_type: str | None, direction: str
+    kg: Any,
+    entity_name: str,
+    relation_type: str | None,
+    direction: str,
 ) -> str:
     """Get all relationships for an entity."""
     relationships = await kg.get_relationships(
@@ -306,11 +348,18 @@ async def _get_entity_relationships_impl(
     direction: str = "both",
 ) -> str:
     """Get all relationships for an entity."""
+
+    async def operation(kg: Any) -> str:
+        return await _get_entity_relationships_operation(
+            kg,
+            entity_name,
+            relation_type,
+            direction,
+        )
+
     return await _execute_kg_operation(
         "Get entity relationships",
-        lambda kg: _get_entity_relationships_operation(
-            kg, entity_name, relation_type, direction
-        ),
+        operation,
     )
 
 
@@ -320,7 +369,10 @@ async def _get_entity_relationships_impl(
 
 
 async def _find_path_operation(
-    kg: Any, from_entity: str, to_entity: str, max_depth: int
+    kg: Any,
+    from_entity: str,
+    to_entity: str,
+    max_depth: int,
 ) -> str:
     """Find paths between two entities using SQL/PGQ."""
     paths = await kg.find_path(
@@ -338,11 +390,13 @@ async def _find_path_operation(
     ]
 
     for i, path in enumerate(paths, 1):
-        lines.extend([
-            f"{i}. Path length: {path['path_length']} hop(s)",
-            f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"{i}. Path length: {path['path_length']} hop(s)",
+                f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}",
+                "",
+            ],
+        )
 
     _get_logger().info(
         "Paths found",
@@ -359,9 +413,13 @@ async def _find_path_impl(
     max_depth: int = 5,
 ) -> str:
     """Find paths between two entities using SQL/PGQ."""
+
+    async def operation(kg: Any) -> str:
+        return await _find_path_operation(kg, from_entity, to_entity, max_depth)
+
     return await _execute_kg_operation(
         "Find path",
-        lambda kg: _find_path_operation(kg, from_entity, to_entity, max_depth),
+        operation,
     )
 
 
@@ -398,10 +456,12 @@ async def _get_knowledge_graph_stats_operation(kg: Any) -> str:
         )
         lines.append("")
 
-    lines.extend([
-        f"💾 Database: {stats['database_path']}",
-        f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
-    ])
+    lines.extend(
+        [
+            f"💾 Database: {stats['database_path']}",
+            f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
+        ],
+    )
 
     _get_logger().info("Knowledge graph stats retrieved", **stats)
     return "\n".join(lines)
@@ -410,7 +470,8 @@ async def _get_knowledge_graph_stats_operation(kg: Any) -> str:
 async def _get_knowledge_graph_stats_impl() -> str:
     """Get knowledge graph statistics."""
     return await _execute_kg_operation(
-        "Get KG stats", _get_knowledge_graph_stats_operation
+        "Get KG stats",
+        _get_knowledge_graph_stats_operation,
     )
 
 
@@ -430,7 +491,9 @@ def _extract_patterns_from_context(context: str) -> dict[str, set[str]]:
 
 
 async def _auto_create_entity_if_new(
-    kg: Any, entity_name: str, entity_type: str
+    kg: Any,
+    entity_name: str,
+    entity_type: str,
 ) -> bool:
     """Create entity if it doesn't exist. Returns True if created."""
     existing = await kg.find_entity_by_name(entity_name)
@@ -493,7 +556,8 @@ async def _extract_entities_from_context_impl(
 
 
 async def _create_single_entity(
-    kg: Any, entity_data: dict[str, Any]
+    kg: Any,
+    entity_data: dict[str, Any],
 ) -> tuple[str | None, tuple[str, str] | None]:
     """Create a single entity. Returns (created_name, None) or (None, (name, error))."""
     try:
@@ -508,7 +572,10 @@ async def _create_single_entity(
         return None, (entity_data["name"], str(e))
 
 
-async def _batch_create_entities_operation(kg: Any, entities: list[dict[str, Any]]) -> str:
+async def _batch_create_entities_operation(
+    kg: Any,
+    entities: list[dict[str, Any]],
+) -> str:
     """Bulk create multiple entities."""
     created = []
     failed = []
@@ -551,9 +618,13 @@ async def _batch_create_entities_operation(kg: Any, entities: list[dict[str, Any
 
 async def _batch_create_entities_impl(entities: list[dict[str, Any]]) -> str:
     """Bulk create multiple entities."""
+
+    async def operation(kg: Any) -> str:
+        return await _batch_create_entities_operation(kg, entities)
+
     return await _execute_kg_operation(
         "Batch create entities",
-        lambda kg: _batch_create_entities_operation(kg, entities),
+        operation,
     )
 
 
@@ -589,7 +660,10 @@ def register_knowledge_graph_tools(mcp_server: Any) -> None:
     ) -> str:
         """Create a relationship between two entities in the knowledge graph."""
         return await _create_relation_impl(
-            from_entity, to_entity, relation_type, properties
+            from_entity,
+            to_entity,
+            relation_type,
+            properties,
         )
 
     @mcp_server.tool()  # type: ignore[misc]
@@ -609,7 +683,9 @@ def register_knowledge_graph_tools(mcp_server: Any) -> None:
     ) -> str:
         """Get all relationships for a specific entity."""
         return await _get_entity_relationships_impl(
-            entity_name, relation_type, direction
+            entity_name,
+            relation_type,
+            direction,
         )
 
     @mcp_server.tool()  # type: ignore[misc]

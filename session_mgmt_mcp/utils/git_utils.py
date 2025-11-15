@@ -65,7 +65,7 @@ def _stage_and_commit_files(
                 )
                 if result.returncode != 0:
                     output.append(
-                        f"⚠️ Failed to stage {file_path}: {result.stderr.strip()}"
+                        f"⚠️ Failed to stage {file_path}: {result.stderr.strip()}",
                     )
         else:
             # Stage all changes
@@ -137,7 +137,7 @@ def _optimize_git_repository(current_dir: Path) -> list[str]:
         else:
             # Remote prune failure is non-critical
             optimization_results.append(
-                "ℹ️ Remote pruning skipped (no remote or access issues)"
+                "ℹ️ Remote pruning skipped (no remote or access issues)",
             )
 
     except Exception as e:

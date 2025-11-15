@@ -58,7 +58,7 @@ class KnowledgeGraphDatabase:
 
         """
         self.db_path = db_path or os.path.expanduser(
-            "~/.claude/data/knowledge_graph.duckdb"
+            "~/.claude/data/knowledge_graph.duckdb",
         )
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -188,19 +188,19 @@ class KnowledgeGraphDatabase:
 
         # Create indexes for performance
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_entities_name ON kg_entities(name)"
+            "CREATE INDEX IF NOT EXISTS idx_entities_name ON kg_entities(name)",
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_entities_type ON kg_entities(entity_type)"
+            "CREATE INDEX IF NOT EXISTS idx_entities_type ON kg_entities(entity_type)",
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_relationships_type ON kg_relationships(relation_type)"
+            "CREATE INDEX IF NOT EXISTS idx_relationships_type ON kg_relationships(relation_type)",
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_relationships_from ON kg_relationships(from_entity)"
+            "CREATE INDEX IF NOT EXISTS idx_relationships_from ON kg_relationships(from_entity)",
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_relationships_to ON kg_relationships(to_entity)"
+            "CREATE INDEX IF NOT EXISTS idx_relationships_to ON kg_relationships(to_entity)",
         )
 
         # Create property graph using DuckPGQ
@@ -295,7 +295,8 @@ class KnowledgeGraphDatabase:
         conn = self._get_conn()
 
         result = conn.execute(
-            "SELECT * FROM kg_entities WHERE id = ?", (entity_id,)
+            "SELECT * FROM kg_entities WHERE id = ?",
+            (entity_id,),
         ).fetchone()
 
         if not result:
@@ -323,7 +324,9 @@ class KnowledgeGraphDatabase:
         }
 
     async def find_entity_by_name(
-        self, name: str, entity_type: str | None = None
+        self,
+        name: str,
+        entity_type: str | None = None,
     ) -> dict[str, Any] | None:
         """Find an entity by name (case-insensitive).
 
@@ -537,7 +540,7 @@ class KnowledgeGraphDatabase:
                     if updated_at_raw
                     else None,
                     "metadata": json.loads(metadata_json) if metadata_json else {},
-                }
+                },
             )
         return entities
 
@@ -620,7 +623,7 @@ class KnowledgeGraphDatabase:
                     "created_at": created_at_raw.isoformat()
                     if created_at_raw
                     else None,
-                }
+                },
             )
         return relationships
 
@@ -683,7 +686,7 @@ class KnowledgeGraphDatabase:
                         "from_entity": from_name,
                         "to_entity": to_name,
                         "path_length": path_length,
-                    }
+                    },
                 )
             return paths
         except Exception:
@@ -702,13 +705,13 @@ class KnowledgeGraphDatabase:
 
         # Count entities
         entity_count_result = conn.execute(
-            "SELECT COUNT(*) FROM kg_entities"
+            "SELECT COUNT(*) FROM kg_entities",
         ).fetchone()
         entity_count: int = int(entity_count_result[0]) if entity_count_result else 0
 
         # Count relationships
         relationship_count_result = conn.execute(
-            "SELECT COUNT(*) FROM kg_relationships"
+            "SELECT COUNT(*) FROM kg_relationships",
         ).fetchone()
         relationship_count: int = (
             int(relationship_count_result[0]) if relationship_count_result else 0

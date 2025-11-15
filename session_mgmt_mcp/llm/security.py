@@ -74,18 +74,9 @@ def _validate_provider_with_security(provider: str, api_key: str) -> tuple[bool,
     validator = APIKeyValidator(provider=provider)
     try:
         validator.validate(api_key, raise_on_invalid=True)
-        masked_key = get_masked_api_key(provider)
-        print(
-            f"✅ {provider.title()} API Key validated: {masked_key}",
-            file=sys.stderr,
-        )
+        get_masked_api_key(provider)
         return True, "valid"
-    except ValueError as e:
-        print(
-            f"\n❌ {provider.title()} API Key Validation Failed",
-            file=sys.stderr,
-        )
-        print(f"   {e}", file=sys.stderr)
+    except ValueError:
         sys.exit(1)
 
 
@@ -96,18 +87,8 @@ def _validate_provider_basic(provider: str, api_key: str) -> str:
         Status message
 
     """
-    import sys
-
     if len(api_key) < 16:
-        print(f"\n⚠️  {provider.title()} API Key Warning", file=sys.stderr)
-        print(
-            f"   API key appears very short ({len(api_key)} characters)",
-            file=sys.stderr,
-        )
-        print(
-            "   Minimum 32 characters recommended for security",
-            file=sys.stderr,
-        )
+        pass
     return "basic_check"
 
 
@@ -141,24 +122,13 @@ def validate_llm_api_keys_at_startup() -> dict[str, str]:
 
     # If no providers configured, warn but allow startup (Ollama might be used)
     if not providers_configured:
-        print("\n⚠️  No LLM Provider API Keys Configured", file=sys.stderr)
-        print(
-            "   OpenAI or Gemini API keys not set in environment variables",
-            file=sys.stderr,
-        )
-        print(
-            "   LLM features will be unavailable unless using local Ollama",
-            file=sys.stderr,
-        )
         return validated_providers
 
     # Validate each configured provider
     for provider in providers_configured:
-        api_key, env_var_name = _get_provider_api_key_and_env(provider)
+        api_key, _env_var_name = _get_provider_api_key_and_env(provider)
 
         if not api_key or not api_key.strip():
-            print(f"\n❌ {provider.title()} API Key Validation Failed", file=sys.stderr)
-            print(f"   {env_var_name} environment variable is not set", file=sys.stderr)
             sys.exit(1)
 
         if SECURITY_AVAILABLE:

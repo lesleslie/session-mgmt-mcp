@@ -7,12 +7,14 @@ OpenAI Python SDK for chat completions and streaming.
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.llm.base import LLMProvider
 from session_mgmt_mcp.llm.models import LLMMessage, LLMResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 class OpenAIProvider(LLMProvider):

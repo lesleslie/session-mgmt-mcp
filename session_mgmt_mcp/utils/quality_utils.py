@@ -106,7 +106,7 @@ def _analyze_quality_trend(quality_scores: list[float]) -> tuple[str, list[str],
             [
                 f"📈 Quality improving: +{difference:.1f} points",
                 "🎯 Continue current development practices",
-            ]
+            ],
         )
     elif difference < -5:
         trend = "declining"
@@ -114,7 +114,7 @@ def _analyze_quality_trend(quality_scores: list[float]) -> tuple[str, list[str],
             [
                 f"📉 Quality declining: {difference:.1f} points",
                 "⚠️ Review recent changes and processes",
-            ]
+            ],
         )
     else:
         trend = "stable"
@@ -123,7 +123,7 @@ def _analyze_quality_trend(quality_scores: list[float]) -> tuple[str, list[str],
             [
                 f"📊 Quality stable: {difference:+.1f} points variation",
                 "✅ Maintaining consistent development standards",
-            ]
+            ],
         )
 
     # Add specific recommendations based on score level
@@ -155,7 +155,7 @@ def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:
                 "• Run comprehensive code review and testing",
                 "• Focus on reducing technical debt",
                 "• Consider pair programming for complex changes",
-            ]
+            ],
         )
     elif current_score < 75:
         recommendations.extend(
@@ -163,7 +163,7 @@ def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:
                 "⚠️ Quality below target: Focus on improvement",
                 "• Increase test coverage and documentation",
                 "• Review and refactor complex code sections",
-            ]
+            ],
         )
     elif current_score < 90:
         recommendations.extend(
@@ -171,7 +171,7 @@ def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:
                 "✅ Good quality: Minor optimizations available",
                 "• Fine-tune linting and formatting rules",
                 "• Enhance error handling and logging",
-            ]
+            ],
         )
     else:
         recommendations.extend(
@@ -179,7 +179,7 @@ def _generate_quality_trend_recommendations(scores: list[float]) -> list[str]:
                 "⭐ Excellent quality: Maintain current standards",
                 "• Share best practices with team",
                 "• Document successful patterns for reuse",
-            ]
+            ],
         )
 
     # Trend-based recommendations
@@ -207,7 +207,7 @@ def _get_time_based_recommendations(hour: int) -> list[str]:
                 "🌅 Morning session: Good time for complex problem-solving",
                 "• Focus on architecture and design decisions",
                 "• Plan day's development priorities",
-            ]
+            ],
         )
     elif 12 <= hour < 17:  # Afternoon
         recommendations.extend(
@@ -215,7 +215,7 @@ def _get_time_based_recommendations(hour: int) -> list[str]:
                 "☀️ Afternoon session: Peak productivity time",
                 "• Implement planned features and fixes",
                 "• Conduct code reviews and testing",
-            ]
+            ],
         )
     elif 17 <= hour < 21:  # Evening
         recommendations.extend(
@@ -223,7 +223,7 @@ def _get_time_based_recommendations(hour: int) -> list[str]:
                 "🌆 Evening session: Good for documentation and cleanup",
                 "• Update documentation and comments",
                 "• Refactor and optimize existing code",
-            ]
+            ],
         )
     else:  # Late night/early morning
         recommendations.extend(
@@ -231,7 +231,7 @@ def _get_time_based_recommendations(hour: int) -> list[str]:
                 "🌙 Late session: Focus on simple, well-tested changes",
                 "• Avoid complex architectural changes",
                 "• Consider shorter development sessions",
-            ]
+            ],
         )
 
     return recommendations

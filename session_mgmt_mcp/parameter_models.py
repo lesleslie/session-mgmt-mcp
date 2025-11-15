@@ -110,11 +110,16 @@ class SearchLimitParams(BaseModel):
     """Standard search and pagination parameters."""
 
     limit: int = Field(
-        default=10, ge=1, le=1000, description="Maximum number of results to return"
+        default=10,
+        ge=1,
+        le=1000,
+        description="Maximum number of results to return",
     )
 
     offset: int = Field(
-        default=0, ge=0, description="Number of results to skip for pagination"
+        default=0,
+        ge=0,
+        description="Number of results to skip for pagination",
     )
 
 
@@ -273,7 +278,10 @@ class CommandExecutionParams(BaseModel):
     )
 
     timeout: int = Field(
-        default=300, ge=1, le=3600, description="Command timeout in seconds"
+        default=300,
+        ge=1,
+        le=3600,
+        description="Command timeout in seconds",
     )
 
     @field_validator("command")
@@ -291,13 +299,15 @@ class BooleanFlagParams(BaseModel):
     """Common boolean flag parameters."""
 
     force: bool = Field(
-        default=False, description="Force operation, bypassing safety checks"
+        default=False,
+        description="Force operation, bypassing safety checks",
     )
 
     verbose: bool = Field(default=False, description="Enable verbose output")
 
     dry_run: bool = Field(
-        default=False, description="Show what would be done without executing"
+        default=False,
+        description="Show what would be done without executing",
     )
 
 
@@ -325,7 +335,8 @@ class ReflectionStoreParams(BaseModel):
     )
 
     tags: list[str] | None = Field(
-        default=None, description="Optional tags for categorization"
+        default=None,
+        description="Optional tags for categorization",
     )
 
     @field_validator("content")
@@ -397,7 +408,8 @@ class ConceptSearchParams(SearchLimitParams, ProjectContextParams):
     )
 
     include_files: bool = Field(
-        default=True, description="Include related files in search results"
+        default=True,
+        description="Include related files in search results",
     )
 
     @field_validator("concept")
@@ -415,7 +427,8 @@ class CrackerjackExecutionParams(CommandExecutionParams, WorkingDirectoryParams)
     """Parameters for crackerjack command execution."""
 
     ai_agent_mode: bool = Field(
-        default=False, description="Enable AI agent mode for autonomous fixing"
+        default=False,
+        description="Enable AI agent mode for autonomous fixing",
     )
 
 
@@ -423,7 +436,9 @@ class CrackerjackHistoryParams(TimeRangeParams, WorkingDirectoryParams):
     """Parameters for crackerjack execution history."""
 
     command_filter: str = Field(
-        default="", max_length=100, description="Filter commands by name"
+        default="",
+        max_length=100,
+        description="Filter commands by name",
     )
 
 
@@ -431,13 +446,16 @@ class TeamUserParams(BaseModel):
     """Parameters for team user operations."""
 
     user_id: str = Field(
-        description="Unique user identifier", min_length=1, max_length=100
+        description="Unique user identifier",
+        min_length=1,
+        max_length=100,
     )
 
     username: str = Field(description="Display username", min_length=1, max_length=100)
 
     role: Literal["owner", "admin", "moderator", "contributor", "viewer"] = Field(
-        default="contributor", description="User role in the team"
+        default="contributor",
+        description="User role in the team",
     )
 
     email: str | None = Field(default=None, description="Optional email address")
@@ -497,17 +515,23 @@ class TeamCreationParams(BaseModel):
     """Parameters for team creation."""
 
     team_id: str = Field(
-        description="Unique team identifier", min_length=1, max_length=100
+        description="Unique team identifier",
+        min_length=1,
+        max_length=100,
     )
 
     name: str = Field(description="Team display name", min_length=1, max_length=200)
 
     description: str = Field(
-        description="Team description", min_length=1, max_length=1000
+        description="Team description",
+        min_length=1,
+        max_length=1000,
     )
 
     owner_id: str = Field(
-        description="User ID of the team owner", min_length=1, max_length=100
+        description="User ID of the team owner",
+        min_length=1,
+        max_length=100,
     )
 
     @field_validator("team_id", "name", "description", "owner_id")
@@ -525,7 +549,9 @@ class TeamReflectionParams(ReflectionStoreParams):
     """Parameters for team reflection operations."""
 
     author_id: str = Field(
-        description="ID of the reflection author", min_length=1, max_length=100
+        description="ID of the reflection author",
+        min_length=1,
+        max_length=100,
     )
 
     team_id: str | None = Field(
@@ -543,7 +569,8 @@ class TeamReflectionParams(ReflectionStoreParams):
     )
 
     access_level: Literal["private", "team", "public"] = Field(
-        default="team", description="Access level for the reflection"
+        default="team",
+        description="Access level for the reflection",
     )
 
     @field_validator("author_id")
@@ -571,7 +598,9 @@ class TeamSearchParams(SearchQueryParams):
     """Parameters for team knowledge search."""
 
     user_id: str = Field(
-        description="ID of the user performing the search", min_length=1, max_length=100
+        description="ID of the user performing the search",
+        min_length=1,
+        max_length=100,
     )
 
     team_id: str | None = Field(

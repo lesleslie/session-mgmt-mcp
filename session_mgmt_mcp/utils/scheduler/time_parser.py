@@ -7,9 +7,10 @@ natural language time expressions into datetime objects.
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from re import Match
 from typing import Any
+
 
 class NaturalLanguageParser:
     """Parses natural language time expressions."""
@@ -38,7 +39,7 @@ class NaturalLanguageParser:
         """Get relative time patterns (in X minutes/hours/days)."""
         return {
             r"in (\d+) (minute|min|minutes|mins)": lambda m: timedelta(
-                minutes=int(m.group(1))
+                minutes=int(m.group(1)),
             ),
             r"in (\d+) (hour|hours|hr|hrs)": lambda m: timedelta(hours=int(m.group(1))),
             r"in (\d+) (day|days)": lambda m: timedelta(days=int(m.group(1))),
@@ -81,7 +82,10 @@ class NaturalLanguageParser:
         }
 
     def _try_parse_relative_pattern(
-        self, expression: str, base_time: datetime, time_patterns: dict[str, Any]
+        self,
+        expression: str,
+        base_time: datetime,
+        time_patterns: dict[str, Any],
     ) -> datetime | None:
         """Try to parse the expression using relative time patterns."""
         for pattern, handler in time_patterns.items():
@@ -104,7 +108,9 @@ class NaturalLanguageParser:
         return None
 
     def _convert_result_to_datetime(
-        self, result: Any, base_time: datetime
+        self,
+        result: Any,
+        base_time: datetime,
     ) -> datetime | None:
         """Convert handler result to datetime with base time."""
         if isinstance(result, timedelta):
@@ -116,7 +122,9 @@ class NaturalLanguageParser:
         return None
 
     def _try_parse_absolute_date(
-        self, expression: str, base_time: datetime
+        self,
+        expression: str,
+        base_time: datetime,
     ) -> datetime | None:
         """Try to parse the expression using absolute date parsing."""
         if DATEUTIL_AVAILABLE:
@@ -146,12 +154,16 @@ class NaturalLanguageParser:
         return expression.lower().strip()
 
     def _try_parsing_strategies(
-        self, expression: str, base_time: datetime
+        self,
+        expression: str,
+        base_time: datetime,
     ) -> datetime | None:
         """Try multiple parsing strategies in order."""
         # Strategy 1: Relative patterns
         result = self._try_parse_relative_pattern(
-            expression, base_time, self.time_patterns
+            expression,
+            base_time,
+            self.time_patterns,
         )
         if result:
             return result
@@ -185,7 +197,9 @@ class NaturalLanguageParser:
 
         for pattern, handler in self.recurrence_patterns.items():
             match = re.search(
-                pattern, expression, re.IGNORECASE
+                pattern,
+                expression,
+                re.IGNORECASE,
             )  # REGEX OK: Recurrence parsing
             if match:
                 if callable(handler):
@@ -264,7 +278,9 @@ class NaturalLanguageParser:
         """Parse 'monday at 3pm'."""
         target_weekday = self._get_weekday_number(match.group(1))
         hour, minute = self._parse_hour_minute(
-            match.group(2), match.group(3), match.group(4)
+            match.group(2),
+            match.group(3),
+            match.group(4),
         )
 
         today = datetime.now()
@@ -287,7 +303,10 @@ class NaturalLanguageParser:
         return weekdays[weekday_name]
 
     def _parse_hour_minute(
-        self, hour_str: str, minute_str: str | None, am_pm: str | None
+        self,
+        hour_str: str,
+        minute_str: str | None,
+        am_pm: str | None,
     ) -> tuple[int, int]:
         """Parse hour and minute from time components."""
         hour = int(hour_str)
@@ -301,7 +320,11 @@ class NaturalLanguageParser:
         return hour, minute
 
     def _calculate_days_ahead(
-        self, target_weekday: int, today: datetime, hour: int, minute: int
+        self,
+        target_weekday: int,
+        today: datetime,
+        hour: int,
+        minute: int,
     ) -> int:
         """Calculate how many days ahead the target weekday is."""
         days_ahead = target_weekday - today.weekday()
@@ -310,11 +333,12 @@ class NaturalLanguageParser:
             days_ahead += 7
         elif days_ahead == 0:  # Today - check if time has passed
             target_time = today.replace(
-                hour=hour, minute=minute, second=0, microsecond=0
+                hour=hour,
+                minute=minute,
+                second=0,
+                microsecond=0,
             )
             if target_time <= today:
                 days_ahead = 7
 
         return days_ahead
-
-

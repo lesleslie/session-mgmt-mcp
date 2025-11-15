@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
-from pathlib import Path
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
 
 
 def build_handoff_header(summary: dict[str, t.Any]) -> list[str]:
@@ -34,7 +36,7 @@ def build_quality_section(quality_data: dict[str, t.Any]) -> list[str]:
             f"- **Dev velocity:** {breakdown.get('dev_velocity', 0):.1f}/20",
             f"- **Security:** {breakdown.get('security', 0):.1f}/10",
             "",
-        ]
+        ],
     )
     return lines
 
@@ -87,7 +89,8 @@ def save_handoff_documentation(content: str, working_dir: Path) -> Path | None:
 
 
 async def generate_handoff_documentation(
-    summary: dict[str, t.Any], quality_data: dict[str, t.Any]
+    summary: dict[str, t.Any],
+    quality_data: dict[str, t.Any],
 ) -> str:
     """Generate comprehensive handoff documentation."""
     lines: list[str] = []

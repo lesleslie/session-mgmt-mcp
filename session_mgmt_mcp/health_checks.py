@@ -349,7 +349,7 @@ async def get_all_health_checks() -> list[ComponentHealth]:
                     name=check_names[i],
                     status=HealthStatus.UNHEALTHY,
                     message=f"Health check crashed: {str(result)[:100]}",
-                )
+                ),
             )
         else:
             components.append(result)  # type: ignore[arg-type]  # result is ComponentHealth from gather
