@@ -24,7 +24,7 @@ from session_mgmt_mcp.parameter_models import (
     SearchQueryParams,
     validate_mcp_params,
 )
-from session_mgmt_mcp.utils.error_handlers import _get_logger
+from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
 from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 # ============================================================================
@@ -35,9 +35,12 @@ from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 async def _store_reflection_validated_impl(**params: Any) -> str:
     """Implementation for store_reflection tool with parameter validation."""
     # Validate parameters using Pydantic model
-    # The function will raise ValidationError if validation fails
-    validated_params = validate_mcp_params(ReflectionStoreParams, **params)
-    params_obj = ReflectionStoreParams(**validated_params)
+    validated = validate_mcp_params(ReflectionStoreParams, params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = validated.params
 
     async def operation(db: Any) -> dict[str, Any]:
         """Store reflection operation."""
@@ -82,9 +85,12 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
 async def _quick_search_validated_impl(**params: Any) -> str:
     """Implementation for quick_search tool with parameter validation."""
     # Validate parameters
-    # The function will raise ValidationError if validation fails
-    validated_params = validate_mcp_params(SearchQueryParams, **params)
-    params_obj = SearchQueryParams(**validated_params)
+    validated = validate_mcp_params(SearchQueryParams, params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = validated.params
 
     async def operation(db: Any) -> dict[str, Any]:
         """Quick search operation."""
@@ -110,7 +116,7 @@ async def _quick_search_validated_impl(**params: Any) -> str:
                 [
                     "🔍 No results found",
                     "💡 Try adjusting your search terms or lowering min_score",
-                ],
+                ]
             )
         else:
             top_result = result["results"][0]
@@ -118,7 +124,7 @@ async def _quick_search_validated_impl(**params: Any) -> str:
                 [
                     "📊 Found results (showing top 1)",
                     f"📝 {top_result['content'][:150]}...",
-                ],
+                ]
             )
             if top_result.get("project"):
                 lines.append(f"📁 Project: {top_result['project']}")
@@ -144,9 +150,12 @@ async def _quick_search_validated_impl(**params: Any) -> str:
 async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
     # Validate parameters
-    # The function will raise ValidationError if validation fails
-    validated_params = validate_mcp_params(FileSearchParams, **params)
-    params_obj = FileSearchParams(**validated_params)
+    validated = validate_mcp_params(FileSearchParams, params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = validated.params
 
     async def operation(db: Any) -> dict[str, Any]:
         """File search operation."""
@@ -176,7 +185,7 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
                 [
                     "🔍 No conversations found about this file",
                     "💡 The file might not have been discussed in previous sessions",
-                ],
+                ]
             )
         else:
             lines.append(f"📈 Found {len(results)} relevant conversations:")
@@ -207,9 +216,12 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
 async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
     # Validate parameters
-    # The function will raise ValidationError if validation fails
-    validated_params = validate_mcp_params(ConceptSearchParams, **params)
-    params_obj = ConceptSearchParams(**validated_params)
+    validated = validate_mcp_params(ConceptSearchParams, params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = validated.params
 
     async def operation(db: Any) -> dict[str, Any]:
         """Concept search operation."""
@@ -240,7 +252,7 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
                 [
                     "🔍 No conversations found about this concept",
                     "💡 Try related terms or broader concepts",
-                ],
+                ]
             )
         else:
             lines.append(f"📈 Found {len(results)} related conversations:")

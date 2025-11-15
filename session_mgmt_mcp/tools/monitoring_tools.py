@@ -21,11 +21,7 @@ from session_mgmt_mcp.utils.instance_managers import (
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
     from fastmcp import FastMCP
-    from session_mgmt_mcp.app_monitor import ApplicationMonitor
-    from session_mgmt_mcp.interruption_manager import InterruptionManager
 
 
 # ============================================================================
@@ -33,31 +29,25 @@ if TYPE_CHECKING:
 # ============================================================================
 
 
-async def _require_app_monitor() -> Any:  # ApplicationMonitor:
+async def _require_app_monitor() -> Any:
     """Get application monitor instance or raise error."""
     monitor = await resolve_app_monitor()
     if monitor is None:
         msg = "Application monitoring not available. Features may be limited"
-        raise RuntimeError(
-            msg,
-        )
+        raise RuntimeError(msg)
     return monitor
 
 
-async def _require_interruption_manager() -> Any:  # InterruptionManager:
+async def _require_interruption_manager() -> Any:
     """Get interruption manager instance or raise error."""
     manager = await resolve_interruption_manager()
     if manager is None:
         msg = "Interruption management not available. Features may be limited"
-        raise RuntimeError(
-            msg,
-        )
+        raise RuntimeError(msg)
     return manager
 
 
-async def _execute_monitor_operation(
-    operation_name: str, operation: Callable[[Any], Awaitable[str]]
-) -> str:
+async def _execute_monitor_operation(operation_name: str, operation: callable) -> str:
     """Execute a monitoring operation with error handling."""
     try:
         monitor = await _require_app_monitor()
@@ -70,8 +60,7 @@ async def _execute_monitor_operation(
 
 
 async def _execute_interruption_operation(
-    operation_name: str,
-    operation: Callable[[Any], Awaitable[str]],
+    operation_name: str, operation: callable
 ) -> str:
     """Execute an interruption management operation with error handling."""
     try:
@@ -90,8 +79,7 @@ async def _execute_interruption_operation(
 
 
 async def _start_app_monitoring_operation(
-    monitor: Any,
-    project_paths: list[str] | None,
+    monitor: Any, project_paths: list[str] | None
 ) -> str:
     """Start monitoring IDE activity and browser documentation usage."""
     await monitor.start_monitoring(project_paths=project_paths)
@@ -115,7 +103,7 @@ async def _start_app_monitoring_operation(
             "",
             "💡 Use `get_activity_summary` to view tracked activity",
             "💡 Use `stop_app_monitoring` to end tracking",
-        ],
+        ]
     )
 
     return "\n".join(lines)
@@ -123,13 +111,9 @@ async def _start_app_monitoring_operation(
 
 async def _start_app_monitoring_impl(project_paths: list[str] | None = None) -> str:
     """Start monitoring IDE activity and browser documentation usage."""
-
-    async def operation(monitor: ApplicationMonitor) -> str:
-        return await _start_app_monitoring_operation(monitor, project_paths)
-
     return await _execute_monitor_operation(
         "Start app monitoring",
-        operation,
+        lambda m: _start_app_monitoring_operation(m, project_paths),
     )
 
 
@@ -155,8 +139,7 @@ async def _stop_app_monitoring_operation(monitor: Any) -> str:
 async def _stop_app_monitoring_impl() -> str:
     """Stop all application monitoring."""
     return await _execute_monitor_operation(
-        "Stop app monitoring",
-        _stop_app_monitoring_operation,
+        "Stop app monitoring", _stop_app_monitoring_operation
     )
 
 
@@ -213,7 +196,7 @@ async def _get_activity_summary_operation(monitor: Any, hours: int) -> str:
             [
                 "🔍 No activity data available",
                 "💡 Start monitoring with `start_app_monitoring`",
-            ],
+            ]
         )
         return "\n".join(lines)
 
@@ -227,13 +210,8 @@ async def _get_activity_summary_operation(monitor: Any, hours: int) -> str:
 
 async def _get_activity_summary_impl(hours: int = 2) -> str:
     """Get activity summary for the specified number of hours."""
-
-    async def operation(monitor: ApplicationMonitor) -> str:
-        return await _get_activity_summary_operation(monitor, hours)
-
     return await _execute_monitor_operation(
-        "Get activity summary",
-        operation,
+        "Get activity summary", lambda m: _get_activity_summary_operation(m, hours)
     )
 
 
@@ -270,7 +248,7 @@ def _format_context_insights_output(insights: dict[str, Any], hours: int) -> lis
             [
                 f"   • {tech['name']}: {tech['confidence']:.0%} confidence"
                 for tech in tech_context[:5]
-            ],
+            ]
         )
 
     # Recommendations
@@ -291,13 +269,8 @@ async def _get_context_insights_operation(monitor: Any, hours: int) -> str:
 
 async def _get_context_insights_impl(hours: int = 1) -> str:
     """Get contextual insights from recent activity."""
-
-    async def operation(monitor: ApplicationMonitor) -> str:
-        return await _get_context_insights_operation(monitor, hours)
-
     return await _execute_monitor_operation(
-        "Get context insights",
-        operation,
+        "Get context insights", lambda m: _get_context_insights_operation(m, hours)
     )
 
 
@@ -312,7 +285,7 @@ async def _get_active_files_operation(monitor: Any, minutes: int) -> str:
             [
                 "🔍 No active files in this period",
                 "💡 Files will appear here when you edit them during monitoring",
-            ],
+            ]
         )
         return "\n".join(lines)
 
@@ -331,13 +304,8 @@ async def _get_active_files_operation(monitor: Any, minutes: int) -> str:
 
 async def _get_active_files_impl(minutes: int = 60) -> str:
     """Get list of actively edited files in recent minutes."""
-
-    async def operation(monitor: ApplicationMonitor) -> str:
-        return await _get_active_files_operation(monitor, minutes)
-
     return await _execute_monitor_operation(
-        "Get active files",
-        operation,
+        "Get active files", lambda m: _get_active_files_operation(m, minutes)
     )
 
 
@@ -347,9 +315,7 @@ async def _get_active_files_impl(minutes: int = 60) -> str:
 
 
 async def _start_interruption_monitoring_operation(
-    manager: Any,
-    session_id: str,
-    user_id: str,
+    manager: Any, session_id: str, user_id: str
 ) -> str:
     """Start monitoring for interruptions and context switches."""
     await manager.start_monitoring(session_id=session_id, user_id=user_id)
@@ -369,24 +335,17 @@ async def _start_interruption_monitoring_operation(
             "",
             "💡 Context will be automatically preserved on interruptions",
             "💡 Use `get_interruption_history` to view past events",
-        ],
+        ]
     )
 
 
 async def _start_interruption_monitoring_impl(
-    session_id: str,
-    user_id: str = "default_user",
+    session_id: str, user_id: str = "default_user"
 ) -> str:
     """Start monitoring for interruptions and context switches."""
-
-    async def operation(manager: InterruptionManager) -> str:
-        return await _start_interruption_monitoring_operation(
-            manager, session_id, user_id
-        )
-
     return await _execute_interruption_operation(
         "Start interruption monitoring",
-        operation,
+        lambda m: _start_interruption_monitoring_operation(m, session_id, user_id),
     )
 
 
@@ -404,27 +363,23 @@ async def _stop_interruption_monitoring_operation(manager: Any) -> str:
             f"   • Contexts preserved: {summary.get('contexts_saved', 0)}",
             "",
             "✅ Monitoring stopped successfully",
-        ],
+        ]
     )
 
 
 async def _stop_interruption_monitoring_impl() -> str:
     """Stop interruption monitoring."""
     return await _execute_interruption_operation(
-        "Stop interruption monitoring",
-        _stop_interruption_monitoring_operation,
+        "Stop interruption monitoring", _stop_interruption_monitoring_operation
     )
 
 
 async def _create_session_context_operation(
-    manager: Any,
-    session_id: str,
-    context_data: dict[str, Any],
+    manager: Any, session_id: str, context_data: dict[str, Any]
 ) -> str:
     """Create a new session context snapshot."""
     context_id = await manager.create_context_snapshot(
-        session_id=session_id,
-        context_data=context_data,
+        session_id=session_id, context_data=context_data
     )
 
     return "\n".join(
@@ -437,36 +392,26 @@ async def _create_session_context_operation(
             "",
             "✅ Context snapshot saved successfully",
             "💡 Use `restore_session_context` to restore this context",
-        ],
+        ]
     )
 
 
 async def _create_session_context_impl(
-    session_id: str,
-    context_data: dict[str, Any],
+    session_id: str, context_data: dict[str, Any]
 ) -> str:
     """Create a new session context snapshot."""
-
-    async def operation(manager: InterruptionManager) -> str:
-        return await _create_session_context_operation(
-            manager, session_id, context_data
-        )
-
     return await _execute_interruption_operation(
         "Create session context",
-        operation,
+        lambda m: _create_session_context_operation(m, session_id, context_data),
     )
 
 
 async def _preserve_current_context_operation(
-    manager: Any,
-    session_id: str,
-    reason: str,
+    manager: Any, session_id: str, reason: str
 ) -> str:
     """Preserve current development context before an interruption."""
     context_snapshot = await manager.preserve_context(
-        session_id=session_id,
-        interruption_reason=reason,
+        session_id=session_id, interruption_reason=reason
     )
 
     return "\n".join(
@@ -479,22 +424,17 @@ async def _preserve_current_context_operation(
             "",
             "✅ Context saved successfully",
             "💡 Use `restore_session_context` to restore this context",
-        ],
+        ]
     )
 
 
 async def _preserve_current_context_impl(
-    session_id: str,
-    reason: str = "manual_checkpoint",
+    session_id: str, reason: str = "manual_checkpoint"
 ) -> str:
     """Preserve current development context before an interruption."""
-
-    async def operation(manager: InterruptionManager) -> str:
-        return await _preserve_current_context_operation(manager, session_id, reason)
-
     return await _execute_interruption_operation(
         "Preserve current context",
-        operation,
+        lambda m: _preserve_current_context_operation(m, session_id, reason),
     )
 
 
@@ -515,26 +455,20 @@ async def _restore_session_context_operation(manager: Any, session_id: str) -> s
             "",
             "✅ Context restored successfully",
             "💡 Resume work from where you left off",
-        ],
+        ]
     )
 
 
 async def _restore_session_context_impl(session_id: str) -> str:
     """Restore a previously saved session context."""
-
-    async def operation(manager: InterruptionManager) -> str:
-        return await _restore_session_context_operation(manager, session_id)
-
     return await _execute_interruption_operation(
         "Restore session context",
-        operation,
+        lambda m: _restore_session_context_operation(m, session_id),
     )
 
 
 async def _get_interruption_history_operation(
-    manager: Any,
-    user_id: str,
-    hours: int,
+    manager: Any, user_id: str, hours: int
 ) -> str:
     """Get history of interruptions for debugging and analysis."""
     history = await manager.get_interruption_history(user_id=user_id, hours=hours)
@@ -546,7 +480,7 @@ async def _get_interruption_history_operation(
             [
                 "🔍 No interruptions recorded",
                 "💡 Interruptions will appear here when detected during monitoring",
-            ],
+            ]
         )
         return "\n".join(lines)
 
@@ -558,7 +492,7 @@ async def _get_interruption_history_operation(
                 f"   Type: {event['type']}",
                 f"   Reason: {event.get('reason', 'N/A')}",
                 f"   Recovery: {event.get('recovery_action', 'None')}",
-            ],
+            ]
         )
 
     if len(history) > 10:
@@ -569,13 +503,9 @@ async def _get_interruption_history_operation(
 
 async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
     """Get history of interruptions for debugging and analysis."""
-
-    async def operation(manager: InterruptionManager) -> str:
-        return await _get_interruption_history_operation(manager, user_id, hours)
-
     return await _execute_interruption_operation(
         "Get interruption history",
-        operation,
+        lambda m: _get_interruption_history_operation(m, user_id, hours),
     )
 
 
@@ -614,8 +544,7 @@ def register_monitoring_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()  # type: ignore[misc]
     async def start_interruption_monitoring(
-        session_id: str,
-        user_id: str = "default_user",
+        session_id: str, user_id: str = "default_user"
     ) -> str:
         """Start monitoring for interruptions and context switches."""
         return await _start_interruption_monitoring_impl(session_id, user_id)
@@ -627,16 +556,14 @@ def register_monitoring_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()  # type: ignore[misc]
     async def create_session_context(
-        session_id: str,
-        context_data: dict[str, Any],
+        session_id: str, context_data: dict[str, Any]
     ) -> str:
         """Create a new session context snapshot."""
         return await _create_session_context_impl(session_id, context_data)
 
     @mcp.tool()  # type: ignore[misc]
     async def preserve_current_context(
-        session_id: str,
-        reason: str = "manual_checkpoint",
+        session_id: str, reason: str = "manual_checkpoint"
     ) -> str:
         """Preserve current development context before an interruption."""
         return await _preserve_current_context_impl(session_id, reason)

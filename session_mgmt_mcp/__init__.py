@@ -12,6 +12,9 @@ with suppress(ImportError):
     from .advanced_features import (
         AdvancedFeaturesHub,
     )
+    from .core.permissions import (
+        SessionPermissionsManager,
+    )
     from .quality_engine import (
         QualityEngine,
         QualityScoreResult,
@@ -19,7 +22,6 @@ with suppress(ImportError):
     from .server_core import (
         MCPServerCore,
         SessionLogger,  # type: ignore[attr-defined]
-        SessionPermissionsManager,
     )
 
 __version__ = "0.7.4"

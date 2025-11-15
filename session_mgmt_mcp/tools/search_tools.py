@@ -47,9 +47,7 @@ async def _optimize_search_results_impl(
                 optimized_results,
                 optimization_info,
             ) = await optimizer.optimize_search_results(
-                results,
-                "truncate_old",
-                max_tokens,
+                results, "truncate_old", max_tokens
             )
             return {
                 "results": optimized_results,
@@ -72,9 +70,7 @@ async def _optimize_search_results_impl(
 
 
 async def _store_reflection_operation(
-    db: ReflectionDatabase,
-    content: str,
-    tags: list[str],
+    db: ReflectionDatabase, content: str, tags: list[str]
 ) -> dict[str, Any]:
     """Execute reflection storage operation."""
     reflection_id = await db.store_reflection(content, tags)
@@ -97,10 +93,7 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
         return await _store_reflection_operation(db, content, tags or [])
 
     return await execute_database_tool(
-        operation,
-        _format_store_reflection,
-        "Store reflection",
-        validator,
+        operation, _format_store_reflection, "Store reflection", validator
     )
 
 
@@ -110,17 +103,11 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
 
 
 async def _quick_search_operation(
-    db: ReflectionDatabase,
-    query: str,
-    project: str | None,
-    min_score: float,
+    db: ReflectionDatabase, query: str, project: str | None, min_score: float
 ) -> str:
     """Execute quick search and format results."""
     total_results = await db.search_conversations(
-        query=query,
-        project=project,
-        min_score=min_score,
-        limit=100,
+        query=query, project=project, min_score=min_score, limit=100
     )
 
     if not total_results:
@@ -195,17 +182,11 @@ async def _format_search_summary(query: str, results: list[dict[str, Any]]) -> s
 
 
 async def _search_summary_operation(
-    db: ReflectionDatabase,
-    query: str,
-    project: str | None,
-    min_score: float,
+    db: ReflectionDatabase, query: str, project: str | None, min_score: float
 ) -> str:
     """Execute search summary operation."""
     results = await db.search_conversations(
-        query=query,
-        project=project,
-        min_score=min_score,
-        limit=20,
+        query=query, project=project, min_score=min_score, limit=20
     )
     return await _format_search_summary(query, results)
 
@@ -264,17 +245,11 @@ async def _get_more_results_operation(
 ) -> str:
     """Execute pagination operation."""
     results = await db.search_conversations(
-        query=query,
-        project=project,
-        limit=limit + offset,
+        query=query, project=project, limit=limit + offset
     )
     paginated_results = results[offset : offset + limit]
     return _build_pagination_output(
-        query,
-        offset,
-        paginated_results,
-        len(results),
-        limit,
+        query, offset, paginated_results, len(results), limit
     )
 
 
@@ -307,8 +282,7 @@ def _extract_file_excerpt(content: str, file_path: str) -> str:
 
 
 async def _format_file_search_results(
-    file_path: str,
-    results: list[dict[str, Any]],
+    file_path: str, results: list[dict[str, Any]]
 ) -> str:
     """Format file search results."""
     if not results:
@@ -328,16 +302,11 @@ async def _format_file_search_results(
 
 
 async def _search_by_file_operation(
-    db: ReflectionDatabase,
-    file_path: str,
-    limit: int,
-    project: str | None,
+    db: ReflectionDatabase, file_path: str, limit: int, project: str | None
 ) -> str:
     """Execute file search operation."""
     results = await db.search_conversations(
-        query=file_path,
-        project=project,
-        limit=limit,
+        query=file_path, project=project, limit=limit
     )
     return await _format_file_search_results(file_path, results)
 
@@ -393,9 +362,7 @@ def _extract_mentioned_files(results: list[dict[str, Any]]) -> list[str]:
 
 
 async def _format_concept_results(
-    concept: str,
-    results: list[dict[str, Any]],
-    include_files: bool,
+    concept: str, results: list[dict[str, Any]], include_files: bool
 ) -> str:
     """Format concept search results."""
     if not results:
@@ -430,10 +397,7 @@ async def _search_by_concept_operation(
 ) -> str:
     """Execute concept search operation."""
     results = await db.search_conversations(
-        query=concept,
-        project=project,
-        limit=limit,
-        min_score=0.6,
+        query=concept, project=project, limit=limit, min_score=0.6
     )
     return await _format_concept_results(concept, results, include_files)
 
@@ -448,11 +412,7 @@ async def _search_by_concept_impl(
 
     async def operation(db: ReflectionDatabase) -> str:
         return await _search_by_concept_operation(
-            db,
-            concept,
-            include_files,
-            limit,
-            project,
+            db, concept, include_files, limit, project
         )
 
     return await execute_simple_database_tool(operation, "Search by concept")
@@ -508,9 +468,7 @@ def _extract_code_blocks_from_content(content: str) -> list[str]:
 
 
 async def _format_code_search_results(
-    query: str,
-    results: list[dict[str, Any]],
-    pattern_type: str | None,
+    query: str, results: list[dict[str, Any]], pattern_type: str | None
 ) -> str:
     """Format code search results."""
     if not results:
@@ -557,10 +515,7 @@ async def _search_code_operation(
         code_query += f" {pattern_type}"
 
     results = await db.search_conversations(
-        query=code_query,
-        project=project,
-        limit=limit,
-        min_score=0.5,
+        query=code_query, project=project, limit=limit, min_score=0.5
     )
     return await _format_code_search_results(query, results, pattern_type)
 
@@ -600,13 +555,11 @@ def _find_best_error_excerpt(content: str) -> str:
                 best_score = score
                 best_excerpt = excerpt
 
-    return best_excerpt or content[:150]
+    return best_excerpt if best_excerpt else content[:150]
 
 
 async def _format_error_search_results(
-    query: str,
-    results: list[dict[str, Any]],
-    error_type: str | None,
+    query: str, results: list[dict[str, Any]], error_type: str | None
 ) -> str:
     """Format error search results."""
     if not results:
@@ -641,10 +594,7 @@ async def _search_errors_operation(
         error_query += f" {error_type}"
 
     results = await db.search_conversations(
-        query=error_query,
-        project=project,
-        limit=limit,
-        min_score=0.4,
+        query=error_query, project=project, limit=limit, min_score=0.4
     )
     return await _format_error_search_results(query, results, error_type)
 
@@ -685,9 +635,7 @@ def _parse_time_expression(time_expression: str) -> datetime | None:
 
 
 async def _format_temporal_results(
-    time_expression: str,
-    query: str | None,
-    results: list[dict[str, Any]],
+    time_expression: str, query: str | None, results: list[dict[str, Any]]
 ) -> str:
     """Format temporal search results."""
     if not results:
@@ -720,9 +668,7 @@ async def _search_temporal_operation(
     start_time = _parse_time_expression(time_expression)
     search_query = query or ""
     results = await db.search_conversations(
-        query=search_query,
-        project=project,
-        limit=limit * 2,
+        query=search_query, project=project, limit=limit * 2
     )
 
     if start_time:
@@ -743,11 +689,7 @@ async def _search_temporal_impl(
 
     async def operation(db: ReflectionDatabase) -> str:
         return await _search_temporal_operation(
-            db,
-            time_expression,
-            query,
-            limit,
-            project,
+            db, time_expression, query, limit, project
         )
 
     return await execute_simple_database_tool(operation, "Temporal search")
@@ -774,10 +716,7 @@ def register_search_tools(mcp: Any) -> None:
         query: str,
     ) -> dict[str, Any]:
         return await _optimize_search_results_impl(
-            results,
-            optimize_tokens,
-            max_tokens,
-            query,
+            results, optimize_tokens, max_tokens, query
         )
 
     @mcp.tool()  # type: ignore[misc]
@@ -786,34 +725,25 @@ def register_search_tools(mcp: Any) -> None:
 
     @mcp.tool()  # type: ignore[misc]
     async def quick_search(
-        query: str,
-        project: str | None = None,
-        min_score: float = 0.7,
+        query: str, project: str | None = None, min_score: float = 0.7
     ) -> str:
         return await _quick_search_impl(query, project, min_score)
 
     @mcp.tool()  # type: ignore[misc]
     async def search_summary(
-        query: str,
-        project: str | None = None,
-        min_score: float = 0.7,
+        query: str, project: str | None = None, min_score: float = 0.7
     ) -> str:
         return await _search_summary_impl(query, project, min_score)
 
     @mcp.tool()  # type: ignore[misc]
     async def get_more_results(
-        query: str,
-        offset: int = 3,
-        limit: int = 3,
-        project: str | None = None,
+        query: str, offset: int = 3, limit: int = 3, project: str | None = None
     ) -> str:
         return await _get_more_results_impl(query, offset, limit, project)
 
     @mcp.tool()  # type: ignore[misc]
     async def search_by_file(
-        file_path: str,
-        limit: int = 10,
-        project: str | None = None,
+        file_path: str, limit: int = 10, project: str | None = None
     ) -> str:
         return await _search_by_file_impl(file_path, limit, project)
 

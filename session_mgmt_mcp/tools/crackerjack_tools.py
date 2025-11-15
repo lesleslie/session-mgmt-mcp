@@ -1297,11 +1297,17 @@ def _format_trend_recommendations(success_rate: float) -> str:
 
 async def _crackerjack_health_check_impl() -> str:
     """Check Crackerjack integration health and provide diagnostics."""
+    import os
+
     output = "🔧 **Crackerjack Health Check**\n\n"
 
     try:
         # Check if crackerjack is available
         import subprocess  # nosec B404
+
+        # Set ACB_LIBRARY_MODE for synchronous Settings initialization
+        env = os.environ.copy()
+        env["ACB_LIBRARY_MODE"] = "true"
 
         result = subprocess.run(
             ["python", "-m", "crackerjack", "--version"],
@@ -1309,6 +1315,7 @@ async def _crackerjack_health_check_impl() -> str:
             capture_output=True,
             text=True,
             timeout=10,
+            env=env,
         )
 
         if result.returncode == 0:

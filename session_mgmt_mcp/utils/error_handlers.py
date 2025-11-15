@@ -161,16 +161,11 @@ def validate_type(value: Any, expected_type: type, field_name: str) -> None:
         msg = (
             f"{field_name} must be {expected_type.__name__}, got {type(value).__name__}"
         )
-        raise ValidationError(
-            msg,
-        )
+        raise ValidationError(msg)
 
 
 def validate_range(
-    value: float,
-    min_val: float,
-    max_val: float,
-    field_name: str,
+    value: float, min_val: float, max_val: float, field_name: str
 ) -> None:
     """Validate that a numeric value is within a specified range.
 
@@ -190,6 +185,4 @@ def validate_range(
 
     if value < min_val or value > max_val:
         msg = f"{field_name} must be between {min_val} and {max_val}, got {value}"
-        raise ValidationError(
-            msg,
-        )
+        raise ValidationError(msg)

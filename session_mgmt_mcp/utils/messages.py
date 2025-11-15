@@ -119,7 +119,7 @@ class ToolMessages:
 
         Example:
             >>> ToolMessages.empty_results("Search", "Try broader terms")
-            # Returns a string with information symbol indicating no results
+            'ℹ️ No results found for Search. Try broader terms'
 
         """
         msg = f"ℹ️ No results found for {operation}"
@@ -236,7 +236,7 @@ class ToolMessages:
         return f"{minutes}m {remaining_seconds:.1f}s"
 
     @staticmethod
-    def format_bytes(bytes_count: float) -> str:
+    def format_bytes(bytes_count: int) -> str:
         """Format byte count to human-readable form.
 
         Args:
@@ -252,7 +252,7 @@ class ToolMessages:
             '1.4 MB'
 
         """
-        for unit in ("B", "KB", "MB", "GB"):
+        for unit in ["B", "KB", "MB", "GB"]:
             if bytes_count < 1024.0:
                 return f"{bytes_count:.1f} {unit}"
             bytes_count /= 1024.0

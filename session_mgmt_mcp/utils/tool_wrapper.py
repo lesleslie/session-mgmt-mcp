@@ -243,58 +243,33 @@ def create_validator(**validations: Any) -> Callable[[], None]:
 
     def validator() -> None:
         for key, value in validations.items():
-            _validate_single_field(
-                key, value, validate_required, validate_type, validate_range
-            )
+            if key.startswith("required_"):
+                field_name = key[9:]  # Remove "required_" prefix
+                validate_required(value, field_name)
+
+            elif key.startswith("type_"):
+                parts = key.split("_")
+                if len(parts) >= 3:
+                    field_name = "_".join(parts[1:-1])
+                    expected_type_name = parts[-1]
+                    expected_type = {
+                        "str": str,
+                        "int": int,
+                        "float": float,
+                        "bool": bool,
+                        "list": list,
+                        "dict": dict,
+                    }.get(expected_type_name)
+
+                    if expected_type and isinstance(value, tuple) and len(value) == 2:
+                        validate_type(value[0], expected_type, field_name)
+
+            elif key.startswith("range_"):
+                field_name = key[6:]  # Remove "range_" prefix
+                if isinstance(value, tuple) and len(value) == 3:
+                    validate_range(value[0], value[1], value[2], field_name)
 
     return validator
-
-
-def _validate_single_field(
-    key: str,
-    value: Any,
-    validate_required: Callable[..., None],
-    validate_type: Callable[..., None],
-    validate_range: Callable[..., None],
-) -> None:
-    """Validate a single field based on its key prefix."""
-    if key.startswith("required_"):
-        field_name = key[9:]  # Remove "required_" prefix
-        validate_required(value, field_name)
-    elif key.startswith("type_"):
-        _validate_type_field(key, value, validate_type)
-    elif key.startswith("range_"):
-        _validate_range_field(key, value, validate_range)
-
-
-def _validate_type_field(
-    key: str, value: Any, validate_type: Callable[..., None]
-) -> None:
-    """Validate a type field."""
-    parts = key.split("_")
-    if len(parts) >= 3:
-        field_name = "_".join(parts[1:-1])
-        expected_type_name = parts[-1]
-        expected_type = {
-            "str": str,
-            "int": int,
-            "float": float,
-            "bool": bool,
-            "list": list,
-            "dict": dict,
-        }.get(expected_type_name)
-
-        if expected_type and isinstance(value, tuple) and len(value) == 2:
-            validate_type(value[0], expected_type, field_name)
-
-
-def _validate_range_field(
-    key: str, value: Any, validate_range: Callable[..., None]
-) -> None:
-    """Validate a range field."""
-    field_name = key[6:]  # Remove "range_" prefix
-    if isinstance(value, tuple) and len(value) == 3:
-        validate_range(value[0], value[1], value[2], field_name)
 
 
 def format_reflection_result(
@@ -362,8 +337,7 @@ def format_search_results(
     """
     if not results:
         return ToolMessages.empty_results(
-            f'Search for "{query}"',
-            "Try different search terms",
+            f'Search for "{query}"', "Try different search terms"
         )
 
     count = len(results)
@@ -375,7 +349,7 @@ def format_search_results(
         display_count = min(count, max_results)
         for i, result in enumerate(results[:display_count], 1):
             lines.append(
-                f"\n{i}. {ToolMessages.truncate_text(result.get('content', ''), 80)}",
+                f"\n{i}. {ToolMessages.truncate_text(result.get('content', ''), 80)}"
             )
             if "score" in result:
                 lines.append(f"   Relevance: {result['score']:.2f}")

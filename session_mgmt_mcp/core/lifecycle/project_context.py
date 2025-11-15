@@ -6,7 +6,6 @@ frameworks, and gathering project health indicators.
 
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import TYPE_CHECKING
 
 from session_mgmt_mcp.utils.git_operations import is_git_repository
@@ -75,8 +74,7 @@ def check_framework_imports(content: str, indicators: dict[str, bool]) -> None:
 
 
 def detect_python_frameworks(
-    python_files: list[Path],
-    indicators: dict[str, bool],
+    python_files: list[Path], indicators: dict[str, bool]
 ) -> None:
     """Detect Python frameworks from file content."""
     for py_file in python_files[:10]:  # Sample first 10 files
@@ -89,14 +87,16 @@ def detect_python_frameworks(
 
 
 def add_python_context_indicators(
-    project_dir: Path,
-    indicators: dict[str, bool],
+    project_dir: Path, indicators: dict[str, bool]
 ) -> None:
     """Add Python-specific context indicators."""
-    with suppress(Exception):
+    try:
         python_files = list(project_dir.glob("**/*.py"))
         indicators["has_python_files"] = len(python_files) > 0
         detect_python_frameworks(python_files, indicators)
+    except Exception:
+        # Silently fail if we can't analyze Python files
+        pass
 
 
 async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
