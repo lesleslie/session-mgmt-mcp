@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import gzip
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
+
 
 class LocalFileStorage(SessionStorage):
     """Local file-based session storage (for development/testing)."""
@@ -153,5 +154,3 @@ class LocalFileStorage(SessionStorage):
     async def is_available(self) -> bool:
         """Check if local storage is available."""
         return self.storage_dir.exists() and self.storage_dir.is_dir()
-
-

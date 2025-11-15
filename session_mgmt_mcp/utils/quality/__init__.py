@@ -36,20 +36,20 @@ __all__ = [
     # Compaction
     "check_git_activity",
     "count_significant_files",
-    "evaluate_git_activity_heuristic",
-    "evaluate_large_project_heuristic",
-    "evaluate_python_project_heuristic",
-    "get_default_compaction_reason",
-    "get_fallback_compaction_reason",
-    # Recommendations
-    "generate_quality_recommendations",
     # Summary
     "create_empty_summary",
     "ensure_summary_defaults",
+    "evaluate_git_activity_heuristic",
+    "evaluate_large_project_heuristic",
+    "evaluate_python_project_heuristic",
     "extract_decisions_from_content",
     "extract_next_steps_from_content",
     "extract_topics_from_content",
+    # Recommendations
+    "generate_quality_recommendations",
+    "get_default_compaction_reason",
     "get_error_summary",
+    "get_fallback_compaction_reason",
     "get_fallback_summary",
     "process_recent_reflections",
 ]

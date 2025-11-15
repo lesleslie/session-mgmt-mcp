@@ -7,12 +7,11 @@ built-in caching mechanisms.
 
 from __future__ import annotations
 
-import gzip
-import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
+
 
 class ACBCacheStorage(SessionStorage):
     """ACB cache adapter for session storage.
@@ -279,5 +278,3 @@ class ACBCacheStorage(SessionStorage):
                 await self.cache.set(self._index_key, index_data, ttl=None)
         except Exception as e:
             self.logger.warning(f"Failed to update index: {e}")
-
-

@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
-from pathlib import Path
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
 
 
 def build_handoff_header(summary: dict[str, t.Any]) -> list[str]:

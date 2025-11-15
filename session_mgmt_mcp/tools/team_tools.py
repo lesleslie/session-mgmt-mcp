@@ -20,7 +20,9 @@ if TYPE_CHECKING:
 
 
 # Constants for error messages
-TEAM_NOT_AVAILABLE_MSG = "Team collaboration features not available. Install optional dependencies"
+TEAM_NOT_AVAILABLE_MSG = (
+    "Team collaboration features not available. Install optional dependencies"
+)
 
 
 # ============================================================================
@@ -47,9 +49,9 @@ async def _execute_team_operation(
         manager = await _require_team_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except ValueError as e:
-        return f"❌ {operation_name} failed: {str(e)}"
+        return f"❌ {operation_name} failed: {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -289,6 +291,7 @@ def register_team_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
+
     """
 
     @mcp.tool()

@@ -24,10 +24,6 @@ from session_mgmt_mcp.llm import (
 )
 
 # Re-export security utilities for backwards compatibility
-from session_mgmt_mcp.llm.security import (
-    get_masked_api_key,
-    validate_llm_api_keys_at_startup,
-)
 
 
 class LLMManager:

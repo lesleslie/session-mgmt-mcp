@@ -5,10 +5,9 @@ Enables request-scoped sessions with external storage backends (Redis, S3, Dynam
 Allows the session management server to operate in cloud/serverless environments.
 """
 
-import asyncio
 import hashlib
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 

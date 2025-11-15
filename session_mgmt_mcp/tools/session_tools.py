@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess  # nosec B404
-import typing as t
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,7 +22,6 @@ from bevy import get_container
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-from acb.adapters import import_adapter
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.utils.error_handlers import _get_logger
 
@@ -82,6 +80,7 @@ def _get_session_manager() -> SessionLifecycleManager:
     Note:
         Checks bevy container directly instead of using depends.get_sync()
         to avoid async event loop issues during module import.
+
     """
     # Check if already registered without triggering async machinery
     container = get_container()
@@ -108,6 +107,7 @@ def _create_session_shortcuts() -> dict[str, Any]:
 
     Returns:
         Dict with 'created' bool, 'existed' bool, and 'shortcuts' list
+
     """
     claude_home = Path.home() / ".claude"
     commands_dir = claude_home / "commands"
@@ -763,6 +763,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _start_impl(working_directory)
 
@@ -772,6 +773,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _checkpoint_impl(working_directory)
 
@@ -781,6 +783,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _end_impl(working_directory)
 
@@ -790,6 +793,7 @@ def register_session_tools(mcp_server: FastMCP) -> None:
 
         Args:
             working_directory: Optional working directory override (defaults to PWD environment variable or current directory)
+
         """
         return await _status_impl(working_directory)
 

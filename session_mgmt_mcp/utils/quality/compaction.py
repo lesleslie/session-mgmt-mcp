@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import subprocess  # nosec B404
 from contextlib import suppress
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def get_default_compaction_reason() -> str:

@@ -32,9 +32,6 @@ except ImportError:
 
 import numpy as np
 
-if t.TYPE_CHECKING:
-    from types import TracebackType
-
 
 class ReflectionDatabaseAdapter:
     """Manages conversation memory and reflection using ACB vector adapter.

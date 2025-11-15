@@ -7,7 +7,10 @@ information from handoff files and session summaries.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -93,13 +96,9 @@ def extract_session_metadata(lines: list[str]) -> dict[str, str]:
         if line.startswith("**Session ended:**"):
             info["ended_at"] = line.split("**Session ended:**")[1].strip()
         elif line.startswith("**Final quality score:**"):
-            info["quality_score"] = line.split("**Final quality score:**")[
-                1
-            ].strip()
+            info["quality_score"] = line.split("**Final quality score:**")[1].strip()
         elif line.startswith("**Working directory:**"):
-            info["working_directory"] = line.split("**Working directory:**")[
-                1
-            ].strip()
+            info["working_directory"] = line.split("**Working directory:**")[1].strip()
     return info
 
 

@@ -7,12 +7,14 @@ adapter for connection pooling and aiohttp fallback for HTTP communications.
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.llm.base import LLMProvider
 from session_mgmt_mcp.llm.models import LLMMessage, LLMResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 # ACB Requests adapter (httpx/niquests based on config)
 try:

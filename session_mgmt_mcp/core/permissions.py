@@ -112,5 +112,3 @@ class SessionPermissionsManager:
 # =====================================
 # Configuration Functions
 # =====================================
-
-

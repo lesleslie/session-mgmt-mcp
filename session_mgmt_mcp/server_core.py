@@ -14,22 +14,19 @@ Extracted Components:
 
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
 import os
 import shutil
 import subprocess  # nosec B404
 import sys
 import warnings
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+    from session_mgmt_mcp.core.permissions import SessionPermissionsManager
     from session_mgmt_mcp.utils.logging import SessionLogger
 
 # Suppress transformers warnings
@@ -50,8 +47,6 @@ except ImportError:
     tomli = None  # type: ignore[assignment]
 
 # Import extracted modules
-from session_mgmt_mcp.core.features import FeatureDetector, get_feature_flags
-from session_mgmt_mcp.core.permissions import SessionPermissionsManager
 
 
 # =====================================
@@ -696,5 +691,3 @@ def _should_retry_search(error: Exception) -> bool:
 # =====================================
 # Feature Detection (Phase 2.6)
 # =====================================
-
-

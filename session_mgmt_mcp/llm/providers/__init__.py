@@ -10,4 +10,4 @@ from session_mgmt_mcp.llm.providers.gemini_provider import GeminiProvider
 from session_mgmt_mcp.llm.providers.ollama_provider import OllamaProvider
 from session_mgmt_mcp.llm.providers.openai_provider import OpenAIProvider
 
-__all__ = ["OpenAIProvider", "GeminiProvider", "OllamaProvider"]
+__all__ = ["GeminiProvider", "OllamaProvider", "OpenAIProvider"]

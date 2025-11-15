@@ -32,6 +32,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.not_available("Database", "uv sync --extra embeddings")
             '❌ Database not available. Install: uv sync --extra embeddings'
+
         """
         msg = f"❌ {feature} not available"
         if install_hint:
@@ -55,6 +56,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.operation_failed("Search", ValueError("Bad input"))
             '❌ Search failed: Bad input'
+
         """
         error_str = str(error)
         # Remove "Exception: " prefix if present
@@ -78,6 +80,7 @@ class ToolMessages:
             '✅ Stored
               • items: 5
               • time: 1.2s'
+
         """
         lines = [f"✅ {message}"]
         if details:
@@ -99,6 +102,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.validation_error("email", "Invalid format")
             '❌ Validation error: email - Invalid format'
+
         """
         return f"❌ Validation error: {field} - {message}"
 
@@ -116,6 +120,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.empty_results("Search", "Try broader terms")
             'ℹ️ No results found for Search. Try broader terms'
+
         """
         msg = f"ℹ️ No results found for {operation}"
         if suggestion:
@@ -137,6 +142,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.format_list_item("📝", "Content", "Hello world")
             '📝 Content: Hello world'
+
         """
         return f"{emoji} {label}: {value}"
 
@@ -153,6 +159,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.format_timestamp()
             '2025-01-12 14:30:45'
+
         """
         if dt is None:
             dt = datetime.now()
@@ -175,6 +182,7 @@ class ToolMessages:
             '1 result'
             >>> ToolMessages.format_count(5, "match", "matches")
             '5 matches'
+
         """
         if plural is None:
             plural = f"{singular}s"
@@ -196,6 +204,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.format_progress(5, 10, "Processing")
             'Processing: 5/10 (50%)'
+
         """
         percentage = int((current / total) * 100) if total > 0 else 0
         base = f"{current}/{total} ({percentage}%)"
@@ -218,6 +227,7 @@ class ToolMessages:
             '1m 5.5s'
             >>> ToolMessages.format_duration(3.2)
             '3.2s'
+
         """
         if seconds < 60:
             return f"{seconds:.1f}s"
@@ -240,6 +250,7 @@ class ToolMessages:
             '1.5 KB'
             >>> ToolMessages.format_bytes(1_500_000)
             '1.4 MB'
+
         """
         for unit in ["B", "KB", "MB", "GB"]:
             if bytes_count < 1024.0:
@@ -269,6 +280,7 @@ class ToolMessages:
             >>> results = ["a", "b", "c"]
             >>> ToolMessages.format_result_summary(results, "Search")
             '✅ Search complete: 3 results'
+
         """
         count = len(results)
 
@@ -309,6 +321,7 @@ class ToolMessages:
         Example:
             >>> ToolMessages.truncate_text("Hello world this is long", 15)
             'Hello world ...'
+
         """
         if len(text) <= max_length:
             return text

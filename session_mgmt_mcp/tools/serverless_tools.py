@@ -30,8 +30,9 @@ async def _require_serverless_manager() -> Any:
     """Get serverless manager instance or raise error."""
     manager = await resolve_serverless_manager()
     if manager is None:
+        msg = "Serverless mode not available. Install dependencies: pip install redis boto3"
         raise RuntimeError(
-            "Serverless mode not available. Install dependencies: pip install redis boto3"
+            msg
         )
     return manager
 
@@ -44,7 +45,7 @@ async def _execute_serverless_operation(
         manager = await _require_serverless_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -207,13 +208,15 @@ async def _list_serverless_sessions_operation(
     ]
 
     for session in sessions:
-        lines.extend([
-            f"• Session ID: {session['session_id']}",
-            f"  User: {session['user_id']}",
-            f"  Project: {session['project_id']}",
-            f"  Expires: {session['expires_at']}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"• Session ID: {session['session_id']}",
+                f"  User: {session['user_id']}",
+                f"  Project: {session['project_id']}",
+                f"  Expires: {session['expires_at']}",
+                "",
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -283,7 +286,11 @@ async def _test_serverless_storage_operation(manager: Any) -> str:
     available = [name for name, res in results.items() if res["available"]]
     if available:
         fastest = min(
-            [(name, res["latency_ms"]) for name, res in results.items() if res["available"]],
+            [
+                (name, res["latency_ms"])
+                for name, res in results.items()
+                if res["available"]
+            ],
             key=lambda x: x[1],
         )
         lines.append(f"💡 Recommended: {fastest[0].upper()} (lowest latency)")
@@ -312,12 +319,14 @@ async def _configure_serverless_storage_operation(
     if not success:
         return f"❌ Failed to configure {backend} storage"
 
-    return "\n".join([
-        f"✅ Configured {backend.upper()} storage backend",
-        "",
-        "⚙️ Configuration:",
-        *[f"   • {key}: {value}" for key, value in config.items()],
-    ])
+    return "\n".join(
+        [
+            f"✅ Configured {backend.upper()} storage backend",
+            "",
+            "⚙️ Configuration:",
+            *[f"   • {key}: {value}" for key, value in config.items()],
+        ]
+    )
 
 
 async def _configure_serverless_storage_impl(

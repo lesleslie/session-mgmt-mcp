@@ -33,7 +33,10 @@ async def _require_app_monitor() -> Any:
     """Get application monitor instance or raise error."""
     monitor = await resolve_app_monitor()
     if monitor is None:
-        raise RuntimeError("Application monitoring not available. Features may be limited")
+        msg = "Application monitoring not available. Features may be limited"
+        raise RuntimeError(
+            msg
+        )
     return monitor
 
 
@@ -41,21 +44,20 @@ async def _require_interruption_manager() -> Any:
     """Get interruption manager instance or raise error."""
     manager = await resolve_interruption_manager()
     if manager is None:
+        msg = "Interruption management not available. Features may be limited"
         raise RuntimeError(
-            "Interruption management not available. Features may be limited"
+            msg
         )
     return manager
 
 
-async def _execute_monitor_operation(
-    operation_name: str, operation: callable
-) -> str:
+async def _execute_monitor_operation(operation_name: str, operation: callable) -> str:
     """Execute a monitoring operation with error handling."""
     try:
         monitor = await _require_app_monitor()
         return await operation(monitor)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -69,7 +71,7 @@ async def _execute_interruption_operation(
         manager = await _require_interruption_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -94,17 +96,19 @@ async def _start_app_monitoring_operation(
     else:
         lines.append("📁 Monitoring all accessible paths")
 
-    lines.extend([
-        "",
-        "👁️ Now tracking:",
-        "   • IDE file access and editing patterns",
-        "   • Browser documentation and research activity",
-        "   • Application focus and context switches",
-        "   • File system changes and development flow",
-        "",
-        "💡 Use `get_activity_summary` to view tracked activity",
-        "💡 Use `stop_app_monitoring` to end tracking",
-    ])
+    lines.extend(
+        [
+            "",
+            "👁️ Now tracking:",
+            "   • IDE file access and editing patterns",
+            "   • Browser documentation and research activity",
+            "   • Application focus and context switches",
+            "   • File system changes and development flow",
+            "",
+            "💡 Use `get_activity_summary` to view tracked activity",
+            "💡 Use `stop_app_monitoring` to end tracking",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -155,9 +159,7 @@ def _format_file_activity(files: list[dict[str, Any]]) -> list[str]:
 
     lines = [f"📄 File Activity ({len(files)} files):"]
     for file_info in files[:10]:  # Show top 10
-        lines.append(
-            f"   • {file_info['path']} ({file_info['access_count']} accesses)"
-        )
+        lines.append(f"   • {file_info['path']} ({file_info['access_count']} accesses)")
     if len(files) > 10:
         lines.append(f"   • ... and {len(files) - 10} more files")
     return lines
@@ -194,10 +196,12 @@ async def _get_activity_summary_operation(monitor: Any, hours: int) -> str:
     lines = [f"📊 Activity Summary - Last {hours} Hours", ""]
 
     if not summary.get("has_data"):
-        lines.extend([
-            "🔍 No activity data available",
-            "💡 Start monitoring with `start_app_monitoring`",
-        ])
+        lines.extend(
+            [
+                "🔍 No activity data available",
+                "💡 Start monitoring with `start_app_monitoring`",
+            ]
+        )
         return "\n".join(lines)
 
     # Add all sections
@@ -281,10 +285,12 @@ async def _get_active_files_operation(monitor: Any, minutes: int) -> str:
     lines = [f"📄 Active Files - Last {minutes} Minutes", ""]
 
     if not files:
-        lines.extend([
-            "🔍 No active files in this period",
-            "💡 Files will appear here when you edit them during monitoring",
-        ])
+        lines.extend(
+            [
+                "🔍 No active files in this period",
+                "💡 Files will appear here when you edit them during monitoring",
+            ]
+        )
         return "\n".join(lines)
 
     lines.append(f"📝 Found {len(files)} active files:")
@@ -318,21 +324,23 @@ async def _start_interruption_monitoring_operation(
     """Start monitoring for interruptions and context switches."""
     await manager.start_monitoring(session_id=session_id, user_id=user_id)
 
-    return "\n".join([
-        "🔔 Interruption Monitoring Started",
-        "",
-        f"📝 Session ID: {session_id}",
-        f"👤 User: {user_id}",
-        "",
-        "🎯 Now detecting:",
-        "   • System sleep/wake events",
-        "   • Network disconnections",
-        "   • Application crashes",
-        "   • Long periods of inactivity",
-        "",
-        "💡 Context will be automatically preserved on interruptions",
-        "💡 Use `get_interruption_history` to view past events",
-    ])
+    return "\n".join(
+        [
+            "🔔 Interruption Monitoring Started",
+            "",
+            f"📝 Session ID: {session_id}",
+            f"👤 User: {user_id}",
+            "",
+            "🎯 Now detecting:",
+            "   • System sleep/wake events",
+            "   • Network disconnections",
+            "   • Application crashes",
+            "   • Long periods of inactivity",
+            "",
+            "💡 Context will be automatically preserved on interruptions",
+            "💡 Use `get_interruption_history` to view past events",
+        ]
+    )
 
 
 async def _start_interruption_monitoring_impl(
@@ -349,16 +357,18 @@ async def _stop_interruption_monitoring_operation(manager: Any) -> str:
     """Stop interruption monitoring."""
     summary = await manager.stop_monitoring()
 
-    return "\n".join([
-        "⏹️ Interruption Monitoring Stopped",
-        "",
-        "📊 Session summary:",
-        f"   • Duration: {summary.get('duration_minutes', 0):.1f} minutes",
-        f"   • Interruptions detected: {summary.get('interruption_count', 0)}",
-        f"   • Contexts preserved: {summary.get('contexts_saved', 0)}",
-        "",
-        "✅ Monitoring stopped successfully",
-    ])
+    return "\n".join(
+        [
+            "⏹️ Interruption Monitoring Stopped",
+            "",
+            "📊 Session summary:",
+            f"   • Duration: {summary.get('duration_minutes', 0):.1f} minutes",
+            f"   • Interruptions detected: {summary.get('interruption_count', 0)}",
+            f"   • Contexts preserved: {summary.get('contexts_saved', 0)}",
+            "",
+            "✅ Monitoring stopped successfully",
+        ]
+    )
 
 
 async def _stop_interruption_monitoring_impl() -> str:
@@ -376,16 +386,18 @@ async def _create_session_context_operation(
         session_id=session_id, context_data=context_data
     )
 
-    return "\n".join([
-        "📸 Session Context Created",
-        "",
-        f"🆔 Context ID: {context_id}",
-        f"📝 Session: {session_id}",
-        f"📦 Data items: {len(context_data)}",
-        "",
-        "✅ Context snapshot saved successfully",
-        "💡 Use `restore_session_context` to restore this context",
-    ])
+    return "\n".join(
+        [
+            "📸 Session Context Created",
+            "",
+            f"🆔 Context ID: {context_id}",
+            f"📝 Session: {session_id}",
+            f"📦 Data items: {len(context_data)}",
+            "",
+            "✅ Context snapshot saved successfully",
+            "💡 Use `restore_session_context` to restore this context",
+        ]
+    )
 
 
 async def _create_session_context_impl(
@@ -406,16 +418,18 @@ async def _preserve_current_context_operation(
         session_id=session_id, interruption_reason=reason
     )
 
-    return "\n".join([
-        "💾 Context Preserved",
-        "",
-        f"🆔 Snapshot ID: {context_snapshot['id']}",
-        f"📝 Reason: {reason}",
-        f"📦 Items preserved: {context_snapshot['item_count']}",
-        "",
-        "✅ Context saved successfully",
-        "💡 Use `restore_session_context` to restore this context",
-    ])
+    return "\n".join(
+        [
+            "💾 Context Preserved",
+            "",
+            f"🆔 Snapshot ID: {context_snapshot['id']}",
+            f"📝 Reason: {reason}",
+            f"📦 Items preserved: {context_snapshot['item_count']}",
+            "",
+            "✅ Context saved successfully",
+            "💡 Use `restore_session_context` to restore this context",
+        ]
+    )
 
 
 async def _preserve_current_context_impl(
@@ -435,16 +449,18 @@ async def _restore_session_context_operation(manager: Any, session_id: str) -> s
     if not restored.get("success"):
         return f"❌ Failed to restore context: {restored.get('error', 'Unknown error')}"
 
-    return "\n".join([
-        "♻️ Context Restored",
-        "",
-        f"📝 Session ID: {session_id}",
-        f"📦 Items restored: {restored['item_count']}",
-        f"📅 Original timestamp: {restored['original_timestamp']}",
-        "",
-        "✅ Context restored successfully",
-        "💡 Resume work from where you left off",
-    ])
+    return "\n".join(
+        [
+            "♻️ Context Restored",
+            "",
+            f"📝 Session ID: {session_id}",
+            f"📦 Items restored: {restored['item_count']}",
+            f"📅 Original timestamp: {restored['original_timestamp']}",
+            "",
+            "✅ Context restored successfully",
+            "💡 Resume work from where you left off",
+        ]
+    )
 
 
 async def _restore_session_context_impl(session_id: str) -> str:
@@ -464,20 +480,24 @@ async def _get_interruption_history_operation(
     lines = [f"📜 Interruption History - Last {hours} Hours", f"👤 User: {user_id}", ""]
 
     if not history:
-        lines.extend([
-            "🔍 No interruptions recorded",
-            "💡 Interruptions will appear here when detected during monitoring",
-        ])
+        lines.extend(
+            [
+                "🔍 No interruptions recorded",
+                "💡 Interruptions will appear here when detected during monitoring",
+            ]
+        )
         return "\n".join(lines)
 
     lines.append(f"⚠️ Found {len(history)} interruptions:")
     for event in history[:10]:  # Show last 10
-        lines.extend([
-            f"\n📍 {event['timestamp']}",
-            f"   Type: {event['type']}",
-            f"   Reason: {event.get('reason', 'N/A')}",
-            f"   Recovery: {event.get('recovery_action', 'None')}",
-        ])
+        lines.extend(
+            [
+                f"\n📍 {event['timestamp']}",
+                f"   Type: {event['type']}",
+                f"   Reason: {event.get('reason', 'N/A')}",
+                f"   Recovery: {event.get('recovery_action', 'None')}",
+            ]
+        )
 
     if len(history) > 10:
         lines.append(f"\n... and {len(history) - 10} more events")
@@ -485,9 +505,7 @@ async def _get_interruption_history_operation(
     return "\n".join(lines)
 
 
-async def _get_interruption_history_impl(
-    user_id: str, hours: int = 24
-) -> str:
+async def _get_interruption_history_impl(user_id: str, hours: int = 24) -> str:
     """Get history of interruptions for debugging and analysis."""
     return await _execute_interruption_operation(
         "Get interruption history",

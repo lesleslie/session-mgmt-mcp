@@ -8,20 +8,15 @@ This module provides intelligent scheduling capabilities including:
 """
 
 import asyncio
-import contextlib
 import importlib.util
 import json
 import logging
-import re
 import sqlite3
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
-from re import Match
 from typing import Any
 
 DATEUTIL_AVAILABLE = importlib.util.find_spec("dateutil") is not None
@@ -29,7 +24,6 @@ CRONTAB_AVAILABLE = importlib.util.find_spec("python_crontab") is not None
 SCHEDULE_AVAILABLE = importlib.util.find_spec("schedule") is not None
 
 if DATEUTIL_AVAILABLE:
-    from dateutil import parser as date_parser
     from dateutil.relativedelta import relativedelta
 
 from .types import RecurrenceInterval
@@ -38,11 +32,9 @@ from .utils.scheduler import (
     NaturalReminder,
     ReminderStatus,
     ReminderType,
-    SchedulingContext,
 )
 
 logger = logging.getLogger(__name__)
-
 
 
 class ReminderScheduler:

@@ -84,7 +84,7 @@ def parse_timeframe_single(timeframe: str) -> datetime | None:
 
 def parse_timeframe(timeframe: str) -> TimeRange:
     """Parse timeframe string into TimeRange object.
-    
+
     Supports formats like:
     - '7d' (last 7 days)
     - '2024-01' (specific month)

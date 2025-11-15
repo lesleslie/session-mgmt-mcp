@@ -8,14 +8,12 @@ and intelligent result ranking.
 import hashlib
 import json
 import time
-from contextlib import suppress
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from .reflection_tools import ReflectionDatabase
 from .search_enhanced import EnhancedSearchEngine
-from .types import SQLCondition, TimeRange
-from .utils.regex_patterns import SAFE_PATTERNS
+from .types import SQLCondition
 from .utils.search import (
     SearchFacet,
     SearchFilter,
@@ -621,7 +619,6 @@ class AdvancedSearchEngine:
         if self.reflection_db.conn:
             self.reflection_db.conn.commit()
 
-
     def _build_search_query(
         self,
         query: str,
@@ -904,4 +901,3 @@ class AdvancedSearchEngine:
                 )
 
         return facets
-

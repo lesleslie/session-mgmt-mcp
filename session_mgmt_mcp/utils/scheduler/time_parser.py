@@ -6,10 +6,23 @@ natural language time expressions into datetime objects.
 
 from __future__ import annotations
 
+import contextlib
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from re import Match
 from typing import Any
+
+# Try to import dateutil for better date handling
+try:
+    from dateutil.relativedelta import relativedelta
+    from dateutil import parser as date_parser
+
+    DATEUTIL_AVAILABLE = True
+except ImportError:
+    DATEUTIL_AVAILABLE = False
+    relativedelta = None  # type: ignore[misc,assignment]
+    date_parser = None  # type: ignore[misc,assignment]
+
 
 class NaturalLanguageParser:
     """Parses natural language time expressions."""
@@ -316,5 +329,3 @@ class NaturalLanguageParser:
                 days_ahead = 7
 
         return days_ahead
-
-

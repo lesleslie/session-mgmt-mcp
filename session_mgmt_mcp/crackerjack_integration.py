@@ -22,9 +22,7 @@ from typing import Any
 
 from session_mgmt_mcp.utils.crackerjack import (
     CrackerjackOutputParser,
-    PatternMappingsBuilder,
 )
-from session_mgmt_mcp.utils.regex_patterns import SAFE_PATTERNS
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +181,11 @@ class CrackerjackIntegration:
                 timeout=kwargs.get("timeout", 300),
                 cwd=kwargs.get("cwd", "."),
                 env=env,
-                **{k: v for k, v in kwargs.items() if k not in ("timeout", "cwd", "env")},
+                **{
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ("timeout", "cwd", "env")
+                },
             )
 
             return {

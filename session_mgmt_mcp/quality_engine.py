@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess  # nosec B404
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
@@ -34,20 +33,38 @@ from session_mgmt_mcp.utils.file_utils import (
 from session_mgmt_mcp.utils.git_utils import _optimize_git_repository
 from session_mgmt_mcp.utils.quality import (
     check_git_activity as _check_git_activity,
+)
+from session_mgmt_mcp.utils.quality import (
     count_significant_files as _count_significant_files,
+)
+from session_mgmt_mcp.utils.quality import (
     create_empty_summary as _create_empty_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     ensure_summary_defaults as _ensure_summary_defaults,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_git_activity_heuristic as _evaluate_git_activity_heuristic,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_large_project_heuristic as _evaluate_large_project_heuristic,
+)
+from session_mgmt_mcp.utils.quality import (
     evaluate_python_project_heuristic as _evaluate_python_project_heuristic,
-    extract_decisions_from_content as _extract_decisions_from_content,
-    extract_next_steps_from_content as _extract_next_steps_from_content,
-    extract_topics_from_content as _extract_topics_from_content,
-    generate_quality_recommendations as _generate_quality_recommendations,
+)
+from session_mgmt_mcp.utils.quality import (
     get_default_compaction_reason as _get_default_compaction_reason,
+)
+from session_mgmt_mcp.utils.quality import (
     get_error_summary as _get_error_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     get_fallback_compaction_reason as _get_fallback_compaction_reason,
+)
+from session_mgmt_mcp.utils.quality import (
     get_fallback_summary as _get_fallback_summary,
+)
+from session_mgmt_mcp.utils.quality import (
     process_recent_reflections as _process_recent_reflections,
 )
 from session_mgmt_mcp.utils.quality_utils import (

@@ -7,8 +7,6 @@ code duplication in tool implementations that depend on databases.
 
 from __future__ import annotations
 
-import typing as t
-from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from session_mgmt_mcp.utils.error_handlers import DatabaseUnavailableError, _get_logger
@@ -17,8 +15,9 @@ from session_mgmt_mcp.utils.instance_managers import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
-    from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
 
 T = TypeVar("T")
 
@@ -40,16 +39,18 @@ async def require_reflection_database() -> ReflectionDatabaseAdapter:
     Example:
         >>> db = await require_reflection_database()
         >>> # Use db knowing it's not None
+
     """
     db = await resolve_reflection_database()
     if not db:
+        msg = "Reflection database not available. Install dependencies: uv sync --extra embeddings"
         raise DatabaseUnavailableError(
-            "Reflection database not available. Install dependencies: uv sync --extra embeddings"
+            msg
         )
     return db
 
 
-async def safe_database_operation(
+async def safe_database_operation[T](
     operation: Callable[[ReflectionDatabaseAdapter], Awaitable[T]],
     error_message: str = "Database operation",
 ) -> T:
@@ -76,6 +77,7 @@ async def safe_database_operation(
         >>> async def my_query(db):
         ...     return await db.search_reflections("test")
         >>> results = await safe_database_operation(my_query, "Search reflections")
+
     """
     try:
         db = await require_reflection_database()
@@ -88,7 +90,7 @@ async def safe_database_operation(
         raise
 
 
-async def safe_database_operation_with_message(
+async def safe_database_operation_with_message[T](
     operation: Callable[[ReflectionDatabaseAdapter], Awaitable[T]],
     error_message: str = "Database operation",
 ) -> str:
@@ -110,6 +112,7 @@ async def safe_database_operation_with_message(
         ...     return f"Found {len(result)} results"
         >>> message = await safe_database_operation_with_message(my_query)
         >>> print(message)
+
     """
     try:
         db = await require_reflection_database()
@@ -120,10 +123,10 @@ async def safe_database_operation_with_message(
         # Otherwise, let caller handle the result
         return str(result)
     except DatabaseUnavailableError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {error_message}: {e}")
-        return f"❌ {error_message} failed: {str(e)}"
+        return f"❌ {error_message} failed: {e!s}"
 
 
 async def batch_database_operation(
@@ -152,6 +155,7 @@ async def batch_database_operation(
         ...     return await db.store_reflection(item["content"], item["tags"])
         >>> items = [{"content": "a", "tags": ["t1"]}, ...]
         >>> results = await batch_database_operation(items, store_item)
+
     """
     db = await require_reflection_database()
 
@@ -186,6 +190,7 @@ def check_database_available() -> bool:
         ...     result = await some_database_operation()
         ... else:
         ...     print("Database not available")
+
     """
     try:
         import importlib.util
@@ -196,10 +201,7 @@ def check_database_available() -> bool:
 
         # Check for required dependencies
         spec = importlib.util.find_spec("duckdb")
-        if spec is None:
-            return False
-
-        return True
+        return spec is not None
     except ImportError:
         return False
 
@@ -213,6 +215,7 @@ async def get_database_stats() -> dict[str, Any]:
     Example:
         >>> stats = await get_database_stats()
         >>> print(f"Total reflections: {stats['total_reflections']}")
+
     """
     try:
         db = await require_reflection_database()

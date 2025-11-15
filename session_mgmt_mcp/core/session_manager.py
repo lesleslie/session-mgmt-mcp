@@ -13,14 +13,6 @@ from pathlib import Path
 
 from acb.adapters import import_adapter
 from acb.depends import Inject, depends
-from session_mgmt_mcp.core.lifecycle import (
-    SessionInfo,
-    analyze_project_context,
-    find_latest_handoff_file,
-    generate_handoff_documentation,
-    read_previous_session_info,
-    save_handoff_documentation,
-)
 from session_mgmt_mcp.utils.git_operations import (
     create_checkpoint_commit,
     is_git_repository,

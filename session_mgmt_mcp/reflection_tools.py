@@ -28,7 +28,6 @@ import time
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
-from types import TracebackType
 from typing import Any, Self
 
 # Database and embedding imports

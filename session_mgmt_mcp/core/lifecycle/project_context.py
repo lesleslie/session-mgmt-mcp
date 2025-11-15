@@ -6,9 +6,12 @@ frameworks, and gathering project health indicators.
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from session_mgmt_mcp.utils.git_operations import is_git_repository
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def check_readme_exists(project_dir: Path) -> bool:
@@ -28,9 +31,7 @@ def check_venv_exists(project_dir: Path) -> bool:
 
 def check_tests_exist(project_dir: Path) -> bool:
     """Check if test directories exist."""
-    return any(
-        (project_dir / name).exists() for name in ("tests", "test", "testing")
-    )
+    return any((project_dir / name).exists() for name in ("tests", "test", "testing"))
 
 
 def check_docs_exist(project_dir: Path) -> bool:
@@ -72,7 +73,9 @@ def check_framework_imports(content: str, indicators: dict[str, bool]) -> None:
         indicators["uses_flask"] = True
 
 
-def detect_python_frameworks(python_files: list[Path], indicators: dict[str, bool]) -> None:
+def detect_python_frameworks(
+    python_files: list[Path], indicators: dict[str, bool]
+) -> None:
     """Detect Python frameworks from file content."""
     for py_file in python_files[:10]:  # Sample first 10 files
         try:

@@ -40,7 +40,8 @@ async def _require_knowledge_graph() -> KnowledgeGraphDatabase:
         await kg.initialize()
         return kg
     except Exception as e:
-        raise RuntimeError(f"Knowledge graph not available: {e}") from e
+        msg = f"Knowledge graph not available: {e}"
+        raise RuntimeError(msg) from e
 
 
 async def _execute_kg_operation(operation_name: str, operation: t.Callable) -> str:
@@ -49,7 +50,7 @@ async def _execute_kg_operation(operation_name: str, operation: t.Callable) -> s
         async with await _require_knowledge_graph() as kg:
             return await operation(kg)
     except RuntimeError as e:
-        return f"❌ {str(e)}. Install dependencies: uv sync"
+        return f"❌ {e!s}. Install dependencies: uv sync"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -123,7 +124,9 @@ async def _create_entity_impl(
     )
 
 
-async def _add_observation_operation(kg: Any, entity_name: str, observation: str) -> str:
+async def _add_observation_operation(
+    kg: Any, entity_name: str, observation: str
+) -> str:
     """Add an observation (fact) to an existing entity."""
     success = await kg.add_observation(entity_name, observation)
 
@@ -135,10 +138,12 @@ async def _add_observation_operation(kg: Any, entity_name: str, observation: str
         entity_name=entity_name,
         observation=observation[:100],
     )
-    return "\n".join([
-        f"✅ Observation added to '{entity_name}'",
-        f"📝 Observation: {observation}",
-    ])
+    return "\n".join(
+        [
+            f"✅ Observation added to '{entity_name}'",
+            f"📝 Observation: {observation}",
+        ]
+    )
 
 
 async def _add_observation_impl(entity_name: str, observation: str) -> str:
@@ -268,7 +273,9 @@ def _format_relationship(rel: dict[str, Any], direction: str, entity_name: str) 
     if direction == "outgoing" or (
         direction == "both" and rel["from_entity"] == entity_name
     ):
-        return f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
+        return (
+            f"  {rel['from_entity']} --[{rel['relation_type']}]--> {rel['to_entity']}"
+        )
     return f"  {rel['from_entity']} <--[{rel['relation_type']}]-- {rel['to_entity']}"
 
 
@@ -338,11 +345,13 @@ async def _find_path_operation(
     ]
 
     for i, path in enumerate(paths, 1):
-        lines.extend([
-            f"{i}. Path length: {path['path_length']} hop(s)",
-            f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"{i}. Path length: {path['path_length']} hop(s)",
+                f"   {path['from_entity']} ➜ ... ➜ {path['to_entity']}",
+                "",
+            ]
+        )
 
     _get_logger().info(
         "Paths found",
@@ -398,10 +407,12 @@ async def _get_knowledge_graph_stats_operation(kg: Any) -> str:
         )
         lines.append("")
 
-    lines.extend([
-        f"💾 Database: {stats['database_path']}",
-        f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
-    ])
+    lines.extend(
+        [
+            f"💾 Database: {stats['database_path']}",
+            f"🔧 DuckPGQ: {'✅ Installed' if stats['duckpgq_installed'] else '❌ Not installed'}",
+        ]
+    )
 
     _get_logger().info("Knowledge graph stats retrieved", **stats)
     return "\n".join(lines)
@@ -508,7 +519,9 @@ async def _create_single_entity(
         return None, (entity_data["name"], str(e))
 
 
-async def _batch_create_entities_operation(kg: Any, entities: list[dict[str, Any]]) -> str:
+async def _batch_create_entities_operation(
+    kg: Any, entities: list[dict[str, Any]]
+) -> str:
     """Bulk create multiple entities."""
     created = []
     failed = []

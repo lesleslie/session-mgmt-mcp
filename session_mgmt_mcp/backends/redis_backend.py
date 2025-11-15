@@ -12,6 +12,7 @@ from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
 
+
 class RedisStorage(SessionStorage):
     """Redis-based session storage."""
 
@@ -234,4 +235,3 @@ class RedisStorage(SessionStorage):
             return True
         except Exception:
             return False
-

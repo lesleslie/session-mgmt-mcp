@@ -18,7 +18,6 @@ from session_mgmt_mcp.utils.messages import ToolMessages
 from session_mgmt_mcp.utils.tool_wrapper import (
     execute_database_tool,
     execute_simple_database_tool,
-    format_reflection_result,
 )
 
 if TYPE_CHECKING:
@@ -80,7 +79,7 @@ async def _store_reflection_operation(
 
 def _format_store_reflection(result: dict[str, Any]) -> str:
     """Format reflection storage result."""
-    tag_text = f" (tags: {', '.join(result['tags'])})" if result['tags'] else ""
+    tag_text = f" (tags: {', '.join(result['tags'])})" if result["tags"] else ""
     return f"✅ Reflection stored successfully with ID: {result['id']}{tag_text}"
 
 
@@ -249,7 +248,9 @@ async def _get_more_results_operation(
         query=query, project=project, limit=limit + offset
     )
     paginated_results = results[offset : offset + limit]
-    return _build_pagination_output(query, offset, paginated_results, len(results), limit)
+    return _build_pagination_output(
+        query, offset, paginated_results, len(results), limit
+    )
 
 
 async def _get_more_results_impl(

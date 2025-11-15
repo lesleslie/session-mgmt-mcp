@@ -7,7 +7,6 @@ and message formatting to eliminate repetitive patterns in tool implementations.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from session_mgmt_mcp.utils.database_helpers import (
@@ -21,6 +20,8 @@ from session_mgmt_mcp.utils.error_handlers import (
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 T = TypeVar("T")
@@ -64,10 +65,9 @@ async def execute_database_tool(
         >>> def format_results(results):
         ...     return f"Found {len(results)} results"
         >>> result = await execute_database_tool(
-        ...     search_op,
-        ...     format_results,
-        ...     "Search reflections"
+        ...     search_op, format_results, "Search reflections"
         ... )
+
     """
     try:
         # 1. Validate inputs if validator provided
@@ -113,6 +113,7 @@ async def execute_simple_database_tool(
         ...     results = await db.search_reflections("test")
         ...     return f"Found {len(results)} results"
         >>> result = await execute_simple_database_tool(search_op, "Search")
+
     """
     try:
         db = await require_reflection_database()
@@ -148,6 +149,7 @@ async def execute_database_tool_with_dict(
         >>> result = await execute_database_tool_with_dict(search_op, "Search")
         >>> if result.get("success"):
         ...     print(result["data"]["count"])
+
     """
     try:
         if validator:
@@ -161,13 +163,13 @@ async def execute_database_tool_with_dict(
     except ValidationError as e:
         return {
             "success": False,
-            "error": f"{operation_name} validation failed: {str(e)}",
+            "error": f"{operation_name} validation failed: {e!s}",
         }
     except DatabaseUnavailableError as e:
         return {"success": False, "error": str(e)}
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
-        return {"success": False, "error": f"{operation_name} failed: {str(e)}"}
+        return {"success": False, "error": f"{operation_name} failed: {e!s}"}
 
 
 async def execute_no_database_tool(
@@ -198,10 +200,9 @@ async def execute_no_database_tool(
         >>> def format_config(data):
         ...     return f"Config valid: {data['version']}"
         >>> result = await execute_no_database_tool(
-        ...     validate_config,
-        ...     format_config,
-        ...     "Validate configuration"
+        ...     validate_config, format_config, "Validate configuration"
         ... )
+
     """
     try:
         result = await operation(*args, **kwargs)
@@ -229,9 +230,10 @@ def create_validator(**validations: Any) -> Callable[[], None]:
         >>> validator = create_validator(
         ...     required_query="",
         ...     type_limit_int=(limit, int),
-        ...     range_limit=(limit, 1, 100)
+        ...     range_limit=(limit, 1, 100),
         ... )
         >>> validator()  # Raises ValidationError if invalid
+
     """
     from session_mgmt_mcp.utils.error_handlers import (
         validate_range,
@@ -292,8 +294,9 @@ def format_reflection_result(
         ...     True,
         ...     "Important insight",
         ...     ["learning", "bug-fix"],
-        ...     "2025-01-12 14:30:00"
+        ...     "2025-01-12 14:30:00",
         ... )
+
     """
     if not success:
         return ToolMessages.operation_failed("Store reflection", "Operation failed")
@@ -330,6 +333,7 @@ def format_search_results(
     Example:
         >>> results = [{"content": "test", "score": 0.95}]
         >>> format_search_results(results, "test query")
+
     """
     if not results:
         return ToolMessages.empty_results(
@@ -338,13 +342,15 @@ def format_search_results(
 
     count = len(results)
     lines = [
-        f"🔍 Found {ToolMessages.format_count(count, 'result')} for \"{query}\"",
+        f'🔍 Found {ToolMessages.format_count(count, "result")} for "{query}"',
     ]
 
     if show_details:
         display_count = min(count, max_results)
         for i, result in enumerate(results[:display_count], 1):
-            lines.append(f"\n{i}. {ToolMessages.truncate_text(result.get('content', ''), 80)}")
+            lines.append(
+                f"\n{i}. {ToolMessages.truncate_text(result.get('content', ''), 80)}"
+            )
             if "score" in result:
                 lines.append(f"   Relevance: {result['score']:.2f}")
             if "timestamp" in result:

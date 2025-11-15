@@ -8,11 +8,13 @@ across tool implementations.
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
 from acb.adapters import import_adapter
 from acb.depends import depends
+
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 T = TypeVar("T")
 
@@ -26,22 +28,19 @@ def _get_logger() -> t.Any:
 class ToolError(Exception):
     """Base exception for tool errors."""
 
-    pass
 
 
 class DatabaseUnavailableError(ToolError):
     """Exception raised when database is not available."""
 
-    pass
 
 
 class ValidationError(ToolError):
     """Exception raised when input validation fails."""
 
-    pass
 
 
-async def handle_tool_errors(
+async def handle_tool_errors[T](
     operation: Callable[..., Awaitable[T]],
     error_prefix: str = "Operation",
     *args: Any,
@@ -67,21 +66,22 @@ async def handle_tool_errors(
         >>> result = await handle_tool_errors(my_operation, "Multiplication", 5)
         >>> print(result)
         10
+
     """
     try:
         return await operation(*args, **kwargs)
     except DatabaseUnavailableError as e:
         # Don't log database unavailable as exception - it's expected
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except ValidationError as e:
         # Don't log validation errors as exceptions - they're user errors
-        return f"❌ {error_prefix} validation failed: {str(e)}"
+        return f"❌ {error_prefix} validation failed: {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {error_prefix}: {e}")
-        return f"❌ {error_prefix} failed: {str(e)}"
+        return f"❌ {error_prefix} failed: {e!s}"
 
 
-async def handle_tool_errors_with_result(
+async def handle_tool_errors_with_result[T](
     operation: Callable[..., Awaitable[T]],
     error_prefix: str = "Operation",
     *args: Any,
@@ -107,6 +107,7 @@ async def handle_tool_errors_with_result(
         ...     print(result["data"])
         ... else:
         ...     print(result["error"])
+
     """
     try:
         data = await operation(*args, **kwargs)
@@ -114,10 +115,13 @@ async def handle_tool_errors_with_result(
     except DatabaseUnavailableError as e:
         return {"success": False, "error": str(e)}
     except ValidationError as e:
-        return {"success": False, "error": f"{error_prefix} validation failed: {str(e)}"}
+        return {
+            "success": False,
+            "error": f"{error_prefix} validation failed: {e!s}",
+        }
     except Exception as e:
         _get_logger().exception(f"Error in {error_prefix}: {e}")
-        return {"success": False, "error": f"{error_prefix} failed: {str(e)}"}
+        return {"success": False, "error": f"{error_prefix} failed: {e!s}"}
 
 
 def validate_required(value: Any, field_name: str) -> None:
@@ -129,15 +133,19 @@ def validate_required(value: Any, field_name: str) -> None:
 
     Raises:
         ValidationError: If value is None, empty string, or empty collection
+
     """
     if value is None:
-        raise ValidationError(f"{field_name} is required")
+        msg = f"{field_name} is required"
+        raise ValidationError(msg)
 
     if isinstance(value, str) and not value.strip():
-        raise ValidationError(f"{field_name} cannot be empty")
+        msg = f"{field_name} cannot be empty"
+        raise ValidationError(msg)
 
     if isinstance(value, (list, dict, set, tuple)) and not value:
-        raise ValidationError(f"{field_name} cannot be empty")
+        msg = f"{field_name} cannot be empty"
+        raise ValidationError(msg)
 
 
 def validate_type(value: Any, expected_type: type, field_name: str) -> None:
@@ -150,15 +158,17 @@ def validate_type(value: Any, expected_type: type, field_name: str) -> None:
 
     Raises:
         ValidationError: If value is not of the expected type
+
     """
     if not isinstance(value, expected_type):
+        msg = f"{field_name} must be {expected_type.__name__}, got {type(value).__name__}"
         raise ValidationError(
-            f"{field_name} must be {expected_type.__name__}, got {type(value).__name__}"
+            msg
         )
 
 
 def validate_range(
-    value: int | float, min_val: int | float, max_val: int | float, field_name: str
+    value: float, min_val: float, max_val: float, field_name: str
 ) -> None:
     """Validate that a numeric value is within a specified range.
 
@@ -170,9 +180,14 @@ def validate_range(
 
     Raises:
         ValidationError: If value is outside the specified range
+
     """
     if not isinstance(value, (int, float)):
-        raise ValidationError(f"{field_name} must be a number")
+        msg = f"{field_name} must be a number"
+        raise ValidationError(msg)
 
     if value < min_val or value > max_val:
-        raise ValidationError(f"{field_name} must be between {min_val} and {max_val}, got {value}")
+        msg = f"{field_name} must be between {min_val} and {max_val}, got {value}"
+        raise ValidationError(
+            msg
+        )

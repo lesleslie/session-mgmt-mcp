@@ -12,7 +12,7 @@ if t.TYPE_CHECKING:
     from session_mgmt_mcp.core import (
         SessionLifecycleManager as SessionLifecycleManagerT,  # noqa: F401
     )
-    from session_mgmt_mcp.server_core import (
+    from session_mgmt_mcp.core.permissions import (
         SessionPermissionsManager as SessionPermissionsManagerT,  # noqa: F401
     )
     from session_mgmt_mcp.utils.logging import (  # type: ignore[attr-defined]
@@ -68,7 +68,7 @@ def reset() -> None:
     """Reset dependencies to defaults."""
     # Reset singleton instances that have class-level state
     with suppress(ImportError, AttributeError):
-        from session_mgmt_mcp.server_core import SessionPermissionsManager
+        from session_mgmt_mcp.core.permissions import SessionPermissionsManager
 
         SessionPermissionsManager.reset_singleton()
 

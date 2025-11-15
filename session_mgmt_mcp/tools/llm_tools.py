@@ -73,7 +73,8 @@ async def _require_llm_manager() -> Any:
 
     manager = await _get_llm_manager()
     if not manager:
-        raise RuntimeError("Failed to initialize LLM manager")
+        msg = "Failed to initialize LLM manager"
+        raise RuntimeError(msg)
 
     return manager
 
@@ -86,7 +87,7 @@ async def _execute_llm_operation(
         manager = await _require_llm_manager()
         return await operation(manager)
     except RuntimeError as e:
-        return f"❌ {str(e)}"
+        return f"❌ {e!s}"
     except Exception as e:
         _get_logger().exception(f"Error in {operation_name}: {e}")
         return ToolMessages.operation_failed(operation_name, e)
@@ -342,6 +343,7 @@ def register_llm_tools(mcp: FastMCP) -> None:
 
     Args:
         mcp: FastMCP server instance
+
     """
 
     @mcp.tool()
@@ -372,6 +374,7 @@ def register_llm_tools(mcp: FastMCP) -> None:
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
             use_fallback: Whether to use fallback providers if primary fails
+
         """
         return await _generate_with_llm_impl(
             prompt, provider, model, temperature, max_tokens, use_fallback
@@ -393,6 +396,7 @@ def register_llm_tools(mcp: FastMCP) -> None:
             model: Specific model to use
             temperature: Generation temperature (0.0-1.0)
             max_tokens: Maximum tokens to generate
+
         """
         return await _chat_with_llm_impl(
             messages, provider, model, temperature, max_tokens
@@ -412,6 +416,7 @@ def register_llm_tools(mcp: FastMCP) -> None:
             api_key: API key for the provider
             base_url: Base URL for the provider API
             default_model: Default model to use
+
         """
         return await _configure_llm_provider_impl(
             provider, api_key, base_url, default_model
