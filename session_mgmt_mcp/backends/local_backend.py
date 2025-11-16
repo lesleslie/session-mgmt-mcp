@@ -1,5 +1,13 @@
 """Local file system session storage backend.
 
+**DEPRECATED**: This module is deprecated and will be removed in v1.0.
+Use ServerlessStorageAdapter with backend="file" instead, which uses ACB's
+native file storage adapter with async support and better performance.
+
+Migration:
+    Old: LocalFileStorage(config)
+    New: ServerlessStorageAdapter(config, backend="file")
+
 This module provides a local file system implementation of the SessionStorage interface
 for storing and retrieving session state in local files (useful for development/testing).
 """
@@ -8,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,9 +25,22 @@ from session_mgmt_mcp.backends.base import SessionState, SessionStorage
 
 
 class LocalFileStorage(SessionStorage):
-    """Local file-based session storage (for development/testing)."""
+    """Local file-based session storage (for development/testing).
+
+    .. deprecated:: 0.9.3
+        LocalFileStorage is deprecated. Use ``ServerlessStorageAdapter(backend="file")``
+        which provides async file operations and better performance via ACB.
+
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
+        warnings.warn(
+            "LocalFileStorage is deprecated and will be removed in v1.0. "
+            "Use ServerlessStorageAdapter(backend='file') instead for "
+            "async file operations and ACB integration.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(config)
         self.storage_dir = Path(
             config.get("storage_dir", Path.home() / ".claude" / "data" / "sessions"),
