@@ -88,19 +88,29 @@ For current project documentation, see the main `docs/` directory:
 
 - `ACB_MIGRATION_COMPLETE.md` - ACB adapter migration summary (✅ Complete)
 - `CRACKERJACK.md` - Crackerjack integration guide
-- `PHASE-2.7-COMPLETION-REVIEW.md` - Latest phase review
-- `SESSION-MGMT-MCP-COMPREHENSIVE-IMPROVEMENT-PLAN.md` - Master improvement plan
-- `TESTING.md` - Current testing guide
-- `TESTING-QUICK-REFERENCE.md` - Quick test commands
 - `UNIFIED_ROADMAP.md` - Current development roadmap
 
-## Archive Organization (January 7, 2025)
+### Recently Archived Docs (January 16, 2025)
 
-This archive was created to reduce documentation clutter while preserving historical value:
+- `PHASE-2.7-COMPLETION-REVIEW.md` → `completed-migrations/`
+- `REFACTORING_PHASE4_COMPLETE.md` → `completed-migrations/`
+- `REFACTORING_PHASE5_COMPLETE.md` → `completed-migrations/`
+- `REFACTORING_PHASE5_PLAN.md` → `completed-migrations/`
+- `SESSION-MGMT-MCP-COMPREHENSIVE-IMPROVEMENT-PLAN.md` → `superseded-plans/`
+- `TESTING.md` → `../developer/`
+- `TESTING-QUICK-REFERENCE.md` → `../developer/`
 
+## Archive Organization
+
+**Initial cleanup (January 7, 2025):**
 - **Before**: 107 markdown files (87 in top-level docs/)
 - **After**: 27 active files + 80 archived files
 - **Improvement**: 91% reduction in top-level clutter
+
+**Second cleanup (January 16, 2025):**
+- Archived 5 more completed phase documents
+- Moved 2 testing docs to `developer/` directory
+- **Current**: 3 active top-level docs + organized subdirectories
 
 ## Navigation Tips
 
@@ -119,5 +129,6 @@ This archive was created to reduce documentation clutter while preserving histor
 
 ______________________________________________________________________
 
-*Last Updated: January 7, 2025*
+*Last Updated: January 16, 2025*
 *Archive Created: January 7, 2025*
+*Second Cleanup: January 16, 2025*
