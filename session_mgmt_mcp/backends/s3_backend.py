@@ -1,5 +1,13 @@
 """S3-compatible session storage backend.
 
+**DEPRECATED**: This module is deprecated and will be removed in v1.0.
+Use ServerlessStorageAdapter with backend="s3" instead, which uses ACB's
+native S3 storage adapter for better performance and features.
+
+Migration:
+    Old: S3Storage(config)
+    New: ServerlessStorageAdapter(config, backend="s3")
+
 This module provides an S3-compatible implementation of the SessionStorage interface
 for storing and retrieving session state in S3-compatible object storage.
 """
@@ -9,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import gzip
 import json
+import warnings
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -16,9 +25,23 @@ from session_mgmt_mcp.backends.base import SessionState, SessionStorage
 
 
 class S3Storage(SessionStorage):
-    """S3-based session storage."""
+    """S3-based session storage.
+
+    .. deprecated:: 0.9.3
+        S3Storage is deprecated. Use ``ServerlessStorageAdapter(backend="s3")``
+        which provides better performance, connection pooling, and streaming support
+        via ACB's native S3 storage adapter.
+
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
+        warnings.warn(
+            "S3Storage is deprecated and will be removed in v1.0. "
+            "Use ServerlessStorageAdapter(backend='s3') instead for better "
+            "performance and ACB integration.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(config)
         self.bucket_name = config.get("bucket_name", "session-mgmt-mcp")
         self.region = config.get("region", "us-east-1")

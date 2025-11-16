@@ -6,11 +6,15 @@ Allows the session management server to operate in cloud/serverless environments
 """
 
 import hashlib
+import json
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from session_mgmt_mcp.adapters.serverless_storage_adapter import (
+    ServerlessStorageAdapter,
+)
 from session_mgmt_mcp.backends import (
     ACBCacheStorage,
     LocalFileStorage,
@@ -188,11 +192,31 @@ class ServerlessConfigManager:
     def create_storage_backend(config: dict[str, Any]) -> SessionStorage:
         """Create storage backend from config.
 
-        Supports legacy backends (redis, s3, local) and new ACB cache backend.
-        ACB is the recommended default for new deployments.
+        Supports new ACB storage adapters (file, s3, azure, gcs, memory) and
+        legacy backends (redis, local, acb cache) for backward compatibility.
+
+        Recommended backends (ACB storage adapters):
+        - "file": Local file storage (default, best for development)
+        - "s3": AWS S3/MinIO (production cloud storage)
+        - "azure": Azure Blob Storage (Azure deployments)
+        - "gcs": Google Cloud Storage (GCP deployments)
+        - "memory": In-memory storage (testing only)
+
+        Legacy backends (deprecated, will be removed in v1.0):
+        - "redis": Redis cache (use "acb" or "s3" instead)
+        - "local": Old local file storage (use "file" instead)
+        - "acb": Old ACB cache backend (use "file" or "s3" instead)
         """
-        backend_type = config.get("storage_backend", "acb")  # Default to ACB
+        backend_type = config.get("storage_backend", "file")  # Default to file
         backend_config = config.get("backends", {}).get(backend_type, {})
+
+        # New ACB storage adapters (recommended)
+        if backend_type in ("file", "s3", "azure", "gcs", "memory"):
+            CONFIG_LOGGER.info(
+                f"Using ACB storage adapter: {backend_type} "
+                "(recommended for production deployments)"
+            )
+            return ServerlessStorageAdapter(config=backend_config, backend=backend_type)
 
         # ACB-style cache backend (using aiocache directly)
         if backend_type == "acb":
@@ -265,6 +289,12 @@ class ServerlessConfigManager:
             try:
                 storage: SessionStorage
                 match backend_name:
+                    # New ACB storage adapters
+                    case "file" | "s3" | "azure" | "gcs" | "memory":
+                        storage = ServerlessStorageAdapter(
+                            config=backend_config, backend=backend_name
+                        )
+
                     case "acb":
                         # Test ACB-style cache backend
                         try:

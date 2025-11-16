@@ -1,5 +1,14 @@
 """Redis-based session storage backend.
 
+**DEPRECATED**: This module is deprecated and will be removed in v1.0.
+Use ACBCacheStorage (via serverless_mode) or ServerlessStorageAdapter instead,
+which provide better connection pooling, SSL/TLS support, and compression.
+
+Migration:
+    Old: RedisStorage(config)
+    New: ServerlessStorageAdapter(config, backend="memory") for caching
+    Or: Use ACBCacheStorage for Redis caching with aiocache
+
 This module provides a Redis implementation of the SessionStorage interface
 for storing and retrieving session state in Redis with TTL support.
 """
@@ -8,15 +17,29 @@ from __future__ import annotations
 
 import gzip
 import json
+import warnings
 from typing import Any
 
 from session_mgmt_mcp.backends.base import SessionState, SessionStorage
 
 
 class RedisStorage(SessionStorage):
-    """Redis-based session storage."""
+    """Redis-based session storage.
+
+    .. deprecated:: 0.9.3
+        RedisStorage is deprecated. Use ``ACBCacheStorage`` for Redis caching
+        or ``ServerlessStorageAdapter`` for file/S3 storage with better features.
+
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
+        warnings.warn(
+            "RedisStorage is deprecated and will be removed in v1.0. "
+            "Use ACBCacheStorage (with aiocache) or ServerlessStorageAdapter "
+            "for better connection pooling, SSL/TLS support, and compression.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(config)
         self.host = config.get("host", "localhost")
         self.port = config.get("port", 6379)

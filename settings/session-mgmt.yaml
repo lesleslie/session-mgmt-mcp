@@ -54,6 +54,47 @@ default_trusted_operations:
 auto_cleanup_old_sessions: true
 session_retention_days: 365
 
+# === Storage Settings ===
+storage:
+  # Default backend: "file" | "s3" | "azure" | "gcs" | "memory"
+  default_backend: "file"
+
+  # File storage settings (local filesystem)
+  file:
+    local_path: "~/.claude/data/sessions"
+    auto_mkdir: true
+
+  # S3 storage settings (AWS S3 / MinIO compatible)
+  s3:
+    bucket_name: "${S3_BUCKET:session-mgmt}"
+    endpoint_url: "${S3_ENDPOINT:}"  # Leave empty for AWS, set for MinIO
+    access_key_id: "${S3_ACCESS_KEY:}"
+    secret_access_key: "${S3_SECRET_KEY:}"
+    region: "${S3_REGION:us-east-1}"
+
+  # Azure Blob storage settings
+  azure:
+    account_name: "${AZURE_ACCOUNT:}"
+    account_key: "${AZURE_KEY:}"
+    container: "${AZURE_CONTAINER:sessions}"
+
+  # Google Cloud Storage settings
+  gcs:
+    bucket_name: "${GCS_BUCKET:}"
+    credentials_path: "${GCS_CREDENTIALS:}"
+    project: "${GCS_PROJECT:}"
+
+  # Memory storage settings (testing only)
+  memory:
+    max_size_mb: 100
+
+  # Bucket configuration (logical groupings)
+  buckets:
+    sessions: "sessions"
+    checkpoints: "checkpoints"
+    handoffs: "handoffs"
+    test: "test"
+
 # Selective auto-store for reflections
 enable_auto_store_reflections: true
 auto_store_quality_delta_threshold: 10
