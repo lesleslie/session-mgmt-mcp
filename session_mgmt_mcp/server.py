@@ -367,10 +367,12 @@ def _format_reflection_output(
         else None
     )
     if token_savings and token_savings.get("savings_percentage") is not None:
-        output_lines.append(
-            f"⚡ Token optimization: {token_savings.get('savings_percentage')}% saved",
+        output_lines.extend(
+            (
+                f"⚡ Token optimization: {token_savings.get('savings_percentage')}% saved",
+                "",
+            )
         )
-        output_lines.append("")
 
     output_lines.extend(_format_search_results(results))
     return "\n".join(output_lines)

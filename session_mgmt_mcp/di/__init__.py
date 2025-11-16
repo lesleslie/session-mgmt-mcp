@@ -10,13 +10,13 @@ from acb.depends import depends
 
 if t.TYPE_CHECKING:
     from session_mgmt_mcp.core import (
-        SessionLifecycleManager as SessionLifecycleManagerT,  # noqa: F401
+        SessionLifecycleManager as SessionLifecycleManagerT,
     )
     from session_mgmt_mcp.core.permissions import (
-        SessionPermissionsManager as SessionPermissionsManagerT,  # noqa: F401
+        SessionPermissionsManager as SessionPermissionsManagerT,
     )
     from session_mgmt_mcp.utils.logging import (  # type: ignore[attr-defined]
-        SessionLogger as SessionLoggerT,  # noqa: F401
+        SessionLogger as SessionLoggerT,
     )
 
 from .config import SessionPaths

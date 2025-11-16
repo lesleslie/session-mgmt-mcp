@@ -3,10 +3,10 @@
 import re
 import typing as t
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class AgentType(str, Enum):
+class AgentType(StrEnum):
     """Available crackerjack AI agents."""
 
     REFACTORING = "RefactoringAgent"

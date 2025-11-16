@@ -60,7 +60,7 @@ class ToolMessages:
         """
         error_str = str(error)
         # Remove "Exception: " prefix if present
-        if ": " in error_str and error_str.split(": ")[0].endswith("Error"):
+        if ": " in error_str and error_str.split(": ", maxsplit=1)[0].endswith("Error"):
             error_str = ": ".join(error_str.split(": ")[1:])
         return f"❌ {operation} failed: {error_str}"
 
@@ -119,7 +119,7 @@ class ToolMessages:
 
         Example:
             >>> ToolMessages.empty_results("Search", "Try broader terms")
-            'ℹ️ No results found for Search. Try broader terms'
+            'i️ No results found for Search. Try broader terms'
 
         """
         msg = f"ℹ️ No results found for {operation}"
@@ -252,11 +252,12 @@ class ToolMessages:
             '1.4 MB'
 
         """
-        for unit in ["B", "KB", "MB", "GB"]:
-            if bytes_count < 1024.0:
-                return f"{bytes_count:.1f} {unit}"
-            bytes_count /= 1024.0
-        return f"{bytes_count:.1f} TB"
+        bytes_float = float(bytes_count)
+        for unit in ("B", "KB", "MB", "GB"):
+            if bytes_float < 1024.0:
+                return f"{bytes_float:.1f} {unit}"
+            bytes_float /= 1024.0
+        return f"{bytes_float:.1f} TB"
 
     @staticmethod
     def format_result_summary(

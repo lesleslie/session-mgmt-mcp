@@ -10,13 +10,14 @@ Refactored to use utility modules for reduced code duplication.
 from __future__ import annotations
 
 import re
-import typing as t
 from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.utils.error_handlers import _get_logger
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
     )
@@ -44,7 +45,9 @@ async def _require_knowledge_graph() -> KnowledgeGraphDatabase:
         raise RuntimeError(msg) from e
 
 
-async def _execute_kg_operation(operation_name: str, operation: t.Callable) -> str:
+async def _execute_kg_operation(
+    operation_name: str, operation: Callable[[Any], Awaitable[str]]
+) -> str:
     """Execute a knowledge graph operation with error handling."""
     try:
         async with await _require_knowledge_graph() as kg:
@@ -116,11 +119,15 @@ async def _create_entity_impl(
     properties: dict[str, Any] | None = None,
 ) -> str:
     """Create an entity in the knowledge graph."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _create_entity_operation(
+            kg, name, entity_type, observations or [], properties or {}
+        )
+
     return await _execute_kg_operation(
         "Create entity",
-        lambda kg: _create_entity_operation(
-            kg, name, entity_type, observations or [], properties or {}
-        ),
+        operation_wrapper,
     )
 
 
@@ -148,9 +155,13 @@ async def _add_observation_operation(
 
 async def _add_observation_impl(entity_name: str, observation: str) -> str:
     """Add an observation (fact) to an existing entity."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _add_observation_operation(kg, entity_name, observation)
+
     return await _execute_kg_operation(
         "Add observation",
-        lambda kg: _add_observation_operation(kg, entity_name, observation),
+        operation_wrapper,
     )
 
 
@@ -201,11 +212,15 @@ async def _create_relation_impl(
     properties: dict[str, Any] | None = None,
 ) -> str:
     """Create a relationship between two entities."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _create_relation_operation(
+            kg, from_entity, to_entity, relation_type, properties or {}
+        )
+
     return await _execute_kg_operation(
         "Create relation",
-        lambda kg: _create_relation_operation(
-            kg, from_entity, to_entity, relation_type, properties or {}
-        ),
+        operation_wrapper,
     )
 
 
@@ -262,9 +277,13 @@ async def _search_entities_impl(
     limit: int = 10,
 ) -> str:
     """Search for entities by name or observations."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _search_entities_operation(kg, query, entity_type, limit)
+
     return await _execute_kg_operation(
         "Search entities",
-        lambda kg: _search_entities_operation(kg, query, entity_type, limit),
+        operation_wrapper,
     )
 
 
@@ -313,11 +332,15 @@ async def _get_entity_relationships_impl(
     direction: str = "both",
 ) -> str:
     """Get all relationships for an entity."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _get_entity_relationships_operation(
+            kg, entity_name, relation_type, direction
+        )
+
     return await _execute_kg_operation(
         "Get entity relationships",
-        lambda kg: _get_entity_relationships_operation(
-            kg, entity_name, relation_type, direction
-        ),
+        operation_wrapper,
     )
 
 
@@ -368,9 +391,13 @@ async def _find_path_impl(
     max_depth: int = 5,
 ) -> str:
     """Find paths between two entities using SQL/PGQ."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _find_path_operation(kg, from_entity, to_entity, max_depth)
+
     return await _execute_kg_operation(
         "Find path",
-        lambda kg: _find_path_operation(kg, from_entity, to_entity, max_depth),
+        operation_wrapper,
     )
 
 
@@ -564,9 +591,13 @@ async def _batch_create_entities_operation(
 
 async def _batch_create_entities_impl(entities: list[dict[str, Any]]) -> str:
     """Bulk create multiple entities."""
+
+    async def operation_wrapper(kg: Any) -> str:
+        return await _batch_create_entities_operation(kg, entities)
+
     return await _execute_kg_operation(
         "Batch create entities",
-        lambda kg: _batch_create_entities_operation(kg, entities),
+        operation_wrapper,
     )
 
 

@@ -8,6 +8,7 @@ Refactored to use utility modules for reduced code duplication.
 
 from __future__ import annotations
 
+import operator
 import typing as t
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
@@ -98,9 +99,11 @@ async def _quick_search_operation(
 
     if results:
         result = results[0]
-        lines.append("📊 Found results (showing top 1)")
-        lines.append(
-            f"📝 {ToolMessages.truncate_text(result['content'], 150)}",
+        lines.extend(
+            (
+                "📊 Found results (showing top 1)",
+                f"📝 {ToolMessages.truncate_text(result['content'], 150)}",
+            )
         )
         if result.get("project"):
             lines.append(f"📁 Project: {result['project']}")
@@ -108,8 +111,12 @@ async def _quick_search_operation(
             lines.append(f"⭐ Relevance: {_format_score(result['score'])}")
         lines.append(f"📅 Date: {result.get('timestamp', 'Unknown')}")
     else:
-        lines.append("🔍 No results found")
-        lines.append("💡 Try adjusting your search terms or lowering min_score")
+        lines.extend(
+            (
+                "🔍 No results found",
+                "💡 Try adjusting your search terms or lowering min_score",
+            )
+        )
 
     return "\n".join(lines)
 
@@ -165,7 +172,7 @@ async def _extract_common_themes(
             word_freq[word] = word_freq.get(word, 0) + 1
 
     if word_freq:
-        return sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+        return sorted(word_freq.items(), key=operator.itemgetter(1), reverse=True)[:5]
     return []
 
 
@@ -195,7 +202,9 @@ async def _format_search_summary(
     projects = await _analyze_project_distribution(results)
     if len(projects) > 1:
         lines.append("📁 Project distribution:")
-        for proj, count in sorted(projects.items(), key=lambda x: x[1], reverse=True):
+        for proj, count in sorted(
+            projects.items(), key=operator.itemgetter(1), reverse=True
+        ):
             lines.append(f"   • {proj}: {count} results")
 
     # Time distribution

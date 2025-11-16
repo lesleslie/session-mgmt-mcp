@@ -35,7 +35,6 @@ classifiers = [
 dependencies = [
     "acb>=0.25.2",
     "aiocache>=0.12.3",
-    "crackerjack",
     "duckdb>=0.9",
     "fastapi>=0.120.4",
     "fastmcp>=2",
@@ -43,7 +42,8 @@ dependencies = [
     "jinja2-async-environment>=0.14.3",
     "mcp-common>=0.3.2",
     "numpy>=1.24",
-    "onnxruntime>=1.15",
+    "onnxruntime>=1.15,<1.24.0.dev",
+    "httpx>=0.27.0,<1.0.0",
     "psutil>=7.0.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
@@ -53,6 +53,7 @@ dependencies = [
     "tomli>=2.2.1",
     "transformers>=4.21",
     "typer>=0.17.4",
+    "crackerjack>=0.44.18",
 ]
 
 [project.license]
@@ -124,6 +125,7 @@ ignore = [
     "B904",
     "BLE001",
     "COM812",
+    "CPY001",  # Missing copyright notice rule
     "D100",
     "D101",
     "D102",
@@ -132,8 +134,13 @@ ignore = [
     "D105",
     "D106",
     "D107",
-    "D205",
-    "D401",
+    "D203",  # Docstring should not have blank line before class
+    "D205",  # Blank line after summary
+    "D211",  # No blank line before class
+    "D212",  # Multi-line docstring summary should start at the first line
+    "D213",  # Multi-line docstring summary should start at the second line
+    "D401",  # First line should be in imperative mood
+    "D402",  # First person in docstring
     "DTZ001",
     "DTZ003",
     "DTZ005",
@@ -142,6 +149,7 @@ ignore = [
     "E501",
     "ERA001",
     "EXE001",
+    "F401",  # Unused imports (sometimes triggered by imports for __all__)
     "F821",
     "FBT001",
     "FBT002",
@@ -179,7 +187,6 @@ ignore = [
     "S607",
     "S608",
     "SIM102",
-    "SIM105",
     "SIM115",
     "SIM117",
     "SLF001",
@@ -192,6 +199,8 @@ ignore = [
     "TRY301",
     "TRY401",
     "UP007",
+    "DOC201",  # Return not documented in docstring
+    "DOC501",  # Raised exception missing from docstring
 ]
 fixable = [
     "ALL",
@@ -463,12 +472,13 @@ keyring-provider = "subprocess"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 
-[tool.uv.sources]
-crackerjack = { path = "../crackerjack", editable = true }
+#[tool.uv.sources]
+#crackerjack = { path = "../crackerjack", editable = true }
+#
+#[tool.uv.sources.acb]
+#git = "https://github.com/lesleslie/acb.git"
+#branch = "main"
 
-[tool.uv.sources.acb]
-git = "https://github.com/lesleslie/acb.git"
-branch = "main"
 
 
 
@@ -491,6 +501,5 @@ lint = [
 dev = [
     { include-group = "test" },
     { include-group = "lint" },
-    "crackerjack",
     "excalidraw-mcp>=0.1.2",
 ]

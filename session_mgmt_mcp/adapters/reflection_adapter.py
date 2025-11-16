@@ -32,6 +32,9 @@ except ImportError:
 
 import numpy as np
 
+if t.TYPE_CHECKING:
+    from types import TracebackType
+
 
 class ReflectionDatabaseAdapter:
     """Manages conversation memory and reflection using ACB vector adapter.
@@ -153,8 +156,6 @@ class ReflectionDatabaseAdapter:
                     self.embedding_dim = 384
             except Exception:
                 self.onnx_session = None
-        else:
-            pass
 
     def _get_adapter(self) -> Vector:
         """Get vector adapter, raising error if not initialized."""

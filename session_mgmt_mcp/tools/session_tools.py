@@ -330,15 +330,17 @@ async def _perform_environment_setup(result: dict[str, Any]) -> SessionSetupResu
 def _setup_uv_dependencies(current_dir: Path) -> list[str]:
     """Set up UV dependencies and requirements.txt generation."""
     output = []
-    output.append("\n" + "=" * 50)
-    output.append("📦 UV Package Management Setup")
-    output.append("=" * 50)
+    output.extend(("\n" + "=" * 50, "📦 UV Package Management Setup", "=" * 50))
 
     # Check if uv is available
     uv_available = shutil.which("uv") is not None
     if not uv_available:
-        output.append("⚠️ UV not found in PATH")
-        output.append("💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh")
+        output.extend(
+            (
+                "⚠️ UV not found in PATH",
+                "💡 Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh",
+            )
+        )
         return output
 
     # Check for pyproject.toml
@@ -368,8 +370,12 @@ def _setup_uv_dependencies(current_dir: Path) -> list[str]:
         except Exception as e:
             output.append(f"⚠️ UV sync error: {e}")
     else:
-        output.append("ℹ️ No pyproject.toml found")
-        output.append("💡 Consider running 'uv init' to create a new UV project")
+        output.extend(
+            (
+                "ℹ️ No pyproject.toml found",
+                "💡 Consider running 'uv init' to create a new UV project",
+            )
+        )
 
     return output
 
@@ -548,8 +554,7 @@ async def _handle_auto_compaction(output: list[str]) -> None:
     )
 
     should_compact, reason = should_suggest_compact()
-    output.append("\n🔄 Automatic Compaction Analysis")
-    output.append(f"📊 {reason}")
+    output.extend(("\n🔄 Automatic Compaction Analysis", f"📊 {reason}"))
 
     if should_compact:
         output.append("\n🔄 Executing automatic compaction...")
@@ -557,8 +562,12 @@ async def _handle_auto_compaction(output: list[str]) -> None:
             await _execute_auto_compact()
             output.append("✅ Context automatically optimized")
         except Exception as e:
-            output.append(f"⚠️ Auto-compact skipped: {e!s}")
-            output.append("💡 Consider running /compact manually")
+            output.extend(
+                (
+                    f"⚠️ Auto-compact skipped: {e!s}",
+                    "💡 Consider running /compact manually",
+                )
+            )
     else:
         output.append("✅ Context appears well-optimized for current session")
 
@@ -657,10 +666,12 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
         working_directory = _get_client_working_directory()
 
     output = []
-    output.append(
-        f"🔍 Claude Session Checkpoint - {_get_session_manager().current_project or 'Current Project'}",
+    output.extend(
+        (
+            f"🔍 Claude Session Checkpoint - {_get_session_manager().current_project or 'Current Project'}",
+            "=" * 50,
+        )
     )
-    output.append("=" * 50)
 
     try:
         # Determine if this is a manual checkpoint (always true for explicit tool calls)
@@ -682,9 +693,11 @@ async def _checkpoint_impl(working_directory: str | None = None) -> str:
             # Auto-compact when needed
             await _handle_auto_compaction(output)
 
-            output.append(f"\n⏰ Checkpoint completed at: {result['timestamp']}")
-            output.append(
-                "\n💡 This checkpoint includes intelligent conversation management and optimization.",
+            output.extend(
+                (
+                    f"\n⏰ Checkpoint completed at: {result['timestamp']}",
+                    "\n💡 This checkpoint includes intelligent conversation management and optimization.",
+                )
             )
         else:
             output.append(f"❌ Checkpoint failed: {result['error']}")

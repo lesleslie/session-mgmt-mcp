@@ -6,6 +6,7 @@ Automatically detects current development context and loads relevant conversatio
 
 import hashlib
 import json
+import operator
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -89,7 +90,7 @@ class ContextDetector:
             found_indicators = self._find_indicators(working_path, indicators)
 
             if found_indicators:
-                if category in ("python", "javascript", "rust", "go", "java"):
+                if category in {"python", "javascript", "rust", "go", "java"}:
                     context["detected_languages"].append(category)
                 else:
                     context["detected_tools"].append(category)
@@ -510,7 +511,9 @@ class AutoContextLoader:
                     relevant_conversations.append(conversation_data)
 
         # Sort by relevance and limit results
-        relevant_conversations.sort(key=lambda x: x["relevance_score"], reverse=True)
+        relevant_conversations.sort(
+            key=operator.itemgetter("relevance_score"), reverse=True
+        )
         top_conversations = relevant_conversations[:max_conversations]
 
         result = {
@@ -545,8 +548,12 @@ class AutoContextLoader:
         context = self.context_detector.detect_current_context(working_dir)
 
         summary_parts = []
-        summary_parts.append(f"📁 Project: {context['project_name']}")
-        summary_parts.append(f"📂 Directory: {context['working_directory']}")
+        summary_parts.extend(
+            (
+                f"📁 Project: {context['project_name']}",
+                f"📂 Directory: {context['working_directory']}",
+            )
+        )
 
         if context["detected_languages"]:
             langs = ", ".join(context["detected_languages"])

@@ -10,6 +10,7 @@ This module provides deep integration with Crackerjack for:
 import asyncio
 import json
 import logging
+import operator
 import sqlite3
 import tempfile
 import threading
@@ -184,7 +185,7 @@ class CrackerjackIntegration:
                 **{
                     k: v
                     for k, v in kwargs.items()
-                    if k not in ("timeout", "cwd", "env")
+                    if k not in {"timeout", "cwd", "env"}
                 },
             )
 
@@ -577,7 +578,7 @@ class CrackerjackIntegration:
     ) -> list[dict[str, Any]]:
         """Filter metrics history by type and sort by timestamp."""
         metric_values = [m for m in metrics_history if m["metric_type"] == metric_type]
-        metric_values.sort(key=lambda x: x["timestamp"], reverse=True)
+        metric_values.sort(key=operator.itemgetter("timestamp"), reverse=True)
         return metric_values
 
     def _calculate_trend_direction(self, change: float) -> str:
@@ -732,7 +733,7 @@ class CrackerjackIntegration:
             change = trend_data["change"]
             recent_avg = trend_data["recent_average"]
 
-            if direction == "declining" and strength in ("strong", "moderate"):
+            if direction == "declining" and strength in {"strong", "moderate"}:
                 recommendation = self._get_declining_recommendation(metric_type, change)
                 if recommendation:
                     recommendations.append(recommendation)
@@ -934,48 +935,50 @@ class CrackerjackIntegration:
                         json.dumps(result.memory_insights),
                     ),
                 )
+
+                # Store individual test results
+                for test_result in result.test_results:
+                    test_id = (
+                        f"test_{result_id}_{hash(test_result.get('test', 'unknown'))}"
+                    )
+                    conn.execute(
+                        """
+                        INSERT INTO test_results
+                        (id, result_id, test_name, status, duration, file_path, timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            test_id,
+                            result_id,
+                            test_result.get("test", ""),
+                            test_result.get("status", ""),
+                            test_result.get("duration", 0),
+                            test_result.get("file", ""),
+                            result.timestamp,
+                        ),
+                    )
+
+                # Store quality metrics
+                for metric_name, metric_value in result.quality_metrics.items():
+                    metric_id = f"metric_{result_id}_{metric_name}"
+                    conn.execute(
+                        """
+                        INSERT INTO quality_metrics_history
+                        (id, project_path, metric_type, metric_value, timestamp, result_id)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            metric_id,
+                            result.working_directory,
+                            metric_name,
+                            metric_value,
+                            result.timestamp.isoformat(),
+                            result_id,
+                        ),
+                    )
         except Exception:
             # In sandboxed/readonly environments, skip persistence
             return
-
-            # Store individual test results
-            for test_result in result.test_results:
-                test_id = f"test_{result_id}_{hash(test_result.get('test', 'unknown'))}"
-                conn.execute(
-                    """
-                    INSERT INTO test_results
-                    (id, result_id, test_name, status, duration, file_path, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        test_id,
-                        result_id,
-                        test_result.get("test", ""),
-                        test_result.get("status", ""),
-                        test_result.get("duration", 0),
-                        test_result.get("file", ""),
-                        result.timestamp,
-                    ),
-                )
-
-            # Store quality metrics
-            for metric_name, metric_value in result.quality_metrics.items():
-                metric_id = f"metric_{result_id}_{metric_name}"
-                conn.execute(
-                    """
-                    INSERT INTO quality_metrics_history
-                    (id, project_path, metric_type, metric_value, timestamp, result_id)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        metric_id,
-                        result.working_directory,
-                        metric_name,
-                        metric_value,
-                        result.timestamp.isoformat(),
-                        result_id,
-                    ),
-                )
 
     async def _store_progress_snapshot(
         self,
@@ -1014,6 +1017,7 @@ class CrackerjackIntegration:
                         ),
                     )
             except Exception:
+                # In sandboxed/readonly environments, skip persistence
                 return
 
 

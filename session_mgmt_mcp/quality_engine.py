@@ -168,8 +168,7 @@ async def _analyze_context_compaction() -> list[str]:
 
     try:
         should_compact, reason = should_suggest_compact()
-        results.append("\n🔍 Context Compaction Analysis")
-        results.append(f"📊 {reason}")
+        results.extend(("\n🔍 Context Compaction Analysis", f"📊 {reason}"))
 
         if should_compact:
             results.extend(
@@ -779,21 +778,21 @@ async def _analyze_token_usage_recommendations(results: list[str]) -> None:
     """Analyze token usage and add recommendations."""
     token_analysis = await analyze_token_usage_patterns()
     if token_analysis["needs_attention"]:
-        results.append(f"⚠️ Context usage: {token_analysis['status']}")
-        results.append(
-            f"   Estimated conversation length: {token_analysis['estimated_length']}",
+        results.extend(
+            (
+                f"⚠️ Context usage: {token_analysis['status']}",
+                f"   Estimated conversation length: {token_analysis['estimated_length']}",
+            )
         )
 
         # Smart compaction triggers - PRIORITY RECOMMENDATIONS
         if token_analysis["recommend_compact"]:
-            results.append(
-                "🚨 CRITICAL AUTO-RECOMMENDATION: Context compaction required",
-            )
-            results.append(
-                "🔄 This checkpoint has prepared conversation summary for compaction",
-            )
-            results.append(
-                "💡 Compaction should be applied automatically after this checkpoint",
+            results.extend(
+                (
+                    "🚨 CRITICAL AUTO-RECOMMENDATION: Context compaction required",
+                    "🔄 This checkpoint has prepared conversation summary for compaction",
+                    "💡 Compaction should be applied automatically after this checkpoint",
+                )
             )
 
         if token_analysis["recommend_clear"]:

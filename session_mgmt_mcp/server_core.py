@@ -78,7 +78,7 @@ def _generate_server_guidance(detected_servers: dict[str, bool]) -> list[str]:
     """Generate guidance messages based on detected servers."""
     guidance = []
 
-    if detected_servers.get("crackerjack", False):
+    if detected_servers.get("crackerjack"):
         guidance.extend(
             [
                 "💡 CRACKERJACK INTEGRATION DETECTED:",
@@ -136,8 +136,6 @@ def _load_mcp_config() -> dict[str, Any]:
                 message="Failed to load MCP config from pyproject.toml",
                 details=[str(e), "Using default configuration values"],
             )
-        else:
-            pass
         return {
             "http_port": 8678,
             "http_host": "127.0.0.1",
@@ -260,8 +258,6 @@ async def auto_setup_git_working_directory(session_logger: SessionLogger) -> Non
                         "Auto-lifecycle": "Enabled (init, checkpoint, cleanup)",
                     },
                 )
-            else:
-                pass
         else:
             session_logger.debug(
                 "No git repository detected in current directory - skipping auto-setup",
@@ -381,8 +377,6 @@ async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
                     "Using safe default values",
                 ],
             )
-        else:
-            pass
         return {
             "python_project": False,
             "git_repo": False,
@@ -488,9 +482,13 @@ async def _add_basic_status_info(
     """Add basic status information to output."""
     current_project_ref = current_dir.name
 
-    output.append(f"📁 Current project: {current_project_ref}")
-    output.append(f"🗂️ Working directory: {current_dir}")
-    output.append("🌐 MCP server: Active (Claude Session Management)")
+    output.extend(
+        (
+            f"📁 Current project: {current_project_ref}",
+            f"🗂️ Working directory: {current_dir}",
+            "🌐 MCP server: Active (Claude Session Management)",
+        )
+    )
 
 
 async def _add_health_status_info(
@@ -568,23 +566,25 @@ async def _format_quality_results(
     # Quality breakdown - V2 format (actual code quality metrics)
     output.append("\n📈 Quality breakdown (code health metrics):")
     breakdown = quality_data["breakdown"]
-    output.append(f"   • Code quality: {breakdown['code_quality']:.1f}/40")
-    output.append(f"   • Project health: {breakdown['project_health']:.1f}/30")
-    output.append(f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20")
-    output.append(f"   • Security: {breakdown['security']:.1f}/10")
+    output.extend(
+        (
+            f"   • Code quality: {breakdown['code_quality']:.1f}/40",
+            f"   • Project health: {breakdown['project_health']:.1f}/30",
+            f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20",
+            f"   • Security: {breakdown['security']:.1f}/10",
+        )
+    )
 
     # Trust score (separate from quality)
     if "trust_score" in quality_data:
         trust = quality_data["trust_score"]
-        output.append(f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)")
-        output.append(
-            f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40",
-        )
-        output.append(
-            f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30",
-        )
-        output.append(
-            f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30",
+        output.extend(
+            (
+                f"\n🔐 Trust score: {trust['total']:.0f}/100 (separate metric)",
+                f"   • Trusted operations: {trust['breakdown']['trusted_operations']:.0f}/40",
+                f"   • Session features: {trust['breakdown']['session_availability']:.0f}/30",
+                f"   • Tool ecosystem: {trust['breakdown']['tool_ecosystem']:.0f}/30",
+            )
         )
 
     # Recommendations
@@ -604,15 +604,13 @@ async def _format_quality_results(
 
         session_stats = checkpoint_result.get("session_stats", {})
         if session_stats:
-            output.append("\n⏱️ Session progress:")
-            output.append(
-                f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
-            )
-            output.append(
-                f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
-            )
-            output.append(
-                f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
+            output.extend(
+                (
+                    "\n⏱️ Session progress:",
+                    f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
+                    f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
+                    f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
+                )
             )
 
     return output
@@ -625,9 +623,7 @@ async def _perform_git_checkpoint(
 ) -> list[str]:
     """Handle git operations for checkpoint commit."""
     output = []
-    output.append("\n" + "=" * 50)
-    output.append("📦 Git Checkpoint Commit")
-    output.append("=" * 50)
+    output.extend(("\n" + "=" * 50, "📦 Git Checkpoint Commit", "=" * 50))
 
     # Use the proper checkpoint commit function from git_operations
     from session_mgmt_mcp.utils.git_operations import create_checkpoint_commit

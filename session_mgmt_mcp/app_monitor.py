@@ -8,6 +8,7 @@ Excludes Slack/Discord as per Phase 4 requirements.
 import asyncio
 import contextlib
 import json
+import operator
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
@@ -171,7 +172,9 @@ class ProjectActivityMonitor:
                 },
             )
 
-        return sorted(active_files, key=lambda x: x["activity_score"], reverse=True)
+        return sorted(
+            active_files, key=operator.itemgetter("activity_score"), reverse=True
+        )
 
 
 class IDEFileHandler(FileSystemEventHandler):
@@ -315,7 +318,7 @@ class BrowserDocumentationMonitor:
             elif (
                 "javascript" in path
                 or "js" in path
-                or domain in ("developer.mozilla.org", "nodejs.org")
+                or domain in {"developer.mozilla.org", "nodejs.org"}
             ):
                 context["technology"] = "javascript"
                 context["relevance"] = 0.8
@@ -438,7 +441,7 @@ class ApplicationFocusMonitor:
             event_type="app_focus",
             application=app_info["name"],
             details={"category": app_info["category"], "pid": app_info["pid"]},
-            relevance_score=0.6 if app_info["category"] in ("ide", "terminal") else 0.3,
+            relevance_score=0.6 if app_info["category"] in {"ide", "terminal"} else 0.3,
         )
 
         self.focus_history.append(activity_event)
@@ -778,7 +781,7 @@ class ApplicationMonitor:
             ext = event.details.get("file_extension", "")
             if ext == ".py":
                 insights["technologies_used"].add("python")
-            elif ext in (".js", ".ts"):
+            elif ext in {".js", ".ts"}:
                 insights["technologies_used"].add("javascript")
             elif ext == ".rs":
                 insights["technologies_used"].add("rust")
@@ -807,7 +810,9 @@ class ApplicationMonitor:
     ) -> None:
         """Determine the primary application focus."""
         if app_time:
-            insights["primary_focus"] = max(app_time.items(), key=lambda x: x[1])[0]
+            insights["primary_focus"] = max(
+                app_time.items(), key=operator.itemgetter(1)
+            )[0]
 
     def _calculate_productivity_score(
         self,

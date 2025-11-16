@@ -8,6 +8,7 @@ code analysis, and development workflow integration.
 from __future__ import annotations
 
 import logging
+import operator
 import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -303,19 +304,29 @@ def _format_execution_status(result: CrackerjackResult) -> str:
 
 def _parse_crackerjack_output(output: str) -> tuple[list[str], list[str]]:
     """Parse crackerjack output to extract passed and failed hooks."""
+    from .hook_parser import ParseError, parse_hook_output
+
     passed_hooks: list[str] = []
     failed_hooks: list[str] = []
 
-    lines = output.split("\n")
-
-    for line in lines:
-        # Look for hook lines in format like:
-        # ruff-format....................................................... ✅
-        # bandit............................................................ ❌
-        if _should_parse_line(line):
-            hook_name = _extract_hook_name(line)
-            if hook_name:
-                _categorize_hook(hook_name, line, passed_hooks, failed_hooks)
+    try:
+        results = parse_hook_output(output)
+        for result in results:
+            if result.passed:
+                passed_hooks.append(result.hook_name)
+            else:
+                failed_hooks.append(result.hook_name)
+    except ParseError:
+        # Fallback to original parsing if the robust parser fails
+        lines = output.split("\n")
+        for line in lines:
+            # Look for hook lines in format like:
+            # ruff-format....................................................... ✅
+            # bandit............................................................ ❌
+            if _should_parse_line(line):
+                hook_name = _extract_hook_name(line)
+                if hook_name:
+                    _categorize_hook(hook_name, line, passed_hooks, failed_hooks)
 
     return passed_hooks, failed_hooks
 
@@ -973,7 +984,7 @@ def _format_quality_metrics_output(
         output += "**Quality Focus Areas**:\n"
         for keyword, count in sorted(
             keywords.items(),
-            key=lambda x: x[1],
+            key=operator.itemgetter(1),
             reverse=True,
         ):
             output += f"- {keyword.title()}: {count} mentions\n"
@@ -1069,7 +1080,9 @@ def _format_failure_patterns(patterns: dict[str, int]) -> str:
 
     if patterns:
         output += "**Common Failure Patterns**:\n"
-        sorted_patterns = sorted(patterns.items(), key=lambda x: x[1], reverse=True)
+        sorted_patterns = sorted(
+            patterns.items(), key=operator.itemgetter(1), reverse=True
+        )
 
         for i, (pattern, count) in enumerate(sorted_patterns[:10], 1):
             output += f"{i}. ({count}x) {pattern}...\n"
@@ -1336,7 +1349,7 @@ async def _crackerjack_health_check_impl() -> str:
     # Check integration components
     try:
         # CrackerjackIntegration will be imported when needed
-        import session_mgmt_mcp.crackerjack_integration  # noqa: F401
+        import session_mgmt_mcp.crackerjack_integration
 
         output += "✅ **Integration Module**: Available\n"
     except ImportError:

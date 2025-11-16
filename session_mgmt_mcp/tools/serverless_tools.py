@@ -9,6 +9,7 @@ Refactored to use utility modules for reduced code duplication.
 
 from __future__ import annotations
 
+import operator
 from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.utils.error_handlers import _get_logger
@@ -18,6 +19,8 @@ from session_mgmt_mcp.utils.instance_managers import (
 from session_mgmt_mcp.utils.messages import ToolMessages
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from fastmcp import FastMCP
 
 
@@ -36,7 +39,7 @@ async def _require_serverless_manager() -> Any:
 
 
 async def _execute_serverless_operation(
-    operation_name: str, operation: callable
+    operation_name: str, operation: Callable[[Any], Awaitable[str]]
 ) -> str:
     """Execute a serverless operation with error handling."""
     try:
@@ -78,11 +81,15 @@ async def _create_serverless_session_impl(
     ttl_hours: int = 24,
 ) -> str:
     """Create a new serverless session with external storage."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _create_serverless_session_operation(
+            manager, user_id, project_id, session_data, ttl_hours
+        )
+
     return await _execute_serverless_operation(
         "Create serverless session",
-        lambda m: _create_serverless_session_operation(
-            m, user_id, project_id, session_data, ttl_hours
-        ),
+        operation_wrapper,
     )
 
 
@@ -113,9 +120,13 @@ async def _get_serverless_session_operation(manager: Any, session_id: str) -> st
 
 async def _get_serverless_session_impl(session_id: str) -> str:
     """Get serverless session state."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _get_serverless_session_operation(manager, session_id)
+
     return await _execute_serverless_operation(
         "Get serverless session",
-        lambda m: _get_serverless_session_operation(m, session_id),
+        operation_wrapper,
     )
 
 
@@ -147,11 +158,15 @@ async def _update_serverless_session_impl(
     extend_ttl_hours: int | None = None,
 ) -> str:
     """Update serverless session data."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _update_serverless_session_operation(
+            manager, session_id, session_data, extend_ttl_hours
+        )
+
     return await _execute_serverless_operation(
         "Update serverless session",
-        lambda m: _update_serverless_session_operation(
-            m, session_id, session_data, extend_ttl_hours
-        ),
+        operation_wrapper,
     )
 
 
@@ -167,9 +182,13 @@ async def _delete_serverless_session_operation(manager: Any, session_id: str) ->
 
 async def _delete_serverless_session_impl(session_id: str) -> str:
     """Delete a serverless session."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _delete_serverless_session_operation(manager, session_id)
+
     return await _execute_serverless_operation(
         "Delete serverless session",
-        lambda m: _delete_serverless_session_operation(m, session_id),
+        operation_wrapper,
     )
 
 
@@ -225,11 +244,15 @@ async def _list_serverless_sessions_impl(
     include_expired: bool = False,
 ) -> str:
     """List serverless sessions with optional filtering."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _list_serverless_sessions_operation(
+            manager, user_id, project_id, include_expired
+        )
+
     return await _execute_serverless_operation(
         "List serverless sessions",
-        lambda m: _list_serverless_sessions_operation(
-            m, user_id, project_id, include_expired
-        ),
+        operation_wrapper,
     )
 
 
@@ -264,8 +287,12 @@ def _format_storage_test_results(results: dict[str, Any]) -> list[str]:
         lines.append(f"{status} {backend.upper()}:")
 
         if result["available"]:
-            lines.append(f"   Latency: {result.get('latency_ms', 'N/A')} ms")
-            lines.append(f"   Status: {result.get('status', 'OK')}")
+            lines.extend(
+                (
+                    f"   Latency: {result.get('latency_ms', 'N/A')} ms",
+                    f"   Status: {result.get('status', 'OK')}",
+                )
+            )
         else:
             lines.append(f"   Error: {result.get('error', 'Unknown')}")
 
@@ -289,7 +316,7 @@ async def _test_serverless_storage_operation(manager: Any) -> str:
                 for name, res in results.items()
                 if res["available"]
             ],
-            key=lambda x: x[1],
+            key=operator.itemgetter(1),
         )
         lines.append(f"💡 Recommended: {fastest[0].upper()} (lowest latency)")
     else:
@@ -332,9 +359,13 @@ async def _configure_serverless_storage_impl(
     config: dict[str, Any],
 ) -> str:
     """Configure storage backend for serverless sessions."""
+
+    async def operation_wrapper(manager: Any) -> str:
+        return await _configure_serverless_storage_operation(manager, backend, config)
+
     return await _execute_serverless_operation(
         "Configure serverless storage",
-        lambda m: _configure_serverless_storage_operation(m, backend, config),
+        operation_wrapper,
     )
 
 

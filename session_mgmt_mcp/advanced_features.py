@@ -101,17 +101,23 @@ async def create_natural_reminder(
 
         if reminder_id:
             output = []
-            output.append("⏰ Natural reminder created successfully!")
-            output.append(f"🆔 Reminder ID: {reminder_id}")
-            output.append(f"📝 Title: {title}")
-            output.append(f"📄 Description: {description}")
-            output.append(f"🕐 When: {time_expression}")
-            output.append(f"👤 User: {user_id}")
+            output.extend(
+                (
+                    "⏰ Natural reminder created successfully!",
+                    f"🆔 Reminder ID: {reminder_id}",
+                    f"📝 Title: {title}",
+                    f"📄 Description: {description}",
+                    f"🕐 When: {time_expression}",
+                    f"👤 User: {user_id}",
+                )
+            )
             if project_id:
                 output.append(f"📁 Project: {project_id}")
-            output.append(f"📢 Notification: {notification_method}")
-            output.append(
-                "🎯 Reminder will trigger automatically at the scheduled time",
+            output.extend(
+                (
+                    f"📢 Notification: {notification_method}",
+                    "🎯 Reminder will trigger automatically at the scheduled time",
+                )
             )
             return "\n".join(output)
         return f"❌ Failed to parse time expression: '{time_expression}'\n💡 Try formats like 'in 30 minutes', 'tomorrow at 9am', 'every day at 5pm'"
@@ -160,10 +166,14 @@ async def cancel_user_reminder(reminder_id: str) -> str:
 
         if success:
             output = []
-            output.append("❌ Reminder cancelled successfully!")
-            output.append(f"🆔 Reminder ID: {reminder_id}")
-            output.append("🚫 The reminder will no longer trigger")
-            output.append("💡 You can create a new reminder if needed")
+            output.extend(
+                (
+                    "❌ Reminder cancelled successfully!",
+                    f"🆔 Reminder ID: {reminder_id}",
+                    "🚫 The reminder will no longer trigger",
+                    "💡 You can create a new reminder if needed",
+                )
+            )
             return "\n".join(output)
         return f"❌ Failed to cancel reminder {reminder_id}. Check that the ID is correct and the reminder exists"
 
@@ -210,14 +220,16 @@ async def start_reminder_service() -> str:
         _start_reminder_service()
 
         output = []
-        output.append("🚀 Natural reminder service started!")
-        output.append("⏰ Background scheduler is now active")
-        output.append("🔍 Checking for due reminders every minute")
-        output.append("📢 Session notifications are registered")
-        output.append(
-            "💡 Reminders will automatically trigger at their scheduled times",
+        output.extend(
+            (
+                "🚀 Natural reminder service started!",
+                "⏰ Background scheduler is now active",
+                "🔍 Checking for due reminders every minute",
+                "📢 Session notifications are registered",
+                "💡 Reminders will automatically trigger at their scheduled times",
+                "🛑 Use 'stop_reminder_service' to stop the background service",
+            )
         )
-        output.append("🛑 Use 'stop_reminder_service' to stop the background service")
 
         return "\n".join(output)
 
@@ -235,12 +247,14 @@ async def stop_reminder_service() -> str:
         _stop_reminder_service()
 
         output = []
-        output.append("🛑 Natural reminder service stopped")
-        output.append("❌ Background scheduler is no longer active")
-        output.append("⚠️ Existing reminders will not trigger automatically")
-        output.append("🚀 Use 'start_reminder_service' to restart the service")
-        output.append(
-            "💡 You can still check due reminders manually with 'check_due_reminders'",
+        output.extend(
+            (
+                "🛑 Natural reminder service stopped",
+                "❌ Background scheduler is no longer active",
+                "⚠️ Existing reminders will not trigger automatically",
+                "🚀 Use 'start_reminder_service' to restart the service",
+                "💡 You can still check due reminders manually with 'check_due_reminders'",
+            )
         )
 
         return "\n".join(output)
@@ -675,8 +689,12 @@ async def git_worktree_add(
         if result.get("output"):
             output.append(f"\n📝 Git output: {result['output']}")
 
-        output.append(f"\n💡 To start working: cd {result['worktree_path']}")
-        output.append("💡 Use `git_worktree_list` to see all worktrees")
+        output.extend(
+            (
+                f"\n💡 To start working: cd {result['worktree_path']}",
+                "💡 Use `git_worktree_list` to see all worktrees",
+            )
+        )
 
         return "\n".join(output)
 
@@ -721,8 +739,12 @@ async def git_worktree_remove(
         if result.get("output"):
             output.append(f"📝 Git output: {result['output']}")
 
-        output.append(f"\n💡 Used force removal: {'Yes' if force else 'No'}")
-        output.append("💡 Use `git_worktree_list` to see remaining worktrees")
+        output.extend(
+            (
+                f"\n💡 Used force removal: {'Yes' if force else 'No'}",
+                "💡 Use `git_worktree_list` to see remaining worktrees",
+            )
+        )
 
         return "\n".join(output)
 
@@ -806,8 +828,7 @@ async def session_welcome() -> str:
     # Previous session info
     previous = _connection_info.get("previous_session")
     if previous:
-        output.append("\n📋 Previous Session Summary:")
-        output.append("-" * 30)
+        output.extend(("\n📋 Previous Session Summary:", "-" * 30))
 
         if "ended_at" in previous:
             output.append(f"⏰ Last session ended: {previous['ended_at']}")
@@ -818,8 +839,12 @@ async def session_welcome() -> str:
 
         output.append("\n✨ Session continuity restored - your progress is preserved!")
     else:
-        output.append("\n🌟 This is your first session in this project!")
-        output.append("💡 Session data will be preserved for future continuity")
+        output.extend(
+            (
+                "\n🌟 This is your first session in this project!",
+                "💡 Session data will be preserved for future continuity",
+            )
+        )
 
     # Current recommendations
     recommendations = _connection_info.get("recommendations", [])
@@ -828,10 +853,14 @@ async def session_welcome() -> str:
         for i, rec in enumerate(recommendations[:3], 1):
             output.append(f"   {i}. {rec}")
 
-    output.append("\n🔧 Use other session-mgmt tools for:")
-    output.append("   • /session-mgmt:status - Detailed project health")
-    output.append("   • /session-mgmt:checkpoint - Mid-session quality check")
-    output.append("   • /session-mgmt:end - Graceful session cleanup")
+    output.extend(
+        (
+            "\n🔧 Use other session-mgmt tools for:",
+            "   • /session-mgmt:status - Detailed project health",
+            "   • /session-mgmt:checkpoint - Mid-session quality check",
+            "   • /session-mgmt:end - Graceful session cleanup",
+        )
+    )
 
     # Clear the connection info after display
     _connection_info = None

@@ -6,6 +6,7 @@ Provides conversation consolidation, summarization, and memory compression capab
 
 import hashlib
 import json
+import operator
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from typing import Any
@@ -122,7 +123,7 @@ class ConversationSummarizer:
             scored_sentences.append((score, sentence))
 
         # Sort by score and take top sentences
-        scored_sentences.sort(key=lambda x: x[0], reverse=True)
+        scored_sentences.sort(key=operator.itemgetter(0), reverse=True)
         top_sentences = [sent for score, sent in scored_sentences[:max_sentences]]
 
         return ". ".join(top_sentences) + "."
@@ -301,7 +302,9 @@ class ConversationSummarizer:
                 word_counts[word] = word_counts.get(word, 0) + 1
 
         # Get top keywords
-        top_keywords = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+        top_keywords = sorted(
+            word_counts.items(), key=operator.itemgetter(1), reverse=True
+        )
         keywords = [word for word, count in top_keywords[:max_keywords]]
 
         return f"Keywords: {', '.join(keywords)}" if keywords else "General discussion"

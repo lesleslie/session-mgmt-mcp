@@ -40,7 +40,7 @@ def _parse_score_text(score_text: str) -> float | None:
     with suppress(ValueError, TypeError, IndexError):
         # Handle formats like "85/100", "0.85", "85"
         if "/" in score_text:
-            numerator = float(score_text.split("/")[0])
+            numerator = float(score_text.split("/", maxsplit=1)[0])
             denominator = float(score_text.split("/")[1])
             score = (numerator / denominator) * 100
         elif "." in score_text and float(score_text) <= 1.0:

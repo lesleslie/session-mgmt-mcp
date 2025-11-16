@@ -185,10 +185,10 @@ def generate_auto_store_tags(
         tags.append("session-summary")
     elif reason == CheckpointReason.MANUAL_CHECKPOINT:
         tags.append("user-initiated")
-    elif reason in (
+    elif reason in {
         CheckpointReason.QUALITY_IMPROVEMENT,
         CheckpointReason.QUALITY_DEGRADATION,
-    ):
+    }:
         tags.append("quality-change")
 
     return tags

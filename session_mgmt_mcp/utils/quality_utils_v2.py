@@ -704,11 +704,11 @@ def _parse_metrics_history(metrics_history: list[dict[str, Any]]) -> dict[str, A
         if metric_type == "code_coverage" and "code_coverage" not in metrics:
             # First coverage metric found
             metrics["code_coverage"] = metric_value
-        elif metric_type in (
+        elif metric_type in {
             "lint_score",
             "security_score",
             "complexity_score",
-        ):  # FURB109
+        }:  # FURB109
             # Update these if found
             metrics[metric_type] = metric_value
 

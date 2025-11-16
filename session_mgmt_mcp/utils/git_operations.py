@@ -440,8 +440,12 @@ def _perform_staging_and_commit(
         hash_result.stdout.strip()[:8] if hash_result.returncode == 0 else "unknown"
     )
 
-    output.append(f"✅ Checkpoint commit created successfully ({commit_hash})")
-    output.append(f"   Message: {commit_message}")
+    output.extend(
+        (
+            f"✅ Checkpoint commit created successfully ({commit_hash})",
+            f"   Message: {commit_message}",
+        )
+    )
     return True, commit_hash, output
 
 
@@ -506,7 +510,11 @@ def _format_untracked_files(untracked_files: list[str]) -> list[str]:
     if len(untracked_files) > 10:
         output.append(f"   ... and {len(untracked_files) - 10} more")
 
-    output.append("⚠️ Please manually review and add untracked files if needed:")
-    output.append("   Use: git add <file> for files you want to include")
+    output.extend(
+        (
+            "⚠️ Please manually review and add untracked files if needed:",
+            "   Use: git add <file> for files you want to include",
+        )
+    )
 
     return output

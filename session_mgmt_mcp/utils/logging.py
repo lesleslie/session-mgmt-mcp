@@ -77,7 +77,7 @@ class SessionLogger:
         """Log exception with optional context."""
         if context:
             message = f"{message} | Context: {_safe_json_serialize(context)}"
-        self.logger.exception(message)
+        self.logger.error(message)
 
     def critical(self, message: str, **context: t.Any) -> None:
         """Log critical with optional context."""

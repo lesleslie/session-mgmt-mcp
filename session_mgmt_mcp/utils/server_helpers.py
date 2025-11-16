@@ -23,18 +23,18 @@ CONFIG_AVAILABLE = False
 CRACKERJACK_INTEGRATION_AVAILABLE = False
 
 with suppress(ImportError):
-    from session_mgmt_mcp.token_optimizer import TokenOptimizer  # noqa: F401
+    from session_mgmt_mcp.token_optimizer import TokenOptimizer
 
     TOKEN_OPTIMIZER_AVAILABLE = True
 
 with suppress(ImportError):
-    from session_mgmt_mcp.di.config import SessionPaths  # noqa: F401
+    from session_mgmt_mcp.di.config import SessionPaths
 
     CONFIG_AVAILABLE = True
 
 with suppress(ImportError):
     from session_mgmt_mcp.crackerjack_integration import (
-        CrackerjackIntegration,  # noqa: F401
+        CrackerjackIntegration,
     )
 
     CRACKERJACK_INTEGRATION_AVAILABLE = True
@@ -72,8 +72,12 @@ def _format_current_worktree_info(worktree_info: Any) -> list[str]:
             f"   \x73 Current: Main repository on '{worktree_info.branch}'",
         )
     else:
-        output.append(f"   \x73 Current: Worktree on '{worktree_info.branch}'")
-        output.append(f"   \x72 Path: {worktree_info.path}")
+        output.extend(
+            (
+                f"   s Current: Worktree on '{worktree_info.branch}'",
+                f"   r Path: {worktree_info.path}",
+            )
+        )
     return output
 
 
@@ -126,8 +130,7 @@ def _format_detached_head_warning(worktree_info: Any) -> list[str]:
 def _format_no_reminders_message(user_id: str, project_id: str | None) -> list[str]:
     """Format message when no reminders are found."""
     output = []
-    output.append("📋 No pending reminders found")
-    output.append(f"👤 User: {user_id}")
+    output.extend(("📋 No pending reminders found", f"👤 User: {user_id}"))
     if project_id:
         output.append(f"📁 Project: {project_id}")
     output.append(
@@ -143,8 +146,12 @@ def _format_reminders_header(
 ) -> list[str]:
     """Format header for reminders list."""
     output = []
-    output.append(f"⏰ Found {len(reminders)} pending reminders")
-    output.append(f"👤 User: {user_id}")
+    output.extend(
+        (
+            f"⏰ Found {len(reminders)} pending reminders",
+            f"👤 User: {user_id}",
+        )
+    )
     if project_id:
         output.append(f"📁 Project: {project_id}")
     output.append("=" * 50)
@@ -154,9 +161,13 @@ def _format_reminders_header(
 def _format_single_reminder(reminder: dict[str, Any], index: int) -> list[str]:
     """Format a single reminder for display."""
     output = []
-    output.append(f"\n#{index}")
-    output.append(f"🆔 ID: {reminder['id']}")
-    output.append(f"📝 Title: {reminder['title']}")
+    output.extend(
+        (
+            f"\n#{index}",
+            f"🆔 ID: {reminder['id']}",
+            f"📝 Title: {reminder['title']}",
+        )
+    )
     return output
 
 
@@ -367,10 +378,14 @@ def _run_uv_sync_and_compile(output: list[str], current_dir: Path) -> None:
 
 def _setup_session_management(output: list[str]) -> None:
     """Setup session management functionality."""
-    output.append("\n🔧 Phase 3: Session management setup...")
-    output.append("✅ Session management functionality ready")
-    output.append("   📊 Conversation memory system enabled")
-    output.append("   🔍 Semantic search capabilities available")
+    output.extend(
+        (
+            "\n🔧 Phase 3: Session management setup...",
+            "✅ Session management functionality ready",
+            "   📊 Conversation memory system enabled",
+            "   🔍 Semantic search capabilities available",
+        )
+    )
 
 
 def _add_final_summary(
@@ -381,9 +396,13 @@ def _add_final_summary(
     claude_validation: dict[str, Any],
 ) -> None:
     """Add final summary information to output."""
-    output.append("\n" + "=" * 60)
-    output.append(f"🎯 {current_project.upper()} SESSION INITIALIZATION COMPLETE")
-    output.append("=" * 60)
+    output.extend(
+        (
+            "\n" + "=" * 60,
+            f"🎯 {current_project.upper()} SESSION INITIALIZATION COMPLETE",
+            "=" * 60,
+        )
+    )
 
 
 def _add_permissions_and_tools_summary(
@@ -395,13 +414,19 @@ def _add_permissions_and_tools_summary(
     # Permissions Summary
     if permissions_manager is not None:
         permissions_status = permissions_manager.get_permission_status()
-        output.append("\n🔐 Session Permissions Summary:")
-        output.append(
-            f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+        output.extend(
+            (
+                "\n🔐 Session Permissions Summary:",
+                f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+            )
         )
     else:
-        output.append("\n🔐 Session Permissions Summary:")
-        output.append("   ⚠️ Permissions manager not available")
+        output.extend(
+            (
+                "\n🔐 Session Permissions Summary:",
+                "   ⚠️ Permissions manager not available",
+            )
+        )
 
 
 def _add_session_health_insights(insights: list[str], quality_score: float) -> None:
@@ -430,9 +455,11 @@ def _add_permissions_info(
     """Add permissions information to output."""
     if permissions_manager is not None:
         permissions_status = permissions_manager.get_permission_status()
-        output.append("\n🔐 Session Permissions:")
-        output.append(
-            f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+        output.extend(
+            (
+                "\n🔐 Session Permissions:",
+                f"   📊 Trusted operations: {permissions_status['trusted_operations_count']}",
+            )
         )
         if permissions_status["trusted_operations"]:
             for op in permissions_status["trusted_operations"]:
@@ -442,54 +469,72 @@ def _add_permissions_info(
                 "   ⚠️ No trusted operations yet - will prompt for permissions",
             )
     else:
-        output.append("\n🔐 Session Permissions:")
-        output.append("   ⚠️ Permissions manager not available")
+        output.extend(
+            (
+                "\n🔐 Session Permissions:",
+                "   ⚠️ Permissions manager not available",
+            )
+        )
 
 
 def _add_basic_tools_info(output: list[str]) -> None:
     """Add basic MCP tools information to output."""
-    output.append("\n🛠️ Available MCP Tools:")
-    output.append("• init - Full session initialization")
-    output.append("• checkpoint - Quality monitoring")
-    output.append("• end - Complete cleanup")
-    output.append("• status - This status report with health checks")
-    output.append("• permissions - Manage trusted operations")
-    output.append("• git_worktree_list - List all git worktrees")
-    output.append("• git_worktree_add - Create new worktrees")
-    output.append("• git_worktree_remove - Remove worktrees")
-    output.append("• git_worktree_status - Comprehensive worktree status")
-    output.append("• git_worktree_prune - Clean up stale references")
+    output.extend(
+        (
+            "\n🛠️ Available MCP Tools:",
+            "• init - Full session initialization",
+            "• checkpoint - Quality monitoring",
+            "• end - Complete cleanup",
+            "• status - This status report with health checks",
+            "• permissions - Manage trusted operations",
+            "• git_worktree_list - List all git worktrees",
+            "• git_worktree_add - Create new worktrees",
+            "• git_worktree_remove - Remove worktrees",
+            "• git_worktree_status - Comprehensive worktree status",
+            "• git_worktree_prune - Clean up stale references",
+        )
+    )
 
 
 def _add_feature_status_info(output: list[str]) -> None:
     """Add feature status information to output."""
     # Token Optimization Status
     if TOKEN_OPTIMIZER_AVAILABLE:
-        output.append("\n⚡ Token Optimization:")
-        output.append("• get_cached_chunk - Retrieve chunked response data")
-        output.append("• get_token_usage_stats - Token usage and savings metrics")
-        output.append("• optimize_memory_usage - Consolidate old conversations")
-        output.append("• Built-in response chunking and truncation")
+        output.extend(
+            (
+                "\n⚡ Token Optimization:",
+                "• get_cached_chunk - Retrieve chunked response data",
+                "• get_token_usage_stats - Token usage and savings metrics",
+                "• optimize_memory_usage - Consolidate old conversations",
+                "• Built-in response chunking and truncation",
+            )
+        )
 
 
 def _add_configuration_info(output: list[str]) -> None:
     """Add configuration information to output."""
     if CONFIG_AVAILABLE:
-        output.append("\n⚙️ Configuration:")
-        output.append("• pyproject.toml configuration support")
-        output.append("• Environment variable overrides")
-        output.append("• Configurable database, search, and optimization settings")
+        output.extend(
+            (
+                "\n⚙️ Configuration:",
+                "• pyproject.toml configuration support",
+                "• Environment variable overrides",
+                "• Configurable database, search, and optimization settings",
+            )
+        )
 
 
 def _add_crackerjack_integration_info(output: list[str]) -> None:
     """Add Crackerjack integration information to output."""
     if CRACKERJACK_INTEGRATION_AVAILABLE:
-        output.append("\n🔧 Crackerjack Integration (Enhanced):")
-        output.append("\n🎯 RECOMMENDED COMMANDS (Enhanced with Memory & Analytics):")
-        output.append(
-            "• /session-mgmt:crackerjack-run <command> - Smart execution with insights",
+        output.extend(
+            (
+                "\n🔧 Crackerjack Integration (Enhanced):",
+                "\n🎯 RECOMMENDED COMMANDS (Enhanced with Memory & Analytics):",
+                "• /session-mgmt:crackerjack-run <command> - Smart execution with insights",
+                "• /session-mgmt:crackerjack-history - View trends and patterns",
+                "• /session-mgmt:crackerjack-metrics - Quality metrics over time",
+                "• /session-mgmt:crackerjack-patterns - Test failure analysis",
+                "• /session-mgmt:crackerjack-help - Complete command guide",
+            )
         )
-        output.append("• /session-mgmt:crackerjack-history - View trends and patterns")
-        output.append("• /session-mgmt:crackerjack-metrics - Quality metrics over time")
-        output.append("• /session-mgmt:crackerjack-patterns - Test failure analysis")
-        output.append("• /session-mgmt:crackerjack-help - Complete command guide")

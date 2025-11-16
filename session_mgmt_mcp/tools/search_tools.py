@@ -9,6 +9,7 @@ Refactored to use utility modules for reduced code duplication.
 
 from __future__ import annotations
 
+import operator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -150,7 +151,9 @@ def _extract_key_terms(all_content: str) -> list[str]:
             word_freq[word.lower()] = word_freq.get(word.lower(), 0) + 1
 
     if word_freq:
-        top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+        top_words = sorted(word_freq.items(), key=operator.itemgetter(1), reverse=True)[
+            :5
+        ]
         return [w[0] for w in top_words]
     return []
 
@@ -555,7 +558,7 @@ def _find_best_error_excerpt(content: str) -> str:
                 best_score = score
                 best_excerpt = excerpt
 
-    return best_excerpt if best_excerpt else content[:150]
+    return best_excerpt or content[:150]
 
 
 async def _format_error_search_results(

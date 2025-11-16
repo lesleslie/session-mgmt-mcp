@@ -45,7 +45,7 @@ class LLMManager:
 
         if config_path and Path(config_path).exists():
             with contextlib.suppress(OSError, json.JSONDecodeError):
-                with open(config_path) as f:
+                with open(config_path, encoding="utf-8") as f:
                     file_config = json.load(f)
                     config.update(file_config)
 

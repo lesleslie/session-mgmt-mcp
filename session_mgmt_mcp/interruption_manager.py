@@ -718,7 +718,7 @@ class InterruptionManager:
                 self.auto_save_enabled
                 and self.current_context
                 and interruption_type
-                in (InterruptionType.APP_SWITCH, InterruptionType.FOCUS_LOST)
+                in {InterruptionType.APP_SWITCH, InterruptionType.FOCUS_LOST}
             ):
                 focus_duration = event_data.get("focus_duration", 0)
                 if focus_duration >= self.save_threshold:

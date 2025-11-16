@@ -149,14 +149,18 @@ def _format_provider_list(provider_data: dict[str, Any]) -> str:
 def _format_generation_result(result: dict[str, Any]) -> str:
     """Format LLM generation result."""
     output = ["✨ LLM Generation Result", ""]
-    output.append(f"🤖 Provider: {result['metadata']['provider']}")
-    output.append(f"🎯 Model: {result['metadata']['model']}")
-    output.append(f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms")
-    output.append(f"📊 Tokens: {result['metadata'].get('tokens_used', 'N/A')}")
-    output.append("")
-    output.append("💬 Generated text:")
-    output.append("─" * 40)
-    output.append(result["text"])
+    output.extend(
+        (
+            f"🤖 Provider: {result['metadata']['provider']}",
+            f"🎯 Model: {result['metadata']['model']}",
+            f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms",
+            f"📊 Tokens: {result['metadata'].get('tokens_used', 'N/A')}",
+            "",
+            "💬 Generated text:",
+            "─" * 40,
+            result["text"],
+        )
+    )
 
     return "\n".join(output)
 
@@ -164,14 +168,18 @@ def _format_generation_result(result: dict[str, Any]) -> str:
 def _format_chat_result(result: dict[str, Any], message_count: int) -> str:
     """Format LLM chat result."""
     output = ["💬 LLM Chat Result", ""]
-    output.append(f"🤖 Provider: {result['metadata']['provider']}")
-    output.append(f"🎯 Model: {result['metadata']['model']}")
-    output.append(f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms")
-    output.append(f"📊 Messages: {message_count} → 1")
-    output.append("")
-    output.append("🎭 Assistant response:")
-    output.append("─" * 40)
-    output.append(result["response"])
+    output.extend(
+        (
+            f"🤖 Provider: {result['metadata']['provider']}",
+            f"🎯 Model: {result['metadata']['model']}",
+            f"⚡ Response time: {result['metadata']['response_time_ms']:.0f}ms",
+            f"📊 Messages: {message_count} → 1",
+            "",
+            "🎭 Assistant response:",
+            "─" * 40,
+            result["response"],
+        )
+    )
 
     return "\n".join(output)
 
@@ -197,9 +205,13 @@ def _format_provider_config_output(
     if default_model:
         output.append(f"🎯 Default Model: {default_model}")
 
-    output.append("")
-    output.append("✅ Configuration saved successfully!")
-    output.append("💡 Use `test_llm_providers` to verify the configuration")
+    output.extend(
+        (
+            "",
+            "✅ Configuration saved successfully!",
+            "💡 Use `test_llm_providers` to verify the configuration",
+        )
+    )
 
     return "\n".join(output)
 
@@ -237,8 +249,12 @@ async def _test_llm_providers_operation(manager: Any) -> str:
         output.append(f"{status} {provider.title()}")
 
         if result["success"]:
-            output.append(f"   ⚡ Response time: {result['response_time_ms']:.0f}ms")
-            output.append(f"   🎯 Model: {result['model']}")
+            output.extend(
+                (
+                    f"   ⚡ Response time: {result['response_time_ms']:.0f}ms",
+                    f"   🎯 Model: {result['model']}",
+                )
+            )
         else:
             output.append(f"   ❌ Error: {result['error']}")
         output.append("")

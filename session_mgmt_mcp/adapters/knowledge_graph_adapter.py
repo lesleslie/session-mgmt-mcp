@@ -31,6 +31,7 @@ from acb.depends import depends
 
 if t.TYPE_CHECKING:
     from pathlib import Path
+    from types import TracebackType
 
 # DuckDB will be imported at runtime
 DUCKDB_AVAILABLE = True

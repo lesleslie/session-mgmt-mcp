@@ -59,7 +59,7 @@ def find_server_processes() -> list[psutil.Process]:
                 or
                 # Check if it's bound to our ports (for HTTP mode)
                 any(
-                    conn.laddr.port in (8678, 8677)
+                    conn.laddr.port in {8678, 8677}
                     for conn in proc.net_connections()
                     if conn.laddr
                 )

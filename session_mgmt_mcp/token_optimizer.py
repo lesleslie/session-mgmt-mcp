@@ -7,6 +7,7 @@ to reduce token usage while maintaining functionality.
 
 import hashlib
 import json
+import operator
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
@@ -316,7 +317,7 @@ class TokenOptimizer:
             scored_results.append((score, result))
 
         # Sort by priority score and take top results within token limit
-        scored_results.sort(key=lambda x: x[0], reverse=True)
+        scored_results.sort(key=operator.itemgetter(0), reverse=True)
 
         prioritized_results = []
         current_tokens = 0
@@ -421,7 +422,7 @@ class TokenOptimizer:
             Dict with chunk data and metadata, or None if not found
 
         """
-        if not await self.chunk_cache.__contains__(cache_key):
+        if not await (cache_key in self.chunk_cache):
             return None
 
         chunk_result = await self.chunk_cache.get(cache_key)

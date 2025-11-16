@@ -216,7 +216,7 @@ def _format_monitoring_status(quality_data: dict[str, Any]) -> list[str]:
         "",
     ]
 
-    if quality_data.get("monitoring_active", False):
+    if quality_data.get("monitoring_active"):
         lines.extend(
             [
                 "✅ Quality monitoring is active",

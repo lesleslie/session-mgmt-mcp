@@ -18,6 +18,8 @@ except ImportError:
     DATEUTIL_AVAILABLE = False
 
 
+import operator
+
 from .reflection_tools import ReflectionDatabase
 from .types import TimeRange
 from .utils.regex_patterns import SAFE_PATTERNS
@@ -166,7 +168,7 @@ class ErrorPatternMatcher:
                         "subtype": context_name,
                         "content": content,
                         "relevance": "high"
-                        if context_name in ("debugging", "error_handling")
+                        if context_name in {"debugging", "error_handling"}
                         else "medium",
                     },
                 )
@@ -397,7 +399,7 @@ class EnhancedSearchEngine:
         limit: int,
     ) -> list[dict[str, Any]]:
         """Sort results by relevance and limit."""
-        results.sort(key=lambda x: x["relevance"], reverse=True)
+        results.sort(key=operator.itemgetter("relevance"), reverse=True)
         return results[:limit]
 
     async def search_error_patterns(

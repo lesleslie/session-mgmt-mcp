@@ -153,12 +153,12 @@ class SessionLifecycleManager:
                 "Session needs attention - multiple areas for improvement",
             )
 
-        if not project_context.get("has_pyproject_toml", False):
+        if not project_context.get("has_pyproject_toml"):
             recommendations.append(
                 "Consider adding pyproject.toml for modern Python project structure",
             )
 
-        if not project_context.get("has_git_repo", False):
+        if not project_context.get("has_git_repo"):
             recommendations.append("Initialize git repository for version control")
 
         if not uv_available:
@@ -166,7 +166,7 @@ class SessionLifecycleManager:
                 "Install UV package manager for improved dependency management",
             )
 
-        if not project_context.get("has_tests", False):
+        if not project_context.get("has_tests"):
             recommendations.append("Add test suite to improve code quality")
 
         if score >= 80:
@@ -208,14 +208,12 @@ class SessionLifecycleManager:
 
             # Only show breakdown if available
             if details:
-                output.append(
-                    f"   • Trusted operations: {details.get('permissions_count', 0)}/40",
-                )
-                output.append(
-                    f"   • Session features: {details.get('session_available', False)} (available)",
-                )
-                output.append(
-                    f"   • Tool ecosystem: {details.get('tool_count', 0)} tools",
+                output.extend(
+                    (
+                        f"   • Trusted operations: {details.get('permissions_count', 0)}/40",
+                        f"   • Session features: {details.get('session_available', False)} (available)",
+                        f"   • Tool ecosystem: {details.get('tool_count', 0)} tools",
+                    )
                 )
         return output
 
@@ -241,10 +239,14 @@ class SessionLifecycleManager:
         # Quality breakdown - V2 format (actual code quality metrics)
         output.append("\n📈 Quality breakdown (code health metrics):")
         breakdown = quality_data["breakdown"]
-        output.append(f"   • Code quality: {breakdown['code_quality']:.1f}/40")
-        output.append(f"   • Project health: {breakdown['project_health']:.1f}/30")
-        output.append(f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20")
-        output.append(f"   • Security: {breakdown['security']:.1f}/10")
+        output.extend(
+            (
+                f"   • Code quality: {breakdown['code_quality']:.1f}/40",
+                f"   • Project health: {breakdown['project_health']:.1f}/30",
+                f"   • Dev velocity: {breakdown['dev_velocity']:.1f}/20",
+                f"   • Security: {breakdown['security']:.1f}/10",
+            )
+        )
 
         # Trust score (separate from quality) - extracted to helper
         if "trust_score" in quality_data:
@@ -267,15 +269,13 @@ class SessionLifecycleManager:
 
             session_stats = checkpoint_result.get("session_stats", {})
             if session_stats:
-                output.append("\n⏱️ Session progress:")
-                output.append(
-                    f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
-                )
-                output.append(
-                    f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
-                )
-                output.append(
-                    f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
+                output.extend(
+                    (
+                        "\n⏱️ Session progress:",
+                        f"   • Duration: {session_stats.get('duration_minutes', 0)} minutes",
+                        f"   • Checkpoints: {session_stats.get('total_checkpoints', 0)}",
+                        f"   • Success rate: {session_stats.get('success_rate', 0):.1f}%",
+                    )
                 )
 
         return output
@@ -287,9 +287,7 @@ class SessionLifecycleManager:
     ) -> list[str]:
         """Handle git operations for checkpoint commit using the new git utilities."""
         output = []
-        output.append("\n" + "=" * 50)
-        output.append("📦 Git Checkpoint Commit")
-        output.append("=" * 50)
+        output.extend(("\n" + "=" * 50, "📦 Git Checkpoint Commit", "=" * 50))
 
         try:
             # Use the new git utilities
@@ -349,7 +347,7 @@ class SessionLifecycleManager:
     ) -> dict[str, t.Any] | None:
         """Read previous session information from a file."""
         try:
-            content = file_path.read_text()
+            content = file_path.read_text(encoding="utf-8")
             import json
 
             data = json.loads(content)

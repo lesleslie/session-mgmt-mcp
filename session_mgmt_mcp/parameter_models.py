@@ -15,12 +15,20 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+class ValidationResponse(NamedTuple):
+    """Response from parameter validation containing status and data."""
+
+    is_valid: bool
+    params: BaseModel | None = None
+    errors: str | None = None
 
 
 # Helper functions for common validation patterns
@@ -639,7 +647,9 @@ class TeamSearchParams(SearchQueryParams):
 
 
 # Validation helper functions
-def validate_mcp_params(model_class: type[BaseModel], **params: Any) -> dict[str, Any]:
+def validate_mcp_params(
+    model_class: type[BaseModel], **params: Any
+) -> ValidationResponse:
     """Helper function to validate MCP tool parameters using a Pydantic model.
 
     Args:
@@ -647,23 +657,26 @@ def validate_mcp_params(model_class: type[BaseModel], **params: Any) -> dict[str
         **params: Parameter values to validate
 
     Returns:
-        Dictionary of validated parameters
-
-    Raises:
-        ValueError: If validation fails with detailed error messages
+        ValidationResponse object with is_valid, params, and errors attributes
 
     Example:
         @mcp.tool()
         async def search_reflections(**params) -> str:
             validated = validate_mcp_params(SearchQueryParams, **params)
-            query = validated['query']
-            limit = validated['limit']
+            if not validated.is_valid:
+                return f"Validation failed: {validated.errors}"
+            query = validated.params.query  # access Pydantic model attribute
+            limit = validated.params.limit  # access Pydantic model attribute
             # ... rest of implementation
 
     """
     try:
         validated_model = model_class(**params)
-        return validated_model.model_dump(exclude_none=True)
+        return ValidationResponse(
+            is_valid=True,
+            params=validated_model,
+            errors=None,
+        )
     except Exception as e:
         # Convert Pydantic validation errors to more user-friendly messages
         if hasattr(e, "errors"):
@@ -672,10 +685,10 @@ def validate_mcp_params(model_class: type[BaseModel], **params: Any) -> dict[str
                 field = error.get("loc", ["unknown"])[-1]
                 msg = error.get("msg", "validation error")
                 error_messages.append(f"{field}: {msg}")
-            msg = f"Parameter validation failed: {'; '.join(error_messages)}"
-            raise ValueError(msg) from e
-        msg = f"Parameter validation failed: {e!s}"
-        raise ValueError(msg) from e
+            errors = f"Parameter validation failed: {'; '.join(error_messages)}"
+            return ValidationResponse(is_valid=False, params=None, errors=errors)
+        errors = f"Parameter validation failed: {e!s}"
+        return ValidationResponse(is_valid=False, params=None, errors=errors)
 
 
 def create_mcp_validator(

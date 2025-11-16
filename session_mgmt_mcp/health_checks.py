@@ -13,11 +13,11 @@ import typing as t
 
 # Health status types (mcp_common.health doesn't exist in 2.0.0)
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 
-class HealthStatus(str, Enum):
+class HealthStatus(StrEnum):
     """Health status levels."""
 
     HEALTHY = "healthy"
@@ -206,7 +206,7 @@ async def check_dependencies_health() -> ComponentHealth:
 
     # Check ONNX/embeddings
     try:
-        import onnxruntime  # noqa: F401
+        import onnxruntime
 
         available.append("onnx")
     except ImportError:

@@ -7,6 +7,7 @@ complexity metrics, and progress information.
 
 from __future__ import annotations
 
+import operator
 from typing import Any
 
 from session_mgmt_mcp.utils.crackerjack.pattern_builder import PatternMappingsBuilder
@@ -407,13 +408,17 @@ class CrackerjackOutputParser:
             insights.append(f"Code quality: {total_issues} lint issues found")
 
             # Top issue types
-            top_types = sorted(by_type.items(), key=lambda x: x[1], reverse=True)[:3]
+            top_types = sorted(
+                by_type.items(), key=operator.itemgetter(1), reverse=True
+            )[:3]
             if top_types:
                 type_summary = ", ".join(f"{t}: {c}" for t, c in top_types)
                 insights.append(f"Most common issues: {type_summary}")
 
             # Files needing attention
-            top_files = sorted(by_file.items(), key=lambda x: x[1], reverse=True)[:3]
+            top_files = sorted(
+                by_file.items(), key=operator.itemgetter(1), reverse=True
+            )[:3]
             if top_files and top_files[0][1] > 5:
                 insights.append(
                     f"Files needing attention: {top_files[0][0]} ({top_files[0][1]} issues)",

@@ -253,7 +253,7 @@ def get_dependency_status() -> dict[str, dict[str, Any]]:
             "available": loader.available if loader else False,
             "required": False,
             "category": "embeddings"
-            if dep in ("transformers", "onnxruntime", "numpy")
+            if dep in {"transformers", "onnxruntime", "numpy"}
             else "optimization",
         }
 

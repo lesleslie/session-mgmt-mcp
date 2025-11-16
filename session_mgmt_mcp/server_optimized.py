@@ -160,8 +160,7 @@ async def session_welcome() -> str:
     # Previous session info
     previous = _connection_info.get("previous_session")
     if previous:
-        output.append("\n📋 Previous Session Summary:")
-        output.append("-" * 30)
+        output.extend(("\n📋 Previous Session Summary:", "-" * 30))
 
         if "ended_at" in previous:
             output.append(f"⏰ Last session ended: {previous['ended_at']}")
@@ -172,8 +171,12 @@ async def session_welcome() -> str:
 
         output.append("\n✨ Session continuity restored - your progress is preserved!")
     else:
-        output.append("\n🌟 This is your first session in this project!")
-        output.append("💡 Session data will be preserved for future continuity")
+        output.extend(
+            (
+                "\n🌟 This is your first session in this project!",
+                "💡 Session data will be preserved for future continuity",
+            )
+        )
 
     # Current recommendations
     recommendations = _connection_info.get("recommendations", [])
@@ -182,10 +185,14 @@ async def session_welcome() -> str:
         for i, rec in enumerate(recommendations[:3], 1):
             output.append(f"   {i}. {rec}")
 
-    output.append("\n🔧 Use other session-mgmt tools for:")
-    output.append("   • /session-mgmt:status - Detailed project health")
-    output.append("   • /session-mgmt:checkpoint - Mid-session quality check")
-    output.append("   • /session-mgmt:end - Graceful session cleanup")
+    output.extend(
+        (
+            "\n🔧 Use other session-mgmt tools for:",
+            "   • /session-mgmt:status - Detailed project health",
+            "   • /session-mgmt:checkpoint - Mid-session quality check",
+            "   • /session-mgmt:end - Graceful session cleanup",
+        )
+    )
 
     # Clear the connection info after display
     _connection_info = None
@@ -223,8 +230,7 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
 
     """
     output = []
-    output.append("🔐 Session Permissions Management")
-    output.append("=" * 40)
+    output.extend(("🔐 Session Permissions Management", "=" * 40))
 
     if action == "status":
         if permissions_manager.trusted_operations:
@@ -237,40 +243,58 @@ async def permissions(action: str = "status", operation: str | None = None) -> s
                 "\n💡 These operations will not prompt for permission in future sessions",
             )
         else:
-            output.append("⚠️ No operations are currently trusted")
-            output.append(
-                "💡 Operations will be automatically trusted on first successful use",
+            output.extend(
+                (
+                    "⚠️ No operations are currently trusted",
+                    "💡 Operations will be automatically trusted on first successful use",
+                )
             )
 
-        output.append("\n🛠️ Common Operations That Can Be Trusted:")
-        output.append("   • UV Package Management - uv sync, pip operations")
-        output.append("   • Git Repository Access - git status, commit, push")
-        output.append("   • Project File Access - reading/writing project files")
-        output.append("   • Subprocess Execution - running build tools, tests")
-        output.append("   • Claude Directory Access - accessing ~/.claude/")
+        output.extend(
+            (
+                "\n🛠️ Common Operations That Can Be Trusted:",
+                "   • UV Package Management - uv sync, pip operations",
+                "   • Git Repository Access - git status, commit, push",
+                "   • Project File Access - reading/writing project files",
+                "   • Subprocess Execution - running build tools, tests",
+                "   • Claude Directory Access - accessing ~/.claude/",
+            )
+        )
 
     elif action == "trust":
         if not operation:
-            output.append("❌ Error: 'operation' parameter required for 'trust' action")
-            output.append(
-                "💡 Example: permissions with action='trust' and operation='uv_package_management'",
+            output.extend(
+                (
+                    "❌ Error: 'operation' parameter required for 'trust' action",
+                    "💡 Example: permissions with action='trust' and operation='uv_package_management'",
+                )
             )
         else:
             permissions_manager.add_trusted_operation(operation)
-            output.append(
-                f"✅ Operation '{operation}' has been added to trusted operations",
+            output.extend(
+                (
+                    f"✅ Operation '{operation}' has been added to trusted operations",
+                    "💡 This operation will no longer require permission prompts",
+                )
             )
-            output.append("💡 This operation will no longer require permission prompts")
 
     elif action == "revoke_all":
         count = len(permissions_manager.trusted_operations)
         permissions_manager.trusted_operations.clear()
-        output.append(f"🗑️ Revoked {count} trusted operations")
-        output.append("💡 All operations will now require permission prompts")
+        output.extend(
+            (
+                f"🗑️ Revoked {count} trusted operations",
+                "💡 All operations will now require permission prompts",
+            )
+        )
 
     else:
-        output.append(f"❌ Unknown action: {action}")
-        output.append("💡 Valid actions: status, trust, revoke_all")
+        output.extend(
+            (
+                f"❌ Unknown action: {action}",
+                "💡 Valid actions: status, trust, revoke_all",
+            )
+        )
 
     return "\n".join(output)
 
@@ -460,8 +484,7 @@ async def _execute_auto_compact() -> str:
 async def auto_compact() -> str:
     """Automatically trigger conversation compaction with intelligent summary."""
     output = []
-    output.append("🗜️ Auto-Compaction Feature")
-    output.append("=" * 30)
+    output.extend(("🗜️ Auto-Compaction Feature", "=" * 30))
 
     should_compact, reason = should_suggest_compact()
     output.append(f"📊 Analysis: {reason}")
@@ -480,13 +503,15 @@ async def auto_compact() -> str:
 async def quality_monitor() -> str:
     """Phase 3: Proactive quality monitoring with early warning system."""
     output = []
-    output.append("📊 Quality Monitoring")
-    output.append("=" * 25)
-    output.append(
-        "✅ Quality monitoring is integrated into the session management system",
+    output.extend(
+        (
+            "📊 Quality Monitoring",
+            "=" * 25,
+            "✅ Quality monitoring is integrated into the session management system",
+            "💡 Use the 'status' tool to get current quality metrics",
+            "💡 Use the 'checkpoint' tool for comprehensive quality assessment",
+        )
     )
-    output.append("💡 Use the 'status' tool to get current quality metrics")
-    output.append("💡 Use the 'checkpoint' tool for comprehensive quality assessment")
     return "\n".join(output)
 
 

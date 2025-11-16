@@ -47,6 +47,8 @@ try:
 except ImportError:
     ONNX_AVAILABLE = False
 
+import operator
+
 import numpy as np
 
 
@@ -144,8 +146,6 @@ class ReflectionDatabase:
                     self.embedding_dim = 384
             except Exception:
                 self.onnx_session = None
-        else:
-            pass
 
         # Create tables if they don't exist
         await self._ensure_tables()
@@ -488,7 +488,7 @@ class ReflectionDatabase:
                 )
 
         # Sort by score and return top matches
-        matches.sort(key=lambda x: x["score"], reverse=True)
+        matches.sort(key=operator.itemgetter("score"), reverse=True)
         return matches[:limit]
 
     async def search_reflections(
@@ -573,7 +573,7 @@ class ReflectionDatabase:
                 )
 
         # Sort by score and return top matches
-        matches.sort(key=lambda x: x["score"], reverse=True)
+        matches.sort(key=operator.itemgetter("score"), reverse=True)
         return matches[:limit]
 
     async def search_by_file(

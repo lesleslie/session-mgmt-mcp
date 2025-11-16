@@ -34,13 +34,15 @@ from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 async def _store_reflection_validated_impl(**params: Any) -> str:
     """Implementation for store_reflection tool with parameter validation."""
+    from typing import cast
+
     # Validate parameters using Pydantic model
-    validated = validate_mcp_params(ReflectionStoreParams, params)
+    validated = validate_mcp_params(ReflectionStoreParams, **params)
     if not validated.is_valid:
         msg = f"Parameter validation failed: {validated.errors}"
         raise ValidationError(msg)
 
-    params_obj = validated.params
+    params_obj = cast("ReflectionStoreParams", validated.params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Store reflection operation."""
@@ -84,13 +86,15 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
 
 async def _quick_search_validated_impl(**params: Any) -> str:
     """Implementation for quick_search tool with parameter validation."""
+    from typing import cast
+
     # Validate parameters
-    validated = validate_mcp_params(SearchQueryParams, params)
+    validated = validate_mcp_params(SearchQueryParams, **params)
     if not validated.is_valid:
         msg = f"Parameter validation failed: {validated.errors}"
         raise ValidationError(msg)
 
-    params_obj = validated.params
+    params_obj = cast("SearchQueryParams", validated.params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Quick search operation."""
@@ -149,13 +153,15 @@ async def _quick_search_validated_impl(**params: Any) -> str:
 
 async def _search_by_file_validated_impl(**params: Any) -> str:
     """Implementation for search_by_file tool with parameter validation."""
+    from typing import cast
+
     # Validate parameters
-    validated = validate_mcp_params(FileSearchParams, params)
+    validated = validate_mcp_params(FileSearchParams, **params)
     if not validated.is_valid:
         msg = f"Parameter validation failed: {validated.errors}"
         raise ValidationError(msg)
 
-    params_obj = validated.params
+    params_obj = cast("FileSearchParams", validated.params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """File search operation."""
@@ -215,13 +221,15 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
 
 async def _search_by_concept_validated_impl(**params: Any) -> str:
     """Implementation for search_by_concept tool with parameter validation."""
+    from typing import cast
+
     # Validate parameters
-    validated = validate_mcp_params(ConceptSearchParams, params)
+    validated = validate_mcp_params(ConceptSearchParams, **params)
     if not validated.is_valid:
         msg = f"Parameter validation failed: {validated.errors}"
         raise ValidationError(msg)
 
-    params_obj = validated.params
+    params_obj = cast("ConceptSearchParams", validated.params)
 
     async def operation(db: Any) -> dict[str, Any]:
         """Concept search operation."""
