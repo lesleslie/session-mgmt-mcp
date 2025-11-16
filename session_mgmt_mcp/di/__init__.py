@@ -60,6 +60,7 @@ def configure(*, force: bool = False) -> None:
     # Register ACB adapters (Phase 2.7: DuckDB migration)
     _register_vector_adapter(paths, force)
     _register_graph_adapter(paths, force)  # Fixed: ACB ssl_enabled bug resolved
+    _register_storage_adapters(paths, force)  # Phase 1: Storage adapters
 
     _configured = True
 
@@ -268,6 +269,53 @@ def _register_graph_adapter(paths: SessionPaths, force: bool) -> None:
     graph_adapter = Graph()
     graph_adapter.config = config  # Override _DependencyMarker with actual Config
     depends.set(Graph, graph_adapter)
+
+
+def _register_storage_adapters(paths: SessionPaths, force: bool) -> None:
+    """Register ACB storage adapters for session state persistence.
+
+    Args:
+        paths: Session paths configuration with data directory
+        force: If True, re-registers even if already registered
+
+    Note:
+        Registers file storage adapter by default for local session storage.
+        Additional backends (S3, Azure, GCS, Memory) can be registered on-demand
+        via the storage_registry module when needed for serverless deployments.
+
+    """
+    from session_mgmt_mcp.adapters.storage_registry import (
+        configure_storage_buckets,
+        get_default_session_buckets,
+        register_storage_adapter,
+    )
+
+    # Configure default buckets for session management
+    buckets = get_default_session_buckets(paths.data_dir)
+    configure_storage_buckets(buckets)
+
+    # Register file storage adapter by default (local session storage)
+    config_overrides = {
+        "local_path": str(paths.data_dir),
+        "buckets": buckets,
+    }
+
+    try:
+        storage_adapter = register_storage_adapter(
+            "file",
+            config_overrides=config_overrides,
+            force=force,
+        )
+        # Initialize buckets
+        # Note: Initialization is deferred to avoid event loop conflicts
+        # Buckets will be created on first use
+        storage_adapter._buckets_initialized = False
+    except Exception as e:
+        # Log but don't fail - storage is optional for basic session management
+        import logging
+
+        logger = logging.getLogger("session_mgmt_mcp.di")
+        logger.warning(f"Failed to register storage adapter: {e}")
 
 
 def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
