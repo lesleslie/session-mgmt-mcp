@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import subprocess
 import typing as t
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
@@ -28,12 +30,10 @@ def tmp_git_repo(tmp_path: Path) -> Path:
         >>> def test_git_status(tmp_git_repo):
         ...     # tmp_git_repo is already initialized with git
         ...     result = subprocess.run(
-        ...         ["git", "status"],
-        ...         cwd=tmp_git_repo,
-        ...         capture_output=True,
-        ...         text=True
+        ...         ["git", "status"], cwd=tmp_git_repo, capture_output=True, text=True
         ...     )
         ...     assert "On branch main" in result.stdout
+
     """
     # Initialize git repository
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
@@ -53,8 +53,12 @@ def tmp_git_repo(tmp_path: Path) -> Path:
     )
 
     # Create initial commit
-    (tmp_path / "README.md").write_text("# Test Project\n\nTest repository for fixtures.\n")
-    subprocess.run(["git", "add", "README.md"], cwd=tmp_path, check=True, capture_output=True)
+    (tmp_path / "README.md").write_text(
+        "# Test Project\n\nTest repository for fixtures.\n"
+    )
+    subprocess.run(
+        ["git", "add", "README.md"], cwd=tmp_path, check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", "Initial commit"],
         cwd=tmp_path,
@@ -74,6 +78,7 @@ def tmp_git_repo_with_commits(tmp_git_repo: Path) -> Path:
 
     Returns:
         Path to git repository with commit history.
+
     """
     # Add additional commits
     for i in range(3):
@@ -104,6 +109,7 @@ def tmp_git_repo_with_changes(tmp_git_repo: Path) -> Path:
 
     Returns:
         Path to git repository with uncommitted changes.
+
     """
     # Create modified file (staged)
     modified_file = tmp_git_repo / "modified.txt"
@@ -133,10 +139,10 @@ def mock_git_operations() -> Mock:
         >>> def test_checkpoint_commit(mock_git_operations):
         ...     mock_git_operations.create_checkpoint_commit.return_value = "abc123"
         ...     sha = mock_git_operations.create_checkpoint_commit(
-        ...         message="Checkpoint",
-        ...         metadata={"score": 75}
+        ...         message="Checkpoint", metadata={"score": 75}
         ...     )
         ...     assert sha == "abc123"
+
     """
     mock = Mock()
 
@@ -181,6 +187,7 @@ def git_commit_data_factory() -> t.Callable[..., dict[str, t.Any]]:
         >>> commit = factory(message="Test commit", quality_score=85)
         >>> assert commit["message"] == "Test commit"
         >>> assert commit["metadata"]["quality_score"] == 85
+
     """
 
     def factory(
@@ -199,6 +206,7 @@ def git_commit_data_factory() -> t.Callable[..., dict[str, t.Any]]:
 
         Returns:
             Git commit data dictionary.
+
         """
         commit_data: dict[str, t.Any] = {
             "message": message,
@@ -238,6 +246,7 @@ def mock_git_status_factory() -> t.Callable[..., dict[str, t.Any]]:
         >>> status = factory(branch="feature", staged=["file.py"], unstaged=["test.py"])
         >>> assert status["branch"] == "feature"
         >>> assert len(status["staged"]) == 1
+
     """
 
     def factory(
@@ -262,6 +271,7 @@ def mock_git_status_factory() -> t.Callable[..., dict[str, t.Any]]:
 
         Returns:
             Git status dictionary.
+
         """
         return {
             "branch": branch,
@@ -288,6 +298,7 @@ def mock_checkpoint_metadata_factory() -> t.Callable[..., dict[str, t.Any]]:
         >>> metadata = factory(checkpoint_number=5, quality_score=85)
         >>> assert metadata["checkpoint_number"] == 5
         >>> assert metadata["quality"]["score"] == 85
+
     """
 
     def factory(
@@ -308,6 +319,7 @@ def mock_checkpoint_metadata_factory() -> t.Callable[..., dict[str, t.Any]]:
 
         Returns:
             Checkpoint metadata dictionary.
+
         """
         metadata: dict[str, t.Any] = {
             "checkpoint_number": checkpoint_number,

@@ -208,9 +208,7 @@ class TestACBCacheStorage:
 
         mock_cache = AsyncMock()
         # Index has 2 sessions
-        mock_cache.get = AsyncMock(
-            return_value={"session-1": {}, "session-2": {}}
-        )
+        mock_cache.get = AsyncMock(return_value={"session-1": {}, "session-2": {}})
         # First session exists, second doesn't
         mock_cache.exists = AsyncMock(side_effect=[True, False])
         mock_cache.set = AsyncMock()

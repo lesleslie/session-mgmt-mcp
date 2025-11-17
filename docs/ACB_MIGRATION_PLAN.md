@@ -25,15 +25,18 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 ### ✅ Phase 0: Critical Bug Fixes (Completed)
 
 - [x] **ACB_LIBRARY_MODE Environment Variable** (Commit: 36f6c96)
+
   - Fixed crackerjack hooks by setting `ACB_LIBRARY_MODE=true` in subprocess calls
   - Locations updated: crackerjack_integration.py (2 places), crackerjack_tools.py (1 place)
 
 - [x] **Type Checking Errors** (Commit: 9a4f9f2)
+
   - Fixed missing imports in `utils/scheduler/time_parser.py`
   - Fixed SessionPermissionsManager export path in `__init__.py`
   - Reduced errors from 121 → 112 (remaining in optional features)
 
 - [x] **Auto-Formatting** (Commit: 49d72bb)
+
   - Applied crackerjack auto-formatting fixes
   - Committed to resolve stop hook warnings
 
@@ -46,6 +49,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 1: Storage Adapter Registry ✅ COMPLETE
 
 - [x] **Task 1.1**: Create storage adapter registry module ✅
+
   - File: `session_mgmt_mcp/adapters/storage_registry.py` (173 lines)
   - Register ACB storage adapters (S3, Azure, GCS, File, Memory)
   - Follow Vector/Graph adapter registration pattern
@@ -57,6 +61,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   from acb.adapters.storage.memory import MemoryStorage
   from acb.config import Config
   from acb.depends import depends
+
 
   def configure_storage_adapters():
       """Register ACB storage adapters with DI container."""
@@ -90,6 +95,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   ```
 
 - [x] **Task 1.2**: Update DI configuration ✅
+
   - File: `session_mgmt_mcp/di/__init__.py`
   - Added `_register_storage_adapters()` function (46 lines)
   - Registers file storage adapter by default with session buckets
@@ -99,6 +105,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 2: Configuration Migration ✅ COMPLETE
 
 - [x] **Task 2.1**: Create storage configuration schema ✅
+
   - File: `settings/session-mgmt.yaml` (updated existing file)
   - Define S3, Azure, GCS, File, Memory settings
   - Support environment variable overrides
@@ -132,6 +139,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   ```
 
 - [x] **Task 2.2**: Update Config class to load storage settings ✅
+
   - File: `settings/session-mgmt.yaml` (ACB uses its own Config system)
   - Storage configuration via YAML and environment variables
   - ACB StorageBaseSettings handles configuration loading
@@ -140,6 +148,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 3: Unified Storage Interface ✅ COMPLETE
 
 - [x] **Task 3.1**: Create SessionStorageAdapter facade ✅
+
   - File: `session_mgmt_mcp/adapters/session_storage_adapter.py` (339 lines)
   - Unified interface wrapping ACB storage adapters
   - Runtime backend selection based on config
@@ -150,6 +159,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   from acb.adapters.storage.file import FileStorage
   from acb.adapters.storage.memory import MemoryStorage
   from acb.depends import depends
+
 
   class SessionStorageAdapter:
       """Unified storage adapter for session state persistence."""
@@ -182,6 +192,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   ```
 
 - [x] **Task 3.2**: Add tests for SessionStorageAdapter ✅
+
   - File: `tests/unit/test_session_storage_adapter.py` (420 lines)
   - 25 comprehensive unit tests
   - Test all backend types with mocking
@@ -190,6 +201,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Commit: 8762deb
 
 **Phase 1 Success Criteria** ✅ ALL MET:
+
 - ✅ Storage adapters registered in DI container
 - ✅ Configuration loads from YAML with env overrides
 - ✅ SessionStorageAdapter works with all backends
@@ -197,7 +209,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ No breaking changes to existing functionality
 - ✅ Phase 1 completed in 1 day (ahead of 3-day schedule)
 
----
+______________________________________________________________________
 
 ### Phase 2: Backend Consolidation (Days 4-7) ✅ COMPLETE
 
@@ -206,6 +218,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 4-5: Serverless Mode Migration ✅ COMPLETE
 
 - [x] **Task 4.1**: Create ServerlessStorageAdapter bridge ✅
+
   - File: `session_mgmt_mcp/adapters/serverless_storage_adapter.py` (313 lines)
   - Bridge between SessionStorage protocol and SessionStorageAdapter
   - Implements all SessionStorage methods with TTL support
@@ -213,6 +226,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Commit: 843cff9
 
 - [x] **Task 4.2**: Update serverless_mode.py ✅
+
   - File: `session_mgmt_mcp/serverless_mode.py`
   - Added ServerlessStorageAdapter import
   - Updated create_storage_backend() to use new adapters first
@@ -238,6 +252,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   ```
 
 - [x] **Task 5.1**: Add deprecation warnings to old backends ✅
+
   - Files: `backends/s3_backend.py`, `backends/redis_backend.py`, `backends/local_backend.py`
   - Added DeprecationWarning in __init__() methods
   - Added deprecation notices in module docstrings
@@ -245,6 +260,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Commit: 843cff9
 
 - [x] **Task 5.2**: Create integration tests ✅
+
   - File: `tests/integration/test_serverless_storage.py` (285 lines)
   - 16 comprehensive integration tests
   - Tests store/retrieve/delete operations
@@ -254,6 +270,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Commit: 843cff9
 
 **Phase 2 Success Criteria** ✅ ALL MET:
+
 - ✅ serverless_mode.py migrated to use SessionStorageAdapter
 - ✅ ServerlessStorageAdapter bridge created with full SessionStorage protocol
 - ✅ Integration tests passing (16/16, 100% pass rate)
@@ -262,8 +279,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ 81.69% coverage on ServerlessStorageAdapter
 - ✅ Phase 2 completed in 2 days (ahead of 4-day schedule)
 
-
----
+______________________________________________________________________
 
 ### Phase 2.5: Graph Adapter Migration Investigation ✅ COMPLETE (Days 8-9)
 
@@ -275,6 +291,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 8: Graph Adapter Investigation & Setup ✅ COMPLETE
 
 - [x] **Task 8.1**: Audit current KnowledgeGraphDatabaseAdapter ✅
+
   - File: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (698 lines)
   - Documented all DuckDB SQL operations
   - Mapped to ACB Graph adapter methods
@@ -282,6 +299,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Conclusion: Hybrid approach already optimal
 
 - [x] **Task 8.2**: Study ACB Graph adapter API ✅
+
   - Package: `acb.adapters.graph.duckdb_pgq`
   - Reviewed all available methods (29 methods discovered)
   - Compared with current KnowledgeGraphDatabaseAdapter interface
@@ -292,14 +310,17 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   # Current state (NOT using ACB):
   import duckdb  # ❌ Direct DuckDB
 
+
   class KnowledgeGraphDatabaseAdapter:
       def initialize(self):
           self.conn = duckdb.connect(db_path)  # ❌ Raw SQL
           self.conn.execute("CREATE TABLE kg_entities ...")  # ❌ Manual schema
 
+
   # Target state (using ACB Graph):
   from acb.adapters.graph.duckdb_pgq import Graph
   from acb.depends import depends
+
 
   class KnowledgeGraphDatabaseAdapter:
       def initialize(self):
@@ -310,30 +331,35 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 9: API Compatibility Analysis ✅ COMPLETE
 
 - [x] **Task 9.1**: Test ACB Graph adapter create_node() API ✅
+
   - **Discovery**: No `node_id` parameter! ACB auto-generates IDs
   - **Issue**: Incompatible with our UUID-based API
   - **Actual Signature**: `create_node(labels: list[str], properties: dict) -> GraphNodeModel`
   - Created `knowledge_graph_adapter_acb_investigation.py` (421 lines) demonstrating full ACB implementation attempt
 
 - [x] **Task 9.2**: Analyze ID generation compatibility ✅
+
   - **Finding**: ACB generates node IDs automatically, we generate custom UUIDs
   - **Impact**: Breaking change for all existing code and data
   - **Workarounds considered**: Dual ID system (complex), ACB IDs only (breaking change)
   - **Conclusion**: Incompatible without major breaking changes
 
 - [x] **Task 9.3**: Evaluate migration effort vs benefits ✅
+
   - **Estimated effort**: 5-7 days for full migration + data migration + consuming code updates
   - **Breaking changes**: All existing code using entity IDs
   - **Benefits**: Code reduction, cleaner abstraction
   - **Cost/benefit ratio**: Not justified
 
 - [x] **Task 9.4**: Document findings and recommendations ✅
+
   - Created: `docs/ACB_GRAPH_ADAPTER_INVESTIGATION.md` (comprehensive documentation)
   - Recommendation: Keep current hybrid approach (ACB config + raw SQL)
   - Rationale: Already has ACB benefits without breaking changes
   - Reference implementation: `knowledge_graph_adapter_acb_investigation.py` (kept for future reference)
 
 **Phase 2.5 Actual Outcomes**:
+
 - ✅ ACB Graph adapter fully investigated
 - ✅ API incompatibilities documented
 - ✅ Decision made: Hybrid approach is optimal
@@ -342,6 +368,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ Zero breaking changes (kept stable API)
 
 **Phase 2.5 Key Insights**:
+
 - ✅ Hybrid patterns are valid architectural choices
 - ✅ Not every ACB adapter needs to be used directly
 - ✅ Current implementation already has ACB benefits (config, DI, lifecycle)
@@ -349,10 +376,11 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ Investigation prevented costly failed migration
 
 **Files Created**:
+
 - `docs/ACB_GRAPH_ADAPTER_INVESTIGATION.md` - Full investigation report
 - `knowledge_graph_adapter_acb_investigation.py` - Reference ACB implementation
 
----
+______________________________________________________________________
 
 ### Phase 3: Testing & Validation ✅ COMPLETE (Days 10-12)
 
@@ -364,6 +392,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 10: Integration Tests ✅ COMPLETE
 
 - [x] **Task 10.1**: File & Memory backend integration tests ✅
+
   - File: `tests/integration/test_serverless_storage.py` (16 tests, 100% pass)
   - ✅ SessionStorageAdapter with file backend
   - ✅ In-memory storage for testing scenarios
@@ -372,6 +401,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - **Result**: All core backends tested and working
 
 - [x] **Task 10.2**: Unit tests for SessionStorageAdapter ✅
+
   - File: `tests/unit/test_session_storage_adapter.py` (25 tests, 100% pass)
   - ✅ Initialization & configuration (4 tests)
   - ✅ CRUD operations (11 tests)
@@ -380,6 +410,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - **Coverage**: 93.58%
 
 - [x] **Task 10.3**: S3/Azure/GCS backend validation ✅
+
   - **Status**: ACB adapters are production-ready (validated in ACB project)
   - **Evidence**: Mocked tests pass, ACB has comprehensive adapter tests
   - **Decision**: Real infrastructure tests optional (infrastructure not always available)
@@ -388,6 +419,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 11: Migration & Compatibility Tests ✅ COMPLETE
 
 - [x] **Task 11.1**: Backward compatibility validation ✅
+
   - **Evidence**: ServerlessStorageAdapter maintains SessionStorage protocol
   - ✅ All 16 integration tests pass with new adapter
   - ✅ API compatibility maintained (0 breaking changes)
@@ -395,6 +427,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - **Result**: Full backward compatibility confirmed
 
 - [x] **Task 11.2**: Graph adapter decision (Phase 2.5) ✅
+
   - **Status**: Investigation complete (see Phase 2.5)
   - **Decision**: Hybrid approach optimal (ACB config + raw SQL)
   - **Outcome**: No graph migration needed
@@ -402,6 +435,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - ✅ Comprehensive documentation written
 
 - [x] **Task 11.3**: Integration validation ✅
+
   - ✅ Storage adapters working correctly
   - ✅ DI container registration validated
   - ✅ Cross-module compatibility (adapters are independent)
@@ -410,21 +444,25 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 12: Performance & Load Tests ⚠️ DEFERRED
 
 - [⚠️] **Task 12.1**: Performance benchmarks (Optional)
+
   - **Status**: Deferred (can add if performance issues arise)
   - **Rationale**: ACB adapters are well-optimized in ACB project
   - **Alternative**: Monitor performance in production
   - **Impact**: Low (ACB has benchmark coverage)
 
 - [⚠️] **Task 12.2**: Load tests (Optional)
+
   - **Status**: Deferred (production usage will validate)
   - **Tests Needed**: 100+ concurrent sessions, >1MB states, rapid create/delete
   - **Impact**: Low (can add when load patterns are known)
 
 - [⚠️] **Task 12.3**: Memory profiling (Optional)
+
   - **Status**: Deferred (can monitor in production)
   - **Impact**: Low (no memory leak indicators in existing tests)
 
 **Phase 3 Actual Outcomes**:
+
 - ✅ 41/41 tests passing (100% pass rate)
 - ✅ 93.58% coverage on SessionStorageAdapter
 - ✅ 81.69% coverage on ServerlessStorageAdapter
@@ -433,6 +471,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ Production-ready status achieved
 
 **Phase 3 Success Criteria Assessment**:
+
 - ✅ All integration tests passing (41/41)
 - ✅ Migration compatibility verified (API maintained)
 - ⚠️ Performance meets/exceeds old (untested, expected based on ACB)
@@ -441,7 +480,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 
 **Overall Assessment**: ✅ **Production Ready** (4/5 criteria met, 1 deferred as optional)
 
----
+______________________________________________________________________
 
 ### Phase 4: Documentation & Cleanup ⏳ IN PROGRESS (Days 13-16)
 
@@ -451,6 +490,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 13: User Documentation ✅ COMPLETE
 
 - [x] **Task 13.1**: Update CLAUDE.md ✅
+
   - ✅ Documented new ACB storage adapter usage
   - ✅ Added configuration examples with environment variables
   - ✅ Listed recommended backends (file, s3, azure, gcs, memory)
@@ -458,6 +498,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - ✅ Updated serverless_mode.py description
 
 - [x] **Task 13.2**: Create migration guide ✅
+
   - ✅ Created `docs/MIGRATION_GUIDE_ACB.md` (650+ lines)
   - ✅ Step-by-step migration instructions for all backends
   - ✅ Configuration migration examples (before/after)
@@ -468,6 +509,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - ✅ End-to-end test examples
 
 - [x] **Task 13.3**: API documentation ✅
+
   - ✅ Migration guide includes comprehensive API examples
   - ✅ Configuration reference with all backends documented
   - ✅ Environment variable syntax documented
@@ -479,6 +521,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 **Planned Removal**: v1.0
 
 - [⚠️] **Task 14.1**: Remove deprecated backends (AFTER one release in v1.0)
+
   - Delete `backends/s3_backend.py` (~280 lines)
   - Delete `backends/redis_backend.py` (~200 lines)
   - Delete `backends/local_backend.py` (~150 lines)
@@ -486,11 +529,13 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
   - Keep `backends/base.py` (SessionState model only)
 
 - [ ] **Task 14.2**: Update imports across codebase
+
   - Search for old backend imports
   - Replace with SessionStorageAdapter
   - Update type hints
 
 - [ ] **Task 14.3**: Clean up DI configuration
+
   - Remove old backend registration code
   - Simplify configure() function
   - Add comments documenting ACB adapter setup
@@ -498,17 +543,20 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 15: Final Validation
 
 - [ ] **Task 15.1**: Full test suite run
+
   - Run `pytest --cov=session_mgmt_mcp --cov-fail-under=85`
   - Verify all tests passing
   - Check coverage metrics
 
 - [ ] **Task 15.2**: Quality checks
+
   - Run `python -m crackerjack -t`
   - Ensure all hooks passing
   - Verify type checking passes
   - Check code complexity ≤15
 
 - [ ] **Task 15.3**: Manual testing
+
   - Test session management workflow end-to-end
   - Test with S3, File, and Memory backends
   - Test graph operations with new adapter
@@ -517,29 +565,33 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 #### Day 16: Release Preparation
 
 - [ ] **Task 16.1**: Update changelog
+
   - File: `CHANGELOG.md`
   - Document all changes
   - Note breaking changes (if any)
   - List new features and improvements
 
 - [ ] **Task 16.2**: Version bump
+
   - Update version in `pyproject.toml`
   - Update `__version__` in `__init__.py`
   - Follow semantic versioning
 
 - [ ] **Task 16.3**: Final commit and PR
+
   - Commit all changes with descriptive message
   - Push to branch `claude/fix-crackerjack-hooks-01SNFACYTnFCvfcLMFBRuKLU`
   - Create PR with comprehensive description
 
 **Phase 4 Success Criteria**:
+
 - ✅ Documentation complete and accurate
 - ✅ Deprecated code removed
 - ✅ All tests passing
 - ✅ Code quality checks passing
 - ✅ Ready for release
 
----
+______________________________________________________________________
 
 ## Success Metrics
 
@@ -571,37 +623,42 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 - ✅ Configuration backward compatible
 - ✅ Documentation complete
 
----
+______________________________________________________________________
 
 ## Risk Mitigation
 
 ### Identified Risks
 
 1. **ACB Adapter API Changes** (Probability: Low, Impact: High)
+
    - Mitigation: Pin ACB version, abstract with SessionStorageAdapter facade
    - Fallback: Keep old backends deprecated but functional for one release
 
-2. **Performance Regression** (Probability: Medium, Impact: Medium)
+1. **Performance Regression** (Probability: Medium, Impact: Medium)
+
    - Mitigation: Comprehensive benchmarking in Phase 3
    - Fallback: Add caching layer if needed
 
-3. **Data Migration Issues** (Probability: Low, Impact: High)
+1. **Data Migration Issues** (Probability: Low, Impact: High)
+
    - Mitigation: Extensive migration compatibility tests
    - Fallback: Provide migration scripts for manual intervention
 
-4. **Graph Adapter Limitations** (Probability: Medium, Impact: Medium)
+1. **Graph Adapter Limitations** (Probability: Medium, Impact: Medium)
+
    - Mitigation: Thoroughly test ACB Graph adapter capabilities first
    - Fallback: Keep hybrid approach (ACB for simple ops, raw DuckDB for complex)
 
 ### Rollback Plan
 
 If critical issues discovered:
-1. Revert commits on branch
-2. Keep old backends active
-3. Document issues and adjust plan
-4. Re-attempt migration with fixes
 
----
+1. Revert commits on branch
+1. Keep old backends active
+1. Document issues and adjust plan
+1. Re-attempt migration with fixes
+
+______________________________________________________________________
 
 ## Dependencies
 
@@ -619,7 +676,7 @@ If critical issues discovered:
 
 No new external dependencies required - all ACB components already available.
 
----
+______________________________________________________________________
 
 ## Progress Tracking
 
@@ -637,10 +694,11 @@ No new external dependencies required - all ACB components already available.
 **Current Status**: Phase 2 complete (5 critical tasks)! Delivered in 2 days vs 4-day estimate. Ready to begin Phase 2.5 (Graph Adapter Migration).
 
 **Latest Commits**:
+
 - 8762deb - feat: Phase 1 Day 1 - Storage adapter foundation
 - 843cff9 - feat: Phase 2 Days 4-5 - Serverless backend consolidation
 
----
+______________________________________________________________________
 
 ## References
 
@@ -670,7 +728,7 @@ No new external dependencies required - all ACB components already available.
 - `docs/ACB_MIGRATION_COMPLETE.md` - Previous Vector/Graph migration docs
 - `docs/refactoring/` - Historical refactoring documentation
 
----
+______________________________________________________________________
 
 ## Notes
 
@@ -680,7 +738,7 @@ No new external dependencies required - all ACB components already available.
 - 90% success probability based on proven ACB adapter track record
 - Timeline assumes 1-2 developers working concurrently on different phases
 
----
+______________________________________________________________________
 
 **Document Version**: 1.0
 **Last Modified**: 2025-01-16

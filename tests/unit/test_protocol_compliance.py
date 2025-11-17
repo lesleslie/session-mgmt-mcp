@@ -6,6 +6,7 @@ external protocols and interfaces that other systems expect.
 """
 
 import asyncio
+import contextlib
 import inspect
 import subprocess
 from pathlib import Path
@@ -310,9 +311,10 @@ class TestErrorHandlingProtocol:
             assert isinstance(result, dict), "Should return dict even on timeout"
             assert result["success"] is False, "Should indicate failure"
             assert result["returncode"] == -1, "Should use -1 for timeout"
-            assert ("timeout" in result["stderr"].lower() or "timed out" in result["stderr"].lower()), (
-                "Should indicate timeout in stderr"
-            )
+            assert (
+                "timeout" in result["stderr"].lower()
+                or "timed out" in result["stderr"].lower()
+            ), "Should indicate timeout in stderr"
 
     def test_sync_method_exception_handling(self):
         """Test sync method handles general exceptions."""
@@ -344,7 +346,10 @@ class TestErrorHandlingProtocol:
                 "Should return CrackerjackResult even on error"
             )
             assert result.exit_code == -1, "Should use -1 for timeout"
-            assert ("timeout" in result.stderr.lower() or "timed out" in result.stderr.lower()), "Should indicate timeout"
+            assert (
+                "timeout" in result.stderr.lower()
+                or "timed out" in result.stderr.lower()
+            ), "Should indicate timeout"
 
     async def test_async_method_general_exception_handling(self):
         """Test async method handles general exceptions."""
@@ -387,10 +392,8 @@ class TestDatabaseProtocolCompliance:
             assert integration is not None
         finally:
             # Cleanup
-            try:
+            with contextlib.suppress(OSError):
                 Path(db_path).unlink()
-            except OSError:
-                pass
 
     async def test_result_storage_protocol(self):
         """Test that results are stored following expected protocol."""
@@ -417,10 +420,8 @@ class TestDatabaseProtocolCompliance:
                 assert recent[0]["command"] == "test", "Stored result should match"
 
         finally:
-            try:
+            with contextlib.suppress(OSError):
                 Path(db_path).unlink()
-            except OSError:
-                pass
 
 
 class TestRegressionPreventionTests:

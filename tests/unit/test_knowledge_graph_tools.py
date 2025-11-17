@@ -115,9 +115,7 @@ class TestPathFinding:
 
         assert _find_path_impl is not None
 
-    async def test_find_path_with_depth_limit(
-        self, mock_knowledge_graph: dict
-    ) -> None:
+    async def test_find_path_with_depth_limit(self, mock_knowledge_graph: dict) -> None:
         """Test path finding with max depth constraint."""
         from session_mgmt_mcp.tools.knowledge_graph_tools import _find_path_impl
 
@@ -218,9 +216,7 @@ class TestKnowledgeGraphStats:
 
         assert _get_knowledge_graph_stats_impl is not None
 
-    async def test_get_stats_populated_graph(
-        self, mock_knowledge_graph: dict
-    ) -> None:
+    async def test_get_stats_populated_graph(self, mock_knowledge_graph: dict) -> None:
         """Test stats for graph with data."""
         from session_mgmt_mcp.tools.knowledge_graph_tools import (
             _get_knowledge_graph_stats_impl,

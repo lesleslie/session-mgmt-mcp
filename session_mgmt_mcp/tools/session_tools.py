@@ -261,6 +261,26 @@ def _safe_get_mtime(repo_path: Path) -> float | None:
         return None
 
 
+def _collect_git_repos(projects_path: Path) -> list[tuple[float, str]]:
+    """Collect git repositories with modification times from a directory."""
+    git_repos: list[tuple[float, str]] = []
+    for repo_path in projects_path.iterdir():
+        if _is_git_repository(repo_path):
+            mtime = _safe_get_mtime(repo_path)
+            if mtime is not None:
+                git_repos.append((mtime, str(repo_path)))
+    return git_repos
+
+
+def _get_most_recent_client_repo(git_repos: list[tuple[float, str]]) -> str | None:
+    """Get most recent repository excluding the server itself."""
+    git_repos.sort(reverse=True)
+    for _mtime, repo_path_str in git_repos:
+        if not repo_path_str.endswith("session-mgmt-mcp"):
+            return repo_path_str
+    return None
+
+
 def _find_recent_git_repository() -> str | None:
     """Look for recent git repositories in common project directories."""
     for projects_dir in ("/Users/les/Projects", str(Path.home() / "Projects")):
@@ -268,20 +288,10 @@ def _find_recent_git_repository() -> str | None:
         if not projects_path.exists():
             continue
 
-        # Collect all git repositories with modification times
-        git_repos: list[tuple[float, str]] = []
-        for repo_path in projects_path.iterdir():
-            if _is_git_repository(repo_path):
-                mtime = _safe_get_mtime(repo_path)
-                if mtime is not None:
-                    git_repos.append((mtime, str(repo_path)))
-
+        git_repos = _collect_git_repos(projects_path)
         if git_repos:
-            # Sort by modification time and find most recent non-server repo
-            git_repos.sort(reverse=True)
-            for _mtime, repo_path_str in git_repos:
-                if not repo_path_str.endswith("session-mgmt-mcp"):
-                    return repo_path_str
+            if repo := _get_most_recent_client_repo(git_repos):
+                return repo
 
     return None
 

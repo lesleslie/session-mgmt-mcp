@@ -44,10 +44,9 @@ async def get_memory_optimization_policy(strategy: str, max_age_days: int):
     """Build a policy for memory optimization based on strategy."""
     if strategy == "aggressive":
         return {"consolidation_age_days": max_age_days, "importance_threshold": 0.3}
-    elif strategy == "conservative":
+    if strategy == "conservative":
         return {"consolidation_age_days": max_age_days, "importance_threshold": 0.7}
-    else:
-        return {"consolidation_age_days": max_age_days, "importance_threshold": 0.5}
+    return {"consolidation_age_days": max_age_days, "importance_threshold": 0.5}
 
 
 async def format_memory_optimization_results(results: dict, dry_run: bool) -> str:
@@ -93,8 +92,8 @@ async def optimize_memory_usage(
     strategy: str = "auto", max_age_days: int = 30, dry_run: bool = True
 ):
     from session_mgmt_mcp.server import (
-        TOKEN_OPTIMIZER_AVAILABLE,
         REFLECTION_TOOLS_AVAILABLE,
+        TOKEN_OPTIMIZER_AVAILABLE,
     )
 
     # Validate dependencies are available
@@ -285,17 +284,11 @@ class TestCachedChunkRetrieval:
     @pytest.mark.asyncio
     async def test_get_cached_chunk_success(self):
         """Test successful chunk retrieval."""
-        mock_chunk_data = {
-            "chunk": [{"id": "conv1", "content": "Test content"}],
-            "current_chunk": 1,
-            "total_chunks": 3,
-            "cache_key": "test_key",
-            "has_more": True,
-        }
-
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
+            patch(
+                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+            ) as mock_get_chunk,
         ):
             mock_get_chunk.return_value = "📄 Chunk 1 of 3\n--------------------\nTest content\n\nMore chunks available..."
 
@@ -311,7 +304,9 @@ class TestCachedChunkRetrieval:
         """Test chunk retrieval when chunk not found."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
+            patch(
+                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+            ) as mock_get_chunk,
         ):
             mock_get_chunk.return_value = "❌ Chunk not found or expired."
 
@@ -331,19 +326,15 @@ class TestCachedChunkRetrieval:
     @pytest.mark.asyncio
     async def test_get_cached_chunk_last_chunk(self):
         """Test retrieving the last chunk."""
-        mock_chunk_data = {
-            "chunk": [{"id": "conv3", "content": "Final chunk content"}],
-            "current_chunk": 3,
-            "total_chunks": 3,
-            "cache_key": "test_key",
-            "has_more": False,
-        }
-
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk,
+            patch(
+                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+            ) as mock_get_chunk,
         ):
-            mock_get_chunk.return_value = "📄 Chunk 3 of 3\n--------------------\nFinal chunk content"
+            mock_get_chunk.return_value = (
+                "📄 Chunk 3 of 3\n--------------------\nFinal chunk content"
+            )
 
             result = await get_cached_chunk("test_key", 3)
 
@@ -357,24 +348,14 @@ class TestTokenUsageStats:
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_success(self):
         """Test successful token usage stats retrieval."""
-        mock_stats = {
-            "status": "success",
-            "total_requests": 25,
-            "total_tokens": 5000,
-            "average_tokens_per_request": 200.0,
-            "optimizations_applied": {"prioritize_recent": 10, "truncate_old": 5},
-            "estimated_cost_savings": {
-                "savings_usd": 0.0125,
-                "estimated_tokens_saved": 1250,
-                "requests_optimized": 15,
-            },
-        }
-
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
+            patch(
+                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                new_callable=AsyncMock,
+            ) as mock_get_stats,
         ):
-            mock_get_stats.return_value = f"""📊 Token Usage Statistics (last 24 hours):
+            mock_get_stats.return_value = """📊 Token Usage Statistics (last 24 hours):
 - Total Requests: 25
 - Total Tokens Used: 5,000
 - Average Tokens per Request: 200.0
@@ -401,13 +382,16 @@ class TestTokenUsageStats:
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_no_data(self):
         """Test token usage stats when no data available."""
-        mock_stats = {"status": "no_data"}
-
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
+            patch(
+                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                new_callable=AsyncMock,
+            ) as mock_get_stats,
         ):
-            mock_get_stats.return_value = "No token usage data available for the last 24 hours."
+            mock_get_stats.return_value = (
+                "No token usage data available for the last 24 hours."
+            )
 
             result = await get_token_usage_stats(hours=24)
 
@@ -427,7 +411,10 @@ class TestTokenUsageStats:
         """Test error handling in token usage stats."""
         with (
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.token_optimizer.get_token_usage_stats", new_callable=AsyncMock) as mock_get_stats,
+            patch(
+                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                new_callable=AsyncMock,
+            ) as mock_get_stats,
         ):
             mock_get_stats.side_effect = Exception("Stats error")
 
@@ -463,7 +450,9 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
+            patch(
+                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+            ) as mock_optimizer_class,
         ):
             # Mock MemoryOptimizer
             mock_db = AsyncMock()
@@ -504,7 +493,9 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
+            patch(
+                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+            ) as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
             mock_get_db.return_value = mock_db
@@ -574,7 +565,9 @@ class TestOptimizeMemoryUsage:
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.memory_optimizer.MemoryOptimizer") as mock_optimizer_class,
+            patch(
+                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+            ) as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
             mock_get_db.return_value = mock_db
@@ -599,8 +592,13 @@ class TestOptimizationIntegration:
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response", new_callable=AsyncMock) as mock_optimize,
-            patch("session_mgmt_mcp.server.track_token_usage", new_callable=AsyncMock) as mock_track,
+            patch(
+                "session_mgmt_mcp.server.optimize_search_response",
+                new_callable=AsyncMock,
+            ) as mock_optimize,
+            patch(
+                "session_mgmt_mcp.server.track_token_usage", new_callable=AsyncMock
+            ) as mock_track,
         ):
             mock_get_db.return_value = mock_reflection_db
 
@@ -629,7 +627,9 @@ class TestOptimizationIntegration:
             mock_track.assert_called_once()
 
             # Step 2: Retrieve additional chunks
-            with patch("session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock) as mock_get_chunk:
+            with patch(
+                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+            ) as mock_get_chunk:
                 mock_chunk_data = {
                     "chunk": [mock_reflection_db.search_conversations.return_value[1]],
                     "current_chunk": 2,

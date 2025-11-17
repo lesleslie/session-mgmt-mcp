@@ -7,12 +7,13 @@ Tests tool decorator registration, parameter validation, and error handling.
 from __future__ import annotations
 
 import typing as t
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-
 from tests.fixtures import mock_fastmcp_server, mock_session_paths
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.asyncio
@@ -27,7 +28,9 @@ class TestMCPToolRegistration:
         register_session_tools(mock_fastmcp_server)
 
         # Verify tool decorator was called for each session tool
-        assert mock_fastmcp_server.tool.call_count >= 4  # start, checkpoint, end, status
+        assert (
+            mock_fastmcp_server.tool.call_count >= 4
+        )  # start, checkpoint, end, status
 
     def test_search_tools_registration(self, mock_fastmcp_server: Mock):
         """Search tools are registered correctly."""
@@ -164,7 +167,9 @@ class TestToolParameterValidation:
     """Test tool parameter validation and type checking."""
 
     @patch("session_mgmt_mcp.tools.session_tools._start_impl")
-    async def test_start_tool_accepts_valid_directory(self, mock_start: AsyncMock, tmp_path: Path):
+    async def test_start_tool_accepts_valid_directory(
+        self, mock_start: AsyncMock, tmp_path: Path
+    ):
         """Start tool accepts valid working directory parameter."""
         from session_mgmt_mcp.tools.session_tools import register_session_tools
 
@@ -192,13 +197,15 @@ class TestToolParameterValidation:
         assert start_tool is not None
 
         # Call with valid directory
-        result = await start_tool(working_directory=str(tmp_path))
+        await start_tool(working_directory=str(tmp_path))
 
         # Verify implementation was called
         mock_start.assert_called_once_with(str(tmp_path))
 
     @patch("session_mgmt_mcp.tools.session_tools._checkpoint_impl")
-    async def test_checkpoint_tool_accepts_none_directory(self, mock_checkpoint: AsyncMock):
+    async def test_checkpoint_tool_accepts_none_directory(
+        self, mock_checkpoint: AsyncMock
+    ):
         """Checkpoint tool accepts None for working_directory (uses PWD)."""
         from session_mgmt_mcp.tools.session_tools import register_session_tools
 
@@ -226,7 +233,7 @@ class TestToolParameterValidation:
         assert checkpoint_tool is not None
 
         # Call with None (should use PWD)
-        result = await checkpoint_tool(working_directory=None)
+        await checkpoint_tool(working_directory=None)
 
         # Verify implementation was called with None
         mock_checkpoint.assert_called_once_with(None)
@@ -237,7 +244,9 @@ class TestToolErrorHandling:
     """Test tool error handling and response formatting."""
 
     @patch("session_mgmt_mcp.tools.session_tools._start_impl")
-    async def test_start_tool_handles_implementation_errors(self, mock_start: AsyncMock):
+    async def test_start_tool_handles_implementation_errors(
+        self, mock_start: AsyncMock
+    ):
         """Start tool handles errors from implementation gracefully."""
         from session_mgmt_mcp.tools.session_tools import register_session_tools
 
@@ -314,7 +323,10 @@ class TestTokenOptimizerFallbacks:
 
     async def test_get_token_usage_stats_fallback(self):
         """get_token_usage_stats has fallback implementation."""
-        from session_mgmt_mcp.server import get_token_usage_stats, TOKEN_OPTIMIZER_AVAILABLE
+        from session_mgmt_mcp.server import (
+            TOKEN_OPTIMIZER_AVAILABLE,
+            get_token_usage_stats,
+        )
 
         # Call fallback
         result = await get_token_usage_stats(hours=24)

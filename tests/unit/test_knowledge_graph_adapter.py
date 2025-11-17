@@ -16,10 +16,13 @@ Testing Strategy:
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestKnowledgeGraphAdapterInit:
@@ -119,7 +122,8 @@ class TestContextManagers:
 
         with pytest.raises(ValueError, match="test exception"):
             async with adapter:
-                raise ValueError("test exception")
+                msg = "test exception"
+                raise ValueError(msg)
 
         # Connection should still be cleaned up
         assert adapter.conn is None
@@ -144,7 +148,10 @@ class TestDatabasePathResolution:
 
         adapter = KnowledgeGraphDatabaseAdapter()
 
-        with patch("session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync", return_value=mock_config):
+        with patch(
+            "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+            return_value=mock_config,
+        ):
             result = adapter._get_db_path()
 
         assert result == str(mock_config.graph.database_path)
@@ -251,7 +258,6 @@ class TestInitialization:
         adapter = KnowledgeGraphDatabaseAdapter(db_path)
 
         await adapter.initialize()
-        first_conn = adapter.conn
 
         await adapter.initialize()
         second_conn = adapter.conn
@@ -306,7 +312,6 @@ class TestCloseAndCleanup:
         adapter = KnowledgeGraphDatabaseAdapter(db_path)
 
         await adapter.initialize()
-        conn = adapter.conn
 
         # Trigger destructor
         del adapter
@@ -324,10 +329,11 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_create_entity_with_observations(self, tmp_path: Path) -> None:
         """Should create entity with observations."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_name = f"test-project-{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -347,10 +353,11 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_create_entity_with_properties(self, tmp_path: Path) -> None:
         """Should create entity with properties."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_name = f"FastMCP-{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -371,10 +378,11 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_find_entity_by_name(self, tmp_path: Path) -> None:
         """Should find entity by name."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_name = f"unique-entity-{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -409,10 +417,11 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_add_observation_to_entity(self, tmp_path: Path) -> None:
         """Should add observation to existing entity."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_name = f"test-entity-{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -435,10 +444,11 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_search_entities_by_query(self, tmp_path: Path) -> None:
         """Should search entities by query."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -446,17 +456,25 @@ class TestEntityOperations:
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             # Create test entities with unique names
             await kg.create_entity(
-                name=f"python-lib-{unique_id}", entity_type="library", observations=["Python library"]
+                name=f"python-lib-{unique_id}",
+                entity_type="library",
+                observations=["Python library"],
             )
             await kg.create_entity(
-                name=f"js-lib-{unique_id}", entity_type="library", observations=["JavaScript library"]
+                name=f"js-lib-{unique_id}",
+                entity_type="library",
+                observations=["JavaScript library"],
             )
 
             # Search for python
             results = await kg.search_entities("python")
 
             assert len(results) >= 1
-            assert any("python" in r["name"].lower() or "python" in str(r.get("observations", [])).lower() for r in results)
+            assert any(
+                "python" in r["name"].lower()
+                or "python" in str(r.get("observations", [])).lower()
+                for r in results
+            )
 
 
 class TestRelationshipOperations:
@@ -468,10 +486,11 @@ class TestRelationshipOperations:
     @pytest.mark.asyncio
     async def test_create_relation_between_entities(self, tmp_path: Path) -> None:
         """Should create relationship between entities."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -479,10 +498,14 @@ class TestRelationshipOperations:
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             # Create two entities with unique names
             entity1 = await kg.create_entity(
-                name=f"project-a-{unique_id}", entity_type="project", observations=["test"]
+                name=f"project-a-{unique_id}",
+                entity_type="project",
+                observations=["test"],
             )
             entity2 = await kg.create_entity(
-                name=f"project-b-{unique_id}", entity_type="project", observations=["test"]
+                name=f"project-b-{unique_id}",
+                entity_type="project",
+                observations=["test"],
             )
 
             # Create relationship using entity names (not IDs)
@@ -498,10 +521,11 @@ class TestRelationshipOperations:
     @pytest.mark.asyncio
     async def test_create_relation_with_properties(self, tmp_path: Path) -> None:
         """Should create relationship with properties."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -509,10 +533,14 @@ class TestRelationshipOperations:
         async with KnowledgeGraphDatabaseAdapter(db_path) as kg:
             # Create two entities with unique names
             entity1 = await kg.create_entity(
-                name=f"service-a-{unique_id}", entity_type="service", observations=["test"]
+                name=f"service-a-{unique_id}",
+                entity_type="service",
+                observations=["test"],
             )
             entity2 = await kg.create_entity(
-                name=f"service-b-{unique_id}", entity_type="service", observations=["test"]
+                name=f"service-b-{unique_id}",
+                entity_type="service",
+                observations=["test"],
             )
 
             # Create relationship with properties using entity names (not IDs)
@@ -531,10 +559,11 @@ class TestRelationshipOperations:
     @pytest.mark.asyncio
     async def test_get_entity_relationships(self, tmp_path: Path) -> None:
         """Should get all relationships for an entity."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -563,10 +592,11 @@ class TestRelationshipOperations:
     @pytest.mark.asyncio
     async def test_find_path_between_entities(self, tmp_path: Path) -> None:
         """Should find paths between entities."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"
@@ -597,10 +627,11 @@ class TestStatistics:
     @pytest.mark.asyncio
     async def test_get_statistics_empty_graph(self, tmp_path: Path) -> None:
         """Should get statistics for empty graph."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
 
@@ -617,10 +648,11 @@ class TestStatistics:
     @pytest.mark.asyncio
     async def test_get_statistics_with_data(self, tmp_path: Path) -> None:
         """Should get accurate statistics."""
+        import time
+
         from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
-        import time
 
         db_path = tmp_path / f"test_{id(tmp_path)}-{int(time.time() * 1000000)}.duckdb"
         unique_id = f"{id(tmp_path)}-{int(time.time() * 1000000)}"

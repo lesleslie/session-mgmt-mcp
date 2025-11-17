@@ -28,6 +28,7 @@ $ python -c "from acb.adapters.graph.duckdb_pgq import Graph; print(dir(Graph))"
 ```
 
 **DI Registration** (`session_mgmt_mcp/di/__init__.py` lines 230-272):
+
 ```python
 from acb.adapters.graph.duckdb_pgq import DuckDBPGQSettings, Graph
 
@@ -81,6 +82,7 @@ execute_query(
 ```
 
 **GraphNodeModel Structure** (Pydantic model):
+
 ```python
 class GraphNodeModel(BaseModel):
     id: str | None  # ← ACB-generated ID
@@ -95,6 +97,7 @@ class GraphNodeModel(BaseModel):
 #### Issue #1: ID Generation Strategy Mismatch
 
 **Current Implementation** (raw DuckDB):
+
 ```python
 async def create_entity(self, name: str, entity_type: str, ...) -> dict:
     entity_id = str(uuid.uuid4())  # ← WE generate the ID
@@ -106,6 +109,7 @@ async def create_entity(self, name: str, entity_type: str, ...) -> dict:
 ```
 
 **ACB Graph Adapter**:
+
 ```python
 async def create_entity(self, name: str, entity_type: str, ...) -> dict:
     node = await graph.create_node(  # ← No way to specify ID!
@@ -117,6 +121,7 @@ async def create_entity(self, name: str, entity_type: str, ...) -> dict:
 ```
 
 **Impact**:
+
 - Existing code expects stable, predictable UUIDs
 - ACB generates different IDs
 - Breaking change for all existing data and API consumers
@@ -124,11 +129,13 @@ async def create_entity(self, name: str, entity_type: str, ...) -> dict:
 #### Issue #2: Labels vs Single Entity Type
 
 **Current API**:
+
 ```python
 entity_type: str  # Single string: "project", "task", etc.
 ```
 
 **ACB Graph API**:
+
 ```python
 labels: list[str] | None  # List of labels: ["project", "active"]
 ```
@@ -138,12 +145,14 @@ labels: list[str] | None  # List of labels: ["project", "active"]
 #### Issue #3: Node/Edge Retrieval
 
 **Current Implementation**:
+
 ```python
 # Get by custom UUID stored in 'id' column
 result = conn.execute("SELECT * FROM kg_entities WHERE id = ?", (entity_id,))
 ```
 
 **ACB Graph Adapter**:
+
 ```python
 # Get by ACB-generated node ID
 node = await graph.get_node(node_id=acb_generated_id)  # ← Different ID!
@@ -152,6 +161,7 @@ node = await graph.get_node(node_id=acb_generated_id)  # ← Different ID!
 #### Issue #4: Custom Queries Needed
 
 Many operations in our API don't map cleanly to ACB methods:
+
 - `find_entity_by_name()` - No direct ACB method
 - `search_entities()` - Requires custom SQL
 - `add_observation()` - Complex property updates
@@ -162,38 +172,48 @@ Many operations in our API don't map cleanly to ACB methods:
 ## Alternative Approaches Considered
 
 ### Option A: Use ACB IDs (Breaking Change)
+
 **Pro**: Clean ACB integration
 **Con**: Breaks all existing code and data
 
 ### Option B: Dual ID System
+
 **Approach**:
+
 - Generate custom UUID, store in properties
 - Use ACB's ID internally
 - Map between them
 
 **Issues**:
+
 - Complex mapping logic
 - Performance overhead
 - Confusing ID semantics
 
 ### Option C: Hybrid (Current Choice)
+
 **Approach**:
+
 - Use ACB for config/DI (✅ already done in Phase 3)
 - Keep raw DuckDB SQL for operations
 - Use same tables (kg_entities, kg_relationships)
 
 **Benefits**:
+
 - ✅ Full backwards compatibility
 - ✅ Stable UUIDs
 - ✅ ACB benefits (config, DI, lifecycle)
 - ✅ Zero breaking changes
 
 **Tradeoffs**:
+
 - ❌ Not using ACB Graph adapter methods
 - ❌ Less code reduction than hoped
 
 ### Option D: Full Rewrite with Migration
+
 **Approach**:
+
 - Rewrite to use ACB Graph adapter API
 - Create data migration script
 - Update all consuming code
@@ -206,13 +226,15 @@ Many operations in our API don't map cleanly to ACB methods:
 **Keep the current hybrid implementation** (Phase 3 complete, documented in `ACB_MIGRATION_COMPLETE.md`).
 
 **Rationale**:
+
 1. **Already functional**: Current hybrid approach works well
-2. **ACB benefits achieved**: Configuration, DI, lifecycle management
-3. **Zero breaking changes**: Existing code continues to work
-4. **ID stability**: Custom UUIDs maintained
-5. **Cost/benefit**: Full ACB Graph migration effort doesn't justify benefits
+1. **ACB benefits achieved**: Configuration, DI, lifecycle management
+1. **Zero breaking changes**: Existing code continues to work
+1. **ID stability**: Custom UUIDs maintained
+1. **Cost/benefit**: Full ACB Graph migration effort doesn't justify benefits
 
 **Phase 2.5 Conclusion**:
+
 - Investigation complete ✅
 - ACB Graph adapter API documented ✅
 - Compatibility issues identified ✅
@@ -221,6 +243,7 @@ Many operations in our API don't map cleanly to ACB methods:
 ## Files from Investigation
 
 ### Created During Investigation:
+
 1. `knowledge_graph_adapter_acb_investigation.py` (421 lines)
    - Full ACB Graph adapter implementation attempt
    - Demonstrates API usage
@@ -228,6 +251,7 @@ Many operations in our API don't map cleanly to ACB methods:
    - Kept for reference
 
 ### Current Production Code:
+
 1. `knowledge_graph_adapter.py` (698 lines)
    - Hybrid ACB config + raw DuckDB SQL
    - Stable, tested, backwards compatible
@@ -236,18 +260,18 @@ Many operations in our API don't map cleanly to ACB methods:
 ## Lessons Learned
 
 1. **ACB Graph adapter is real and functional** - but has different design assumptions
-2. **ID generation is fundamental** - can't easily change without breaking compatibility
-3. **Hybrid patterns are valid** - don't need to use every ACB feature
-4. **Investigation before migration** - saved time by discovering blockers early
+1. **ID generation is fundamental** - can't easily change without breaking compatibility
+1. **Hybrid patterns are valid** - don't need to use every ACB feature
+1. **Investigation before migration** - saved time by discovering blockers early
 
 ## Next Steps
 
 1. ✅ Document findings (this file)
-2. ✅ Update migration plan to reflect Phase 2.5 outcome
-3. ✅ Commit investigation code as reference
-4. ✅ Close Phase 2.5 as "Investigation Complete"
-5. ✅ Proceed to Phase 3: Testing & Validation
+1. ✅ Update migration plan to reflect Phase 2.5 outcome
+1. ✅ Commit investigation code as reference
+1. ✅ Close Phase 2.5 as "Investigation Complete"
+1. ✅ Proceed to Phase 3: Testing & Validation
 
----
+______________________________________________________________________
 
 **Status**: Phase 2.5 investigation complete. Hybrid approach (Phase 3 from ACB_MIGRATION_COMPLETE.md) is the recommended production approach.

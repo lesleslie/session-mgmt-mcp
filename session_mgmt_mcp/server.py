@@ -35,11 +35,9 @@ from session_mgmt_mcp.di import configure as configure_di
 configure_di()
 
 # Phase 2.5: Import core infrastructure from server_core
-from session_mgmt_mcp.server_core import (
-    SessionPermissionsManager,
-    _load_mcp_config,
-    get_feature_flags,
-)
+from session_mgmt_mcp.core.features import get_feature_flags
+from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+from session_mgmt_mcp.server_core import _load_mcp_config
 from session_mgmt_mcp.server_core import (
     # Health & status functions
     health_check as _health_check_impl,
@@ -53,8 +51,8 @@ from session_mgmt_mcp.server_core import (
 )
 
 # Get ACB logger from DI container
-Logger = import_adapter("logger")
-session_logger = depends.get_sync(Logger)
+logger_class = import_adapter("logger")
+session_logger = depends.get_sync(logger_class)
 
 # Check mcp-common exceptions availability (must be defined early for FastMCP import)
 EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
@@ -216,7 +214,7 @@ if RATE_LIMITING_AVAILABLE:
 
 # Register extracted tool modules following crackerjack architecture patterns
 # Import LLM provider validation (Phase 3 Security Hardening)
-from .llm_providers import validate_llm_api_keys_at_startup
+from .llm.security import validate_llm_api_keys_at_startup
 from .tools import (
     register_crackerjack_tools,
     register_knowledge_graph_tools,
@@ -578,10 +576,11 @@ def main(http_mode: bool = False, http_port: int | None = None) -> None:
             port=port,
             path="/mcp",
             stateless_http=True,
+            show_banner=False,  # Disable Rich banner to avoid BlockingIOError
         )
     else:
         _display_stdio_startup(features)
-        mcp.run(stateless_http=True)
+        mcp.run(stateless_http=True, show_banner=False)
 
 
 def _ensure_default_recommendations(priority_actions: list[str]) -> list[str]:

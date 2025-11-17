@@ -177,7 +177,9 @@ class TestConversationClusterer:
         assert len(clusters) > 0
         # Related conversations should be clustered together
         cluster_with_auth = [
-            c for c in clusters if any("authentication" in conv.get("content", "").lower() for conv in c)
+            c
+            for c in clusters
+            if any("authentication" in conv.get("content", "").lower() for conv in c)
         ]
         assert len(cluster_with_auth) > 0
 
@@ -269,7 +271,7 @@ class TestRetentionPolicyManager:
             for i in range(10)
         ]
 
-        keep, consolidate = manager.get_conversations_for_retention(conversations)
+        keep, _consolidate = manager.get_conversations_for_retention(conversations)
 
         # Should keep newest conversations
         assert len(keep) > 0
@@ -294,7 +296,7 @@ class TestRetentionPolicyManager:
             },
         ]
 
-        keep, consolidate = manager.get_conversations_for_retention(conversations)
+        keep, _consolidate = manager.get_conversations_for_retention(conversations)
 
         # Recent should be kept, old might be consolidated
         recent_kept = any(conv["id"] == "recent-conv" for conv in keep)
@@ -347,7 +349,13 @@ class TestMemoryOptimizer:
         mock_conversations = [
             ("conv-1", "Old conversation 1", "project-a", old_date, "{}"),
             ("conv-2", "Old conversation 2", "project-a", old_date, "{}"),
-            ("conv-3", "Recent conversation", "project-a", datetime.now().isoformat(), "{}"),
+            (
+                "conv-3",
+                "Recent conversation",
+                "project-a",
+                datetime.now().isoformat(),
+                "{}",
+            ),
         ]
         mock_db.conn.execute = MagicMock(
             return_value=MagicMock(fetchall=MagicMock(return_value=mock_conversations))
@@ -361,7 +369,8 @@ class TestMemoryOptimizer:
         assert result["total_conversations"] == 3
         # Should not call DELETE or INSERT in dry run
         insert_calls = [
-            call for call in mock_db.conn.execute.call_args_list
+            call
+            for call in mock_db.conn.execute.call_args_list
             if len(call[0]) > 0 and "INSERT" in str(call[0][0])
         ]
         assert len(insert_calls) == 0

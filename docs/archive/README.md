@@ -103,11 +103,13 @@ For current project documentation, see the main `docs/` directory:
 ## Archive Organization
 
 **Initial cleanup (January 7, 2025):**
+
 - **Before**: 107 markdown files (87 in top-level docs/)
 - **After**: 27 active files + 80 archived files
 - **Improvement**: 91% reduction in top-level clutter
 
 **Second cleanup (January 16, 2025):**
+
 - Archived 5 more completed phase documents
 - Moved 2 testing docs to `developer/` directory
 - **Current**: 3 active top-level docs + organized subdirectories

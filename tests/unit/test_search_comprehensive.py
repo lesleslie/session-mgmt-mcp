@@ -61,9 +61,7 @@ class TestFullTextSearch:
 
     async def test_search_with_special_characters(self, search_db):
         """Test search with special characters."""
-        results = await search_db.search_conversations(
-            "testing pytest", limit=10
-        )
+        results = await search_db.search_conversations("testing pytest", limit=10)
         assert isinstance(results, list)
 
     async def test_search_empty_query(self, search_db):
@@ -73,9 +71,7 @@ class TestFullTextSearch:
 
     async def test_search_nonexistent_term(self, search_db):
         """Test searching for nonexistent term."""
-        results = await search_db.search_conversations(
-            "xyzabc123notfound", limit=10
-        )
+        results = await search_db.search_conversations("xyzabc123notfound", limit=10)
         assert isinstance(results, list)
 
 
@@ -124,9 +120,7 @@ class TestSearchFiltering:
 
     async def test_search_large_limit(self, filtered_search_db):
         """Test search with very large limit."""
-        results = await filtered_search_db.search_conversations(
-            "topic", limit=1000
-        )
+        results = await filtered_search_db.search_conversations("topic", limit=1000)
         assert isinstance(results, list)
 
 
@@ -142,8 +136,12 @@ class TestSemanticSearch:
 
         # Add semantically related content
         await db.store_conversation("Machine learning models", {"topic": "ml"})
-        await db.store_conversation("Neural networks and deep learning", {"topic": "dl"})
-        await db.store_conversation("Artificial intelligence applications", {"topic": "ai"})
+        await db.store_conversation(
+            "Neural networks and deep learning", {"topic": "dl"}
+        )
+        await db.store_conversation(
+            "Artificial intelligence applications", {"topic": "ai"}
+        )
         await db.store_conversation("Data science techniques", {"topic": "data"})
 
         yield db
@@ -152,9 +150,7 @@ class TestSemanticSearch:
     async def test_semantic_search_similarity(self, semantic_db):
         """Test semantic similarity search."""
         # Even if embeddings fail, should fall back to text search
-        results = await semantic_db.search_conversations(
-            "machine learning", limit=10
-        )
+        results = await semantic_db.search_conversations("machine learning", limit=10)
         assert isinstance(results, list)
 
     async def test_semantic_search_synonyms(self, semantic_db):
@@ -165,9 +161,7 @@ class TestSemanticSearch:
     async def test_semantic_search_fallback(self, semantic_db):
         """Test that semantic search falls back to text search."""
         # Search should work regardless of embedding availability
-        results = await semantic_db.search_conversations(
-            "learning models", limit=10
-        )
+        results = await semantic_db.search_conversations("learning models", limit=10)
         assert isinstance(results, list)
 
 
@@ -202,9 +196,7 @@ class TestTagSearch:
 
     async def test_search_for_nonexistent_tag_content(self, tagged_db):
         """Test searching for nonexistent tag content."""
-        results = await tagged_db.search_reflections(
-            "nonexistent", limit=10
-        )
+        results = await tagged_db.search_reflections("nonexistent", limit=10)
         assert isinstance(results, list)
 
     async def test_search_case_handling(self, tagged_db):

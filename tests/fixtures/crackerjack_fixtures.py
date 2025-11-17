@@ -18,6 +18,7 @@ def mock_crackerjack_output_success() -> str:
 
     Returns:
         Realistic crackerjack output string with quality metrics.
+
     """
     return """
 ╭─────────────────────────────────────────────────────────────╮
@@ -47,6 +48,7 @@ def mock_crackerjack_output_failures() -> str:
 
     Returns:
         Realistic crackerjack output string showing test failures.
+
     """
     return """
 ╭─────────────────────────────────────────────────────────────╮
@@ -82,6 +84,7 @@ def mock_crackerjack_metrics_success() -> dict[str, t.Any]:
 
     Returns:
         Structured quality metrics dictionary.
+
     """
     return {
         "quality_score": 85,
@@ -127,6 +130,7 @@ def mock_crackerjack_metrics_failures() -> dict[str, t.Any]:
 
     Returns:
         Structured quality metrics dictionary showing failures.
+
     """
     return {
         "quality_score": 45,
@@ -184,6 +188,7 @@ def mock_crackerjack_integration() -> Mock:
         ...     mock_crackerjack_integration.parse_output.return_value = {"score": 85}
         ...     result = mock_crackerjack_integration.parse_output("output")
         ...     assert result["score"] == 85
+
     """
     mock = Mock()
 
@@ -237,6 +242,7 @@ def crackerjack_output_factory() -> t.Callable[..., str]:
         >>> output = factory(quality_score=90, tests_passed=1000, coverage=85.5)
         >>> assert "90/100" in output
         >>> assert "1000 passed" in output
+
     """
 
     def factory(
@@ -265,6 +271,7 @@ def crackerjack_output_factory() -> t.Callable[..., str]:
 
         Returns:
             Formatted crackerjack output string.
+
         """
         status_icon = "✅" if tests_failed == 0 else "❌"
         security_icon = "🔒" if security_vulns == 0 else "⚠️"
@@ -300,6 +307,7 @@ def crackerjack_metrics_factory() -> t.Callable[..., dict[str, t.Any]]:
         >>> metrics = factory(quality_score=90, coverage=85.5)
         >>> assert metrics["quality_score"] == 90
         >>> assert metrics["coverage"]["percentage"] == 85.5
+
     """
 
     def factory(
@@ -324,6 +332,7 @@ def crackerjack_metrics_factory() -> t.Callable[..., dict[str, t.Any]]:
 
         Returns:
             Structured metrics dictionary.
+
         """
         return {
             "quality_score": quality_score,
@@ -366,6 +375,7 @@ def mock_crackerjack_command_result() -> dict[str, t.Any]:
 
     Returns:
         Command execution result dictionary.
+
     """
     return {
         "success": True,

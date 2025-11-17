@@ -88,7 +88,9 @@ def dangerous_function():
 
             # This should store the content safely as text
             try:
-                reflection_id = await db.store_reflection(executable_looking_content, tags)
+                reflection_id = await db.store_reflection(
+                    executable_looking_content, tags
+                )
                 retrieved = await db.get_reflection_by_id(reflection_id)
 
                 # Content should be stored exactly as provided
@@ -196,7 +198,10 @@ Unicode: ñáéíóú 中文 🚀
             project_dir = Path(temp_dir)
 
             # Mock git repository status
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session
@@ -204,7 +209,9 @@ Unicode: ñáéíóú 中文 🚀
 
                         # Verify success and check that it's secure
                         assert init_result["success"] is True
-                        assert "error" not in init_result or init_result["error"] is None
+                        assert (
+                            "error" not in init_result or init_result["error"] is None
+                        )
 
     async def test_environment_variable_injection(self):
         """Test that environment variables are handled safely."""
@@ -227,7 +234,10 @@ Unicode: ñáéíóú 中文 🚀
             assert len(results) > 0
 
             # Check that our content appears in results
-            found = any("environment test content" in result["content"].lower() for result in results)
+            found = any(
+                "environment test content" in result["content"].lower()
+                for result in results
+            )
             assert found
 
             db.close()

@@ -128,15 +128,16 @@ class SessionStorageAdapter:
 
         Example:
             >>> await storage.store_session("abc123", {"status": "active"})
-            >>> await storage.store_session("abc123", checkpoint_data, "checkpoint_001.json")
+            >>> await storage.store_session(
+            ...     "abc123", checkpoint_data, "checkpoint_001.json"
+            ... )
 
         """
         adapter = await self._ensure_adapter()
         path = self._get_session_path(session_id, filename)
 
         # Add metadata to state
-        enhanced_state = {
-            **state,
+        enhanced_state = state | {
             "_metadata": {
                 "session_id": session_id,
                 "stored_at": datetime.now().isoformat(),
@@ -182,27 +183,21 @@ class SessionStorageAdapter:
         path = self._get_session_path(session_id, filename)
 
         # Check if session exists
-        try:
+        with suppress(Exception):
+            # If exists() fails, try downloading anyway
             exists = await adapter.exists(self.bucket, path)
             if not exists:
                 return None
-        except Exception:
-            # If exists() fails, try downloading anyway
-            pass
 
         # Download from storage
         try:
             file_obj = await adapter.download(self.bucket, path)
-            # Read file content (file_obj is a BinaryIO)
-            if hasattr(file_obj, "read"):
-                data = file_obj.read()
-            else:
-                # If it's already bytes
-                data = file_obj
+            # Read file content (file_obj is a BinaryIO or bytes)
+            data = file_obj.read() if hasattr(file_obj, "read") else file_obj
 
             # Decode and parse JSON
-            state = json.loads(data.decode("utf-8"))
-            return state
+            result: dict[str, t.Any] = json.loads(data.decode("utf-8"))
+            return result
 
         except FileNotFoundError:
             return None
@@ -230,7 +225,9 @@ class SessionStorageAdapter:
         Example:
             >>> await storage.delete_session("abc123")  # Delete all files
             True
-            >>> await storage.delete_session("abc123", "checkpoint_001.json")  # Delete specific
+            >>> await storage.delete_session(
+            ...     "abc123", "checkpoint_001.json"
+            ... )  # Delete specific
             True
 
         """
@@ -273,7 +270,8 @@ class SessionStorageAdapter:
         path = self._get_session_path(session_id)
 
         try:
-            return await adapter.exists(self.bucket, path)
+            exists: bool = await adapter.exists(self.bucket, path)
+            return exists
         except Exception:
             # On any error, assume session doesn't exist
             return False
@@ -362,7 +360,7 @@ def get_default_storage_adapter() -> SessionStorageAdapter:
 
 
 __all__ = [
+    "DEFAULT_SESSION_BUCKET",
     "SessionStorageAdapter",
     "get_default_storage_adapter",
-    "DEFAULT_SESSION_BUCKET",
 ]

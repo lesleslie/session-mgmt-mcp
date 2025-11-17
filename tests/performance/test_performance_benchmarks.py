@@ -29,7 +29,9 @@ class TestPerformanceBenchmarks:
 
                 # Store 100 reflections
                 for i in range(100):
-                    content = f"Test reflection content {i} " * 10  # Make content longer
+                    content = (
+                        f"Test reflection content {i} " * 10
+                    )  # Make content longer
                     tags = [f"tag_{i % 10}" for i in range(3)]  # Up to 3 tags
                     await db.store_reflection(content, tags)
 
@@ -39,6 +41,7 @@ class TestPerformanceBenchmarks:
                 # Try to clean up even if the test failed
                 try:
                     import os
+
                     os.remove(db_path)
                 except:
                     pass
@@ -81,9 +84,9 @@ class TestPerformanceBenchmarks:
                     )
 
                     # Assert reasonable performance (adjust thresholds as needed)
-                    assert (
-                        search_duration < 5.0
-                    ), f"Search with {size} items took too long: {search_duration:.4f}s"
+                    assert search_duration < 5.0, (
+                        f"Search with {size} items took too long: {search_duration:.4f}s"
+                    )
 
                 db.close()
 
@@ -91,6 +94,7 @@ class TestPerformanceBenchmarks:
                 # Try to clean up even if the test failed
                 try:
                     import os
+
                     os.remove(db_path)
                 except:
                     pass
@@ -111,7 +115,7 @@ class TestPerformanceBenchmarks:
             start_time = perf_counter()
             for i in range(500):  # 500 reflections
                 content = f"Large dataset test content {i} " + "lorem ipsum " * 20
-                tags = [f"large_dataset", f"tag_{i % 20}"]
+                tags = ["large_dataset", f"tag_{i % 20}"]
                 await db.store_reflection(content, tags)
             insert_time = perf_counter() - start_time
 
@@ -123,7 +127,9 @@ class TestPerformanceBenchmarks:
             results = await db.similarity_search("lorem ipsum", limit=10)
             search_time = perf_counter() - search_start
 
-            print(f"Searched 500 reflections in {search_time:.4f}s, got {len(results)} results")
+            print(
+                f"Searched 500 reflections in {search_time:.4f}s, got {len(results)} results"
+            )
             assert search_time < 5.0, f"Search took too long: {search_time:.4f}s"
 
             db.close()
@@ -132,6 +138,7 @@ class TestPerformanceBenchmarks:
             # Try to clean up even if the test failed
             try:
                 import os
+
                 os.remove(db_path)
             except:
                 pass
@@ -150,7 +157,7 @@ class TestPerformanceBenchmarks:
                 # Each task will perform several operations
                 for i in range(10):
                     content = f"Concurrent task {task_id} item {i}"
-                    tags = [f"concurrent", f"task_{task_id}"]
+                    tags = ["concurrent", f"task_{task_id}"]
                     await db.store_reflection(content, tags)
                     results = await db.similarity_search(content, limit=1)
                     # Verify we can retrieve what we stored
@@ -164,9 +171,9 @@ class TestPerformanceBenchmarks:
 
             print(f"Completed 50 concurrent operations in {concurrent_time:.4f}s")
             # This may take longer due to resource contention, but shouldn't be excessive
-            assert (
-                concurrent_time < 60.0
-            ), f"Concurrent operations took too long: {concurrent_time:.4f}s"
+            assert concurrent_time < 60.0, (
+                f"Concurrent operations took too long: {concurrent_time:.4f}s"
+            )
 
             db.close()
 
@@ -174,6 +181,7 @@ class TestPerformanceBenchmarks:
             # Try to clean up even if the test failed
             try:
                 import os
+
                 os.remove(db_path)
             except:
                 pass
@@ -203,13 +211,15 @@ class TestPerformanceBenchmarks:
             final_memory = process.memory_info().rss / 1024 / 1024  # MB
             memory_increase = final_memory - initial_memory
 
-            print(f"Memory usage: started at {initial_memory:.2f}MB, ended at {final_memory:.2f}MB")
+            print(
+                f"Memory usage: started at {initial_memory:.2f}MB, ended at {final_memory:.2f}MB"
+            )
             print(f"Memory increase: {memory_increase:.2f}MB")
 
             # Memory increase should be reasonable (less than 100MB for this test)
-            assert (
-                abs(memory_increase) < 100
-            ), f"Excessive memory increase: {memory_increase:.2f}MB"
+            assert abs(memory_increase) < 100, (
+                f"Excessive memory increase: {memory_increase:.2f}MB"
+            )
 
         except ImportError:
             # psutil not available, skip this test

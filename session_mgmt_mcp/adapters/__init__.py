@@ -23,16 +23,16 @@ from .storage_registry import (
 )
 
 __all__ = [
+    "DEFAULT_SESSION_BUCKET",
+    "SUPPORTED_BACKENDS",
     # Reflection adapter (Phase 2.7)
     "ReflectionDatabaseAdapter",
     # Storage adapters (Phase 1)
     "SessionStorageAdapter",
-    "get_default_storage_adapter",
-    "DEFAULT_SESSION_BUCKET",
-    # Storage registry
-    "register_storage_adapter",
-    "get_storage_adapter",
     "configure_storage_buckets",
     "get_default_session_buckets",
-    "SUPPORTED_BACKENDS",
+    "get_default_storage_adapter",
+    "get_storage_adapter",
+    # Storage registry
+    "register_storage_adapter",
 ]

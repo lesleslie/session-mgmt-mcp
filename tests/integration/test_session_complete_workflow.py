@@ -29,7 +29,10 @@ class TestSessionWorkflowIntegration:
             manager = SessionLifecycleManager()
 
             # Mock git repository check and other dependencies
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session
@@ -66,13 +69,18 @@ class TestSessionWorkflowIntegration:
             await db.initialize()
 
             # Add some initial reflections
-            await db.store_reflection("Initial reflection for testing", ["test", "initial"])
+            await db.store_reflection(
+                "Initial reflection for testing", ["test", "initial"]
+            )
             await db.store_reflection("Another reflection", ["test", "example"])
 
             # Now test the session manager with these reflections
             manager = SessionLifecycleManager()
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session
@@ -89,7 +97,9 @@ class TestSessionWorkflowIntegration:
                         assert checkpoint_result["success"] is True
 
                         # Add a reflection during the session
-                        await db.store_reflection("Added during session", ["session", "test"])
+                        await db.store_reflection(
+                            "Added during session", ["session", "test"]
+                        )
 
                         # End session
                         end_result = await manager.end_session()
@@ -109,12 +119,20 @@ class TestSessionWorkflowIntegration:
             mock_perms_manager = Mock()
             mock_perms_manager.trusted_operations = {"op1", "op2", "op3"}
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
-                        with patch("session_mgmt_mcp.server.permissions_manager", mock_perms_manager):
+                        with patch(
+                            "session_mgmt_mcp.server.permissions_manager",
+                            mock_perms_manager,
+                        ):
                             # Initialize session
-                            init_result = await manager.initialize_session(str(project_dir))
+                            init_result = await manager.initialize_session(
+                                str(project_dir)
+                            )
                             assert init_result["success"] is True
 
                             # The quality score should reflect the trusted operations count
@@ -139,7 +157,10 @@ class TestSessionWorkflowIntegration:
 
             manager = SessionLifecycleManager()
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session with project files present
@@ -168,16 +189,21 @@ class TestSessionWorkflowIntegration:
             manager1 = SessionLifecycleManager()
             manager2 = SessionLifecycleManager()
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize first session
-                        init_result1 = await manager1.initialize_session(str(project_dir))
+                        init_result1 = await manager1.initialize_session(
+                            str(project_dir)
+                        )
                         assert init_result1["success"] is True
 
                         # Initialize second session in the same directory
                         # This should work but may have different behavior depending on implementation
-                        init_result2 = await manager2.initialize_session(str(project_dir))
+                        await manager2.initialize_session(str(project_dir))
                         # Depending on implementation, this might succeed or fail appropriately
 
                         # Perform operations on first session
@@ -204,7 +230,7 @@ class TestSessionWorkflowIntegration:
                 "DuckDB vector search implementation",
                 "MCP server best practices",
                 "FastAPI async testing strategies",
-                "Quality score calculation methods"
+                "Quality score calculation methods",
             ]
 
             for i, content in enumerate(search_contents):
@@ -212,7 +238,10 @@ class TestSessionWorkflowIntegration:
 
             manager = SessionLifecycleManager()
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session
@@ -220,7 +249,9 @@ class TestSessionWorkflowIntegration:
                         assert init_result["success"] is True
 
                         # Simulate operations that might use search
-                        results = await db.similarity_search("async programming", limit=10)
+                        results = await db.similarity_search(
+                            "async programming", limit=10
+                        )
                         assert len(results) > 0
 
                         # Checkpoint and end session
@@ -239,15 +270,26 @@ class TestSessionWorkflowIntegration:
 
             # Initialize a git repository in the temp directory
             import subprocess
-            subprocess.run(["git", "init"], cwd=project_dir, check=True, capture_output=True)
-            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=project_dir, check=True)
-            subprocess.run(["git", "config", "user.name", "Test User"], cwd=project_dir, check=True)
+
+            subprocess.run(
+                ["git", "init"], cwd=project_dir, check=True, capture_output=True
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=project_dir,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test User"], cwd=project_dir, check=True
+            )
 
             # Create a file and commit it
             test_file = project_dir / "test.txt"
             test_file.write_text("Initial commit")
             subprocess.run(["git", "add", "test.txt"], cwd=project_dir, check=True)
-            subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=project_dir, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "Initial commit"], cwd=project_dir, check=True
+            )
 
             manager = SessionLifecycleManager()
 
@@ -275,7 +317,10 @@ class TestSessionWorkflowIntegration:
 
             manager = SessionLifecycleManager()
 
-            with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+            with patch(
+                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                return_value=True,
+            ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         # Initialize session normally
@@ -284,14 +329,19 @@ class TestSessionWorkflowIntegration:
 
                         # Mock one operation to fail
                         original_method = manager.perform_quality_assessment
+
                         async def failing_quality_assessment():
-                            raise Exception("Simulated failure")
+                            msg = "Simulated failure"
+                            raise Exception(msg)
 
                         # Replace temporarily
                         manager.perform_quality_assessment = failing_quality_assessment
 
                         # This checkpoint should fail
-                        with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=True):
+                        with patch(
+                            "session_mgmt_mcp.core.session_manager.is_git_repository",
+                            return_value=True,
+                        ):
                             checkpoint_result = await manager.checkpoint_session()
                             assert checkpoint_result["success"] is False
                             assert "error" in checkpoint_result

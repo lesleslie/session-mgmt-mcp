@@ -330,9 +330,17 @@ def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
         following ACB's type-based dependency injection pattern.
 
     """
-    # Import deferred to avoid circular dependency at module load time
-    # SessionPermissionsManager will be imported when needed
-    # Registration happens lazily when first accessed
+    from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+
+    if not force:
+        with suppress(Exception):  # Catch all DI resolution errors
+            existing = depends.get_sync(SessionPermissionsManager)
+            if isinstance(existing, SessionPermissionsManager):
+                return
+
+    # Create and register permissions manager instance
+    permissions_manager = SessionPermissionsManager(claude_dir)
+    depends.set(SessionPermissionsManager, permissions_manager)
 
 
 def _register_lifecycle_manager(force: bool) -> None:

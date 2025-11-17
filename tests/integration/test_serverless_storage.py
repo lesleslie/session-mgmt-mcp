@@ -12,7 +12,6 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from session_mgmt_mcp.adapters.serverless_storage_adapter import (
     ServerlessStorageAdapter,
     create_serverless_storage,
@@ -266,7 +265,9 @@ class TestServerlessStorageAdapterOperations:
     ):
         """Test storage availability check success."""
         mock_session_storage_adapter.store_session = AsyncMock()
-        mock_session_storage_adapter.load_session = AsyncMock(return_value={"test": True})
+        mock_session_storage_adapter.load_session = AsyncMock(
+            return_value={"test": True}
+        )
         mock_session_storage_adapter.delete_session = AsyncMock(return_value=True)
 
         is_available = await adapter_with_mock.is_available()

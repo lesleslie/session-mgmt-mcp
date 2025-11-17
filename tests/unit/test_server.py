@@ -24,6 +24,7 @@ class TestServerInitialization:
         """Test that server module imports successfully."""
         try:
             import session_mgmt_mcp.server
+
             assert session_mgmt_mcp.server is not None
         except ImportError as e:
             pytest.skip(f"Server module import failed: {e}")
@@ -32,11 +33,11 @@ class TestServerInitialization:
         """Test that token optimizer has fallback implementations."""
         try:
             from session_mgmt_mcp.server import (
+                get_cached_chunk,
+                get_token_usage_stats,
                 optimize_memory_usage,
                 optimize_search_response,
                 track_token_usage,
-                get_cached_chunk,
-                get_token_usage_stats,
             )
 
             # Functions should exist (either from token_optimizer or as fallbacks)
@@ -52,6 +53,7 @@ class TestServerInitialization:
         """Test that session logger is properly configured."""
         try:
             from session_mgmt_mcp.server import session_logger
+
             assert session_logger is not None
         except ImportError:
             pytest.skip("Session logger not available")
@@ -65,6 +67,7 @@ class TestServerHealthChecks:
         """Test that health_check function is defined."""
         try:
             from session_mgmt_mcp.server import health_check
+
             assert callable(health_check)
         except ImportError:
             pytest.skip("health_check function not available")
@@ -73,6 +76,7 @@ class TestServerHealthChecks:
         """Test that health_check returns a dictionary."""
         try:
             from session_mgmt_mcp.server import health_check
+
             # Mock the logger to avoid DI container issues
             with patch("session_mgmt_mcp.server.session_logger") as mock_logger:
                 mock_logger.info = MagicMock()
@@ -85,6 +89,7 @@ class TestServerHealthChecks:
         """Test that health check response includes status information."""
         try:
             from session_mgmt_mcp.server import health_check
+
             with patch("session_mgmt_mcp.server.session_logger") as mock_logger:
                 mock_logger.info = MagicMock()
                 result = await health_check()
@@ -102,6 +107,7 @@ class TestServerQualityScoring:
         """Test that quality score calculation function exists."""
         try:
             from session_mgmt_mcp.server import calculate_quality_score
+
             assert callable(calculate_quality_score)
         except ImportError:
             pytest.skip("calculate_quality_score not available")
@@ -110,6 +116,7 @@ class TestServerQualityScoring:
         """Test quality score calculation with default arguments."""
         try:
             from session_mgmt_mcp.server import calculate_quality_score
+
             result = await calculate_quality_score()
             assert isinstance(result, dict)
         except ImportError:
@@ -119,6 +126,7 @@ class TestServerQualityScoring:
         """Test quality score calculation with specific directory."""
         try:
             from session_mgmt_mcp.server import calculate_quality_score
+
             with tempfile.TemporaryDirectory() as tmpdir:
                 result = await calculate_quality_score(project_dir=Path(tmpdir))
                 assert isinstance(result, dict)
@@ -129,6 +137,7 @@ class TestServerQualityScoring:
         """Test that quality score result contains numeric values."""
         try:
             from session_mgmt_mcp.server import calculate_quality_score
+
             result = await calculate_quality_score()
             # Should have numeric values representing quality metrics
             assert any(isinstance(v, (int, float)) for v in result.values())
@@ -144,6 +153,7 @@ class TestServerReflectionFunctions:
         """Test that reflect_on_past function exists."""
         try:
             from session_mgmt_mcp.server import reflect_on_past
+
             assert callable(reflect_on_past)
         except ImportError:
             pytest.skip("reflect_on_past not available")
@@ -152,6 +162,7 @@ class TestServerReflectionFunctions:
         """Test reflect_on_past with a query string."""
         try:
             from session_mgmt_mcp.server import reflect_on_past
+
             # Mock the database to avoid external dependencies
             with patch("session_mgmt_mcp.server.depends") as mock_depends:
                 # Create a mock database
@@ -174,6 +185,7 @@ class TestServerOptimization:
         """Test that memory optimization function is callable."""
         try:
             from session_mgmt_mcp.server import optimize_memory_usage
+
             assert callable(optimize_memory_usage)
         except ImportError:
             pytest.skip("optimize_memory_usage not available")
@@ -182,6 +194,7 @@ class TestServerOptimization:
         """Test that memory optimization returns a string result."""
         try:
             from session_mgmt_mcp.server import optimize_memory_usage
+
             result = await optimize_memory_usage(dry_run=True)
             assert isinstance(result, str)
         except ImportError:
@@ -191,6 +204,7 @@ class TestServerOptimization:
         """Test that search response optimization is callable."""
         try:
             from session_mgmt_mcp.server import optimize_search_response
+
             assert callable(optimize_search_response)
         except ImportError:
             pytest.skip("optimize_search_response not available")
@@ -199,6 +213,7 @@ class TestServerOptimization:
         """Test search response optimization with sample results."""
         try:
             from session_mgmt_mcp.server import optimize_search_response
+
             sample_results = [
                 {"id": "1", "content": "Result 1"},
                 {"id": "2", "content": "Result 2"},
@@ -220,6 +235,7 @@ class TestServerTokenTracking:
         """Test that token tracking function is callable."""
         try:
             from session_mgmt_mcp.server import track_token_usage
+
             assert callable(track_token_usage)
         except ImportError:
             pytest.skip("track_token_usage not available")
@@ -228,6 +244,7 @@ class TestServerTokenTracking:
         """Test token tracking with operation parameters."""
         try:
             from session_mgmt_mcp.server import track_token_usage
+
             result = await track_token_usage(
                 operation="test_operation",
                 request_tokens=100,
@@ -242,6 +259,7 @@ class TestServerTokenTracking:
         """Test that token usage stats function is callable."""
         try:
             from session_mgmt_mcp.server import get_token_usage_stats
+
             assert callable(get_token_usage_stats)
         except ImportError:
             pytest.skip("get_token_usage_stats not available")
@@ -250,6 +268,7 @@ class TestServerTokenTracking:
         """Test that token usage stats returns a dictionary."""
         try:
             from session_mgmt_mcp.server import get_token_usage_stats
+
             result = await get_token_usage_stats(hours=24)
             assert isinstance(result, dict)
         except ImportError:
@@ -264,6 +283,7 @@ class TestServerCaching:
         """Test that cache retrieval function is callable."""
         try:
             from session_mgmt_mcp.server import get_cached_chunk
+
             assert callable(get_cached_chunk)
         except ImportError:
             pytest.skip("get_cached_chunk not available")
@@ -272,6 +292,7 @@ class TestServerCaching:
         """Test retrieving non-existent cache entry."""
         try:
             from session_mgmt_mcp.server import get_cached_chunk
+
             result = await get_cached_chunk(
                 cache_key="nonexistent_key",
                 chunk_index=0,
@@ -290,6 +311,7 @@ class TestServerErrorHandling:
         """Test that health check handles errors gracefully."""
         try:
             from session_mgmt_mcp.server import health_check
+
             # Mock a potential error condition
             with patch("session_mgmt_mcp.server.session_logger") as mock_logger:
                 mock_logger.info = MagicMock()
@@ -303,6 +325,7 @@ class TestServerErrorHandling:
         """Test quality scoring with invalid directory."""
         try:
             from session_mgmt_mcp.server import calculate_quality_score
+
             # Should handle invalid paths gracefully
             invalid_path = Path("/nonexistent/path/that/does/not/exist")
             result = await calculate_quality_score(project_dir=invalid_path)
@@ -361,6 +384,7 @@ class TestServerMain:
         """Test that main function is defined."""
         try:
             from session_mgmt_mcp.server import main
+
             assert callable(main)
         except ImportError:
             pytest.skip("main function not available")
@@ -368,8 +392,9 @@ class TestServerMain:
     def test_main_function_signature(self):
         """Test main function accepts http parameters."""
         try:
-            from session_mgmt_mcp.server import main
             import inspect
+
+            from session_mgmt_mcp.server import main
 
             sig = inspect.signature(main)
             # Should accept http_mode and http_port parameters
@@ -408,32 +433,39 @@ class TestServerHelperFunctions:
 
     def test_build_feature_list_conditional_security(self):
         """Should conditionally include security features based on availability."""
-        from session_mgmt_mcp.server import _build_feature_list, SECURITY_AVAILABLE
+        from session_mgmt_mcp.server import SECURITY_AVAILABLE, _build_feature_list
 
         features = _build_feature_list()
 
         # Security features should only appear if SECURITY_AVAILABLE is True
         has_security_feature = any("API Key Validation" in f for f in features)
         if SECURITY_AVAILABLE:
-            assert has_security_feature, "Security feature should be present when SECURITY_AVAILABLE=True"
+            assert has_security_feature, (
+                "Security feature should be present when SECURITY_AVAILABLE=True"
+            )
         else:
             # May or may not be present depending on actual availability
             pass
 
     def test_build_feature_list_conditional_rate_limiting(self):
         """Should conditionally include rate limiting based on availability."""
-        from session_mgmt_mcp.server import _build_feature_list, RATE_LIMITING_AVAILABLE
+        from session_mgmt_mcp.server import RATE_LIMITING_AVAILABLE, _build_feature_list
 
         features = _build_feature_list()
 
         # Rate limiting should only appear if RATE_LIMITING_AVAILABLE is True
         has_rate_limit_feature = any("Rate Limiting" in f for f in features)
         if RATE_LIMITING_AVAILABLE:
-            assert has_rate_limit_feature, "Rate limiting feature should be present when RATE_LIMITING_AVAILABLE=True"
+            assert has_rate_limit_feature, (
+                "Rate limiting feature should be present when RATE_LIMITING_AVAILABLE=True"
+            )
 
     def test_display_http_startup_with_serverpanels(self):
         """Should use ServerPanels when available."""
-        from session_mgmt_mcp.server import _display_http_startup, SERVERPANELS_AVAILABLE
+        from session_mgmt_mcp.server import (
+            SERVERPANELS_AVAILABLE,
+            _display_http_startup,
+        )
 
         if not SERVERPANELS_AVAILABLE:
             pytest.skip("ServerPanels not available")
@@ -471,7 +503,10 @@ class TestServerHelperFunctions:
 
     def test_display_http_startup_with_custom_port(self):
         """Should display correct port in endpoint URL."""
-        from session_mgmt_mcp.server import _display_http_startup, SERVERPANELS_AVAILABLE
+        from session_mgmt_mcp.server import (
+            SERVERPANELS_AVAILABLE,
+            _display_http_startup,
+        )
 
         if not SERVERPANELS_AVAILABLE:
             pytest.skip("ServerPanels not available")
@@ -486,7 +521,10 @@ class TestServerHelperFunctions:
 
     def test_display_stdio_startup_with_serverpanels(self):
         """Should use ServerPanels for STDIO mode when available."""
-        from session_mgmt_mcp.server import _display_stdio_startup, SERVERPANELS_AVAILABLE
+        from session_mgmt_mcp.server import (
+            SERVERPANELS_AVAILABLE,
+            _display_stdio_startup,
+        )
 
         if not SERVERPANELS_AVAILABLE:
             pytest.skip("ServerPanels not available")
@@ -522,7 +560,10 @@ class TestServerHelperFunctions:
 
     def test_display_stdio_startup_with_empty_features(self):
         """Should handle empty feature list gracefully."""
-        from session_mgmt_mcp.server import _display_stdio_startup, SERVERPANELS_AVAILABLE
+        from session_mgmt_mcp.server import (
+            SERVERPANELS_AVAILABLE,
+            _display_stdio_startup,
+        )
 
         if not SERVERPANELS_AVAILABLE:
             pytest.skip("ServerPanels not available")

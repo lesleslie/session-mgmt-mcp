@@ -9,15 +9,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from session_mgmt_mcp.utils.logging_utils import SessionLogger
 
 
 @pytest.fixture
 def temp_log_dir(tmp_path: Path) -> Path:
     """Create temporary log directory for testing."""
-    log_dir = tmp_path / "logs"
-    return log_dir
+    return tmp_path / "logs"
 
 
 @pytest.fixture
@@ -32,7 +30,7 @@ class TestSessionLoggerInitialization:
     def test_creates_log_directory(self, temp_log_dir: Path) -> None:
         """Test that log directory is created."""
         assert not temp_log_dir.exists()
-        logger = SessionLogger(temp_log_dir)
+        SessionLogger(temp_log_dir)
         assert temp_log_dir.exists()
         assert temp_log_dir.is_dir()
 

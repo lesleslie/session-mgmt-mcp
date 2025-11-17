@@ -9,12 +9,14 @@ Phase: Week 6 Day 2 - Security Testing
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-
 from session_mgmt_mcp.server_core import SessionPermissionsManager
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture(autouse=True)
@@ -47,7 +49,9 @@ class TestInitializationAndSessionID:
         assert manager1 is manager2
         assert manager1.session_id == manager2.session_id
 
-    def test_session_id_generation(self, permissions_manager: SessionPermissionsManager) -> None:
+    def test_session_id_generation(
+        self, permissions_manager: SessionPermissionsManager
+    ) -> None:
         """Should generate unique session ID."""
         session_id = permissions_manager.session_id
 
@@ -68,7 +72,9 @@ class TestInitializationAndSessionID:
 
         assert session_id1 == session_id2
 
-    def test_permissions_file_creation(self, permissions_manager: SessionPermissionsManager) -> None:
+    def test_permissions_file_creation(
+        self, permissions_manager: SessionPermissionsManager
+    ) -> None:
         """Should create permissions directory structure."""
         permissions_file = permissions_manager.permissions_file
 
@@ -265,7 +271,9 @@ class TestAuditCapabilities:
 class TestPersistenceAndLoading:
     """Test persistence across manager instances."""
 
-    def test_load_permissions_from_existing_file(self, temp_permissions_dir: Path) -> None:
+    def test_load_permissions_from_existing_file(
+        self, temp_permissions_dir: Path
+    ) -> None:
         """Should load previously saved permissions."""
         # Ensure .claude directory exists
         temp_permissions_dir.mkdir(parents=True, exist_ok=True)
@@ -297,7 +305,9 @@ class TestPersistenceAndLoading:
         SessionPermissionsManager.reset_singleton()
 
         # Create permissions file with invalid JSON
-        permissions_file = temp_permissions_dir / "sessions" / "trusted_permissions.json"
+        permissions_file = (
+            temp_permissions_dir / "sessions" / "trusted_permissions.json"
+        )
         permissions_file.parent.mkdir(parents=True, exist_ok=True)
         permissions_file.write_text("{ invalid json ]")
 
@@ -316,7 +326,9 @@ class TestPersistenceAndLoading:
 
         # Ensure parent .claude directory exists but no permissions file
         temp_permissions_dir.mkdir(parents=True, exist_ok=True)
-        permissions_file = temp_permissions_dir / "sessions" / "trusted_permissions.json"
+        permissions_file = (
+            temp_permissions_dir / "sessions" / "trusted_permissions.json"
+        )
         if permissions_file.exists():
             permissions_file.unlink()
 
@@ -379,7 +391,9 @@ class TestSecurityBoundaries:
 class TestConcurrencyAndThreadSafety:
     """Test thread safety considerations."""
 
-    def test_singleton_thread_safety_structure(self, temp_permissions_dir: Path) -> None:
+    def test_singleton_thread_safety_structure(
+        self, temp_permissions_dir: Path
+    ) -> None:
         """Should use class-level variables for thread safety."""
         # Verify singleton uses class-level state
         assert hasattr(SessionPermissionsManager, "_instance")

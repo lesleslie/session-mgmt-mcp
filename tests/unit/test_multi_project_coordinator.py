@@ -225,7 +225,16 @@ class TestCachingBehavior:
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
-        mock_groups = [("group-1", "Test Group", "Desc", ["proj-a", "proj-b"], datetime.now(), "{}")]
+        mock_groups = [
+            (
+                "group-1",
+                "Test Group",
+                "Desc",
+                ["proj-a", "proj-b"],
+                datetime.now(),
+                "{}",
+            )
+        ]
         mock_db.conn.execute = MagicMock(
             return_value=MagicMock(fetchall=MagicMock(return_value=mock_groups))
         )
@@ -369,7 +378,9 @@ class TestInsightsAndAnalytics:
 
         coordinator = MultiProjectCoordinator(mock_db)
 
-        insights = await coordinator.get_cross_project_insights(projects=["proj-a", "proj-b"])
+        insights = await coordinator.get_cross_project_insights(
+            projects=["proj-a", "proj-b"]
+        )
 
         assert isinstance(insights, dict)
         assert "project_activity" in insights
@@ -401,7 +412,9 @@ class TestInsightsAndAnalytics:
 
         coordinator = MultiProjectCoordinator(mock_db)
 
-        insights = await coordinator.get_cross_project_insights(projects=["proj-a", "proj-b"])
+        insights = await coordinator.get_cross_project_insights(
+            projects=["proj-a", "proj-b"]
+        )
 
         # Should identify common patterns like "authentication"
         assert isinstance(insights, dict)
@@ -431,7 +444,9 @@ class TestInsightsAndAnalytics:
 
         coordinator = MultiProjectCoordinator(mock_db)
 
-        insights = await coordinator.get_cross_project_insights(projects=["proj-a", "proj-b"])
+        insights = await coordinator.get_cross_project_insights(
+            projects=["proj-a", "proj-b"]
+        )
 
         # Should include collaboration_opportunities field
         assert isinstance(insights, dict)

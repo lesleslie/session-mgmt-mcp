@@ -1,9 +1,13 @@
 """Integration tests for crackerjack:run workflow."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from session_mgmt_mcp.tools.agent_analyzer import AgentAnalyzer, AgentType
-from session_mgmt_mcp.tools.quality_metrics import QualityMetricsExtractor, QualityMetrics
+from session_mgmt_mcp.tools.quality_metrics import (
+    QualityMetrics,
+    QualityMetricsExtractor,
+)
 from session_mgmt_mcp.tools.recommendation_engine import RecommendationEngine
 
 
@@ -182,6 +186,7 @@ class TestEndToEndWorkflow:
         # Results should be valid dicts (may be coroutines if caching is broken, but test should still work)
         # Ensure results are awaitable if they're coroutines
         import inspect
+
         if inspect.iscoroutine(result1):
             result1 = await result1
         if inspect.iscoroutine(result2):
@@ -190,18 +195,30 @@ class TestEndToEndWorkflow:
         # Results can be None if cache implementation is incomplete
         # But if they're not None, they should be dicts
         if result1 is not None:
-            assert isinstance(result1, dict), f"result1 should be dict or None, got {type(result1)}"
+            assert isinstance(result1, dict), (
+                f"result1 should be dict or None, got {type(result1)}"
+            )
 
         if result2 is not None:
-            assert isinstance(result2, dict), f"result2 should be dict or None, got {type(result2)}"
+            assert isinstance(result2, dict), (
+                f"result2 should be dict or None, got {type(result2)}"
+            )
 
         # Both should have some analysis results, if not None
         # Patterns may be empty list or dict, not None
         if result1 is not None:
-            assert "patterns" in result1 or "agent_effectiveness" in result1 or len(result1) > 0, f"result1 keys: {result1.keys()}"
+            assert (
+                "patterns" in result1
+                or "agent_effectiveness" in result1
+                or len(result1) > 0
+            ), f"result1 keys: {result1.keys()}"
 
         if result2 is not None:
-            assert "patterns" in result2 or "agent_effectiveness" in result2 or len(result2) > 0, f"result2 keys: {result2.keys()}"
+            assert (
+                "patterns" in result2
+                or "agent_effectiveness" in result2
+                or len(result2) > 0
+            ), f"result2 keys: {result2.keys()}"
 
         # Test passes as long as no exceptions are raised (caching doesn't cause errors)
 

@@ -5,15 +5,16 @@ from __future__ import annotations
 import os
 import sys
 import types
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-
 from acb.depends import depends
-
-from session_mgmt_mcp.di import configure, reset as reset_di
+from session_mgmt_mcp.di import configure
+from session_mgmt_mcp.di import reset as reset_di
 from session_mgmt_mcp.utils import instance_managers
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture(autouse=True)
@@ -39,7 +40,9 @@ async def test_get_app_monitor_registers_singleton(
             self.project_paths = project_paths
             self.started = False
 
-        async def start_monitoring(self, project_paths: list[str] | None = None) -> None:
+        async def start_monitoring(
+            self, project_paths: list[str] | None = None
+        ) -> None:
             self.started = True
 
     module.ApplicationMonitor = DummyMonitor  # type: ignore[attr-defined]
@@ -49,6 +52,7 @@ async def test_get_app_monitor_registers_singleton(
     monkeypatch.setenv("HOME", str(tmp_path))
     os.chdir(tmp_path)
     from session_mgmt_mcp.server_core import SessionPermissionsManager
+
     SessionPermissionsManager.reset_singleton()
     configure(force=True)
 
@@ -80,6 +84,7 @@ async def test_get_llm_manager_uses_di_cache(
     # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
     from session_mgmt_mcp.server_core import SessionPermissionsManager
+
     SessionPermissionsManager.reset_singleton()
     configure(force=True)
 
@@ -92,7 +97,9 @@ async def test_get_llm_manager_uses_di_cache(
 
 
 @pytest.mark.asyncio
-async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_serverless_manager_uses_config(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Serverless manager resolves through DI and respects config loading."""
     module = types.ModuleType("session_mgmt_mcp.serverless_mode")
     module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.serverless_mode")  # type: ignore[attr-defined]
@@ -118,7 +125,11 @@ async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, t
             self.backend = backend
 
         async def create_session(
-            self, user_id: str, project_id: str, session_data: dict[str, Any] | None, ttl_hours: int
+            self,
+            user_id: str,
+            project_id: str,
+            session_data: dict[str, Any] | None,
+            ttl_hours: int,
         ) -> str:
             return "session-id"
 
@@ -129,6 +140,7 @@ async def test_serverless_manager_uses_config(monkeypatch: pytest.MonkeyPatch, t
     # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
     from session_mgmt_mcp.server_core import SessionPermissionsManager
+
     SessionPermissionsManager.reset_singleton()
     configure(force=True)
 

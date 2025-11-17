@@ -187,7 +187,9 @@ class TestAnalyzeProjectContext:
             from session_mgmt_mcp.server_core import analyze_project_context
 
             # Mock the .exists() check to raise PermissionError
-            with patch.object(Path, "exists", side_effect=PermissionError("Access denied")):
+            with patch.object(
+                Path, "exists", side_effect=PermissionError("Access denied")
+            ):
                 result = await analyze_project_context(test_dir)
 
             # Should return safe defaults
@@ -261,7 +263,9 @@ class TestFormatConversationSummary:
     @pytest.mark.asyncio
     async def test_format_empty_conversation(self) -> None:
         """Should handle empty conversation history."""
-        with patch("session_mgmt_mcp.reflection_tools.get_reflection_database") as mock_db:
+        with patch(
+            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+        ) as mock_db:
             mock_reflection = MagicMock()
             mock_reflection.search_conversations.return_value = []
             mock_db.return_value = mock_reflection
@@ -277,7 +281,9 @@ class TestFormatConversationSummary:
     @pytest.mark.asyncio
     async def test_format_conversation_with_results(self) -> None:
         """Should format conversation results."""
-        with patch("session_mgmt_mcp.reflection_tools.get_reflection_database") as mock_db:
+        with patch(
+            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+        ) as mock_db:
             # Mock conversation results
             mock_reflection = MagicMock()
             mock_reflection.search_conversations.return_value = [
@@ -294,12 +300,17 @@ class TestFormatConversationSummary:
             assert len(summary) > 0
             # Should contain session or conversation content
             summary_text = " ".join(summary)
-            assert "session" in summary_text.lower() or "conversation" in summary_text.lower()
+            assert (
+                "session" in summary_text.lower()
+                or "conversation" in summary_text.lower()
+            )
 
     @pytest.mark.asyncio
     async def test_format_conversation_database_unavailable(self) -> None:
         """Should handle missing reflection database."""
-        with patch("session_mgmt_mcp.reflection_tools.get_reflection_database") as mock_db:
+        with patch(
+            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+        ) as mock_db:
             # Mock database import error
             mock_db.side_effect = ImportError("Database not available")
 

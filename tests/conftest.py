@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import duckdb
 import numpy as np
 import pytest
+from acb.depends import depends
 from fastmcp import FastMCP
 # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
 from session_mgmt_mcp.adapters.reflection_adapter import (
@@ -22,7 +23,6 @@ from session_mgmt_mcp.adapters.reflection_adapter import (
 # Configure DI container BEFORE any other imports
 # This ensures SessionLogger and other dependencies are available
 from session_mgmt_mcp.di import configure as configure_di
-from acb.depends import depends
 
 # Initialize DI container for tests - force registration to bypass async checks
 try:
@@ -30,7 +30,8 @@ try:
 except Exception as e:
     # If DI configuration fails during import, we'll retry in the fixture
     import warnings
-    warnings.warn(f"DI configuration failed during conftest import: {e}")
+
+    warnings.warn(f"DI configuration failed during conftest import: {e}", stacklevel=2)
 
 
 # =====================================
@@ -72,7 +73,7 @@ class MockFastMCP:
 
     def run(self, *args: Any, **kwargs: Any) -> None:
         """Mock run method."""
-        pass
+
 
 # Import test factories for enhanced test data generation
 # Note: After Phase 2.7 cleanup, only actively-used factories are imported
@@ -117,12 +118,13 @@ def temp_test_dir(temp_base_dir: Path) -> Generator[Path]:
     """Function-scoped test directory within session temp dir."""
     test_dir = temp_base_dir / f"test_{id(temp_base_dir)}"
     test_dir.mkdir(parents=True, exist_ok=True)
-    yield test_dir
+    return test_dir
 
 
 @pytest.fixture(scope="session")
 def mock_logger_factory():
     """Factory for creating mock loggers - session scoped for reuse."""
+
     def create_mock_logger(**kwargs) -> Mock:
         logger = Mock()
         logger.info = Mock()
@@ -133,6 +135,7 @@ def mock_logger_factory():
         for key, value in kwargs.items():
             setattr(logger, key, value)
         return logger
+
     return create_mock_logger
 
 
@@ -142,10 +145,8 @@ async def fast_temp_db() -> AsyncGenerator[ReflectionDatabase]:
     db = ReflectionDatabase(db_path=":memory:")
     await db.initialize()
     yield db
-    try:
+    with suppress(Exception):
         db.close()
-    except Exception:
-        pass
 
 
 @pytest.fixture
@@ -159,6 +160,7 @@ async def db_with_sample_data(fast_temp_db: ReflectionDatabase) -> ReflectionDat
 @pytest.fixture(scope="session")
 def mock_git_repo_factory():
     """Factory for creating mock git repository structures."""
+
     def create_mock_git_repo(path: Path, **kwargs):
         git_dir = path / ".git"
         git_dir.mkdir(parents=True, exist_ok=True)
@@ -167,12 +169,14 @@ def mock_git_repo_factory():
         refs_dir.mkdir(parents=True, exist_ok=True)
         (refs_dir / "main").write_text("0" * 40 + "\n")
         return git_dir
+
     return create_mock_git_repo
 
 
 @pytest.fixture(scope="session")
 def mock_project_factory():
     """Factory for creating mock project structures."""
+
     def create_mock_project(path: Path, features: dict[str, bool]):
         if features.get("has_pyproject_toml"):
             (path / "pyproject.toml").write_text('[project]\nname = "test"\n')
@@ -191,6 +195,7 @@ def mock_project_factory():
             docs_dir.mkdir(exist_ok=True)
             (docs_dir / "index.md").write_text("# Docs\n")
         return path
+
     return create_mock_project
 
 
@@ -707,6 +712,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture
 async def session_permissions():
     """Provide mock session permissions for testing."""
+
     class MockSessionPermissions:
         def __init__(self):
             self.trusted_operations = set()

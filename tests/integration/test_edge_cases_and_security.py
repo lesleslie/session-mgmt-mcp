@@ -48,9 +48,7 @@ class TestInvalidInputHandling:
 
             # Should handle gracefully or raise appropriate error
             try:
-                result = await manager.initialize_session(
-                    working_directory=nonexistent
-                )
+                result = await manager.initialize_session(working_directory=nonexistent)
                 # If it succeeds, directory should be created
                 assert isinstance(result, dict)
             except (FileNotFoundError, OSError):
@@ -76,7 +74,7 @@ class TestInvalidInputHandling:
 
                 # Should handle gracefully
                 try:
-                    score, data = await manager.perform_quality_assessment(tmppath)
+                    score, _data = await manager.perform_quality_assessment(tmppath)
                     # Should return default score on error
                     assert isinstance(score, int)
                     assert score >= 0
@@ -147,7 +145,7 @@ class TestResourceConstraints:
                 manager = SessionLifecycleManager()
 
                 # Should handle large project
-                score, data = await manager.perform_quality_assessment(tmppath)
+                score, _data = await manager.perform_quality_assessment(tmppath)
                 assert isinstance(score, int)
                 assert 0 <= score <= 100
 

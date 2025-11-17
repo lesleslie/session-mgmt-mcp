@@ -86,7 +86,9 @@ class TestTokenOptimizerPerformance:
         assert info["strategy"] == "truncate_old"
 
     @pytest.mark.asyncio
-    async def test_summarization_strategy_performance(self, large_conversations_dataset):
+    async def test_summarization_strategy_performance(
+        self, large_conversations_dataset
+    ):
         """Test performance of summarization strategy."""
         optimizer = TokenOptimizer()
 
@@ -94,7 +96,9 @@ class TestTokenOptimizerPerformance:
         subset = large_conversations_dataset[:100]
 
         start_time = time.time()
-        optimized, info = await optimizer._summarize_long_content(subset, max_tokens=10000)
+        optimized, info = await optimizer._summarize_long_content(
+            subset, max_tokens=10000
+        )
         end_time = time.time()
 
         duration = end_time - start_time
@@ -105,7 +109,9 @@ class TestTokenOptimizerPerformance:
         assert info["strategy"] == "summarize_content"
 
     @pytest.mark.asyncio
-    async def test_prioritization_strategy_performance(self, large_conversations_dataset):
+    async def test_prioritization_strategy_performance(
+        self, large_conversations_dataset
+    ):
         """Test performance of prioritization strategy."""
         optimizer = TokenOptimizer()
 
@@ -161,7 +167,7 @@ class TestTokenOptimizerPerformance:
         optimizer = TokenOptimizer(chunk_size=1000)
 
         start_time = time.time()
-        optimized, info = await optimizer._chunk_large_response(
+        _optimized, info = await optimizer._chunk_large_response(
             large_conversations_dataset,
             max_tokens=2000,
         )
@@ -290,7 +296,7 @@ class TestMemoryUsageOptimization:
         # Process large dataset multiple times
         for strategy in ["truncate_old", "prioritize_recent", "filter_duplicates"]:
             strategy_func = optimizer.strategies[strategy]
-            optimized, info = await strategy_func(
+            _optimized, _info = await strategy_func(
                 large_conversations_dataset,
                 max_tokens=3000,
             )
@@ -353,7 +359,7 @@ class TestScalabilityBenchmarks:
 
         # Test truncation strategy scaling
         start_time = time.time()
-        optimized, info = await optimizer._truncate_old_conversations(
+        _optimized, _info = await optimizer._truncate_old_conversations(
             conversations,
             max_tokens=2000,
         )
@@ -366,13 +372,15 @@ class TestScalabilityBenchmarks:
         )
 
     @pytest.mark.asyncio
-    async def test_concurrent_optimization_performance(self, large_conversations_dataset):
+    async def test_concurrent_optimization_performance(
+        self, large_conversations_dataset
+    ):
         """Test performance under concurrent optimization requests."""
 
         async def optimize_batch(batch_id, conversations):
             """Optimize a batch of conversations."""
             start_time = time.time()
-            result, info = await optimize_search_response(
+            result, _info = await optimize_search_response(
                 conversations,
                 strategy="prioritize_recent",
                 max_tokens=1000,

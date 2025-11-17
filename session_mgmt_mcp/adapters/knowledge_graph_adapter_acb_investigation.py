@@ -31,6 +31,7 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
+    import types
     from pathlib import Path
 
 
@@ -75,7 +76,12 @@ class KnowledgeGraphDatabaseAdapter:
         msg = "Use 'async with' instead of 'with' for KnowledgeGraphDatabaseAdapter"
         raise RuntimeError(msg)
 
-    def __exit__(self, *_exc_info) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
         """Sync context manager exit."""
 
     async def __aenter__(self) -> t.Self:
@@ -83,7 +89,12 @@ class KnowledgeGraphDatabaseAdapter:
         await self.initialize()
         return self
 
-    async def __aexit__(self, *_exc_info) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
         """Async context manager exit with cleanup."""
         self.close()
 

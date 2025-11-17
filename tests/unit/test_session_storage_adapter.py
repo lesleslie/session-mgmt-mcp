@@ -13,7 +13,6 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from session_mgmt_mcp.adapters import (
     DEFAULT_SESSION_BUCKET,
     SessionStorageAdapter,
@@ -159,7 +158,9 @@ class TestSessionStorageAdapterOperations:
         assert result["status"] == "active"
         assert result["_metadata"]["session_id"] == session_id
 
-    async def test_load_session_not_found(self, adapter_with_mock, mock_storage_adapter):
+    async def test_load_session_not_found(
+        self, adapter_with_mock, mock_storage_adapter
+    ):
         """Test loading non-existent session returns None."""
         mock_storage_adapter.exists = AsyncMock(return_value=False)
 
@@ -246,9 +247,7 @@ class TestSessionStorageAdapterOperations:
         self, adapter_with_mock, mock_storage_adapter
     ):
         """Test session_exists returns False on error."""
-        mock_storage_adapter.exists = AsyncMock(
-            side_effect=Exception("Storage error")
-        )
+        mock_storage_adapter.exists = AsyncMock(side_effect=Exception("Storage error"))
 
         result = await adapter_with_mock.session_exists("test_session")
 

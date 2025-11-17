@@ -284,7 +284,7 @@ class TestSessionCheckpoint:
                 result = await manager.checkpoint_session(tmpdir)
 
                 assert result["success"]
-                project = result.get("quality_score")  # May be in auto_store_decision
+                result.get("quality_score")  # May be in auto_store_decision
                 # Quality score should be recorded
                 assert "quality_score" in result
         except ImportError:
@@ -398,7 +398,7 @@ class TestQualityFormatting:
                 assert isinstance(output, list)
                 assert len(output) > 0
                 # Output should contain status line
-                output_str = "\n".join(output)
+                "\n".join(output)
                 assert any("quality" in line.lower() for line in output)
         except ImportError:
             pytest.skip("SessionLifecycleManager not available")

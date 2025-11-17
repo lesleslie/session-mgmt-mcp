@@ -11,7 +11,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from session_mgmt_mcp.core.session_manager import SessionInfo, SessionLifecycleManager
 from tests.fixtures import mock_lifecycle_manager, tmp_git_repo
 

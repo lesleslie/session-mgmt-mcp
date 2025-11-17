@@ -8,11 +8,10 @@ Phase 10.1: Production Hardening - Health Check Tests
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from session_mgmt_mcp.health_checks import (
     ComponentHealth,
     HealthStatus,
@@ -22,6 +21,9 @@ from session_mgmt_mcp.health_checks import (
     check_python_environment_health,
     get_all_health_checks,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestDatabaseHealthCheck:
@@ -140,7 +142,9 @@ class TestFileSystemHealthCheck:
         claude_dir.chmod(0o444)
 
         try:
-            with patch("session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path):
+            with patch(
+                "session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path
+            ):
                 result = await check_file_system_health()
 
                 assert result.name == "file_system"
@@ -177,11 +181,13 @@ class TestDependenciesHealthCheck:
         mock_server.MULTI_PROJECT_AVAILABLE = True
 
         with (
-            patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True),
-            patch.dict("sys.modules", {
-                "onnxruntime": MagicMock(),
-                "session_mgmt_mcp.server": mock_server
-            }),
+            patch(
+                "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
+            ),
+            patch.dict(
+                "sys.modules",
+                {"onnxruntime": MagicMock(), "session_mgmt_mcp.server": mock_server},
+            ),
         ):
             result = await check_dependencies_health()
 
@@ -209,15 +215,21 @@ class TestDependenciesHealthCheck:
         # Mock import to make onnxruntime fail
         def mock_import(name, *args, **kwargs):
             if name == "onnxruntime":
-                raise ImportError(f"No module named '{name}'")
+                msg = f"No module named '{name}'"
+                raise ImportError(msg)
             return original_import(name, *args, **kwargs)
 
         try:
             with (
-                patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
+                patch(
+                    "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE",
+                    False,
+                ),
                 patch.dict("sys.modules", {"session_mgmt_mcp.server": mock_server}),
                 patch("builtins.__import__", side_effect=mock_import),
-                patch("importlib.util.find_spec", return_value=None),  # Mock multi_project check
+                patch(
+                    "importlib.util.find_spec", return_value=None
+                ),  # Mock multi_project check
             ):
                 result = await check_dependencies_health()
 
@@ -233,7 +245,9 @@ class TestDependenciesHealthCheck:
     async def test_dependencies_some_available(self) -> None:
         """Should return DEGRADED when some dependencies available."""
         with (
-            patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True),
+            patch(
+                "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
+            ),
             patch.dict("sys.modules", clear=True),  # Clear all modules
         ):
             result = await check_dependencies_health()
@@ -241,7 +255,9 @@ class TestDependenciesHealthCheck:
             assert result.name == "dependencies"
             # Can be HEALTHY or DEGRADED depending on what's available
             assert result.status in (HealthStatus.HEALTHY, HealthStatus.DEGRADED)
-            assert result.metadata.get("available") or result.metadata.get("unavailable")
+            assert result.metadata.get("available") or result.metadata.get(
+                "unavailable"
+            )
 
 
 class TestPythonEnvironmentHealthCheck:
@@ -265,8 +281,12 @@ class TestPythonEnvironmentHealthCheck:
         from collections import namedtuple
 
         # Create a mock version_info for Python 3.11
-        MockVersionInfo = namedtuple("version_info", ["major", "minor", "micro", "releaselevel", "serial"])
-        mock_version = MockVersionInfo(major=3, minor=11, micro=0, releaselevel="final", serial=0)
+        MockVersionInfo = namedtuple(
+            "version_info", ["major", "minor", "micro", "releaselevel", "serial"]
+        )
+        mock_version = MockVersionInfo(
+            major=3, minor=11, micro=0, releaselevel="final", serial=0
+        )
 
         # Patch sys.version_info
         with patch("sys.version_info", new=mock_version):

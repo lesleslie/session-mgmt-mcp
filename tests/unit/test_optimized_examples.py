@@ -8,23 +8,26 @@ This module shows how to write fast, efficient tests using:
 - Parallel-safe patterns
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from pathlib import Path
+from unittest.mock import Mock, patch
 
+import pytest
 
 # ==============================================================================
 # PARAMETRIZED TESTS - Reduce code duplication
 # ==============================================================================
 
 
-@pytest.mark.parametrize("content,tags,expected_tag_count", [
-    ("Simple reflection", ["tag1"], 1),
-    ("Unicode content: 你好", ["tag1", "tag2"], 2),
-    ("Long content" * 100, ["long"], 1),
-    ("", ["empty"], 1),
-    ("Multi-tag test", ["a", "b", "c", "d", "e"], 5),
-])
+@pytest.mark.parametrize(
+    ("content", "tags", "expected_tag_count"),
+    [
+        ("Simple reflection", ["tag1"], 1),
+        ("Unicode content: 你好", ["tag1", "tag2"], 2),
+        ("Long content" * 100, ["long"], 1),
+        ("", ["empty"], 1),
+        ("Multi-tag test", ["a", "b", "c", "d", "e"], 5),
+    ],
+)
 @pytest.mark.asyncio
 async def test_store_reflection_parametrized(
     fast_temp_db, content, tags, expected_tag_count
@@ -43,24 +46,22 @@ async def test_store_reflection_parametrized(
     assert stats["total_reflections"] >= 1
 
 
-@pytest.mark.parametrize("project_features,expected_min_score,expected_max_score", [
-    (
-        {"has_pyproject_toml": True, "has_git_repo": True, "has_tests": True},
-        45, 60
-    ),
-    (
-        {"has_pyproject_toml": True, "has_git_repo": True},
-        40, 50
-    ),
-    (
-        {"has_pyproject_toml": False},
-        0, 30
-    ),
-], ids=["high-quality", "medium-quality", "minimal"])
+@pytest.mark.parametrize(
+    ("project_features", "expected_min_score", "expected_max_score"),
+    [
+        ({"has_pyproject_toml": True, "has_git_repo": True, "has_tests": True}, 45, 60),
+        ({"has_pyproject_toml": True, "has_git_repo": True}, 40, 50),
+        ({"has_pyproject_toml": False}, 0, 30),
+    ],
+    ids=["high-quality", "medium-quality", "minimal"],
+)
 @pytest.mark.asyncio
 async def test_quality_scoring_parametrized(
-    temp_test_dir, mock_project_factory, project_features,
-    expected_min_score, expected_max_score
+    temp_test_dir,
+    mock_project_factory,
+    project_features,
+    expected_min_score,
+    expected_max_score,
 ):
     """Test quality scoring across project types - parametrized.
 
@@ -194,6 +195,7 @@ def test_with_resource_pool(resource_pool):
 
     Expensive resources are created once and reused.
     """
+
     def expensive_factory():
         return {"expensive": "resource", "data": [1, 2, 3, 4, 5]}
 
@@ -233,11 +235,15 @@ def test_with_performance_tracking(performance_tracker):
 
 
 @pytest.mark.parallel_safe
-@pytest.mark.parametrize("input_text,expected_length", [
-    ("hello", 5),
-    ("", 0),
-    ("a" * 100, 100),
-], ids=["normal", "empty", "long"])
+@pytest.mark.parametrize(
+    ("input_text", "expected_length"),
+    [
+        ("hello", 5),
+        ("", 0),
+        ("a" * 100, 100),
+    ],
+    ids=["normal", "empty", "long"],
+)
 def test_combined_optimizations(input_text, expected_length, performance_tracker):
     """Test combining multiple optimization strategies.
 
@@ -247,6 +253,7 @@ def test_combined_optimizations(input_text, expected_length, performance_tracker
     - Pure function for speed
     """
     import time
+
     start = time.time()
 
     result_length = len(input_text)

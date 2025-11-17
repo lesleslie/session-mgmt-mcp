@@ -482,6 +482,29 @@ async def _auto_create_entity_if_new(
     return False
 
 
+async def _process_entity_type(
+    kg: Any,
+    entity_type: str,
+    entities: set[str],
+    auto_create: bool,
+) -> tuple[list[str], int, int]:
+    """Process entities of a specific type."""
+    lines = [f"📊 {entity_type.capitalize()}:"]
+    count = 0
+    created = 0
+
+    for entity_name in sorted(entities):
+        lines.append(f"   • {entity_name}")
+        count += 1
+        if auto_create and await _auto_create_entity_if_new(
+            kg, entity_name, entity_type
+        ):
+            created += 1
+
+    lines.append("")
+    return lines, count, created
+
+
 async def _extract_entities_from_context_impl(
     context: str,
     auto_create: bool = False,
@@ -490,7 +513,6 @@ async def _extract_entities_from_context_impl(
 
     async def operation(kg: Any) -> str:
         extracted = _extract_patterns_from_context(context)
-
         if not extracted:
             return "🔍 No entities detected in context"
 
@@ -499,17 +521,12 @@ async def _extract_entities_from_context_impl(
         created_count = 0
 
         for entity_type, entities in extracted.items():
-            lines.append(f"📊 {entity_type.capitalize()}:")
-
-            for entity_name in sorted(entities):
-                lines.append(f"   • {entity_name}")
-                total_extracted += 1
-
-                if auto_create:
-                    if await _auto_create_entity_if_new(kg, entity_name, entity_type):
-                        created_count += 1
-
-            lines.append("")
+            type_lines, count, created = await _process_entity_type(
+                kg, entity_type, entities, auto_create
+            )
+            lines.extend(type_lines)
+            total_extracted += count
+            created_count += created
 
         lines.append(f"📊 Total Extracted: {total_extracted}")
         if auto_create:

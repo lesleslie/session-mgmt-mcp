@@ -9,11 +9,9 @@ from __future__ import annotations
 import json
 import subprocess
 import typing as t
-from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from session_mgmt_mcp.utils.quality_utils_v2 import (
     CodeQualityScore,
     DevVelocityScore,
@@ -23,6 +21,9 @@ from session_mgmt_mcp.utils.quality_utils_v2 import (
     TrustScore,
     calculate_quality_score_v2,
 )
+
+if t.TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.asyncio
@@ -91,7 +92,9 @@ class TestCalculateQualityScoreV2:
         # Verify result structure
         assert isinstance(result, QualityScoreV2)
         assert result.version == "2.0"
-        assert result.total_score >= 75  # Should be high (git velocity may be low in test)
+        assert (
+            result.total_score >= 75
+        )  # Should be high (git velocity may be low in test)
 
         # Verify components are present
         assert isinstance(result.code_quality, CodeQualityScore)
@@ -217,8 +220,6 @@ class TestCodeQualityCalculation:
         assert result.total == 18.0
 
 
-
-
 @pytest.mark.asyncio
 class TestProjectHealthCalculation:
     """Test project health component (30 points max)."""
@@ -246,7 +247,9 @@ class TestProjectHealthCalculation:
             capture_output=True,
         )
         (tmp_path / "README.md").write_text("# Project\n")
-        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "add", "."], cwd=tmp_path, check=True, capture_output=True
+        )
         subprocess.run(
             ["git", "commit", "-m", "Initial commit"],
             cwd=tmp_path,
@@ -258,7 +261,10 @@ class TestProjectHealthCalculation:
         for i in range(6):
             (tmp_path / f"file_{i}.txt").write_text(f"content {i}\n")
             subprocess.run(
-                ["git", "add", f"file_{i}.txt"], cwd=tmp_path, check=True, capture_output=True
+                ["git", "add", f"file_{i}.txt"],
+                cwd=tmp_path,
+                check=True,
+                capture_output=True,
             )
             subprocess.run(
                 ["git", "commit", "-m", f"Add file {i}"],

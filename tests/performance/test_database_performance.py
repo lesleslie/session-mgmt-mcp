@@ -291,7 +291,6 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             task = perf_database.store_reflection(
                 content=reflection["content"],
-
                 tags=reflection["tags"],
             )
             tasks.append(task)
@@ -326,7 +325,6 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             await perf_database.store_reflection(
                 content=reflection["content"],
-
                 tags=reflection["tags"],
             )
 
@@ -380,7 +378,6 @@ class TestReflectionDatabasePerformance:
             for reflection in batch:
                 task = perf_database.store_reflection(
                     content=reflection["content"],
-
                     tags=reflection.get("tags", []),
                 )
                 tasks.append(task)
@@ -435,7 +432,6 @@ class TestReflectionDatabasePerformance:
         for reflection in reflections:
             await perf_database.store_reflection(
                 content=reflection["content"],
-
                 tags=reflection["tags"],
             )
 
@@ -499,7 +495,8 @@ class TestReflectionDatabasePerformance:
                 start = time.perf_counter()
 
                 result = await perf_database.store_reflection(
-                    content=f"Writer reflection {i}: {reflection['content']}",                    tags=reflection["tags"],
+                    content=f"Writer reflection {i}: {reflection['content']}",
+                    tags=reflection["tags"],
                 )
 
                 end = time.perf_counter()
@@ -585,7 +582,6 @@ class TestReflectionDatabasePerformance:
                 for reflection in batch:
                     task = perf_database.store_reflection(
                         content=reflection["content"],
-
                         tags=reflection.get("tags", []),
                     )
                     tasks.append(task)
@@ -641,7 +637,6 @@ class TestReflectionDatabasePerformance:
             for reflection in reflections:
                 await perf_database.store_reflection(
                     content=reflection["content"],
-
                     tags=reflection.get("tags", []),
                 )
 
@@ -711,7 +706,6 @@ class TestDatabaseQueryOptimization:
         for reflection in reflections:
             await indexed_database.store_reflection(
                 content=reflection["content"],
-
                 tags=reflection.get("tags", []),
             )
 
@@ -773,7 +767,6 @@ class TestDatabaseQueryOptimization:
         for reflection in reflections:
             await indexed_database.store_reflection(
                 content=reflection["content"],
-
                 tags=reflection.get("tags", []),
             )
 

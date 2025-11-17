@@ -669,7 +669,7 @@ class TestFormatNewStats:
         assert isinstance(result, list)
         assert len(result) == 4
         assert "150" in result[0]  # conversations_count
-        assert "75" in result[1]   # reflections_count
+        assert "75" in result[1]  # reflections_count
         assert "onnx-local" in result[2]  # embedding_provider
         assert "✅ Healthy" in result[3]  # Database health (has data)
 
@@ -712,7 +712,7 @@ class TestFormatNewStats:
 
         assert isinstance(result, list)
         assert "50" in result[0]  # conversations_count present
-        assert "0" in result[1]   # reflections_count default
+        assert "0" in result[1]  # reflections_count default
         assert "transformers" in result[2]
         assert "✅ Healthy" in result[3]  # Has some data (50 > 0)
 

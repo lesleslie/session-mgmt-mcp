@@ -127,7 +127,9 @@ class ServerlessStorageAdapter(SessionStorage):
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to store session {session_state.session_id}: {e}")
+            self.logger.exception(
+                f"Failed to store session {session_state.session_id}: {e}"
+            )
             return False
 
     async def retrieve_session(self, session_id: str) -> SessionState | None:
@@ -169,7 +171,7 @@ class ServerlessStorageAdapter(SessionStorage):
             return SessionState.from_dict(state_dict)
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve session {session_id}: {e}")
+            self.logger.exception(f"Failed to retrieve session {session_id}: {e}")
             return None
 
     async def delete_session(self, session_id: str) -> bool:
@@ -194,7 +196,7 @@ class ServerlessStorageAdapter(SessionStorage):
             return success
 
         except Exception as e:
-            self.logger.error(f"Failed to delete session {session_id}: {e}")
+            self.logger.exception(f"Failed to delete session {session_id}: {e}")
             return False
 
     async def list_sessions(
@@ -270,7 +272,9 @@ class ServerlessStorageAdapter(SessionStorage):
                 if success:
                     deleted_count += 1
             except Exception as e:
-                self.logger.warning(f"Failed to delete expired session {session_id}: {e}")
+                self.logger.warning(
+                    f"Failed to delete expired session {session_id}: {e}"
+                )
 
         if deleted_count > 0:
             self.logger.info(f"Cleaned up {deleted_count} expired sessions")

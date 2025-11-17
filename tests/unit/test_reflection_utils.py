@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 from session_mgmt_mcp.utils.reflection_utils import (
+    AutoStoreDecision,
+    CheckpointReason,
     format_auto_store_summary,
     should_auto_store_checkpoint,
-    AutoStoreDecision,
-    CheckpointReason
 )
 
 
@@ -21,7 +21,7 @@ def test_format_auto_store_summary_should_store():
         metadata={
             "quality_score": 85,
             "delta": 15,
-        }
+        },
     )
 
     summary = format_auto_store_summary(decision)
@@ -34,9 +34,7 @@ def test_format_auto_store_summary_should_store():
 def test_format_auto_store_summary_should_not_store():
     """Test formatting of auto-store summary when not storing."""
     decision = AutoStoreDecision(
-        should_store=False,
-        reason=CheckpointReason.ROUTINE_SKIP,
-        metadata={}
+        should_store=False, reason=CheckpointReason.ROUTINE_SKIP, metadata={}
     )
 
     summary = format_auto_store_summary(decision)
@@ -48,10 +46,7 @@ def test_format_auto_store_summary_should_not_store():
 def test_should_auto_store_checkpoint_quality_improvement():
     """Test auto-store decision for quality improvement."""
     decision = should_auto_store_checkpoint(
-        quality_score=85,
-        previous_score=70,
-        is_manual=False,
-        session_phase="checkpoint"
+        quality_score=85, previous_score=70, is_manual=False, session_phase="checkpoint"
     )
 
     assert decision.should_store is True
@@ -65,7 +60,7 @@ def test_should_auto_store_checkpoint_no_previous_score():
         quality_score=75,
         previous_score=None,
         is_manual=False,
-        session_phase="checkpoint"
+        session_phase="checkpoint",
     )
 
     # When there's no previous score, it won't trigger quality improvement logic
@@ -77,10 +72,7 @@ def test_should_auto_store_checkpoint_no_previous_score():
 def test_should_auto_store_checkpoint_manual():
     """Test auto-store decision for manual checkpoint."""
     decision = should_auto_store_checkpoint(
-        quality_score=75,
-        previous_score=70,
-        is_manual=True,
-        session_phase="checkpoint"
+        quality_score=75, previous_score=70, is_manual=True, session_phase="checkpoint"
     )
 
     assert decision.should_store is True
@@ -90,10 +82,7 @@ def test_should_auto_store_checkpoint_manual():
 def test_should_auto_store_checkpoint_session_end():
     """Test auto-store decision for session end."""
     decision = should_auto_store_checkpoint(
-        quality_score=75,
-        previous_score=70,
-        is_manual=False,
-        session_phase="end"
+        quality_score=75, previous_score=70, is_manual=False, session_phase="end"
     )
 
     assert decision.should_store is True
@@ -106,7 +95,7 @@ def test_should_auto_store_checkpoint_exceptional_quality():
         quality_score=95,  # Exceptional quality
         previous_score=70,
         is_manual=False,
-        session_phase="checkpoint"
+        session_phase="checkpoint",
     )
 
     assert decision.should_store is True

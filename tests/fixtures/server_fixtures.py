@@ -7,13 +7,13 @@ Provides isolated FastMCP server instances and mock tool registration.
 from __future__ import annotations
 
 import typing as t
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 
 if t.TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+    from pathlib import Path
 
 
 @pytest.fixture
@@ -22,6 +22,7 @@ def mock_fastmcp_server() -> Mock:
 
     Returns:
         Mock FastMCP server with tool/resource registration capabilities.
+
     """
     server = Mock()
     server.tool = Mock(return_value=lambda f: f)  # Decorator passthrough
@@ -40,6 +41,7 @@ def mock_session_paths(tmp_path: Path) -> Mock:
 
     Returns:
         Mock SessionPaths instance with test directories.
+
     """
     paths = Mock()
     paths.claude_dir = tmp_path / ".claude"
@@ -69,6 +71,7 @@ def mock_session_logger(tmp_path: Path) -> Mock:
 
     Returns:
         Mock SessionLogger with no-op logging methods.
+
     """
     logger = Mock()
     logger.info = Mock()
@@ -85,6 +88,7 @@ def mock_permissions_manager() -> Mock:
 
     Returns:
         Mock permissions manager with default allow/deny behavior.
+
     """
     manager = Mock()
     manager.is_trusted_operation = Mock(return_value=True)
@@ -100,6 +104,7 @@ def mock_lifecycle_manager() -> Mock:
 
     Returns:
         Mock lifecycle manager with session state tracking.
+
     """
     manager = Mock()
     manager.session_active = False
@@ -149,7 +154,7 @@ async def mock_mcp_server_context(
     mock_permissions_manager: Mock,
     mock_lifecycle_manager: Mock,
     monkeypatch: pytest.MonkeyPatch,
-) -> AsyncGenerator[dict[str, t.Any], None]:
+) -> AsyncGenerator[dict[str, t.Any]]:
     """Create a complete mock MCP server context for integration testing.
 
     Args:
@@ -162,13 +167,14 @@ async def mock_mcp_server_context(
 
     Yields:
         Dictionary with all mock server components.
+
     """
     # Set up environment
     monkeypatch.setenv("PWD", str(tmp_path))
     monkeypatch.setenv("HOME", str(tmp_path))
 
     # Create context with all mocks
-    context = {
+    return {
         "paths": mock_session_paths,
         "logger": mock_session_logger,
         "permissions": mock_permissions_manager,
@@ -176,10 +182,7 @@ async def mock_mcp_server_context(
         "tmp_path": tmp_path,
     }
 
-    yield context
-
     # Cleanup (if needed)
-    pass
 
 
 @pytest.fixture
@@ -188,6 +191,7 @@ def mock_quality_score_result() -> dict[str, t.Any]:
 
     Returns:
         Typical quality score dictionary with all expected fields.
+
     """
     return {
         "success": True,
@@ -214,6 +218,7 @@ def mock_health_check_result() -> dict[str, t.Any]:
 
     Returns:
         Typical health check dictionary with all expected fields.
+
     """
     return {
         "success": True,
@@ -231,7 +236,9 @@ def mock_health_check_result() -> dict[str, t.Any]:
 
 
 @pytest.fixture
-def mock_tool_result_factory() -> t.Callable[[bool, str, dict[str, t.Any]], dict[str, t.Any]]:
+def mock_tool_result_factory() -> t.Callable[
+    [bool, str, dict[str, t.Any]], dict[str, t.Any]
+]:
     """Create a factory for generating mock tool results.
 
     Returns:
@@ -242,6 +249,7 @@ def mock_tool_result_factory() -> t.Callable[[bool, str, dict[str, t.Any]], dict
         >>> result = factory(success=True, message="Done", extra={"data": 42})
         >>> assert result["success"] is True
         >>> assert result["data"] == 42
+
     """
 
     def factory(
@@ -258,6 +266,7 @@ def mock_tool_result_factory() -> t.Callable[[bool, str, dict[str, t.Any]], dict
 
         Returns:
             Tool result dictionary.
+
         """
         result: dict[str, t.Any] = {
             "success": success,

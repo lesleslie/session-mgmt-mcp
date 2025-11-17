@@ -53,7 +53,9 @@ class TestSessionManagerEdgeCases:
 
             # On Unix systems, we can set permissions that prevent access
             # On Windows, we could simulate this with mock
-            with patch("pathlib.Path.glob", side_effect=PermissionError("Permission denied")):
+            with patch(
+                "pathlib.Path.glob", side_effect=PermissionError("Permission denied")
+            ):
                 result = await manager.analyze_project_context(restricted_dir)
 
                 # Should handle permission errors gracefully
@@ -105,7 +107,10 @@ class TestSessionManagerEdgeCases:
         manager = SessionLifecycleManager()
 
         # Mock git repository check to return False
-        with patch("session_mgmt_mcp.core.session_manager.is_git_repository", return_value=False):
+        with patch(
+            "session_mgmt_mcp.core.session_manager.is_git_repository",
+            return_value=False,
+        ):
             with tempfile.TemporaryDirectory() as temp_dir:
                 project_dir = Path(temp_dir)
 
@@ -133,11 +138,14 @@ class TestSessionManagerEdgeCases:
                     "has_git_repo": False,
                     "has_tests": False,
                     "has_venv": False,
-                    "has_python_files": False
-                }
+                    "has_python_files": False,
+                },
             ):
                 with patch("os.getcwd", return_value=str(project_dir)):
-                    quality_score, quality_data = await manager.perform_quality_assessment()
+                    (
+                        quality_score,
+                        quality_data,
+                    ) = await manager.perform_quality_assessment()
 
                     # Should handle minimal project gracefully
                     assert isinstance(quality_score, (int, float))
@@ -171,11 +179,11 @@ class TestSessionManagerEdgeCases:
                 "code_quality": 30.0,
                 "project_health": 25.0,
                 "dev_velocity": 15.0,
-                "security": 8.0
+                "security": 8.0,
             },
             "recommendations": [],
             "version": "2.0",
-            "trust_score": {}
+            "trust_score": {},
         }
 
         result = manager.format_quality_results(quality_score, incomplete_data)
@@ -203,7 +211,9 @@ class TestSessionManagerEdgeCases:
         manager = SessionLifecycleManager()
 
         # Mock git operations to raise exceptions
-        with patch("session_mgmt_mcp.core.session_manager.create_checkpoint_commit") as mock_commit:
+        with patch(
+            "session_mgmt_mcp.core.session_manager.create_checkpoint_commit"
+        ) as mock_commit:
             mock_commit.side_effect = Exception("Git operation failed")
 
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -216,7 +226,10 @@ class TestSessionManagerEdgeCases:
                 # Should handle git errors gracefully and return appropriate message
                 assert isinstance(result, list)
                 # Should contain error message
-                error_found = any("error" in line.lower() or "exception" in line.lower() for line in result)
+                error_found = any(
+                    "error" in line.lower() or "exception" in line.lower()
+                    for line in result
+                )
                 assert error_found, "Result should contain error message"
 
     async def test_initialize_session_with_invalid_path(self):
@@ -272,7 +285,7 @@ class TestSessionManagerEdgeCases:
         with patch.object(
             manager,
             "perform_quality_assessment",
-            side_effect=Exception("Quality assessment failed")
+            side_effect=Exception("Quality assessment failed"),
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
                 with patch("os.getcwd", return_value=str(temp_dir)):
@@ -295,7 +308,7 @@ class TestSessionManagerEdgeCases:
         with patch.object(
             manager,
             "perform_quality_assessment",
-            side_effect=Exception("Quality assessment failed")
+            side_effect=Exception("Quality assessment failed"),
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
                 with patch("os.getcwd", return_value=str(temp_dir)):
@@ -320,7 +333,9 @@ class TestSessionManagerEdgeCases:
 
                 # Should handle missing project gracefully
                 assert isinstance(result, dict)
-                assert result["success"] is True  # Should still succeed even without project
+                assert (
+                    result["success"] is True
+                )  # Should still succeed even without project
                 # May have different behavior depending on implementation
 
     async def test_session_manager_with_closed_database(self):

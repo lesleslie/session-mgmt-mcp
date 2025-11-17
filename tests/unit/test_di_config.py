@@ -13,7 +13,6 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
-
 from session_mgmt_mcp.di.config import SessionPaths
 
 

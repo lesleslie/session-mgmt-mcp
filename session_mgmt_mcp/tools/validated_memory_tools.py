@@ -28,6 +28,64 @@ from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
 from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 # ============================================================================
+# Helper Functions
+# ============================================================================
+
+
+def _format_result_item(res: dict[str, Any], index: int) -> list[str]:
+    """Format a single search result item."""
+    lines = [f"\n{index}. 📝 {res['content'][:200]}..."]
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+    return lines
+
+
+def _format_search_results(results: list[dict[str, Any]]) -> list[str]:
+    """Format search results with common structure."""
+    if not results:
+        return [
+            "🔍 No conversations found about this file",
+            "💡 The file might not have been discussed in previous sessions",
+        ]
+
+    lines = [f"📈 Found {len(results)} relevant conversations:"]
+    for i, res in enumerate(results, 1):
+        lines.extend(_format_result_item(res, i))
+    return lines
+
+
+def _format_concept_results(
+    results: list[dict[str, Any]], include_files: bool
+) -> list[str]:
+    """Format concept search results with optional file information."""
+    if not results:
+        return [
+            "🔍 No conversations found about this concept",
+            "💡 Try related terms or broader concepts",
+        ]
+
+    lines = [f"📈 Found {len(results)} related conversations:"]
+    for i, res in enumerate(results, 1):
+        item_lines = [f"\n{i}. 📝 {res['content'][:250]}..."]
+        if res.get("project"):
+            item_lines.append(f"   📁 Project: {res['project']}")
+        if res.get("score") is not None:
+            item_lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+        if res.get("timestamp"):
+            item_lines.append(f"   📅 Date: {res['timestamp']}")
+        if include_files and res.get("files"):
+            files = res["files"][:3]
+            if files:
+                item_lines.append(f"   📄 Files: {', '.join(files)}")
+        lines.extend(item_lines)
+    return lines
+
+
+# ============================================================================
 # Validated Tool Implementations
 # ============================================================================
 
@@ -181,29 +239,8 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
         file_path = result["file_path"]
         results = result["results"]
 
-        lines = [
-            f"📁 Searching conversations about: {file_path}",
-            "=" * 50,
-        ]
-
-        if not results:
-            lines.extend(
-                [
-                    "🔍 No conversations found about this file",
-                    "💡 The file might not have been discussed in previous sessions",
-                ]
-            )
-        else:
-            lines.append(f"📈 Found {len(results)} relevant conversations:")
-
-            for i, res in enumerate(results, 1):
-                lines.append(f"\n{i}. 📝 {res['content'][:200]}...")
-                if res.get("project"):
-                    lines.append(f"   📁 Project: {res['project']}")
-                if res.get("score") is not None:
-                    lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
-                if res.get("timestamp"):
-                    lines.append(f"   📅 Date: {res['timestamp']}")
+        lines = [f"📁 Searching conversations about: {file_path}", "=" * 50]
+        lines.extend(_format_search_results(results))
 
         _get_logger().info(
             "Validated file search executed",
@@ -250,34 +287,8 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
         concept = result["concept"]
         results = result["results"]
 
-        lines = [
-            f"🧠 Searching for concept: '{concept}'",
-            "=" * 50,
-        ]
-
-        if not results:
-            lines.extend(
-                [
-                    "🔍 No conversations found about this concept",
-                    "💡 Try related terms or broader concepts",
-                ]
-            )
-        else:
-            lines.append(f"📈 Found {len(results)} related conversations:")
-
-            for i, res in enumerate(results, 1):
-                lines.append(f"\n{i}. 📝 {res['content'][:250]}...")
-                if res.get("project"):
-                    lines.append(f"   📁 Project: {res['project']}")
-                if res.get("score") is not None:
-                    lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
-                if res.get("timestamp"):
-                    lines.append(f"   📅 Date: {res['timestamp']}")
-
-                if result["include_files"] and res.get("files"):
-                    files = res["files"][:3]
-                    if files:
-                        lines.append(f"   📄 Files: {', '.join(files)}")
+        lines = [f"🧠 Searching for concept: '{concept}'", "=" * 50]
+        lines.extend(_format_concept_results(results, result["include_files"]))
 
         _get_logger().info(
             "Validated concept search executed",

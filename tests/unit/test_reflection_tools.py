@@ -358,7 +358,7 @@ class TestReflectionDatabaseWithEmbeddings:
     @pytest.mark.asyncio
     async def test_semantic_search(self, temp_db_with_embeddings):
         """Test semantic search with embeddings."""
-        db, mock_get_embedding = temp_db_with_embeddings
+        db, _mock_get_embedding = temp_db_with_embeddings
 
         # Store a reflection
         await db.store_reflection(

@@ -80,7 +80,9 @@ class TestTokenOptimizer:
             assert token_count == len(text) // 4
 
     @pytest.mark.asyncio
-    async def test_truncate_old_conversations(self, token_optimizer, sample_conversations):
+    async def test_truncate_old_conversations(
+        self, token_optimizer, sample_conversations
+    ):
         """Test truncating old conversations strategy."""
         optimized, info = await token_optimizer._truncate_old_conversations(
             sample_conversations,
@@ -149,7 +151,9 @@ class TestTokenOptimizer:
         assert info["duplicates_removed"] == 2
 
     @pytest.mark.asyncio
-    async def test_prioritize_recent_content(self, token_optimizer, sample_conversations):
+    async def test_prioritize_recent_content(
+        self, token_optimizer, sample_conversations
+    ):
         """Test recent content prioritization strategy."""
         optimized, info = await token_optimizer._prioritize_recent_content(
             sample_conversations,
@@ -368,10 +372,12 @@ class TestTokenOptimizer:
         cleaned_count = await token_optimizer.cleanup_cache(max_age_hours=1)
 
         # Cleanup should remove at least the expired entry
-        assert cleaned_count > 0 or cleaned_count == 0  # Either cleans or doesn't (depends on cache implementation)
+        assert (
+            cleaned_count > 0 or cleaned_count == 0
+        )  # Either cleans or doesn't (depends on cache implementation)
 
         # Try to get expired key - should return None if deleted
-        expired_result = await token_optimizer.chunk_cache.get("expired_key")
+        await token_optimizer.chunk_cache.get("expired_key")
         # If cleanup worked, expired_key should be gone
         # Some cache implementations might not cleanup, so we just check it exists after setup
 
@@ -442,14 +448,16 @@ class TestOptimizationStrategies:
             },
         ]
 
-        result, info = await token_optimizer._truncate_old_conversations(single_conv, 1000)
+        result, _info = await token_optimizer._truncate_old_conversations(
+            single_conv, 1000
+        )
         assert len(result) == 1
         assert result[0]["id"] == "conv1"
 
     @pytest.mark.asyncio
     async def test_large_token_limit(self, token_optimizer, sample_conversations):
         """Test optimization with very large token limit."""
-        result, info = await token_optimizer._truncate_old_conversations(
+        result, _info = await token_optimizer._truncate_old_conversations(
             sample_conversations,
             max_tokens=10000,
         )

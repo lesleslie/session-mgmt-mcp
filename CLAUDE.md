@@ -512,6 +512,7 @@ The server uses the ~/.claude directory for data storage:
 **New**: Session-mgmt-mcp now uses ACB (Asynchronous Component Base) storage adapters for improved reliability and multi-cloud support.
 
 **Recommended Backends**:
+
 - `file` - Local file storage (default, best for development)
 - `s3` - AWS S3/MinIO (production cloud storage)
 - `azure` - Azure Blob Storage (Azure deployments)
@@ -519,6 +520,7 @@ The server uses the ~/.claude directory for data storage:
 - `memory` - In-memory storage (testing only)
 
 **Configuration** (`settings/session-mgmt.yaml`):
+
 ```yaml
 storage:
   default_backend: "file"
@@ -534,6 +536,7 @@ storage:
 ```
 
 **Benefits**:
+
 - ✅ Multiple cloud providers (S3, Azure, GCS)
 - ✅ Environment variable support
 - ✅ Better connection pooling & error handling
@@ -543,6 +546,7 @@ storage:
 **Migration**: See `docs/MIGRATION_GUIDE_ACB.md` for detailed migration instructions.
 
 **Legacy Backends** (deprecated, removed in v1.0):
+
 - `redis`, `local`, old `s3`, `acb` cache
 
 ## Development Notes

@@ -196,7 +196,10 @@ class TestBrowserDocumentationMonitor:
 
     def test_add_browser_activity(self) -> None:
         """Should add browser activity to buffer."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, BrowserDocumentationMonitor
+        from session_mgmt_mcp.app_monitor import (
+            ActivityEvent,
+            BrowserDocumentationMonitor,
+        )
 
         monitor = BrowserDocumentationMonitor()
 
@@ -295,7 +298,6 @@ class TestActivityDatabase:
     def test_store_activity(self) -> None:
         """Should store activity event in database."""
         import tempfile
-        from pathlib import Path
 
         from session_mgmt_mcp.app_monitor import ActivityDatabase, ActivityEvent
 
@@ -326,7 +328,9 @@ class TestApplicationMonitor:
         """Should initialize all sub-monitors."""
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
 
-        monitor = ApplicationMonitor(data_dir="/tmp/test_monitor", project_paths=["/test"])
+        monitor = ApplicationMonitor(
+            data_dir="/tmp/test_monitor", project_paths=["/test"]
+        )
 
         assert monitor.ide_monitor is not None
         assert monitor.browser_monitor is not None
@@ -339,7 +343,9 @@ class TestApplicationMonitor:
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
 
         with patch("session_mgmt_mcp.app_monitor.WATCHDOG_AVAILABLE", True):
-            monitor = ApplicationMonitor(data_dir="/tmp/test_monitor", project_paths=["/test"])
+            monitor = ApplicationMonitor(
+                data_dir="/tmp/test_monitor", project_paths=["/test"]
+            )
 
             # Mock start_monitoring to avoid actual file watching
             monitor.ide_monitor.start_monitoring = Mock(return_value=True)
@@ -354,7 +360,9 @@ class TestApplicationMonitor:
         """Should stop all monitoring components."""
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
 
-        monitor = ApplicationMonitor(data_dir="/tmp/test_monitor", project_paths=["/test"])
+        monitor = ApplicationMonitor(
+            data_dir="/tmp/test_monitor", project_paths=["/test"]
+        )
         monitor.monitoring_active = True
         monitor._monitoring_task = None
 
@@ -366,7 +374,9 @@ class TestApplicationMonitor:
         """Should generate context insights from activity."""
         from session_mgmt_mcp.app_monitor import ApplicationMonitor
 
-        monitor = ApplicationMonitor(data_dir="/tmp/test_monitor", project_paths=["/test"])
+        monitor = ApplicationMonitor(
+            data_dir="/tmp/test_monitor", project_paths=["/test"]
+        )
 
         # get_context_insights is NOT async - it's a regular method
         insights = monitor.get_context_insights(hours=1)

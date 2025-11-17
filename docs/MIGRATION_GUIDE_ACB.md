@@ -13,6 +13,7 @@ This guide helps you migrate to the new ACB (Asynchronous Component Base) integr
 ### Summary of Changes
 
 **✅ New ACB Storage Adapters** (Recommended):
+
 - `file` - Local file storage (default, replaces old `local` backend)
 - `s3` - AWS S3/MinIO (replaces old `s3` backend)
 - `azure` - Azure Blob Storage (new!)
@@ -20,12 +21,14 @@ This guide helps you migrate to the new ACB (Asynchronous Component Base) integr
 - `memory` - In-memory storage for testing (new!)
 
 **⚠️ Deprecated Backends** (Still work, but will be removed in v1.0):
+
 - `local` - Old local file storage → Use `file` instead
 - `redis` - Old Redis backend → Use `acb` or `s3` instead
 - Old `s3` - Old S3 backend → Use new `s3` instead
 - `acb` - Old ACB cache → Use `file` or `s3` instead
 
 **Benefits of Migration**:
+
 - ✅ Better reliability (ACB handles connection pooling, retries)
 - ✅ More storage options (Azure, GCS)
 - ✅ Improved configuration (YAML with environment variables)
@@ -40,16 +43,18 @@ This guide helps you migrate to the new ACB (Asynchronous Component Base) integr
 **Find your current storage backend**:
 
 Look in your configuration or code for:
+
 ```python
 # Old style (still works):
 from session_mgmt_mcp.backends import RedisStorage, S3Storage, LocalFileStorage
 
 storage = RedisStorage(config)  # ⚠️ Deprecated
-storage = S3Storage(config)     # ⚠️ Deprecated
+storage = S3Storage(config)  # ⚠️ Deprecated
 storage = LocalFileStorage(config)  # ⚠️ Deprecated
 ```
 
 Or in `serverless_mode.py` configuration:
+
 ```python
 config = {
     "storage_backend": "redis",  # ⚠️ Deprecated
@@ -62,58 +67,48 @@ config = {
 #### Option A: Update Configuration (Recommended)
 
 **Before** (old backends):
+
 ```python
 config = {
     "storage_backend": "local",  # ⚠️ Deprecated
-    "backends": {
-        "local": {
-            "storage_dir": "~/.claude/data/sessions"
-        }
-    }
+    "backends": {"local": {"storage_dir": "~/.claude/data/sessions"}},
 }
 ```
 
 **After** (new ACB adapters):
+
 ```python
 config = {
     "storage_backend": "file",  # ✅ New ACB adapter
-    "backends": {
-        "file": {
-            "local_path": "~/.claude/data/sessions",
-            "auto_mkdir": True
-        }
-    }
+    "backends": {"file": {"local_path": "~/.claude/data/sessions", "auto_mkdir": True}},
 }
 ```
 
 #### Option B: Update Code Directly
 
 **Before** (old backends):
+
 ```python
 from session_mgmt_mcp.backends import S3Storage
 
-storage = S3Storage({
-    "bucket_name": "my-sessions",
-    "region": "us-east-1"
-})
+storage = S3Storage({"bucket_name": "my-sessions", "region": "us-east-1"})
 ```
 
 **After** (new ACB adapters):
+
 ```python
 from session_mgmt_mcp.adapters import ServerlessStorageAdapter
 
 storage = ServerlessStorageAdapter(
-    config={
-        "bucket_name": "my-sessions",
-        "region": "us-east-1"
-    },
-    backend="s3"  # Uses ACB S3 adapter
+    config={"bucket_name": "my-sessions", "region": "us-east-1"},
+    backend="s3",  # Uses ACB S3 adapter
 )
 ```
 
 ### Step 3: Test the Migration
 
 **Run existing tests**:
+
 ```bash
 # Test storage adapters
 pytest tests/unit/test_session_storage_adapter.py -v
@@ -123,6 +118,7 @@ pytest tests/integration/test_serverless_storage.py -v
 ```
 
 **Test your specific backend**:
+
 ```python
 from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
 
@@ -137,6 +133,7 @@ print(results)  # {"file": True, "s3": True, ...}
 ### Migrating from `local` to `file`
 
 **Old Configuration**:
+
 ```yaml
 storage_backend: local
 backends:
@@ -145,6 +142,7 @@ backends:
 ```
 
 **New Configuration**:
+
 ```yaml
 storage_backend: file
 backends:
@@ -154,27 +152,31 @@ backends:
 ```
 
 **Data Migration**:
+
 - ✅ No data migration needed! Files stay in same location.
 - ✅ File format is identical (JSON)
 - ✅ Just update config, existing sessions will work
 
 **Code Changes**:
+
 ```python
 # Before:
 from session_mgmt_mcp.backends import LocalFileStorage
+
 storage = LocalFileStorage({"storage_dir": "~/.claude/data"})
 
 # After:
 from session_mgmt_mcp.adapters import ServerlessStorageAdapter
+
 storage = ServerlessStorageAdapter(
-    config={"local_path": "~/.claude/data"},
-    backend="file"
+    config={"local_path": "~/.claude/data"}, backend="file"
 )
 ```
 
 ### Migrating from old `s3` to new `s3`
 
 **Old Configuration**:
+
 ```yaml
 storage_backend: s3
 backends:
@@ -185,6 +187,7 @@ backends:
 ```
 
 **New Configuration**:
+
 ```yaml
 storage_backend: s3
 backends:
@@ -197,17 +200,20 @@ backends:
 ```
 
 **Benefits of New S3 Adapter**:
+
 - ✅ Environment variable support (no credentials in config)
 - ✅ Better connection pooling
 - ✅ Automatic retries
 - ✅ MinIO compatibility (via endpoint_url)
 
 **Data Migration**:
+
 - ✅ No migration needed if bucket/prefix unchanged
 - ✅ Session data format is compatible
 - ⚠️ If you need to migrate data: Use AWS CLI or migration script
 
 **Migration Script** (if changing buckets):
+
 ```bash
 # Copy sessions to new bucket (optional)
 aws s3 sync s3://old-bucket/sessions/ s3://new-bucket/sessions/
@@ -216,11 +222,13 @@ aws s3 sync s3://old-bucket/sessions/ s3://new-bucket/sessions/
 ### Migrating from `redis` to `file` or `s3`
 
 **Why Migrate**:
+
 - Redis backend is deprecated
 - File/S3 provide better persistence
 - ACB adapters more reliable
 
 **Before** (Redis):
+
 ```yaml
 storage_backend: redis
 backends:
@@ -232,6 +240,7 @@ backends:
 ```
 
 **After** (File - for development):
+
 ```yaml
 storage_backend: file
 backends:
@@ -241,6 +250,7 @@ backends:
 ```
 
 **After** (S3 - for production):
+
 ```yaml
 storage_backend: s3
 backends:
@@ -250,6 +260,7 @@ backends:
 ```
 
 **Data Migration**:
+
 - ⚠️ Redis sessions are not automatically migrated
 - ⚠️ Old sessions will expire naturally (TTL)
 - ✅ New sessions will use new backend
@@ -258,6 +269,7 @@ backends:
 ### Migrating to Azure or GCS (New!)
 
 **Azure Blob Storage**:
+
 ```yaml
 storage_backend: azure
 backends:
@@ -268,6 +280,7 @@ backends:
 ```
 
 **Google Cloud Storage**:
+
 ```yaml
 storage_backend: gcs
 backends:
@@ -317,10 +330,10 @@ Sessions are organized into buckets (logical groupings):
 
 ```python
 buckets = {
-    "sessions": "sessions",        # Active session state
+    "sessions": "sessions",  # Active session state
     "checkpoints": "checkpoints",  # Session checkpoints
-    "handoffs": "handoffs",        # Session handoff documents
-    "test": "test",                # Test data
+    "handoffs": "handoffs",  # Session handoff documents
+    "test": "test",  # Test data
 }
 ```
 
@@ -333,6 +346,7 @@ buckets = {
 
 **Cause**: DI not initialized before using adapter
 **Solution**:
+
 ```python
 from session_mgmt_mcp.di import configure
 
@@ -341,6 +355,7 @@ configure(force=True)
 
 # Then use adapters
 from session_mgmt_mcp.adapters import KnowledgeGraphDatabaseAdapter
+
 async with KnowledgeGraphDatabaseAdapter() as kg:
     # Now it works!
     pass
@@ -350,6 +365,7 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 
 **Cause**: Backend not properly configured or credentials missing
 **Solution**:
+
 ```python
 # Test backend availability
 from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
@@ -364,6 +380,7 @@ if not results.get("s3"):
 ### Issue: Deprecation warnings
 
 **Example Warning**:
+
 ```
 DeprecationWarning: RedisStorage is deprecated. Use ServerlessStorageAdapter(backend="file")
 or ServerlessStorageAdapter(backend="s3") instead.
@@ -375,19 +392,21 @@ or ServerlessStorageAdapter(backend="s3") instead.
 
 **Cause**: Data in different location/format
 **Solution**:
+
 1. Check bucket/path configuration matches old location
-2. Verify file permissions (file backend)
-3. Verify credentials (cloud backends)
-4. Check session hasn't expired (TTL)
+1. Verify file permissions (file backend)
+1. Verify credentials (cloud backends)
+1. Check session hasn't expired (TTL)
 
 ### Issue: Performance slower than old backend
 
 **Unlikely** - ACB adapters are generally faster
 **If it happens**:
+
 1. Check network latency (cloud backends)
-2. Enable connection pooling (should be automatic)
-3. Consider using `memory` backend for testing
-4. Report issue with benchmarks
+1. Enable connection pooling (should be automatic)
+1. Consider using `memory` backend for testing
+1. Report issue with benchmarks
 
 ## Common Patterns
 
@@ -417,18 +436,16 @@ config = ServerlessConfigManager.load_config()
 
 # Try S3 first, fallback to file
 try:
-    storage = ServerlessConfigManager.create_storage_backend({
-        "storage_backend": "s3",
-        "backends": config["backends"]
-    })
+    storage = ServerlessConfigManager.create_storage_backend(
+        {"storage_backend": "s3", "backends": config["backends"]}
+    )
     if not await storage.is_available():
         raise RuntimeError("S3 unavailable")
 except Exception:
     # Fallback to file
-    storage = ServerlessConfigManager.create_storage_backend({
-        "storage_backend": "file",
-        "backends": config["backends"]
-    })
+    storage = ServerlessConfigManager.create_storage_backend(
+        {"storage_backend": "file", "backends": config["backends"]}
+    )
 ```
 
 ### Pattern: Custom Storage Paths
@@ -438,17 +455,12 @@ from session_mgmt_mcp.adapters import ServerlessStorageAdapter
 
 # Development: local file storage
 dev_storage = ServerlessStorageAdapter(
-    config={"local_path": "/tmp/sessions"},
-    backend="file"
+    config={"local_path": "/tmp/sessions"}, backend="file"
 )
 
 # Production: S3 storage
 prod_storage = ServerlessStorageAdapter(
-    config={
-        "bucket_name": "prod-sessions",
-        "region": "us-west-2"
-    },
-    backend="s3"
+    config={"bucket_name": "prod-sessions", "region": "us-west-2"}, backend="s3"
 )
 ```
 
@@ -478,6 +490,7 @@ pytest tests/integration/test_serverless_storage.py -v
 from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
 from session_mgmt_mcp.adapters import ServerlessStorageAdapter
 
+
 async def test_e2e():
     # Create storage adapter
     storage = ServerlessStorageAdapter(backend="file")
@@ -487,9 +500,7 @@ async def test_e2e():
 
     # Create session
     session_id = await manager.create_session(
-        user_id="test_user",
-        project_id="test_project",
-        session_data={"test": "data"}
+        user_id="test_user", project_id="test_project", session_data={"test": "data"}
     )
 
     # Retrieve session
@@ -502,8 +513,10 @@ async def test_e2e():
 
     print("✅ End-to-end test passed!")
 
+
 # Run test
 import asyncio
+
 asyncio.run(test_e2e())
 ```
 
@@ -512,11 +525,12 @@ asyncio.run(test_e2e())
 If you need to rollback to old backends:
 
 1. **Old backends still work** - They're deprecated but not removed yet
-2. **Update configuration** back to old backend names
-3. **No data loss** - Sessions remain in same locations
-4. **Report issues** so we can fix them!
+1. **Update configuration** back to old backend names
+1. **No data loss** - Sessions remain in same locations
+1. **Report issues** so we can fix them!
 
 **Example Rollback**:
+
 ```yaml
 # Rollback to old S3 backend (still works in 0.9.x)
 storage_backend: s3  # Will show deprecation warning
@@ -547,7 +561,7 @@ backends:
 - [ ] Sessions loading correctly
 - [ ] Ready for production!
 
----
+______________________________________________________________________
 
 **Migration Status**: ✅ Ready for Production
 **Backward Compatibility**: ✅ 100% (old backends work until v1.0)
@@ -555,6 +569,7 @@ backends:
 **Documentation**: ✅ Complete
 
 For technical details, see:
+
 - `docs/ACB_MIGRATION_PLAN.md` - Complete migration plan
 - `docs/ACB_MIGRATION_PHASE3_STATUS.md` - Test status
 - `docs/ACB_GRAPH_ADAPTER_INVESTIGATION.md` - Graph adapter investigation

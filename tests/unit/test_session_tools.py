@@ -8,10 +8,13 @@ Phase: Week 5 Day 2 - Session Tools Coverage
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestSessionOutputBuilder:
@@ -79,7 +82,7 @@ class TestSessionOutputBuilder:
         builder.add_simple_item("Line 2")
 
         output = builder.build()
-        assert "Line 1\nLine 2" == output
+        assert output == "Line 1\nLine 2"
 
 
 class TestSessionSetupResults:
@@ -416,10 +419,10 @@ class TestHealthCheckTools:
     @pytest.mark.asyncio
     async def test_health_check_returns_status(self) -> None:
         """Should return health check status."""
-        from session_mgmt_mcp.tools.session_tools import _get_session_manager
-
         # Access via register function pattern
         from unittest.mock import MagicMock
+
+        from session_mgmt_mcp.tools.session_tools import _get_session_manager
 
         mock_mcp = MagicMock()
         tools = {}

@@ -17,7 +17,6 @@ from session_mgmt_mcp.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
 
-
 # ==============================================================================
 # OPTIMIZED FIXTURES - Scope optimization for better performance
 # ==============================================================================
@@ -38,13 +37,14 @@ def temp_test_dir(temp_base_dir: Path) -> Generator[Path]:
     """Function-scoped test directory within session temp dir."""
     test_dir = temp_base_dir / f"test_{id(temp_base_dir)}"
     test_dir.mkdir(parents=True, exist_ok=True)
-    yield test_dir
+    return test_dir
     # No cleanup needed - session cleanup handles it
 
 
 @pytest.fixture(scope="session")
 def mock_logger_factory():
     """Factory for creating mock loggers - session scoped for reuse."""
+
     def create_mock_logger(**kwargs) -> Mock:
         logger = Mock()
         logger.info = Mock()
@@ -55,6 +55,7 @@ def mock_logger_factory():
         for key, value in kwargs.items():
             setattr(logger, key, value)
         return logger
+
     return create_mock_logger
 
 
@@ -67,11 +68,13 @@ def mock_logger(mock_logger_factory):
 @pytest.fixture(scope="session")
 def async_mock_factory():
     """Factory for creating async mocks - session scoped."""
+
     def create_async_mock(**kwargs) -> AsyncMock:
         mock = AsyncMock()
         for key, value in kwargs.items():
             setattr(mock, key, value)
         return mock
+
     return create_async_mock
 
 
@@ -109,12 +112,8 @@ async def fast_temp_db(temp_test_dir: Path) -> AsyncGenerator[ReflectionDatabase
 async def db_with_sample_data(fast_temp_db: ReflectionDatabase) -> ReflectionDatabase:
     """Database pre-populated with minimal sample data for tests."""
     # Add minimal data needed for most tests
-    await fast_temp_db.store_conversation(
-        "Sample conversation", {"project": "test"}
-    )
-    await fast_temp_db.store_reflection(
-        "Sample reflection", ["test"]
-    )
+    await fast_temp_db.store_conversation("Sample conversation", {"project": "test"})
+    await fast_temp_db.store_reflection("Sample reflection", ["test"])
     return fast_temp_db
 
 
@@ -132,16 +131,17 @@ def generate_test_cases_quality_scoring():
         # (context, expected_min, expected_max, description)
         (
             {"has_pyproject_toml": True, "has_git_repo": True, "has_tests": True},
-            45, 60, "high-quality-project"
+            45,
+            60,
+            "high-quality-project",
         ),
         (
             {"has_pyproject_toml": True, "has_git_repo": True},
-            40, 50, "medium-quality-project"
+            40,
+            50,
+            "medium-quality-project",
         ),
-        (
-            {"has_pyproject_toml": False},
-            0, 30, "minimal-project"
-        ),
+        ({"has_pyproject_toml": False}, 0, 30, "minimal-project"),
     ]
 
 
@@ -221,6 +221,7 @@ async def fast_async_context():
 @pytest.fixture(scope="session")
 def mock_git_repo_factory():
     """Factory for creating mock git repository structures."""
+
     def create_mock_git_repo(path: Path, **kwargs):
         """Create a minimal mock git repository structure."""
         git_dir = path / ".git"
@@ -239,6 +240,7 @@ def mock_git_repo_factory():
 @pytest.fixture(scope="session")
 def mock_project_factory():
     """Factory for creating mock project structures."""
+
     def create_mock_project(path: Path, features: dict[str, bool]):
         """Create a mock project with specified features."""
         if features.get("has_pyproject_toml"):
@@ -306,12 +308,10 @@ def pytest_configure_optimizations(config):
     """Configure pytest for optimal performance."""
     # Enable parallel execution markers
     config.addinivalue_line(
-        "markers",
-        "parallel_safe: mark test as safe for parallel execution"
+        "markers", "parallel_safe: mark test as safe for parallel execution"
     )
     config.addinivalue_line(
-        "markers",
-        "requires_isolation: mark test as requiring isolated execution"
+        "markers", "requires_isolation: mark test as requiring isolated execution"
     )
 
 

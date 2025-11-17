@@ -8,6 +8,7 @@ proper async patterns and thorough coverage.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -56,8 +57,7 @@ class TestSessionLifecycle:
     @pytest.fixture
     async def session_manager(self):
         """Provide session manager for testing."""
-        manager = SessionLifecycleManager()
-        yield manager
+        return SessionLifecycleManager()
 
     async def test_session_initialization(self, session_manager):
         """Test initializing a session manager."""
@@ -249,18 +249,14 @@ class TestSessionCleanup:
     async def test_cleanup_session(self, manager):
         """Test cleaning up session resources."""
         if hasattr(manager, "cleanup_session"):
-            try:
+            with contextlib.suppress(Exception):
                 await manager.cleanup_session()
-            except Exception:
-                pass
 
     async def test_shutdown_graceful(self, manager):
         """Test graceful session shutdown."""
         if hasattr(manager, "shutdown"):
-            try:
+            with contextlib.suppress(Exception):
                 await manager.shutdown()
-            except Exception:
-                pass
 
     async def test_cleanup_removes_temp_files(self, manager):
         """Test that cleanup removes temporary files."""
@@ -269,10 +265,8 @@ class TestSessionCleanup:
             temp_file.write_text("test")
 
             if hasattr(manager, "cleanup_session"):
-                try:
+                with contextlib.suppress(Exception):
                     await manager.cleanup_session()
-                except Exception:
-                    pass
 
 
 @pytest.mark.asyncio
@@ -326,18 +320,18 @@ class TestSessionErrorHandling:
 
         if hasattr(manager, "initialize_session"):
             try:
-                result = await manager.initialize_session(
-                    working_directory=invalid_path
-                )
+                await manager.initialize_session(working_directory=invalid_path)
                 # May succeed with warnings or fail gracefully
             except Exception:
                 pass  # Expected to fail
 
     async def test_concurrent_operations(self, manager):
         """Test concurrent session operations."""
+
         async def concurrent_op():
             if hasattr(manager, "get_session_status"):
                 return manager.get_session_status()
+            return None
 
         tasks = [concurrent_op() for _ in range(5)]
         results = await asyncio.gather(*tasks, return_exceptions=True)

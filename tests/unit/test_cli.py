@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch
 import psutil
 import pytest
 from typer.testing import CliRunner
-
 from session_mgmt_mcp.cli import app, find_server_processes, get_server_status
 
 
@@ -25,7 +24,11 @@ def cli_runner() -> CliRunner:
 def mock_process() -> MagicMock:
     """Create a mock psutil.Process."""
     proc = MagicMock(spec=psutil.Process)
-    proc.info = {"pid": 1234, "name": "python", "cmdline": ["python", "-m", "session_mgmt_mcp.server"]}
+    proc.info = {
+        "pid": 1234,
+        "name": "python",
+        "cmdline": ["python", "-m", "session_mgmt_mcp.server"],
+    }
     proc.pid = 1234
     proc.is_running.return_value = True
     return proc
@@ -59,7 +62,9 @@ class TestGetServerStatus:
 
     def test_get_server_status_with_server(self, mock_process: MagicMock) -> None:
         """Test status when server is running."""
-        with patch("session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]):
+        with patch(
+            "session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]
+        ):
             status = get_server_status()
             assert status["running"] is True
             assert status["process_count"] == 1
@@ -122,11 +127,18 @@ class TestCliCommands:
 class TestServerManagement:
     """Test server lifecycle management."""
 
-    def test_server_already_running(self, cli_runner: CliRunner, mock_process: MagicMock) -> None:
+    def test_server_already_running(
+        self, cli_runner: CliRunner, mock_process: MagicMock
+    ) -> None:
         """Test starting server when already running."""
-        with patch("session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]):
+        with patch(
+            "session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]
+        ):
             result = cli_runner.invoke(app, ["--start-mcp-server"])
-            assert result.exit_code in [0, 1]  # May succeed or fail depending on auto-restart
+            assert result.exit_code in [
+                0,
+                1,
+            ]  # May succeed or fail depending on auto-restart
 
     def test_server_not_running_on_stop(self, cli_runner: CliRunner) -> None:
         """Test stopping server when not running."""

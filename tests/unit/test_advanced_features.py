@@ -134,12 +134,8 @@ class TestNaturalReminderTools:
         """Should start reminder service."""
         from session_mgmt_mcp.advanced_features import start_reminder_service
 
-        with patch(
-            "session_mgmt_mcp.natural_scheduler.register_session_notifications"
-        ):
-            with patch(
-                "session_mgmt_mcp.natural_scheduler.start_reminder_service"
-            ):
+        with patch("session_mgmt_mcp.natural_scheduler.register_session_notifications"):
+            with patch("session_mgmt_mcp.natural_scheduler.start_reminder_service"):
                 result = await start_reminder_service()
 
                 assert isinstance(result, str)
@@ -150,9 +146,7 @@ class TestNaturalReminderTools:
         """Should stop reminder service."""
         from session_mgmt_mcp.advanced_features import stop_reminder_service
 
-        with patch(
-            "session_mgmt_mcp.natural_scheduler.stop_reminder_service"
-        ):
+        with patch("session_mgmt_mcp.natural_scheduler.stop_reminder_service"):
             result = await stop_reminder_service()
 
             assert isinstance(result, str)
@@ -346,14 +340,18 @@ class TestGitWorktreeManagement:
         from session_mgmt_mcp.advanced_features import git_worktree_add
 
         # Mock WorktreeManager where it's imported from
-        with patch("session_mgmt_mcp.worktree_manager.WorktreeManager") as mock_manager_cls:
+        with patch(
+            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+        ) as mock_manager_cls:
             mock_manager = AsyncMock()
-            mock_manager.create_worktree = AsyncMock(return_value={
-                "success": True,
-                "branch": "feature",
-                "worktree_path": "/tmp/worktree",
-                "output": "Created worktree"
-            })
+            mock_manager.create_worktree = AsyncMock(
+                return_value={
+                    "success": True,
+                    "branch": "feature",
+                    "worktree_path": "/tmp/worktree",
+                    "output": "Created worktree",
+                }
+            )
             mock_manager_cls.return_value = mock_manager
 
             result = await git_worktree_add(branch="feature", path="/tmp/worktree")
@@ -367,13 +365,17 @@ class TestGitWorktreeManagement:
         from session_mgmt_mcp.advanced_features import git_worktree_remove
 
         # Mock WorktreeManager where it's imported from
-        with patch("session_mgmt_mcp.worktree_manager.WorktreeManager") as mock_manager_cls:
+        with patch(
+            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+        ) as mock_manager_cls:
             mock_manager = AsyncMock()
-            mock_manager.remove_worktree = AsyncMock(return_value={
-                "success": True,
-                "removed_path": "/tmp/worktree",
-                "output": "Removed worktree"
-            })
+            mock_manager.remove_worktree = AsyncMock(
+                return_value={
+                    "success": True,
+                    "removed_path": "/tmp/worktree",
+                    "output": "Removed worktree",
+                }
+            )
             mock_manager_cls.return_value = mock_manager
 
             result = await git_worktree_remove(path="/tmp/worktree")
@@ -387,19 +389,21 @@ class TestGitWorktreeManagement:
         from session_mgmt_mcp.advanced_features import git_worktree_switch
 
         # Mock WorktreeManager where it's imported from
-        with patch("session_mgmt_mcp.worktree_manager.WorktreeManager") as mock_manager_cls:
+        with patch(
+            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+        ) as mock_manager_cls:
             mock_manager = AsyncMock()
-            mock_manager.switch_worktree_context = AsyncMock(return_value={
-                "success": True,
-                "from_worktree": {"branch": "main", "path": "/tmp/wt1"},
-                "to_worktree": {"branch": "feature", "path": "/tmp/wt2"},
-                "context_preserved": True
-            })
+            mock_manager.switch_worktree_context = AsyncMock(
+                return_value={
+                    "success": True,
+                    "from_worktree": {"branch": "main", "path": "/tmp/wt1"},
+                    "to_worktree": {"branch": "feature", "path": "/tmp/wt2"},
+                    "context_preserved": True,
+                }
+            )
             mock_manager_cls.return_value = mock_manager
 
-            result = await git_worktree_switch(
-                from_path="/tmp/wt1", to_path="/tmp/wt2"
-            )
+            result = await git_worktree_switch(from_path="/tmp/wt1", to_path="/tmp/wt2")
 
             assert isinstance(result, str)
             assert "Switch" in result or "Complete" in result

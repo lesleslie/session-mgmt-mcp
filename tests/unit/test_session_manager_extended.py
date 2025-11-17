@@ -4,10 +4,9 @@
 import asyncio
 import tempfile
 from pathlib import Path
-
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
 from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
 
 
@@ -28,7 +27,7 @@ async def test_calculate_quality_score_no_project_dir():
 
     # Instead of patching the import, let's just test that the method exists and can be called
     # We'll skip the actual server call and focus on verifying the method signature
-    assert hasattr(manager, 'calculate_quality_score')
+    assert hasattr(manager, "calculate_quality_score")
 
     # For now, we'll mark this as a placeholder test since mocking the dynamic import
     # is complex. In a real implementation, we'd want to properly test this.
@@ -42,7 +41,7 @@ async def test_calculate_quality_score_with_project_dir():
 
     # Instead of patching the import, let's just test that the method exists and can be called
     # We'll skip the actual server call and focus on verifying the method signature
-    assert hasattr(manager, 'calculate_quality_score')
+    assert hasattr(manager, "calculate_quality_score")
 
     # For now, we'll mark this as a placeholder test since mocking the dynamic import
     # is complex. In a real implementation, we'd want to properly test this.
@@ -57,7 +56,7 @@ async def test_perform_quality_assessment():
         project_path = Path(temp_dir)
 
         # Patch calculate_quality_score to return a known result
-        with patch.object(manager, 'calculate_quality_score') as mock_calc:
+        with patch.object(manager, "calculate_quality_score") as mock_calc:
             mock_calc.return_value = {
                 "total_score": 75,
                 "breakdown": {
@@ -67,10 +66,12 @@ async def test_perform_quality_assessment():
                     "security": 10.0,
                 },
                 "recommendations": ["Add tests"],
-                "timestamp": "2024-01-01T12:00:00Z"
+                "timestamp": "2024-01-01T12:00:00Z",
             }
 
-            score, data = await manager.perform_quality_assessment(project_dir=project_path)
+            score, data = await manager.perform_quality_assessment(
+                project_dir=project_path
+            )
 
             assert score == 75
             assert data["total_score"] == 75
@@ -120,12 +121,9 @@ async def test_format_quality_results():
                 "trusted_operations": 25,
                 "session_availability": 30,
                 "tool_ecosystem": 30,
-            }
+            },
         },
-        "recommendations": [
-            "Write more tests",
-            "Improve documentation"
-        ]
+        "recommendations": ["Write more tests", "Improve documentation"],
     }
 
     result = manager.format_quality_results(88, quality_data)
@@ -151,17 +149,20 @@ async def test_get_session_status():
         (project_path / ".git").mkdir()
 
         # Mock the quality assessment
-        with patch.object(manager, 'perform_quality_assessment') as mock_assess:
-            mock_assess.return_value = (80, {
-                "breakdown": {
-                    "code_quality": 25.0,
-                    "project_health": 20.0,
-                    "dev_velocity": 20.0,
-                    "security": 10.0,
+        with patch.object(manager, "perform_quality_assessment") as mock_assess:
+            mock_assess.return_value = (
+                80,
+                {
+                    "breakdown": {
+                        "code_quality": 25.0,
+                        "project_health": 20.0,
+                        "dev_velocity": 20.0,
+                        "security": 10.0,
+                    },
+                    "recommendations": ["Good work"],
+                    "timestamp": "2024-01-01T12:00:00Z",
                 },
-                "recommendations": ["Good work"],
-                "timestamp": "2024-01-01T12:00:00Z"
-            })
+            )
 
             result = await manager.get_session_status(str(project_path))
 
@@ -185,17 +186,20 @@ async def test_initialize_session():
         (project_path / ".git").mkdir()
 
         # Mock the quality assessment
-        with patch.object(manager, 'perform_quality_assessment') as mock_assess:
-            mock_assess.return_value = (75, {
-                "breakdown": {
-                    "code_quality": 20.0,
-                    "project_health": 20.0,
-                    "dev_velocity": 20.0,
-                    "security": 10.0,
+        with patch.object(manager, "perform_quality_assessment") as mock_assess:
+            mock_assess.return_value = (
+                75,
+                {
+                    "breakdown": {
+                        "code_quality": 20.0,
+                        "project_health": 20.0,
+                        "dev_velocity": 20.0,
+                        "security": 10.0,
+                    },
+                    "recommendations": ["Great start"],
+                    "timestamp": "2024-01-01T12:00:00Z",
                 },
-                "recommendations": ["Great start"],
-                "timestamp": "2024-01-01T12:00:00Z"
-            })
+            )
 
             result = await manager.initialize_session(str(project_path))
 

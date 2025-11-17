@@ -22,7 +22,9 @@ class TestExecuteCrackerjackCommand:
         """Should execute valid command successfully."""
         from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl") as mock_impl:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+        ) as mock_impl:
             mock_impl.return_value = "Success"
             result = await execute_crackerjack_command(command="test")
 
@@ -45,7 +47,9 @@ class TestExecuteCrackerjackCommand:
         """Should suggest correct command for typos."""
         from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
 
-        result = await execute_crackerjack_command(command="tests")  # typo: should be "test"
+        result = await execute_crackerjack_command(
+            command="tests"
+        )  # typo: should be "test"
 
         assert "❌" in result
         assert "Unknown Command" in result
@@ -56,7 +60,9 @@ class TestExecuteCrackerjackCommand:
         """Should reject --ai-fix in args parameter."""
         from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
 
-        result = await execute_crackerjack_command(command="test", args="--ai-fix --verbose")
+        result = await execute_crackerjack_command(
+            command="test", args="--ai-fix --verbose"
+        )
 
         assert "❌" in result
         assert "Invalid Args" in result
@@ -67,9 +73,19 @@ class TestExecuteCrackerjackCommand:
         """Should accept all valid command names."""
         from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
 
-        valid_commands = ["test", "lint", "check", "format", "security", "complexity", "all"]
+        valid_commands = [
+            "test",
+            "lint",
+            "check",
+            "format",
+            "security",
+            "complexity",
+            "all",
+        ]
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl") as mock_impl:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+        ) as mock_impl:
             mock_impl.return_value = "Success"
 
             for cmd in valid_commands:
@@ -81,7 +97,9 @@ class TestExecuteCrackerjackCommand:
         """Should pass ai_agent_mode to implementation."""
         from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl") as mock_impl:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+        ) as mock_impl:
             mock_impl.return_value = "Success"
 
             await execute_crackerjack_command(command="test", ai_agent_mode=True)
@@ -99,7 +117,9 @@ class TestCrackerjackRun:
         """Should call implementation function."""
         from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_run
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._crackerjack_run_impl") as mock_impl:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._crackerjack_run_impl"
+        ) as mock_impl:
             mock_impl.return_value = "Result"
 
             result = await crackerjack_run(command="lint", args="--verbose")
@@ -117,7 +137,9 @@ class TestCrackerjackHistory:
         from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_history
 
         # crackerjack_history just wraps get_crackerjack_results_history
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
@@ -129,14 +151,20 @@ class TestCrackerjackHistory:
     @pytest.mark.asyncio
     async def test_get_crackerjack_results_history_calls_implementation(self) -> None:
         """Should call reflection database for history."""
-        from session_mgmt_mcp.tools.crackerjack_tools import get_crackerjack_results_history
+        from session_mgmt_mcp.tools.crackerjack_tools import (
+            get_crackerjack_results_history,
+        )
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
-            result = await get_crackerjack_results_history(working_directory=".", days=7)
+            result = await get_crackerjack_results_history(
+                working_directory=".", days=7
+            )
 
             assert isinstance(result, str)
 
@@ -149,7 +177,9 @@ class TestCrackerjackMetrics:
         """Should call get_crackerjack_quality_metrics."""
         from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_metrics
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
@@ -161,14 +191,20 @@ class TestCrackerjackMetrics:
     @pytest.mark.asyncio
     async def test_quality_metrics_implementation(self) -> None:
         """Should calculate quality metrics from history."""
-        from session_mgmt_mcp.tools.crackerjack_tools import get_crackerjack_quality_metrics
+        from session_mgmt_mcp.tools.crackerjack_tools import (
+            get_crackerjack_quality_metrics,
+        )
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
-            result = await get_crackerjack_quality_metrics(working_directory=".", days=30)
+            result = await get_crackerjack_quality_metrics(
+                working_directory=".", days=30
+            )
 
             assert isinstance(result, str)
 
@@ -181,7 +217,9 @@ class TestCrackerjackPatterns:
         """Should call analyze_crackerjack_test_patterns."""
         from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_patterns
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
@@ -193,14 +231,20 @@ class TestCrackerjackPatterns:
     @pytest.mark.asyncio
     async def test_analyze_test_patterns_implementation(self) -> None:
         """Should analyze test failure patterns."""
-        from session_mgmt_mcp.tools.crackerjack_tools import analyze_crackerjack_test_patterns
+        from session_mgmt_mcp.tools.crackerjack_tools import (
+            analyze_crackerjack_test_patterns,
+        )
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
 
-            result = await analyze_crackerjack_test_patterns(days=7, working_directory=".")
+            result = await analyze_crackerjack_test_patterns(
+                days=7, working_directory="."
+            )
 
             assert isinstance(result, str)
 
@@ -228,7 +272,9 @@ class TestQualityTrends:
         """Should analyze quality trends over time."""
         from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_quality_trends
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
             mock_db.return_value = mock_db_instance
@@ -260,7 +306,9 @@ class TestQualityMonitor:
         """Should return quality monitoring insights."""
         from session_mgmt_mcp.tools.crackerjack_tools import quality_monitor
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db") as mock_db:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+        ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db.return_value = mock_db_instance
 
@@ -334,7 +382,9 @@ class TestErrorHandling:
         """Should return None when database is unavailable."""
         from session_mgmt_mcp.tools.crackerjack_tools import _get_reflection_db
 
-        with patch("session_mgmt_mcp.tools.crackerjack_tools.resolve_reflection_database") as mock_resolve:
+        with patch(
+            "session_mgmt_mcp.tools.crackerjack_tools.resolve_reflection_database"
+        ) as mock_resolve:
             # Function returns None when resolve_reflection_database returns None
             mock_resolve.return_value = None
 

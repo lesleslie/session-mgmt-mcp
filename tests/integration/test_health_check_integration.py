@@ -11,19 +11,21 @@ Phase 10.1: Production Hardening - Health Check Integration Tests
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from session_mgmt_mcp.health_checks import HealthStatus
 from session_mgmt_mcp.health_checks import (
+    HealthStatus,
     check_database_health,
     check_dependencies_health,
     check_file_system_health,
     check_python_environment_health,
     get_all_health_checks,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestHealthCheckComponentIntegration:
@@ -115,7 +117,9 @@ class TestHealthCheckAggregation:
         assert "dependencies" in component_names
 
         # All checks should complete quickly when run concurrently
-        assert elapsed_ms < 1000  # Generous upper bound for concurrent execution (relaxed for slower systems)
+        assert (
+            elapsed_ms < 1000
+        )  # Generous upper bound for concurrent execution (relaxed for slower systems)
 
     @pytest.mark.asyncio
     async def test_get_all_health_checks_handles_partial_failures(self) -> None:
@@ -198,9 +202,7 @@ class TestHealthCheckMCPToolIntegration:
         assert len(result) > 0
 
     @pytest.mark.asyncio
-    async def test_status_tool_includes_health_information(
-        self, mcp_server
-    ) -> None:
+    async def test_status_tool_includes_health_information(self, mcp_server) -> None:
         """Should include health information in status tool."""
         result = await mcp_server.call_tool("status", {})
 
@@ -294,14 +296,14 @@ def mcp_server():
 Status: ✅ Active
 Components: 4 checked
 """
-        elif tool_name == "status":
+        if tool_name == "status":
             # Return simplified status response
             return """📊 Session Status
 
 Health: ✅ All systems operational
 """
-        else:
-            raise ValueError(f"Unknown tool: {tool_name}")
+        msg = f"Unknown tool: {tool_name}"
+        raise ValueError(msg)
 
     mock_server.call_tool = mock_call_tool
     return mock_server

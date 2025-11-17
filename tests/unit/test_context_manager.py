@@ -327,9 +327,7 @@ class TestProjectTypeDetection:
 
         assert score >= 1.0
 
-    def test_calculate_project_type_score_for_directories(
-        self, tmp_path: Path
-    ) -> None:
+    def test_calculate_project_type_score_for_directories(self, tmp_path: Path) -> None:
         """Should calculate score based on directory existence."""
         from session_mgmt_mcp.context_manager import ContextDetector
 
@@ -498,9 +496,7 @@ class TestGitInfoDetection:
     Phase 2: Core Coverage - context_manager.py (0% → 60%)
     """
 
-    def test_get_git_info_returns_empty_when_not_git_repo(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_git_info_returns_empty_when_not_git_repo(self, tmp_path: Path) -> None:
         """Should return empty dict when not a Git repository."""
         from session_mgmt_mcp.context_manager import ContextDetector
 
@@ -641,7 +637,9 @@ class TestDetectCurrentContext:
         # Create Git repository structure
         git_dir = tmp_path / ".git"
         git_dir.mkdir()
-        (git_dir / "config").write_text('[remote "origin"]\n  url = https://github.com/user/repo.git')
+        (git_dir / "config").write_text(
+            '[remote "origin"]\n  url = https://github.com/user/repo.git'
+        )
 
         detector = ContextDetector()
         result = detector.detect_current_context(str(tmp_path))
@@ -1026,7 +1024,9 @@ class TestLoadRelevantContext:
     """
 
     @pytest.mark.asyncio
-    async def test_load_relevant_context_returns_structure(self, tmp_path: Path) -> None:
+    async def test_load_relevant_context_returns_structure(
+        self, tmp_path: Path
+    ) -> None:
         """Should return complete result structure."""
         from session_mgmt_mcp.context_manager import AutoContextLoader
 
@@ -1141,9 +1141,7 @@ class TestLoadRelevantContext:
         mock_db.conn = mock_conn
 
         loader = AutoContextLoader(mock_db)
-        result = await loader.load_relevant_context(
-            str(tmp_path), min_relevance=0.3
-        )
+        result = await loader.load_relevant_context(str(tmp_path), min_relevance=0.3)
 
         # Should only include relevant conversation
         assert result["loaded_count"] >= 0

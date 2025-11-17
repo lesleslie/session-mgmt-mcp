@@ -534,10 +534,9 @@ class TestInputValidationSecurity:
         """Helper method to validate reflection content."""
         if test_input is None:
             return ""
-        elif isinstance(test_input, str):
+        if isinstance(test_input, str):
             return test_input
-        else:
-            return str(test_input)
+        return str(test_input)
 
     def test_reflection_content_validation(self):
         """Test validation of reflection content."""
@@ -562,12 +561,11 @@ class TestInputValidationSecurity:
         """Helper method to validate project names."""
         if project_name is None:
             return "default_project"
-        elif len(str(project_name)) > 255:
+        if len(str(project_name)) > 255:
             return str(project_name)[:255]
-        elif str(project_name).strip() == "":
+        if str(project_name).strip() == "":
             return "unnamed_project"
-        else:
-            return str(project_name)
+        return str(project_name)
 
     def test_project_name_validation(self):
         """Test validation of project names."""
@@ -596,17 +594,16 @@ class TestInputValidationSecurity:
         """Helper method to validate tag list."""
         if tags is None:
             return []
-        elif not isinstance(tags, list):
+        if not isinstance(tags, list):
             return [str(tags)] if tags else []
-        else:
-            validated_tags = []
-            for tag in tags[:100]:  # Limit number of tags
-                if tag is None:
-                    continue
-                tag_str = str(tag)
-                if len(tag_str.strip()) > 0 and len(tag_str) <= 100:
-                    validated_tags.append(tag_str.strip())
-            return validated_tags
+        validated_tags = []
+        for tag in tags[:100]:  # Limit number of tags
+            if tag is None:
+                continue
+            tag_str = str(tag)
+            if len(tag_str.strip()) > 0 and len(tag_str) <= 100:
+                validated_tags.append(tag_str.strip())
+        return validated_tags
 
     def test_tag_validation(self):
         """Test validation of reflection tags."""

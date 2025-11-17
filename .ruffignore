@@ -1,0 +1,7 @@
+# Ignore cache directories
+.cache
+.cache/
+**/.cache/**
+
+# Ignore old backup directories
+tests_old_backup/

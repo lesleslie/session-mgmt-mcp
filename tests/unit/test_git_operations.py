@@ -7,11 +7,10 @@ Tests subprocess-based git operations with realistic repository scenarios.
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
-
 from session_mgmt_mcp.utils.git_operations import (
     WorktreeInfo,
     create_checkpoint_commit,
@@ -25,7 +24,14 @@ from session_mgmt_mcp.utils.git_operations import (
     list_worktrees,
     stage_files,
 )
-from tests.fixtures import tmp_git_repo, tmp_git_repo_with_changes, tmp_git_repo_with_commits
+from tests.fixtures import (
+    tmp_git_repo,
+    tmp_git_repo_with_changes,
+    tmp_git_repo_with_commits,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.asyncio
@@ -233,7 +239,9 @@ class TestCheckpointCommitCreation:
 
     def test_create_checkpoint_commit_with_clean_repo(self, tmp_git_repo: Path):
         """create_checkpoint_commit handles clean repository gracefully."""
-        success, result, output = create_checkpoint_commit(tmp_git_repo, "test-project", 85)
+        success, result, output = create_checkpoint_commit(
+            tmp_git_repo, "test-project", 85
+        )
 
         assert success is True
         assert result == "clean"
@@ -244,7 +252,9 @@ class TestCheckpointCommitCreation:
         # Create untracked file
         (tmp_git_repo / "untracked.txt").write_text("content\n")
 
-        success, result, output = create_checkpoint_commit(tmp_git_repo, "test-project", 85)
+        success, result, output = create_checkpoint_commit(
+            tmp_git_repo, "test-project", 85
+        )
 
         # Should fail with no staged changes (only untracked files)
         assert success is False or result == "clean"
@@ -264,7 +274,7 @@ class TestCheckpointCommitCreation:
         readme = tmp_git_repo / "README.md"
         readme.write_text("# Modified for checkpoint test\n")
 
-        success, commit_hash, output = create_checkpoint_commit(
+        success, _commit_hash, _output = create_checkpoint_commit(
             tmp_git_repo, "session-mgmt-mcp", 75
         )
 
@@ -328,7 +338,7 @@ class TestGitOperationsEdgeCases:
         readme = tmp_git_repo / "README.md"
         readme.unlink()
 
-        modified, untracked = get_git_status(tmp_git_repo)
+        modified, _untracked = get_git_status(tmp_git_repo)
 
         # Deleted files appear as modified
         assert "README.md" in modified
@@ -353,7 +363,7 @@ class TestGitOperationsEdgeCases:
         readme = tmp_git_repo / "README.md"
         readme.write_text("# Modified with many changes\n" * 50)
 
-        success, commit_hash, output = create_checkpoint_commit(
+        success, commit_hash, _output = create_checkpoint_commit(
             tmp_git_repo, "test-project", 90
         )
 
@@ -366,7 +376,7 @@ class TestGitOperationsEdgeCases:
         special_file = tmp_git_repo / "file with spaces.txt"
         special_file.write_text("content\n")
 
-        modified, untracked = get_git_status(tmp_git_repo)
+        _modified, untracked = get_git_status(tmp_git_repo)
 
         # Git wraps filenames with spaces in quotes
         assert any("file with spaces.txt" in f for f in untracked)

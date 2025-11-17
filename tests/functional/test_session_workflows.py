@@ -225,7 +225,6 @@ class TestSessionWorkflows:
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     async def test_session_quality_scoring(self, mock_is_git_repo):
         """Test session quality scoring logic with V2 algorithm."""
-
         manager = SessionLifecycleManager(logger=Mock())
 
         test_cases = [
@@ -297,18 +296,16 @@ class TestSessionWorkflows:
             self._setup_test_project(temp_path, test_case["context"])
 
             # Mock git repo check based on context
-            mock_is_git_repo.return_value = test_case["context"].get("has_git_repo", False)
+            mock_is_git_repo.return_value = test_case["context"].get(
+                "has_git_repo", False
+            )
 
             with patch(
                 "shutil.which",
-                return_value="/usr/local/bin/uv"
-                if test_case["uv_available"]
-                else None,
+                return_value="/usr/local/bin/uv" if test_case["uv_available"] else None,
             ):
                 with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
-                    mock_perms.trusted_operations = (
-                        {"op1", "op2"} if i < 2 else set()
-                    )
+                    mock_perms.trusted_operations = {"op1", "op2"} if i < 2 else set()
 
                     # Pass temp_dir to quality scoring
                     quality_result = await manager.calculate_quality_score(
@@ -403,7 +400,6 @@ class TestSessionErrorHandling:
 
     async def test_session_with_invalid_directory(self):
         """Test session initialization with invalid directory."""
-
         manager = SessionLifecycleManager(logger=Mock())
 
         # Try to initialize with non-existent directory
@@ -435,9 +431,7 @@ class TestSessionErrorHandling:
                 assert "error" in result
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_session_with_handoff_write_error(
-        self, mock_is_git_repo
-    ):
+    async def test_session_with_handoff_write_error(self, mock_is_git_repo):
         """Test session handling of handoff file write errors."""
         mock_is_git_repo.return_value = True
 
@@ -466,7 +460,9 @@ class TestSessionErrorHandling:
                 with patch.object(
                     manager, "_save_handoff_documentation", return_value=None
                 ):
-                    result = await manager.end_session(working_directory=str(project_dir))
+                    result = await manager.end_session(
+                        working_directory=str(project_dir)
+                    )
 
                     # Should still succeed but without handoff path
                     assert result["success"] is True
@@ -478,9 +474,7 @@ class TestSessionCrossPlatform:
     """Test session functionality across different environments."""
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_session_in_different_environments(
-        self, mock_is_git_repo
-    ):
+    async def test_session_in_different_environments(self, mock_is_git_repo):
         """Test session behavior with different environment configurations (V2 algorithm)."""
         mock_is_git_repo.return_value = True
 
@@ -540,9 +534,7 @@ class TestSessionCrossPlatform:
                             assert 0 <= quality_result["total_score"] <= 100
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_session_with_different_project_types(
-        self, mock_is_git_repo
-    ):
+    async def test_session_with_different_project_types(self, mock_is_git_repo):
         """Test session with different types of projects."""
         mock_is_git_repo.return_value = True
 

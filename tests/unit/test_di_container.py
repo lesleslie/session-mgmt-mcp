@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-import pytest
+from typing import TYPE_CHECKING
 
 from acb.depends import depends
-
 from session_mgmt_mcp.core import SessionLifecycleManager
 from session_mgmt_mcp.di import SessionPaths, configure, reset
 from session_mgmt_mcp.server_core import SessionPermissionsManager
 from session_mgmt_mcp.utils.logging import SessionLogger
 
+if TYPE_CHECKING:
+    import pytest
 
-def test_configure_registers_singletons(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_configure_registers_singletons(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """configure() should register shared instances for core services."""
     original_home = Path.home()
 
@@ -53,7 +56,9 @@ def test_configure_registers_singletons(tmp_path: Path, monkeypatch: pytest.Monk
     reset()
 
 
-def test_reset_restores_default_instances(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reset_restores_default_instances(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """reset() should replace overrides with freshly configured defaults."""
     original_home = Path.home()
 

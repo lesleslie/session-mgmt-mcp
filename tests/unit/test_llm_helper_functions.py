@@ -168,7 +168,9 @@ class TestValidateProviderBasic:
         assert "API Key Warning" in captured.err
         assert "appears very short" in captured.err
 
-    def test_validate_long_api_key_no_warning(self, capsys: pytest.CaptureFixture) -> None:
+    def test_validate_long_api_key_no_warning(
+        self, capsys: pytest.CaptureFixture
+    ) -> None:
         """Should not warn when API key is long enough."""
         from session_mgmt_mcp.llm_providers import _validate_provider_basic
 
@@ -194,7 +196,9 @@ class TestValidateProviderWithSecurity:
     Phase 2: Core Coverage - llm_providers.py (30% → 70%)
     """
 
-    def test_validate_with_security_success(self, capsys: pytest.CaptureFixture) -> None:
+    def test_validate_with_security_success(
+        self, capsys: pytest.CaptureFixture
+    ) -> None:
         """Should validate API key using security module when available."""
         from session_mgmt_mcp.llm_providers import SECURITY_AVAILABLE
 
@@ -279,7 +283,9 @@ class TestValidateLlmApiKeysAtStartup:
             assert "openai" in result
             assert result["openai"] == "valid"
 
-    def test_validate_without_security_module(self, capsys: pytest.CaptureFixture) -> None:
+    def test_validate_without_security_module(
+        self, capsys: pytest.CaptureFixture
+    ) -> None:
         """Should use basic validation when security module unavailable."""
         from session_mgmt_mcp.llm_providers import validate_llm_api_keys_at_startup
 
@@ -309,7 +315,10 @@ class TestValidateLlmApiKeysAtStartup:
         with (
             patch.dict(
                 os.environ,
-                {"OPENAI_API_KEY": "sk-" + "x" * 40, "GEMINI_API_KEY": "gem-" + "y" * 40},
+                {
+                    "OPENAI_API_KEY": "sk-" + "x" * 40,
+                    "GEMINI_API_KEY": "gem-" + "y" * 40,
+                },
             ),
             patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
         ):
@@ -329,7 +338,10 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_openai_api_key_with_security(self) -> None:
         """Should mask OpenAI API key using security module."""
-        from session_mgmt_mcp.llm_providers import SECURITY_AVAILABLE, get_masked_api_key
+        from session_mgmt_mcp.llm_providers import (
+            SECURITY_AVAILABLE,
+            get_masked_api_key,
+        )
 
         if not SECURITY_AVAILABLE:
             pytest.skip("Security module not available")
@@ -433,7 +445,9 @@ class TestOllamaProviderHelperFunctions:
         mock_session_cm.__aexit__ = AsyncMock(return_value=None)
 
         with patch("aiohttp.ClientSession", return_value=mock_session_cm):
-            result = await provider._check_with_aiohttp("http://localhost:11434/api/tags")
+            result = await provider._check_with_aiohttp(
+                "http://localhost:11434/api/tags"
+            )
 
             assert result is True
             assert provider._available_models == ["llama2", "mistral"]
@@ -463,7 +477,9 @@ class TestOllamaProviderHelperFunctions:
         mock_session_cm.__aexit__ = AsyncMock(return_value=None)
 
         with patch("aiohttp.ClientSession", return_value=mock_session_cm):
-            result = await provider._check_with_aiohttp("http://localhost:11434/api/tags")
+            result = await provider._check_with_aiohttp(
+                "http://localhost:11434/api/tags"
+            )
 
             assert result is False
 
@@ -477,7 +493,9 @@ class TestOllamaProviderHelperFunctions:
         with patch(
             "aiohttp.ClientSession", side_effect=Exception("Connection refused")
         ):
-            result = await provider._check_with_aiohttp("http://localhost:11434/api/tags")
+            result = await provider._check_with_aiohttp(
+                "http://localhost:11434/api/tags"
+            )
 
             assert result is False
 

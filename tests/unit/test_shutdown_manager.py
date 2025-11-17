@@ -14,7 +14,6 @@ import time
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
-
 from session_mgmt_mcp.shutdown_manager import (
     CleanupTask,
     ShutdownManager,
@@ -176,7 +175,8 @@ class TestShutdownExecution:
         executed = []
 
         def failing_task():
-            raise RuntimeError("Cleanup failed")
+            msg = "Cleanup failed"
+            raise RuntimeError(msg)
 
         def successful_task():
             executed.append("success")
@@ -198,12 +198,15 @@ class TestShutdownExecution:
         executed = []
 
         def critical_failing():
-            raise RuntimeError("Critical failure")
+            msg = "Critical failure"
+            raise RuntimeError(msg)
 
         def later_task():
             executed.append("later")
 
-        manager.register_cleanup("critical", critical_failing, priority=100, critical=True)
+        manager.register_cleanup(
+            "critical", critical_failing, priority=100, critical=True
+        )
         manager.register_cleanup("later", later_task, priority=10)
 
         stats = await manager.shutdown()
@@ -349,7 +352,8 @@ class TestShutdownStats:
         manager = ShutdownManager()
 
         def failing():
-            raise RuntimeError("Failed")
+            msg = "Failed"
+            raise RuntimeError(msg)
 
         manager.register_cleanup("fail", failing)
         manager.register_cleanup("success", lambda: None)

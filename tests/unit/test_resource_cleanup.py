@@ -9,11 +9,10 @@ Phase 10.2: Production Hardening - Resource Cleanup Tests
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from session_mgmt_mcp.resource_cleanup import (
     cleanup_background_tasks,
     cleanup_database_connections,
@@ -25,6 +24,9 @@ from session_mgmt_mcp.resource_cleanup import (
     register_all_cleanup_handlers,
 )
 from session_mgmt_mcp.shutdown_manager import ShutdownManager
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestDatabaseCleanup:
@@ -304,9 +306,12 @@ class TestCleanupIntegration:
 
         # Register some cleanups that will fail
         async def failing_cleanup():
-            raise RuntimeError("Cleanup failed")
+            msg = "Cleanup failed"
+            raise RuntimeError(msg)
 
-        manager.register_cleanup("failing", failing_cleanup, priority=50, critical=False)
+        manager.register_cleanup(
+            "failing", failing_cleanup, priority=50, critical=False
+        )
 
         # Register normal cleanups
         register_all_cleanup_handlers(manager)

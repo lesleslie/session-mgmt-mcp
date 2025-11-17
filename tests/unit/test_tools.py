@@ -24,6 +24,7 @@ class TestSessionTools:
         """Test that session_tools module imports successfully."""
         try:
             from session_mgmt_mcp.tools import session_tools
+
             assert session_tools is not None
         except ImportError as e:
             pytest.skip(f"session_tools import failed: {e}")
@@ -34,7 +35,10 @@ class TestSessionTools:
             from session_mgmt_mcp.tools.session_tools import (
                 start_session_tool,
             )
-            assert callable(start_session_tool) or hasattr(session_tools, "start_session")
+
+            assert callable(start_session_tool) or hasattr(
+                session_tools, "start_session"
+            )
         except (ImportError, AttributeError):
             pytest.skip("Start session function not found")
 
@@ -42,6 +46,7 @@ class TestSessionTools:
         """Test that checkpoint function exists."""
         try:
             from session_mgmt_mcp.tools import session_tools
+
             # Should have checkpoint-related functions
             assert hasattr(session_tools, "__file__")
         except ImportError:
@@ -51,6 +56,7 @@ class TestSessionTools:
         """Test that end session function exists."""
         try:
             from session_mgmt_mcp.tools import session_tools
+
             # Session tools module should be importable
             assert session_tools is not None
         except ImportError:
@@ -65,6 +71,7 @@ class TestMemoryTools:
         """Test that memory_tools module imports successfully."""
         try:
             from session_mgmt_mcp.tools import memory_tools
+
             assert memory_tools is not None
         except ImportError as e:
             pytest.skip(f"memory_tools import failed: {e}")
@@ -73,6 +80,7 @@ class TestMemoryTools:
         """Test that store reflection function is available."""
         try:
             from session_mgmt_mcp.tools.memory_tools import store_reflection
+
             assert callable(store_reflection)
         except (ImportError, AttributeError):
             pytest.skip("store_reflection not available")
@@ -83,6 +91,7 @@ class TestMemoryTools:
             from session_mgmt_mcp.tools.memory_tools import (
                 search_reflections,
             )
+
             assert callable(search_reflections)
         except (ImportError, AttributeError):
             pytest.skip("search_reflections not available")
@@ -93,6 +102,7 @@ class TestMemoryTools:
             from session_mgmt_mcp.tools.memory_tools import (
                 reflection_stats,
             )
+
             assert callable(reflection_stats)
         except (ImportError, AttributeError):
             pytest.skip("reflection_stats not available")
@@ -100,13 +110,20 @@ class TestMemoryTools:
     async def test_store_reflection_basic(self):
         """Test basic reflection storage."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import store_reflection
             from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_mgmt_mcp.tools.memory_tools import store_reflection
 
             # Create in-memory database for testing
             with patch.object(ReflectionDatabase, "initialize", new_callable=AsyncMock):
-                with patch.object(ReflectionDatabase, "store_reflection", new_callable=AsyncMock, return_value="test_id"):
-                    result = await store_reflection(content="test reflection", tags=["test"])
+                with patch.object(
+                    ReflectionDatabase,
+                    "store_reflection",
+                    new_callable=AsyncMock,
+                    return_value="test_id",
+                ):
+                    result = await store_reflection(
+                        content="test reflection", tags=["test"]
+                    )
                     # Should return some result
                     assert result is not None
         except (ImportError, AttributeError):
@@ -121,6 +138,7 @@ class TestSearchTools:
         """Test that search_tools module imports successfully."""
         try:
             from session_mgmt_mcp.tools import search_tools
+
             assert search_tools is not None
         except ImportError as e:
             pytest.skip(f"search_tools import failed: {e}")
@@ -131,6 +149,7 @@ class TestSearchTools:
             from session_mgmt_mcp.tools.search_tools import (
                 quick_search,
             )
+
             assert callable(quick_search)
         except (ImportError, AttributeError):
             pytest.skip("quick_search not available")
@@ -141,6 +160,7 @@ class TestSearchTools:
             from session_mgmt_mcp.tools.search_tools import (
                 search_by_concept,
             )
+
             assert callable(search_by_concept)
         except (ImportError, AttributeError):
             pytest.skip("search_by_concept not available")
@@ -149,6 +169,7 @@ class TestSearchTools:
         """Test that code search function is available."""
         try:
             from session_mgmt_mcp.tools.search_tools import search_code
+
             assert callable(search_code)
         except (ImportError, AttributeError):
             pytest.skip("search_code not available")
@@ -252,6 +273,7 @@ class TestToolsIntegration:
         """Test basic session workflow with tools."""
         try:
             from session_mgmt_mcp.tools import session_tools
+
             # Module should be importable and have content
             assert session_tools is not None
             assert hasattr(session_tools, "__name__")
@@ -262,6 +284,7 @@ class TestToolsIntegration:
         """Test memory tools workflow."""
         try:
             from session_mgmt_mcp.tools import memory_tools
+
             # Module should be importable and have content
             assert memory_tools is not None
             assert hasattr(memory_tools, "__name__")
@@ -272,6 +295,7 @@ class TestToolsIntegration:
         """Test search tools workflow."""
         try:
             from session_mgmt_mcp.tools import search_tools
+
             # Module should be importable and have content
             assert search_tools is not None
             assert hasattr(search_tools, "__name__")
@@ -288,7 +312,9 @@ class TestToolsWithMocks:
         try:
             from session_mgmt_mcp.tools.search_tools import quick_search
 
-            with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase") as mock_db_class:
+            with patch(
+                "session_mgmt_mcp.tools.search_tools.ReflectionDatabase"
+            ) as mock_db_class:
                 mock_instance = AsyncMock()
                 mock_instance.search_conversations.return_value = [
                     {"id": "1", "content": "result 1"},
@@ -308,7 +334,9 @@ class TestToolsWithMocks:
                 store_reflection,
             )
 
-            with patch("session_mgmt_mcp.tools.memory_tools.ReflectionDatabase") as mock_db_class:
+            with patch(
+                "session_mgmt_mcp.tools.memory_tools.ReflectionDatabase"
+            ) as mock_db_class:
                 mock_instance = AsyncMock()
                 mock_instance.store_reflection.return_value = "test_id_123"
                 mock_db_class.return_value = mock_instance

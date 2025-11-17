@@ -212,6 +212,47 @@ async def execute_no_database_tool(
         return ToolMessages.operation_failed(operation_name, e)
 
 
+def _validate_required_field(key: str, value: Any) -> None:
+    """Validate a required field."""
+    from session_mgmt_mcp.utils.error_handlers import validate_required
+
+    field_name = key[9:]  # Remove "required_" prefix
+    validate_required(value, field_name)
+
+
+def _validate_type_field(key: str, value: Any) -> None:
+    """Validate a type field."""
+    from session_mgmt_mcp.utils.error_handlers import validate_type
+
+    parts = key.split("_")
+    if len(parts) < 3:
+        return
+
+    field_name = "_".join(parts[1:-1])
+    expected_type_name = parts[-1]
+    type_map = {
+        "str": str,
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "list": list,
+        "dict": dict,
+    }
+    expected_type = type_map.get(expected_type_name)
+
+    if expected_type and isinstance(value, tuple) and len(value) == 2:
+        validate_type(value[0], expected_type, field_name)
+
+
+def _validate_range_field(key: str, value: Any) -> None:
+    """Validate a range field."""
+    from session_mgmt_mcp.utils.error_handlers import validate_range
+
+    field_name = key[6:]  # Remove "range_" prefix
+    if isinstance(value, tuple) and len(value) == 3:
+        validate_range(value[0], value[1], value[2], field_name)
+
+
 def create_validator(**validations: Any) -> Callable[[], None]:
     """Create a validator function from validation rules.
 
@@ -235,39 +276,15 @@ def create_validator(**validations: Any) -> Callable[[], None]:
         >>> validator()  # Raises ValidationError if invalid
 
     """
-    from session_mgmt_mcp.utils.error_handlers import (
-        validate_range,
-        validate_required,
-        validate_type,
-    )
 
     def validator() -> None:
         for key, value in validations.items():
             if key.startswith("required_"):
-                field_name = key[9:]  # Remove "required_" prefix
-                validate_required(value, field_name)
-
+                _validate_required_field(key, value)
             elif key.startswith("type_"):
-                parts = key.split("_")
-                if len(parts) >= 3:
-                    field_name = "_".join(parts[1:-1])
-                    expected_type_name = parts[-1]
-                    expected_type = {
-                        "str": str,
-                        "int": int,
-                        "float": float,
-                        "bool": bool,
-                        "list": list,
-                        "dict": dict,
-                    }.get(expected_type_name)
-
-                    if expected_type and isinstance(value, tuple) and len(value) == 2:
-                        validate_type(value[0], expected_type, field_name)
-
+                _validate_type_field(key, value)
             elif key.startswith("range_"):
-                field_name = key[6:]  # Remove "range_" prefix
-                if isinstance(value, tuple) and len(value) == 3:
-                    validate_range(value[0], value[1], value[2], field_name)
+                _validate_range_field(key, value)
 
     return validator
 

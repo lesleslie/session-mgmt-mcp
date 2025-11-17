@@ -51,16 +51,18 @@ class TestQualityScoreCalculation:
         # Should not raise exception
 
     @pytest.mark.asyncio
-    async def test_calculate_quality_score_uses_v2_algorithm(self, tmp_path: Path) -> None:
+    async def test_calculate_quality_score_uses_v2_algorithm(
+        self, tmp_path: Path
+    ) -> None:
         """Should use quality_utils_v2 for scoring."""
         from session_mgmt_mcp.quality_engine import calculate_quality_score
         from session_mgmt_mcp.utils.quality_utils_v2 import (
-            QualityScoreV2,
-            ProjectHealthScore,
-            TrustScore,
             CodeQualityScore,
             DevVelocityScore,
+            ProjectHealthScore,
+            QualityScoreV2,
             SecurityScore,
+            TrustScore,
         )
 
         # Create minimal project structure
@@ -78,19 +80,31 @@ class TestQualityScoreCalculation:
                 total=29.0,
                 details={},
             ),
-            project_health=ProjectHealthScore(total=20, tooling_score=10, maturity_score=10, details={}),
-            dev_velocity=DevVelocityScore(git_activity=8.0, dev_patterns=8.0, total=16.0, details={}),
-            security=SecurityScore(security_tools=5.0, security_hygiene=5.0, total=10.0, details={}),
+            project_health=ProjectHealthScore(
+                total=20, tooling_score=10, maturity_score=10, details={}
+            ),
+            dev_velocity=DevVelocityScore(
+                git_activity=8.0, dev_patterns=8.0, total=16.0, details={}
+            ),
+            security=SecurityScore(
+                security_tools=5.0, security_hygiene=5.0, total=10.0, details={}
+            ),
             trust_score=TrustScore(
-                trusted_operations=20.0, session_availability=15.0, tool_ecosystem=10.0, total=45.0, details={}
+                trusted_operations=20.0,
+                session_availability=15.0,
+                tool_ecosystem=10.0,
+                total=45.0,
+                details={},
             ),
             recommendations=[],
             timestamp="2025-01-01",
         )
 
-        with patch("session_mgmt_mcp.quality_engine.calculate_quality_score_v2") as mock_v2:
+        with patch(
+            "session_mgmt_mcp.quality_engine.calculate_quality_score_v2"
+        ) as mock_v2:
             mock_v2.return_value = mock_result
-            result = await calculate_quality_score(project_dir=tmp_path)
+            await calculate_quality_score(project_dir=tmp_path)
 
             # Verify V2 algorithm was called
             mock_v2.assert_called_once()
@@ -118,7 +132,9 @@ class TestCompactionAnalysis:
         for i in range(60):
             (tmp_path / f"file_{i}.py").write_text("# Python file\n")
 
-        with patch("session_mgmt_mcp.quality_engine._count_significant_files") as mock_count:
+        with patch(
+            "session_mgmt_mcp.quality_engine._count_significant_files"
+        ) as mock_count:
             mock_count.return_value = 60
 
             should_compact, reason = should_suggest_compact()
@@ -134,7 +150,9 @@ class TestCompactionAnalysis:
         # Create minimal project
         (tmp_path / "main.py").write_text("# Main file\n")
 
-        with patch("session_mgmt_mcp.quality_engine._count_significant_files") as mock_count:
+        with patch(
+            "session_mgmt_mcp.quality_engine._count_significant_files"
+        ) as mock_count:
             mock_count.return_value = 1
 
             should_compact, reason = should_suggest_compact()
@@ -149,7 +167,9 @@ class TestCompactionAnalysis:
         from session_mgmt_mcp.quality_engine import perform_strategic_compaction
 
         # Mock filesystem operations to prevent timeout
-        with patch("session_mgmt_mcp.utils.file_utils._cleanup_temp_files") as mock_cleanup:
+        with patch(
+            "session_mgmt_mcp.utils.file_utils._cleanup_temp_files"
+        ) as mock_cleanup:
             mock_cleanup.return_value = "✅ Cleaned 0 temporary files (0.0 MB)"
 
             result = await perform_strategic_compaction()
@@ -160,11 +180,15 @@ class TestCompactionAnalysis:
                 assert isinstance(item, str)
 
     @pytest.mark.asyncio
-    async def test_perform_strategic_compaction_includes_database_optimization(self) -> None:
+    async def test_perform_strategic_compaction_includes_database_optimization(
+        self,
+    ) -> None:
         """Should include reflection database optimization."""
         from session_mgmt_mcp.quality_engine import perform_strategic_compaction
 
-        with patch("session_mgmt_mcp.quality_engine._optimize_reflection_database") as mock_optimize:
+        with patch(
+            "session_mgmt_mcp.quality_engine._optimize_reflection_database"
+        ) as mock_optimize:
             mock_optimize.return_value = "✅ Database optimized"
 
             result = await perform_strategic_compaction()
@@ -207,7 +231,9 @@ class TestProjectHeuristics:
         # Should only count visible.py, not .hidden/secret.py
         assert count >= 1
 
-    def test_count_significant_files_supports_multiple_languages(self, tmp_path: Path) -> None:
+    def test_count_significant_files_supports_multiple_languages(
+        self, tmp_path: Path
+    ) -> None:
         """Should count files from multiple programming languages."""
         from session_mgmt_mcp.quality_engine import _count_significant_files
 
@@ -255,8 +281,7 @@ class TestProjectHeuristics:
         with patch("subprocess.run") as mock_run:
             # Mock git log output
             mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="commit1\ncommit2\ncommit3\n"
+                returncode=0, stdout="commit1\ncommit2\ncommit3\n"
             )
 
             result = _check_git_activity(tmp_path)
@@ -269,7 +294,9 @@ class TestWorkflowAnalysis:
     """Test workflow pattern analysis."""
 
     @pytest.mark.asyncio
-    async def test_analyze_project_workflow_patterns_returns_dict(self, tmp_path: Path) -> None:
+    async def test_analyze_project_workflow_patterns_returns_dict(
+        self, tmp_path: Path
+    ) -> None:
         """Should return dictionary with workflow analysis."""
         from session_mgmt_mcp.quality_engine import analyze_project_workflow_patterns
 
@@ -277,7 +304,9 @@ class TestWorkflowAnalysis:
 
         assert isinstance(result, dict)
         # Actual keys returned by the function
-        assert "project_characteristics" in result or "workflow_recommendations" in result
+        assert (
+            "project_characteristics" in result or "workflow_recommendations" in result
+        )
 
     @pytest.mark.asyncio
     async def test_analyze_project_workflow_patterns_detects_python_project(
@@ -327,7 +356,11 @@ class TestConversationAnalysis:
 
         assert isinstance(result, dict)
         # Actual keys from _create_empty_summary()
-        assert "key_topics" in result or "decisions_made" in result or "next_steps" in result
+        assert (
+            "key_topics" in result
+            or "decisions_made" in result
+            or "next_steps" in result
+        )
 
     @pytest.mark.asyncio
     async def test_analyze_conversation_flow_returns_dict(self) -> None:
@@ -397,7 +430,11 @@ class TestSessionIntelligence:
         result = await generate_session_intelligence()
 
         assert isinstance(result, dict)
-        assert "insights" in result or "recommendations" in result or "priority_actions" in result
+        assert (
+            "insights" in result
+            or "recommendations" in result
+            or "priority_actions" in result
+        )
 
     @pytest.mark.asyncio
     async def test_monitor_proactive_quality_returns_dict(self) -> None:

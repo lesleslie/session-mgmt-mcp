@@ -204,7 +204,9 @@ class TestExecuteCrackerjackCommandMethod:
         # Test the _build_command_flags method
         for command, expected_flags in test_cases:
             flags = integration._build_command_flags(command, ai_agent_mode=False)
-            assert flags == expected_flags, f"Command '{command}' has incorrect flags: {flags} != {expected_flags}"
+            assert flags == expected_flags, (
+                f"Command '{command}' has incorrect flags: {flags} != {expected_flags}"
+            )
 
     @patch("asyncio.create_subprocess_exec")
     async def test_execute_crackerjack_command_basic(self, mock_create_subprocess):
@@ -225,7 +227,13 @@ class TestExecuteCrackerjackCommandMethod:
         call_args = mock_create_subprocess.call_args
 
         # Should be called with python -m crackerjack + flags
-        expected_cmd = ["python", "-m", "crackerjack", "--fast", "--quick"]  # lint maps to --fast --quick
+        expected_cmd = [
+            "python",
+            "-m",
+            "crackerjack",
+            "--fast",
+            "--quick",
+        ]  # lint maps to --fast --quick
         assert call_args[0] == tuple(expected_cmd)
 
         # Verify result type and content
@@ -249,7 +257,14 @@ class TestExecuteCrackerjackCommandMethod:
 
         # Verify command construction
         call_args = mock_create_subprocess.call_args
-        expected_cmd = ["python", "-m", "crackerjack", "--run-tests", "--quick", "--verbose"]
+        expected_cmd = [
+            "python",
+            "-m",
+            "crackerjack",
+            "--run-tests",
+            "--quick",
+            "--verbose",
+        ]
         assert call_args[0] == tuple(expected_cmd)
 
         # Verify working directory
@@ -313,7 +328,11 @@ class TestExecuteCrackerjackCommandMethod:
 
             # Should call with python -m crackerjack (no flags for unknown commands)
             call_args = mock_create.call_args
-            expected_cmd = ["python", "-m", "crackerjack"]  # No flags for unknown command
+            expected_cmd = [
+                "python",
+                "-m",
+                "crackerjack",
+            ]  # No flags for unknown command
             assert call_args[0] == tuple(expected_cmd)
 
 

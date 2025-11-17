@@ -151,9 +151,7 @@ class TestSessionLifecycleManagerQualityScore:
                 }
 
                 # Mock permissions manager
-                with patch(
-                    "session_mgmt_mcp.server.permissions_manager"
-                ) as mock_perms:
+                with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
                     mock_perms.trusted_operations = {"op1", "op2", "op3", "op4", "op5"}
 
                     result = await manager.calculate_quality_score()
@@ -229,7 +227,6 @@ class TestSessionLifecycleManagerQualityScore:
                     "security",
                 ]
             )
-
 
 
 class TestSessionLifecycleManagerQualityAssessment:
@@ -443,7 +440,9 @@ class TestSessionLifecycleManagerSessionInitialization:
 
     @patch("os.chdir")
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
-    async def test_initialize_session_success(self, mock_is_git_repo, mock_chdir, tmp_path):
+    async def test_initialize_session_success(
+        self, mock_is_git_repo, mock_chdir, tmp_path
+    ):
         """Test initialize_session with successful operation."""
         mock_is_git_repo.return_value = True
 
@@ -656,7 +655,10 @@ class TestSessionLifecycleManagerHandoffDocumentation:
         result = await manager._generate_handoff_documentation(summary, quality_data)
 
         # Check that handoff document was generated with the project name
-        assert ("# Session Handoff Report - test-project" in result or "# Session Handoff - test-project" in result)
+        assert (
+            "# Session Handoff Report - test-project" in result
+            or "# Session Handoff - test-project" in result
+        )
         assert "85/100" in result or "85" in result  # Quality score
         assert "test-project" in result  # Project name
         assert "Quality" in result  # Some quality information
@@ -774,7 +776,9 @@ class TestSessionLifecycleManagerSessionStatus:
 
     @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
     @patch("shutil.which")
-    async def test_get_session_status_success(self, mock_which, mock_is_git_repo, tmp_path):
+    async def test_get_session_status_success(
+        self, mock_which, mock_is_git_repo, tmp_path
+    ):
         """Test get_session_status with successful operation."""
         mock_is_git_repo.return_value = True
         mock_which.return_value = "/usr/local/bin/uv"

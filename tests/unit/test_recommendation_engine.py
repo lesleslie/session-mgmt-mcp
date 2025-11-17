@@ -1,10 +1,10 @@
 """Unit tests for RecommendationEngine with mocked dependencies."""
 
-import pytest
 from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from session_mgmt_mcp.tools.agent_analyzer import AgentRecommendation, AgentType
 from session_mgmt_mcp.tools.recommendation_engine import (
     AgentEffectiveness,
@@ -292,12 +292,15 @@ class TestRecommendationEngine:
 
         # Handle case where result might be a coroutine (if caching returns coroutine)
         import inspect
+
         if inspect.iscoroutine(result1):
             result1 = await result1
 
         # Verify first result - if result is None, cache may be failing but that's acceptable for this test
         if result1 is not None:
-            assert isinstance(result1, dict), f"result1 should be dict or None, got {type(result1)}"
+            assert isinstance(result1, dict), (
+                f"result1 should be dict or None, got {type(result1)}"
+            )
             # The result may or may not have total_executions field
             if "total_executions" in result1:
                 assert result1["total_executions"] >= 0
@@ -324,7 +327,7 @@ class TestRecommendationEngine:
         # Should be same as cached result (doesn't see new execution)
         # But if either result1 or result2 is None, just skip this assertion
         if result1 is not None and result2 is not None:
-            assert "total_executions" in result1 or "total_executions" in result2 or True
+            assert True
             # Caching test - both should be same if they're valid dicts
 
         # Third call without cache - should see both executions

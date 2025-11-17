@@ -152,7 +152,7 @@ class TestMemoryAndReflection:
                 async with ReflectionDatabase() as db:
                     # Test that database initialization works
                     assert db is not None
-            except Exception as e:
+            except Exception:
                 # If database initialization fails (e.g., missing dependencies),
                 # test that the class is properly structured
                 db = ReflectionDatabase()
@@ -288,7 +288,6 @@ class TestToolIntegrationWorkflows:
 
             db = ReflectionDatabase()
             # Simulate storing a reflection
-            reflection_content = "Test reflection about code quality"
 
             # Verify database operations work
             assert hasattr(db, "store_reflection")
@@ -306,14 +305,12 @@ class TestToolIntegrationWorkflows:
                 manager = SessionLifecycleManager()
 
                 # Initialize with quality tracking
-                init_result = await manager.initialize_session(
-                    working_directory=tmpdir
-                )
+                init_result = await manager.initialize_session(working_directory=tmpdir)
                 assert init_result["success"]
-                initial_score = init_result.get("quality_score", 0)
+                init_result.get("quality_score", 0)
 
                 # Record quality assessment
-                quality_score, quality_data = await manager.perform_quality_assessment(
+                quality_score, _quality_data = await manager.perform_quality_assessment(
                     Path(tmpdir)
                 )
 
@@ -398,14 +395,10 @@ class TestToolDataConsistency:
 
                 # First assessment
                 await manager.initialize_session(working_directory=tmpdir)
-                score1, data1 = await manager.perform_quality_assessment(
-                    Path(tmpdir)
-                )
+                score1, _data1 = await manager.perform_quality_assessment(Path(tmpdir))
 
                 # Second assessment of same project
-                score2, data2 = await manager.perform_quality_assessment(
-                    Path(tmpdir)
-                )
+                score2, _data2 = await manager.perform_quality_assessment(Path(tmpdir))
 
                 # Scores should be consistent for identical project state
                 assert isinstance(score1, int)

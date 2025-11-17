@@ -9,10 +9,13 @@ Phase: Week 4 Days 3-5 - Knowledge Graph Coverage
 from __future__ import annotations
 
 import tempfile
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestKnowledgeGraphInitialization:
@@ -99,7 +102,9 @@ class TestKnowledgeGraphEntityOperations:
 
         async with KnowledgeGraphDatabase(db_path=db_path) as kg:
             entity = await kg.create_entity(
-                name="test-project", entity_type="project", observations=["Test project"]
+                name="test-project",
+                entity_type="project",
+                observations=["Test project"],
             )
 
             assert entity["name"] == "test-project"
@@ -181,7 +186,9 @@ class TestKnowledgeGraphEntityOperations:
         async with KnowledgeGraphDatabase(db_path=db_path) as kg:
             # Create entity
             await kg.create_entity(
-                name="test-entity", entity_type="concept", observations=["Initial observation"]
+                name="test-entity",
+                entity_type="concept",
+                observations=["Initial observation"],
             )
 
             # Add observation
@@ -232,7 +239,9 @@ class TestKnowledgeGraphRelations:
 
         async with KnowledgeGraphDatabase(db_path=db_path) as kg:
             # Create entities and relations
-            await kg.create_entity(name="project", entity_type="project", observations=[])
+            await kg.create_entity(
+                name="project", entity_type="project", observations=[]
+            )
             await kg.create_entity(name="lib1", entity_type="library", observations=[])
             await kg.create_entity(name="lib2", entity_type="library", observations=[])
 
@@ -355,7 +364,7 @@ class TestKnowledgeGraphErrorHandling:
         with patch("session_mgmt_mcp.knowledge_graph_db.DUCKDB_AVAILABLE", False):
             from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
 
-            kg = KnowledgeGraphDatabase()
+            KnowledgeGraphDatabase()
 
             # Should handle missing DuckDB gracefully
             # (May raise ImportError or return gracefully)

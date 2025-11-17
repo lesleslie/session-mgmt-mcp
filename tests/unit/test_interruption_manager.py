@@ -6,7 +6,7 @@ Tests context preservation during interruptions and session recovery.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -67,13 +67,15 @@ class TestContextState:
 class TestInterruptionEvent:
     """Test InterruptionEvent dataclass."""
 
-    @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="InterruptionEvent not fully implemented")
+    @pytest.mark.skipif(
+        not HAS_INTERRUPTION_MANAGER, reason="InterruptionEvent not fully implemented"
+    )
     def test_interruption_event_creation(self) -> None:
         """Test creating an interruption event."""
         event = InterruptionEvent(
             id="test-event-123",
             event_type=InterruptionType.APP_SWITCH,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source_context={},
             target_context={},
             duration=None,
@@ -86,14 +88,16 @@ class TestInterruptionEvent:
         assert isinstance(event.timestamp, datetime)
         assert event.source_context == {}
 
-    @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="InterruptionEvent not fully implemented")
+    @pytest.mark.skipif(
+        not HAS_INTERRUPTION_MANAGER, reason="InterruptionEvent not fully implemented"
+    )
     def test_interruption_event_with_metadata(self) -> None:
         """Test interruption event with recovery data."""
         recovery_data = {"reason": "user requested", "severity": "low"}
         event = InterruptionEvent(
             id="test-event-456",
             event_type=InterruptionType.WINDOW_CHANGE,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source_context={},
             target_context={},
             duration=30.5,
@@ -108,7 +112,9 @@ class TestInterruptionEvent:
 class TestSessionContext:
     """Test SessionContext dataclass."""
 
-    @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="SessionContext not fully implemented")
+    @pytest.mark.skipif(
+        not HAS_INTERRUPTION_MANAGER, reason="SessionContext not fully implemented"
+    )
     def test_session_context_creation(self) -> None:
         """Test creating a session context."""
         context = SessionContext(
@@ -122,7 +128,7 @@ class TestSessionContext:
             cursor_positions={},
             environment_vars={},
             process_state={},
-            last_activity=datetime.now(timezone.utc),
+            last_activity=datetime.now(UTC),
             focus_duration=0.0,
             interruption_count=0,
             recovery_attempts=0,
@@ -131,7 +137,9 @@ class TestSessionContext:
         assert context.user_id == "test-user"
         assert isinstance(context.last_activity, datetime)
 
-    @pytest.mark.skipif(not HAS_INTERRUPTION_MANAGER, reason="SessionContext not fully implemented")
+    @pytest.mark.skipif(
+        not HAS_INTERRUPTION_MANAGER, reason="SessionContext not fully implemented"
+    )
     def test_session_context_with_data(self) -> None:
         """Test session context with additional data."""
         open_files = ["/tmp/file1.py", "/tmp/file2.py"]
@@ -147,7 +155,7 @@ class TestSessionContext:
             cursor_positions=cursor_positions,
             environment_vars={"PWD": "/tmp"},
             process_state={"pid": 12345},
-            last_activity=datetime.now(timezone.utc),
+            last_activity=datetime.now(UTC),
             focus_duration=100.5,
             interruption_count=2,
             recovery_attempts=1,

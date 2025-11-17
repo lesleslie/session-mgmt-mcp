@@ -89,7 +89,9 @@ class TestStoreReflectionValidated:
                 tags=["valid-tag", "invalid tag with spaces"],
             )
 
-            assert "Parameter validation error" in result or "validation" in result.lower()
+            assert (
+                "Parameter validation error" in result or "validation" in result.lower()
+            )
 
     @pytest.mark.asyncio
     async def test_store_reflection_without_tags(self) -> None:
@@ -285,7 +287,9 @@ class TestQuickSearchValidated:
                 project=None,
             )
 
-            assert "Parameter validation error" in result or "validation" in result.lower()
+            assert (
+                "Parameter validation error" in result or "validation" in result.lower()
+            )
 
     @pytest.mark.asyncio
     async def test_quick_search_with_no_results(self) -> None:
@@ -753,12 +757,11 @@ class TestAvailabilityChecking:
 
     def test_check_reflection_tools_available_when_installed(self) -> None:
         """Should return True when reflection tools are available."""
+        # Reset global state
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
-
-        # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = None
 
@@ -769,12 +772,11 @@ class TestAvailabilityChecking:
 
     def test_check_reflection_tools_available_when_not_installed(self) -> None:
         """Should return False when reflection tools not available."""
+        # Reset global state
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
-
-        # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = None
 
@@ -785,12 +787,11 @@ class TestAvailabilityChecking:
 
     def test_check_reflection_tools_available_caches_result(self) -> None:
         """Should cache availability check result."""
+        # Reset global state
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
-
-        # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = None
 
@@ -807,12 +808,11 @@ class TestAvailabilityChecking:
     @pytest.mark.asyncio
     async def test_get_reflection_database_when_available(self) -> None:
         """Should get reflection database when available."""
+        # Reset global state
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _get_reflection_database,
         )
-
-        # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = None
 
@@ -829,12 +829,11 @@ class TestAvailabilityChecking:
     @pytest.mark.asyncio
     async def test_get_reflection_database_when_not_available(self) -> None:
         """Should raise ImportError when database not available."""
+        # Reset global state
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _get_reflection_database,
         )
-
-        # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = None
 
@@ -848,12 +847,11 @@ class TestAvailabilityChecking:
     @pytest.mark.asyncio
     async def test_get_reflection_database_when_previously_failed(self) -> None:
         """Should raise immediately when previously failed."""
+        # Set global flag to indicate previous failure
+        import session_mgmt_mcp.tools.validated_memory_tools as module
         from session_mgmt_mcp.tools.validated_memory_tools import (
             _get_reflection_database,
         )
-
-        # Set global flag to indicate previous failure
-        import session_mgmt_mcp.tools.validated_memory_tools as module
 
         module._reflection_tools_available = False
 

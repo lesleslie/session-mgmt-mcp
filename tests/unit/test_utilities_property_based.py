@@ -12,10 +12,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 from session_mgmt_mcp.utils.logging import SessionLogger
 from session_mgmt_mcp.utils.quality_utils_v2 import QualityScoreV2
-
 
 # =========================
 # SessionLogger Tests
@@ -70,7 +70,7 @@ class TestSessionLoggerPropertyBased:
                 # Should not exist yet
                 assert not log_dir.exists()
 
-                logger = SessionLogger(log_dir)
+                SessionLogger(log_dir)
                 # Should exist after initialization
                 assert log_dir.exists()
 
@@ -373,15 +373,19 @@ class TestReflectionDatabasePropertyBased:
             retrieved = await db.get_reflection_by_id(reflection_id)
 
             # Assertions - properties that should always hold
-            assert retrieved is not None, "Reflection should be retrievable after storage"
-            assert (
-                retrieved["content"] == content
-            ), "Content should be preserved after storage and retrieval"
-            assert (
-                retrieved["tags"] == tags
-            ), "Tags should be preserved after storage and retrieval"
+            assert retrieved is not None, (
+                "Reflection should be retrievable after storage"
+            )
+            assert retrieved["content"] == content, (
+                "Content should be preserved after storage and retrieval"
+            )
+            assert retrieved["tags"] == tags, (
+                "Tags should be preserved after storage and retrieval"
+            )
             assert "id" in retrieved, "Retrieved reflection should have an ID"
-            assert "timestamp" in retrieved, "Retrieved reflection should have a timestamp"
+            assert "timestamp" in retrieved, (
+                "Retrieved reflection should have a timestamp"
+            )
 
             # Close database connection
             db.close()
@@ -390,6 +394,7 @@ class TestReflectionDatabasePropertyBased:
             # Try to clean up even if the test failed
             try:
                 import os
+
                 os.remove(db_path)
             except:
                 pass
@@ -430,20 +435,20 @@ class TestReflectionDatabasePropertyBased:
                 assert results is not None, "Search should return a result"
 
                 # 2. Results should be a list
-                assert isinstance(
-                    results, list
-                ), "Search should return a list of results"
+                assert isinstance(results, list), (
+                    "Search should return a list of results"
+                )
 
                 # 3. Each result should have required fields
                 for result in results:
                     assert "content" in result, "Each result should have content field"
                     assert "score" in result, "Each result should have score field"
-                    assert (
-                        "timestamp" in result
-                    ), "Each result should have timestamp field"
-                    assert (
-                        0.0 <= result["score"] <= 1.0
-                    ), "Similarity score should be between 0 and 1"
+                    assert "timestamp" in result, (
+                        "Each result should have timestamp field"
+                    )
+                    assert 0.0 <= result["score"] <= 1.0, (
+                        "Similarity score should be between 0 and 1"
+                    )
 
             db.close()
 
@@ -451,6 +456,7 @@ class TestReflectionDatabasePropertyBased:
             # Try to clean up even if the test failed
             try:
                 import os
+
                 os.remove(db_path)
             except:
                 pass
@@ -490,12 +496,12 @@ class TestReflectionDatabasePropertyBased:
             assert retrieved2 is not None, "Second reflection should be retrievable"
 
             # Verify the correct content was retrieved
-            assert (
-                retrieved1["content"] == content1
-            ), "First retrieved content should match original"
-            assert (
-                retrieved2["content"] == content2
-            ), "Second retrieved content should match original"
+            assert retrieved1["content"] == content1, (
+                "First retrieved content should match original"
+            )
+            assert retrieved2["content"] == content2, (
+                "Second retrieved content should match original"
+            )
 
             db.close()
 
@@ -503,6 +509,7 @@ class TestReflectionDatabasePropertyBased:
             # Try to clean up even if the test failed
             try:
                 import os
+
                 os.remove(db_path)
             except:
                 pass

@@ -389,7 +389,9 @@ class TestAutoCreateEntityIfNew:
         # Mock knowledge graph adapter
         mock_kg = AsyncMock()
         mock_kg.find_entity_by_name = AsyncMock(return_value=None)
-        mock_kg.create_entity = AsyncMock(return_value={"id": "123", "name": "NewEntity"})
+        mock_kg.create_entity = AsyncMock(
+            return_value={"id": "123", "name": "NewEntity"}
+        )
 
         result = await _auto_create_entity_if_new(mock_kg, "NewEntity", "project")
 

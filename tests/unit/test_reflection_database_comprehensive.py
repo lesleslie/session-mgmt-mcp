@@ -22,7 +22,6 @@ class TestReflectionDatabaseInitialization:
 
     async def test_initialize_creates_connection(self):
         """Test that initialize() creates a valid database connection."""
-        import tempfile
         import os
 
         # Create temp directory and path (but don't create file)
@@ -38,7 +37,6 @@ class TestReflectionDatabaseInitialization:
 
     async def test_initialize_creates_tables(self):
         """Test that initialize() creates required database tables."""
-        import tempfile
         import os
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -48,7 +46,9 @@ class TestReflectionDatabaseInitialization:
             await db.initialize()
 
             # Verify tables exist by querying table list
-            tables = db.conn.execute("SELECT table_name FROM duckdb_tables()").fetchall()
+            tables = db.conn.execute(
+                "SELECT table_name FROM duckdb_tables()"
+            ).fetchall()
             table_names = [t[0] for t in tables]
 
             # Should have at least conversations and reflections tables
@@ -57,7 +57,6 @@ class TestReflectionDatabaseInitialization:
 
     async def test_close_connection(self):
         """Test that close() properly closes the connection."""
-        import tempfile
         import os
 
         with tempfile.TemporaryDirectory() as tmpdir:
