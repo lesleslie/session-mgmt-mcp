@@ -5,6 +5,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2025-11-17
+
+### Added
+
+- Phase 1 Day 1 - Storage adapter foundation (ACB migration)
+- Phase 2 Days 4-5 - Serverless backend consolidation (ACB migration)
+
+### Changed
+
+- Phase 1 quick wins - remove unused code, simplify patterns
+- Phase 2 - context manager simplification across codebase
+- Phase 3 Day 1 - Create reusable utility modules for code deduplication
+- Phase 3 Day 2 - Refactor memory_tools.py using utility modules
+- Phase 3 Day 2 - Refactor search_tools.py using utility modules
+- Phase 3 Day 3 - Refactor knowledge_graph_tools.py using utility modules
+- Phase 3 Day 3 - Refactor monitoring_tools.py using utility modules
+- Phase 3 Day 3 - Refactor serverless_tools.py using utility modules
+- Phase 3 Day 3 - Refactor validated_memory_tools.py using utility modules
+- Phase 3 Day 4 - Refactor llm_tools.py using utility modules
+- Phase 3 Day 4 - Refactor session_tools.py using utility modules
+- Phase 3 Day 4 - Refactor team_tools.py using utility modules
+- Phase 4 Day 1 - Extract crackerjack utilities for modularity
+- Phase 4 Day 2 - Extract quality analysis utilities
+- Phase 4 Day 3 - Extract serverless storage backends
+- Phase 4 Day 4 - Extract session lifecycle utilities
+- Phase 4 Day 5 - Extract LLM provider modules
+- Phase 5 Day 1 - Extract advanced search utilities
+- Phase 5 Day 2 - Extract scheduler utilities
+- Phase 5 Day 3 - Extract server core modules
+- Session-mgmt-mcp (quality: 68/100) - 2025-11-17 00:49:01
+- Update config, core, deps
+- Update config, deps
+- Update documentation
+
+### Fixed
+
+- Add ACB_LIBRARY_MODE environment variable to crackerjack subprocess calls
+- bugfixes
+- Fix critical type checking errors exposed by crackerjack
+
+### Documentation
+
+- Add comprehensive ACB migration plan
+- Add comprehensive ACB migration plan
+- Add Phase 1 refactoring summary
+- Cleanup and reorganize documentation structure
+- Complete Phase 2.5 - ACB Graph Adapter Investigation
+- Complete Phase 3 - Testing & Validation (Production Ready)
+- Phase 3 Refactoring Complete - Summary Document
+- Phase 4 Day 13 - User Documentation Complete
+- Phase 4 Refactoring Complete - Summary Document
+- Phase 4 Refactoring Plan - Large File Modularization
+- Phase 5 Refactoring Complete - Summary Document
+- Phase 5 Refactoring Plan - Advanced Feature Modularization
+- Update migration plan - Phase 1 complete
+- Update migration plan - Phase 2 complete
+- Update migration plan - Phase 4 Day 13 complete
+
+### Testing
+
+- Improve test infrastructure and fix pytest 9.0+ compatibility
+- Optimize test suite for speed and efficiency
+
+### Internal
+
+- Apply auto-formatting fixes from crackerjack hooks
+- Update uv.lock with ACB GitHub source
+
 ## [0.9.2] - 2025-11-12
 
 ### Changed
