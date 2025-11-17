@@ -13,11 +13,13 @@ AdapterNotFound: storage adapter not found – check adapters.yaml and ensure pa
 ACB storage adapters follow a **different import pattern** than other ACB adapters:
 
 1. **Other ACB adapters** (logger, cache, etc.):
+
    - Use `import_adapter("adapter_name")`
    - Require registration in `adapters.yaml`
    - Auto-selected based on configuration
 
-2. **ACB storage adapters**:
+1. **ACB storage adapters**:
+
    - Use **direct imports** from specific backend modules
    - Do NOT use `adapters.yaml`
    - Each backend has its own module: `acb.adapters.storage.{backend}`
@@ -90,10 +92,10 @@ def register_storage_adapter(backend: str, ...):
 ## Benefits
 
 1. **Works with all ACB storage backends**: file, s3, azure, gcs, memory
-2. **Lazy loading**: Only imports needed backends (avoids missing dependencies)
-3. **Proper ACB patterns**: Follows ACB's direct import approach for storage
-4. **Backward compatible**: No API changes, existing code works as-is
-5. **Type safe**: Full type hints with `StorageBase` protocol
+1. **Lazy loading**: Only imports needed backends (avoids missing dependencies)
+1. **Proper ACB patterns**: Follows ACB's direct import approach for storage
+1. **Backward compatible**: No API changes, existing code works as-is
+1. **Type safe**: Full type hints with `StorageBase` protocol
 
 ## Testing
 
@@ -135,10 +137,10 @@ Created comprehensive documentation:
 ## Key Takeaways
 
 1. **ACB storage adapters are special**: They use direct imports, not `import_adapter()`
-2. **No `adapters.yaml` needed**: Storage adapters don't require YAML configuration
-3. **Backend selection**: Use a mapping dict for dynamic backend selection
-4. **Lazy loading**: Only import backends when actually needed
-5. **Read the docs**: See `docs/ACB_STORAGE_ADAPTER_GUIDE.md` for complete usage
+1. **No `adapters.yaml` needed**: Storage adapters don't require YAML configuration
+1. **Backend selection**: Use a mapping dict for dynamic backend selection
+1. **Lazy loading**: Only import backends when actually needed
+1. **Read the docs**: See `docs/ACB_STORAGE_ADAPTER_GUIDE.md` for complete usage
 
 ## References
 

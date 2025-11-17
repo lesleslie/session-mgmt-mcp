@@ -17,6 +17,7 @@ storage_class = import_adapter("storage", "file")  # ERROR!
 ```
 
 **Why this fails:**
+
 - `import_adapter()` requires adapters to be registered in `adapters.yaml`
 - ACB storage adapters use direct imports instead
 - No `adapters.yaml` configuration is needed for storage
@@ -44,12 +45,13 @@ import typing as t
 
 # Backend to class mapping
 STORAGE_BACKENDS: dict[str, type[StorageBase]] = {
-    "file": None,    # Lazy-loaded
+    "file": None,  # Lazy-loaded
     "s3": None,
     "azure": None,
     "gcs": None,
     "memory": None,
 }
+
 
 def _get_storage_class(backend: str) -> type[StorageBase]:
     """Get storage class for a backend, lazy-loading on first use.
@@ -70,27 +72,30 @@ def _get_storage_class(backend: str) -> type[StorageBase]:
     if STORAGE_BACKENDS[backend] is None:
         if backend == "file":
             from acb.adapters.storage.file import Storage
+
             STORAGE_BACKENDS["file"] = Storage
         elif backend == "s3":
             from acb.adapters.storage.s3 import Storage
+
             STORAGE_BACKENDS["s3"] = Storage
         elif backend == "azure":
             from acb.adapters.storage.azure import Storage
+
             STORAGE_BACKENDS["azure"] = Storage
         elif backend == "gcs":
             from acb.adapters.storage.gcs import Storage
+
             STORAGE_BACKENDS["gcs"] = Storage
         elif backend == "memory":
             from acb.adapters.storage.memory import Storage
+
             STORAGE_BACKENDS["memory"] = Storage
 
     return STORAGE_BACKENDS[backend]
 
 
 def register_storage_adapter(
-    backend: str,
-    config_overrides: dict[str, t.Any] | None = None,
-    force: bool = False
+    backend: str, config_overrides: dict[str, t.Any] | None = None, force: bool = False
 ) -> StorageBase:
     """Register an ACB storage adapter with the given backend type.
 
@@ -121,6 +126,7 @@ def register_storage_adapter(
     # Ensure storage settings exist
     if not hasattr(config, "storage"):
         from acb.adapters.storage._base import StorageBaseSettings
+
         config.storage = StorageBaseSettings()
 
     # Set default backend
@@ -138,10 +144,12 @@ def register_storage_adapter(
     # Set logger
     try:
         from acb.adapters import import_adapter
+
         logger_class = import_adapter("logger")
         storage_adapter.logger = depends.get_sync(logger_class)
     except Exception:
         import logging
+
         storage_adapter.logger = logging.getLogger(f"acb.storage.{backend}")
 
     # Register with DI container
@@ -220,6 +228,7 @@ from acb.config import Config
 from acb.depends import depends
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
 
+
 def setup_file_storage(data_dir: Path) -> StorageBase:
     """Setup file-based storage for session management.
 
@@ -297,14 +306,11 @@ if __name__ == "__main__":
         await storage.upload(
             bucket="sessions",
             key="session_123/state.json",
-            data=b'{"session_id": "123"}'
+            data=b'{"session_id": "123"}',
         )
 
         # Retrieve
-        data = await storage.download(
-            bucket="sessions",
-            key="session_123/state.json"
-        )
+        data = await storage.download(bucket="sessions", key="session_123/state.json")
 
         print("Retrieved:", data)
 
@@ -324,11 +330,11 @@ if __name__ == "__main__":
 
 1. **Using `import_adapter("storage")`**: This will fail because storage adapters are not registered in `adapters.yaml`
 
-2. **Forgetting to set `config.storage`**: Storage adapters expect `Config.storage` to be a `StorageBaseSettings` instance
+1. **Forgetting to set `config.storage`**: Storage adapters expect `Config.storage` to be a `StorageBaseSettings` instance
 
-3. **Not setting `default_backend`**: The backend type must be explicitly configured
+1. **Not setting `default_backend`**: The backend type must be explicitly configured
 
-4. **Mixing backend classes**: Each backend has its own `Storage` class - they're not interchangeable
+1. **Mixing backend classes**: Each backend has its own `Storage` class - they're not interchangeable
 
 ## Summary
 
