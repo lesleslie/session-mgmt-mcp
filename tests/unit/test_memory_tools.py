@@ -10,9 +10,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from session_mgmt_mcp.tools.memory_tools import (
-    _check_reflection_tools_available,
-    _format_new_stats,
-    _format_old_stats,
+    _format_stats_new,
+    _format_stats_old,
     _quick_search_impl,
     _reflection_stats_impl,
     _reset_reflection_database_impl,
@@ -21,55 +20,6 @@ from session_mgmt_mcp.tools.memory_tools import (
     _search_summary_impl,
     _store_reflection_impl,
 )
-
-
-class TestMemoryToolsAvailability:
-    """Test reflection tools availability checking."""
-
-    def test_check_reflection_tools_available_when_none(self):
-        """Test availability check when status is unknown."""
-        # Reset the global state
-        from session_mgmt_mcp.tools import memory_tools
-
-        memory_tools._reflection_tools_available = None
-
-        # Mock the import check to return True
-        with patch("importlib.util.find_spec") as mock_find_spec:
-            mock_find_spec.return_value = True
-            result = _check_reflection_tools_available()
-            assert result is True
-
-    def test_check_reflection_tools_available_when_false(self):
-        """Test availability check when tools are known to be unavailable."""
-        # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
-
-        memory_tools._reflection_tools_available = False
-
-        result = _check_reflection_tools_available()
-        assert result is False
-
-    def test_check_reflection_tools_available_when_true(self):
-        """Test availability check when tools are known to be available."""
-        # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
-
-        memory_tools._reflection_tools_available = True
-
-        result = _check_reflection_tools_available()
-        assert result is True
-
-    def test_check_reflection_tools_import_error(self):
-        """Test availability check when import fails."""
-        # Reset the global state
-        from session_mgmt_mcp.tools import memory_tools
-
-        memory_tools._reflection_tools_available = None
-
-        # Mock the import check to raise ImportError
-        with patch("importlib.util.find_spec", side_effect=ImportError):
-            result = _check_reflection_tools_available()
-            assert result is False
 
 
 class TestStoreReflectionImpl:
@@ -651,12 +601,12 @@ class TestResetReflectionDatabaseImpl:
 
 
 class TestFormatNewStats:
-    """Test _format_new_stats helper function for V2 stats format.
+    """Test _format_stats_new helper function for V2 stats format.
 
     Phase: Week 1 Day 2 - Quick Win Coverage (84% → 90%)
     """
 
-    def test_format_new_stats_with_complete_data(self):
+    def test_format_stats_new_with_complete_data(self):
         """Should format complete stats with all fields."""
         stats = {
             "conversations_count": 150,
@@ -664,7 +614,7 @@ class TestFormatNewStats:
             "embedding_provider": "onnx-local",
         }
 
-        result = _format_new_stats(stats)
+        result = _format_stats_new(stats)
 
         assert isinstance(result, list)
         assert len(result) == 4
@@ -673,7 +623,7 @@ class TestFormatNewStats:
         assert "onnx-local" in result[2]  # embedding_provider
         assert "✅ Healthy" in result[3]  # Database health (has data)
 
-    def test_format_new_stats_with_zero_counts(self):
+    def test_format_stats_new_with_zero_counts(self):
         """Should indicate empty database for zero counts."""
         stats = {
             "conversations_count": 0,
@@ -681,18 +631,18 @@ class TestFormatNewStats:
             "embedding_provider": "unknown",
         }
 
-        result = _format_new_stats(stats)
+        result = _format_stats_new(stats)
 
         assert isinstance(result, list)
         assert "0" in result[0]  # conversations_count
         assert "0" in result[1]  # reflections_count
         assert "⚠️ Empty" in result[3]  # Database health warning
 
-    def test_format_new_stats_with_missing_fields(self):
+    def test_format_stats_new_with_missing_fields(self):
         """Should handle missing optional fields gracefully."""
         stats = {}  # Empty dict
 
-        result = _format_new_stats(stats)
+        result = _format_stats_new(stats)
 
         assert isinstance(result, list)
         assert "0" in result[0]  # Default conversations_count
@@ -700,7 +650,7 @@ class TestFormatNewStats:
         assert "unknown" in result[2]  # Default embedding_provider
         assert "⚠️ Empty" in result[3]  # Empty database
 
-    def test_format_new_stats_with_partial_data(self):
+    def test_format_stats_new_with_partial_data(self):
         """Should use defaults for missing fields."""
         stats = {
             "conversations_count": 50,
@@ -708,7 +658,7 @@ class TestFormatNewStats:
             "embedding_provider": "transformers",
         }
 
-        result = _format_new_stats(stats)
+        result = _format_stats_new(stats)
 
         assert isinstance(result, list)
         assert "50" in result[0]  # conversations_count present
@@ -716,7 +666,7 @@ class TestFormatNewStats:
         assert "transformers" in result[2]
         assert "✅ Healthy" in result[3]  # Has some data (50 > 0)
 
-    def test_format_new_stats_health_threshold(self):
+    def test_format_stats_new_health_threshold(self):
         """Should show healthy when total count > 0."""
         stats = {
             "conversations_count": 0,

@@ -344,14 +344,23 @@ def _register_permissions_manager(claude_dir: Path, force: bool) -> None:
 
 
 def _register_lifecycle_manager(force: bool) -> None:
-    """Register SessionLifecycleManager lazily.
+    """Register SessionLifecycleManager with the DI container.
 
-    Note:
-        Import deferred to avoid circular dependency at module load time.
-        SessionLifecycleManager will be registered when first accessed.
+    Args:
+        force: If True, re-registers even if already registered
 
     """
-    # Registration happens lazily in session_tools.py _get_session_manager()
+    from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+
+    if not force:
+        with suppress(Exception):  # Catch all DI resolution errors
+            existing = depends.get_sync(SessionLifecycleManager)
+            if isinstance(existing, SessionLifecycleManager):
+                return
+
+    # Create and register lifecycle manager instance
+    lifecycle_manager = SessionLifecycleManager()
+    depends.set(SessionLifecycleManager, lifecycle_manager)
 
 
 __all__ = [

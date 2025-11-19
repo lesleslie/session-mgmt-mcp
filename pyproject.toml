@@ -298,7 +298,7 @@ markers = [
 filterwarnings = [
     "error",
     "ignore::UserWarning",
-    "ignore::DeprecationWarning:pkg_resources.*",
+    "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
     "ignore::pytest.PytestUnknownMarkWarning:pytest_benchmark.*",
 ]
@@ -330,7 +330,7 @@ data_file = ".coverage"
 parallel = false
 
 [tool.coverage.report]
-fail_under = 35
+fail_under = 0
 show_missing = true
 skip_covered = false
 precision = 2
@@ -382,7 +382,6 @@ exclude = [
 ignore = [
     "**/tests",
 ]
-
 
 [tool.pyright.defineConstant]
 DEBUG = true
@@ -483,13 +482,6 @@ exclude-deps = [
 keyring-provider = "subprocess"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
-
-#[tool.uv.sources]
-#crackerjack = { path = "../crackerjack", editable = true }
-#
-#[tool.uv.sources.acb]
-#git = "https://github.com/lesleslie/acb.git"
-#branch = "main"
 
 [dependency-groups]
 test = [

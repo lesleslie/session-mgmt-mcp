@@ -7,7 +7,7 @@ Tests the MCP tools for searching reflections and conversations.
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from session_mgmt_mcp.tools.search_tools import (
+from session_mgmt_mcp.reflection_tools import (
     get_reflection_database,
 )
 
