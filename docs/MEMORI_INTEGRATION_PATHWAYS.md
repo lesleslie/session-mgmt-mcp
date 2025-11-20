@@ -4,7 +4,7 @@
 **Date:** January 19, 2025
 **Author:** Integration Analysis Team
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -20,7 +20,7 @@ This document provides **three detailed integration pathways** for combining the
 
 **Recommendation:** **Pathway 1 (Conscious Memory Architecture)** offers the best long-term value.
 
----
+______________________________________________________________________
 
 ## Pathway 1: Conscious Memory Architecture ⭐ **RECOMMENDED**
 
@@ -32,7 +32,7 @@ This document provides **three detailed integration pathways** for combining the
 
 **Native implementation** of Memori's superior patterns (Conscious Agent, LLM-powered entity extraction, memory categorization) within session-mgmt-mcp, eliminating ALL overlap while preserving session-mgmt's unique strengths.
 
-###  Component Integration Matrix
+### Component Integration Matrix
 
 | Feature | Current (session-mgmt) | After Integration | Source | Action |
 |---------|----------------------|-------------------|--------|--------|
@@ -100,6 +100,7 @@ This document provides **three detailed integration pathways** for combining the
 **Deliverable:** `session_mgmt_mcp/memory/schema_v2.py`
 
 **Schema Changes:**
+
 ```sql
 -- New tables
 CREATE TABLE conversations_v2 (
@@ -140,6 +141,7 @@ CREATE TABLE memory_access_log (
 ```
 
 **Migration Strategy:**
+
 ```python
 # Gradual migration - run both schemas in parallel
 # Old: conversations (existing code paths)
@@ -157,6 +159,7 @@ async def migrate_to_v2():
 **Deliverable:** `session_mgmt_mcp/memory/entity_extractor.py`
 
 **Key Component:**
+
 ```python
 class LLMEntityExtractor:
     """OpenAI structured outputs for entity extraction."""
@@ -169,22 +172,18 @@ class LLMEntityExtractor:
         # Use OpenAI structured outputs (Memori pattern)
         response = await self.client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{
-                "role": "system",
-                "content": ENTITY_EXTRACTION_PROMPT
-            }, {
-                "role": "user",
-                "content": f"User: {user_input}\nAI: {ai_output}"
-            }],
-            response_format={"type": "json_schema", "schema": ProcessedMemory}
+            messages=[
+                {"role": "system", "content": ENTITY_EXTRACTION_PROMPT},
+                {"role": "user", "content": f"User: {user_input}\nAI: {ai_output}"},
+            ],
+            response_format={"type": "json_schema", "schema": ProcessedMemory},
         )
 
-        return ProcessedMemory.model_validate_json(
-            response.choices[0].message.content
-        )
+        return ProcessedMemory.model_validate_json(response.choices[0].message.content)
 ```
 
 **ProcessedMemory Structure (Pydantic):**
+
 ```python
 class ProcessedMemory(BaseModel):
     category: str  # facts, preferences, skills, rules, context
@@ -200,6 +199,7 @@ class ProcessedMemory(BaseModel):
 ```
 
 **Cost Optimization:**
+
 - Use `gpt-4o-mini` ($0.15/M input, $0.60/M output)
 - Estimated cost: ~$0.001 per extraction (500 tokens avg)
 - Budget: ~$5/month for 5,000 extractions
@@ -209,6 +209,7 @@ class ProcessedMemory(BaseModel):
 **Deliverable:** `session_mgmt_mcp/memory/conscious_agent.py`
 
 **Background Loop (Memori pattern):**
+
 ```python
 class ConsciousAgent:
     """
@@ -229,19 +230,17 @@ class ConsciousAgent:
         # 4. Demote stale memories
         demoted = await self._demote_stale_memories()
 
-        return {
-            "promoted_count": len(promoted),
-            "demoted_count": len(demoted)
-        }
+        return {"promoted_count": len(promoted), "demoted_count": len(demoted)}
 ```
 
 **Priority Scoring Algorithm (Memori-inspired):**
+
 ```python
 priority_score = (
-    frequency_score * 0.4 +    # Access frequency (40%)
-    recency_score * 0.3 +      # Time since last access (30%)
-    semantic_score * 0.2 +     # Semantic importance (20%)
-    category_score * 0.1       # Category weight (10%)
+    frequency_score * 0.4  # Access frequency (40%)
+    + recency_score * 0.3  # Time since last access (30%)
+    + semantic_score * 0.2  # Semantic importance (20%)
+    + category_score * 0.1  # Category weight (10%)
 )
 
 # Promote if score >= 0.75 (configurable threshold)
@@ -252,6 +251,7 @@ if priority_score >= self.promotion_threshold:
 #### **Phase 4: Integration with Existing Components (Week 5)**
 
 **Update ReflectionDatabase:**
+
 ```python
 class ReflectionDatabase:
     def __init__(self):
@@ -285,29 +285,31 @@ class ReflectionDatabase:
 #### **Phase 5: Testing & Rollout (Week 6)**
 
 **Test Coverage:**
+
 ```python
 # Unit tests
-test_entity_extraction()           # LLM-powered extraction
-test_conscious_agent_promotion()   # Memory promotion logic
-test_memory_categorization()       # 5-category classification
-test_tier_management()             # working/short_term/long_term
+test_entity_extraction()  # LLM-powered extraction
+test_conscious_agent_promotion()  # Memory promotion logic
+test_memory_categorization()  # 5-category classification
+test_tier_management()  # working/short_term/long_term
 
 # Integration tests
-test_end_to_end_conversation()     # Full workflow
-test_concurrent_access()           # Race conditions
-test_migration_v1_to_v2()          # Data migration
+test_end_to_end_conversation()  # Full workflow
+test_concurrent_access()  # Race conditions
+test_migration_v1_to_v2()  # Data migration
 
 # Performance tests
-test_extraction_latency()          # LLM call overhead
-test_conscious_agent_scalability() # 10k+ memories
-test_vector_search_with_tiers()    # Multi-tier search
+test_extraction_latency()  # LLM call overhead
+test_conscious_agent_scalability()  # 10k+ memories
+test_vector_search_with_tiers()  # Multi-tier search
 ```
 
 **Rollout Strategy:**
+
 1. **Week 6.1:** Feature flag (`enable_memori_patterns=False` by default)
-2. **Week 6.2:** Beta testing with internal users
-3. **Week 6.3:** Gradual rollout (10% → 50% → 100%)
-4. **Week 6.4:** Monitor metrics, gather feedback
+1. **Week 6.2:** Beta testing with internal users
+1. **Week 6.3:** Gradual rollout (10% → 50% → 100%)
+1. **Week 6.4:** Monitor metrics, gather feedback
 
 ### Success Metrics
 
@@ -336,12 +338,13 @@ test_vector_search_with_tiers()    # Multi-tier search
 ⚠️ Testing burden (unit + integration + performance)
 
 **Mitigation:**
+
 - Make LLM extraction **optional** (fallback to pattern-based)
 - Use `gpt-4o-mini` for cost efficiency
 - Feature flag for gradual rollout
 - Comprehensive test suite
 
----
+______________________________________________________________________
 
 ## Pathway 2: Hybrid Storage Layer
 
@@ -401,6 +404,7 @@ test_vector_search_with_tiers()    # Multi-tier search
 #### **Phase 1: Add Memori Dependency (Week 1)**
 
 **Update pyproject.toml:**
+
 ```toml
 [project.dependencies]
 memorisdk = "^0.1.0"  # Add Memori as dependency
@@ -413,12 +417,14 @@ memori-backend = [
 ```
 
 **Configuration:**
+
 ```python
 # config.py
 class MemoryBackend(str, Enum):
-    NATIVE = "native"      # Current ReflectionDatabase
-    MEMORI = "memori"      # Use Memori as backend
-    HYBRID = "hybrid"      # Both (Memori + ONNX vectors)
+    NATIVE = "native"  # Current ReflectionDatabase
+    MEMORI = "memori"  # Use Memori as backend
+    HYBRID = "hybrid"  # Both (Memori + ONNX vectors)
+
 
 class Config:
     memory_backend: MemoryBackend = MemoryBackend.NATIVE
@@ -430,6 +436,7 @@ class Config:
 #### **Phase 2: Memori Adapter (Week 1-2)**
 
 **Create Adapter:**
+
 ```python
 class MemoriAdapter:
     """Adapter to use Memori as memory backend for session-mgmt-mcp."""
@@ -480,6 +487,7 @@ class MemoriAdapter:
 #### **Phase 3: Integration (Week 2-3)**
 
 **Update MCP Tools:**
+
 ```python
 @mcp.tool()
 async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
@@ -495,17 +503,13 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
             "success": True,
             "memory_id": memory_id,
             "backend": "memori",
-            "message": "Stored with Memori (auto-categorized)"
+            "message": "Stored with Memori (auto-categorized)",
         }
     else:
         # Use native ReflectionDatabase
         async with ReflectionDatabase() as db:
             memory_id = await db.store_reflection(content, tags)
-            return {
-                "success": True,
-                "memory_id": memory_id,
-                "backend": "native"
-            }
+            return {"success": True, "memory_id": memory_id, "backend": "native"}
 ```
 
 ### Success Metrics
@@ -536,12 +540,13 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 ⚠️ **Hybrid mode complexity** (Memori + ONNX)
 
 **Mitigation:**
+
 - Version pin Memori (e.g., `memorisdk~=0.1.0`)
 - Adapter pattern isolates changes
 - Hybrid mode combines best of both (optional)
 - Keep native backend as fallback
 
----
+______________________________________________________________________
 
 ## Pathway 3: Side-by-Side Complementary Integration
 
@@ -612,6 +617,7 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> dict:
 #### **Phase 1: Optional Memori Installation (Day 1)**
 
 **User Choice:**
+
 ```bash
 # Users who want Memori for non-Claude LLM projects
 pip install memorisdk
@@ -621,7 +627,8 @@ uv sync  # No Memori dependency
 ```
 
 **Documentation:**
-```markdown
+
+````markdown
 ## Using session-mgmt-mcp with Memori (Optional)
 
 session-mgmt-mcp and Memori can coexist:
@@ -644,11 +651,12 @@ async def sync_tags():
     memori = Memori(...)
     db = ReflectionDatabase()
     # Share tags, but keep storage separate
-```
+````
 
 #### **Phase 2: Optional Metadata Sync (Day 2-3)**
 
 **Lightweight Bridge (Optional):**
+
 ```python
 class MemoriSessionBridge:
     """Optional bridge to sync metadata (not storage)."""
@@ -675,9 +683,7 @@ class MemoriSessionBridge:
 
         summary = await self.session_db.get_session_summary()
         self.memori.add_memory(
-            summary,
-            category="context",
-            labels=["session-mgmt-export"]
+            summary, category="context", labels=["session-mgmt-export"]
         )
 ```
 
@@ -686,13 +692,15 @@ class MemoriSessionBridge:
 **Example Workflow:**
 
 1. **Claude Code Development** (uses session-mgmt-mcp automatically):
+
    ```bash
    # User works in Claude Code
    # session-mgmt-mcp handles everything via MCP
    # No manual intervention needed
    ```
 
-2. **Other LLM Projects** (uses Memori manually):
+1. **Other LLM Projects** (uses Memori manually):
+
    ```python
    from memori import Memori
    from openai import OpenAI
@@ -703,13 +711,13 @@ class MemoriSessionBridge:
 
    client = OpenAI()
    response = client.chat.completions.create(
-       model="gpt-4o",
-       messages=[{"role": "user", "content": "..."}]
+       model="gpt-4o", messages=[{"role": "user", "content": "..."}]
    )
    # Memori automatically records conversation
    ```
 
-3. **Optional Sync** (if user wants cross-project insights):
+1. **Optional Sync** (if user wants cross-project insights):
+
    ```python
    # Manually sync tags (optional, not automatic)
    bridge = MemoriSessionBridge()
@@ -742,12 +750,13 @@ class MemoriSessionBridge:
 ⚠️ **Maintenance duplication** (both systems evolve independently)
 
 **When to Choose This:**
+
 - You want Memori for non-Claude LLM projects
 - You don't want to change session-mgmt-mcp
 - You prefer minimal coupling
 - You're okay with duplicate storage for different use cases
 
----
+______________________________________________________________________
 
 ## Comparison Matrix
 
@@ -779,40 +788,45 @@ class MemoriSessionBridge:
 ### Success Probability Breakdown
 
 #### **Pathway 1: 85%**
+
 - ✅ **Technical feasibility:** 95% (clear implementation path)
 - ✅ **Team capacity:** 80% (requires 4-6 weeks focused work)
 - ✅ **Risk management:** 85% (feature flags, gradual rollout)
 - ⚠️ **External factors:** 80% (LLM API availability)
 
 #### **Pathway 2: 75%**
+
 - ✅ **Technical feasibility:** 90% (Memori is mature)
 - ⚠️ **Dependency risk:** 70% (Memori updates, API changes)
 - ✅ **Implementation speed:** 90% (2-3 weeks)
 - ⚠️ **Long-term maintenance:** 65% (adapter layer complexity)
 
 #### **Pathway 3: 60%**
+
 - ✅ **Technical feasibility:** 100% (minimal changes)
 - ⚠️ **Business value:** 50% (limited integration benefits)
 - ⚠️ **User experience:** 60% (potential confusion)
 - ⚠️ **Long-term viability:** 40% (overlap remains)
 
----
+______________________________________________________________________
 
 ## Final Recommendations
 
 ### Primary Recommendation: **Pathway 1 (Conscious Memory Architecture)** ⭐
 
 **Why:**
+
 1. **Complete overlap elimination** - No duplicate functionality
-2. **Native control** - Full ownership of implementation
-3. **Best long-term** - No external dependencies
-4. **Superior performance** - DuckDB + ONNX combination
-5. **Production-ready** - Feature flags enable gradual rollout
+1. **Native control** - Full ownership of implementation
+1. **Best long-term** - No external dependencies
+1. **Superior performance** - DuckDB + ONNX combination
+1. **Production-ready** - Feature flags enable gradual rollout
 
 **Investment:** 4-6 weeks, ~$15k-$20k implementation
 **ROI:** High - One-time investment, long-term benefits
 
 ### Alternative: **Pathway 2 (Hybrid Storage Layer)** if:
+
 - ✅ You need **fast implementation** (2-3 weeks)
 - ✅ You want to **leverage Memori's battle-tested code**
 - ✅ You're okay with **external dependency**
@@ -822,6 +836,7 @@ class MemoriSessionBridge:
 **Trade-off:** Lower upfront cost, higher maintenance burden
 
 ### Not Recommended: **Pathway 3 (Side-by-Side)** unless:
+
 - ⚠️ You need Memori **only for non-Claude LLM projects**
 - ⚠️ You want **absolutely minimal changes** to session-mgmt-mcp
 - ⚠️ You're okay with **fragmented data** and limited integration
@@ -829,37 +844,42 @@ class MemoriSessionBridge:
 **Investment:** 1 week, ~$4k-$5k
 **Caveat:** Limited synergy, overlap remains
 
----
+______________________________________________________________________
 
 ## Implementation Roadmap
 
 ### Recommended Path (Pathway 1)
 
 **Phase 0: Preparation (1 week)**
+
 - [ ] Secure OpenAI API key (for LLM entity extraction)
 - [ ] Set up feature flag system
 - [ ] Design database migration strategy
 - [ ] Create test plan
 
 **Phase 1: Schema & Entity Extraction (2 weeks)**
+
 - [ ] Implement schema_v2.py with Memori-inspired tables
 - [ ] Create LLMEntityExtractor with OpenAI structured outputs
 - [ ] Add migration script (v1 → v2)
 - [ ] Unit tests for entity extraction
 
 **Phase 2: Conscious Agent (2 weeks)**
+
 - [ ] Implement ConsciousAgent background loop
 - [ ] Add priority scoring algorithm
 - [ ] Create promotion/demotion logic
 - [ ] Integration tests for memory tiers
 
 **Phase 3: Integration (1 week)**
+
 - [ ] Update ReflectionDatabase to use new components
 - [ ] Add feature flag support
 - [ ] Update MCP tools
 - [ ] End-to-end testing
 
 **Phase 4: Rollout (1 week)**
+
 - [ ] Beta testing with internal users
 - [ ] Monitor metrics (extraction accuracy, latency, costs)
 - [ ] Gradual rollout (10% → 50% → 100%)
@@ -867,7 +887,7 @@ class MemoriSessionBridge:
 
 **Total: 6 weeks** ✅
 
----
+______________________________________________________________________
 
 ## Conclusion
 
@@ -878,6 +898,7 @@ class MemoriSessionBridge:
 - **Best approach:** Native implementation (Pathway 1) for long-term value
 
 **Integration Value:**
+
 - ✅ Eliminate duplicate entity extraction (use LLM-powered approach)
 - ✅ Add background intelligence (Conscious Agent)
 - ✅ Improve memory categorization (5 structured categories)
@@ -885,14 +906,15 @@ class MemoriSessionBridge:
 - ✅ Preserve unique dev workflow tools (git, quality, crackerjack)
 
 **Next Steps:**
+
 1. Review this document with stakeholders
-2. Select integration pathway (recommend: Pathway 1)
-3. Allocate 4-6 weeks for implementation
-4. Begin Phase 0 preparation
+1. Select integration pathway (recommend: Pathway 1)
+1. Allocate 4-6 weeks for implementation
+1. Begin Phase 0 preparation
 
 **Questions?** Contact the integration team or open an issue on GitHub.
 
----
+______________________________________________________________________
 
 **Document Status:** ✅ Ready for Review
 **Last Updated:** January 19, 2025

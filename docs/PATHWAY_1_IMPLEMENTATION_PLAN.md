@@ -1,11 +1,12 @@
 # Implementation Plan: Pathway 1 - Conscious Memory Architecture
+
 **Memori Integration with Multi-Provider LLM Cascade**
 
 **Status:** 🟡 Planning Phase
 **Timeline:** 4-6 weeks (Standard)
 **Last Updated:** January 19, 2025
 
----
+______________________________________________________________________
 
 ## Progress Tracker
 
@@ -22,7 +23,7 @@
 
 **Legend:** 🔵 Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -36,13 +37,14 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 - ✅ **Zero breaking changes:** Backward compatible with existing installations
 - ✅ **Auto-migration:** Intelligent detection and migration of existing data
 
----
+______________________________________________________________________
 
 ## Design Decisions
 
 ### 1. Multi-Provider LLM Cascade
 
 **Extraction attempts in order:**
+
 ```
 1. OpenAI (gpt-4o-mini) [$0.15/$0.60 per 1M tokens]
    ↓ (if API key missing or fails)
@@ -54,6 +56,7 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 ```
 
 **Rationale:**
+
 - **OpenAI primary:** Cheapest, fastest, structured outputs
 - **Claude fallback:** Same provider as main app, high quality
 - **Pattern-based:** Always available, no dependencies
@@ -64,11 +67,13 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 ### 2. Smart Threshold Auto-Extraction
 
 **Filesystem monitoring triggers extraction only when:**
+
 - ✅ `relevance_score > 0.7` (significant files)
 - ✅ Active development (modified in last 5 minutes)
 - ✅ Critical file patterns (auth, database, config, API, security)
 
 **Rationale:**
+
 - Balances automation with API cost control
 - Focuses on meaningful changes
 - Avoids noise from temporary/build files
@@ -76,12 +81,13 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 ### 3. Graceful Degradation
 
 **All LLM features are optional:**
+
 - ✅ System works without any API keys
 - ✅ Pattern-based extraction always available
 - ✅ Feature flags for gradual rollout
 - ✅ User chooses extraction method via config
 
----
+______________________________________________________________________
 
 ## Phase 0: Preparation (Week 0)
 
@@ -92,21 +98,25 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 ### Tasks
 
 - [ ] **0.1** Set up feature flag system
+
   - Create `config.feature_flags` module
   - Add toggle mechanism for each feature
   - Default all flags to `False` (safe rollout)
 
 - [ ] **0.2** Design database migration strategy
+
   - Document v1 → v2 schema changes
   - Plan parallel schema operation (v1 + v2 simultaneously)
   - Create rollback plan
 
 - [ ] **0.3** Create test plan and fixtures
+
   - Define test coverage requirements (>85%)
   - Create test data for entity extraction
   - Set up performance benchmarks
 
 - [ ] **0.4** Secure API keys (optional)
+
   - Document API key setup instructions
   - Create `.env.example` template
   - Test API key validation
@@ -118,7 +128,7 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 - `docs/API_KEY_SETUP.md`
 - Test plan document
 
----
+______________________________________________________________________
 
 ## Phase 1: Enhanced Memory Schema (Week 1)
 
@@ -129,6 +139,7 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
 ### Tasks
 
 - [ ] **1.1** Create schema_v2.py with enhanced DuckDB tables
+
   - `conversations_v2` with Memori categorization
   - `memory_entities` for entity storage
   - `memory_relationships` for entity connections
@@ -136,21 +147,25 @@ Implement native Memori-inspired patterns (Conscious Agent, multi-provider entit
   - `memory_access_log` for Conscious Agent
 
 - [ ] **1.2** Implement migration script (v1 → v2)
+
   - Best-effort categorization of existing data
   - Preserve existing ONNX embeddings
   - Gradual migration with rollback capability
 
 - [ ] **1.3** Add database version tracking
+
   - Schema version table
   - Migration history log
   - Health check for schema compatibility
 
 - [ ] **1.4** Create indexes for performance
+
   - Category + namespace indexes
   - Memory tier + importance indexes
   - Timestamp + access pattern indexes
 
 - [ ] **1.5** Unit tests for schema
+
   - Table creation tests
   - Migration tests (v1 → v2)
   - Index performance tests
@@ -232,6 +247,7 @@ CREATE TABLE memory_access_log (
 ### Migration Strategy
 
 **Parallel Schema Operation:**
+
 ```python
 # Run v1 and v2 schemas simultaneously during transition
 # Feature flag controls which schema is used
@@ -254,7 +270,7 @@ else:
 - `tests/unit/test_schema_v2.py`
 - `tests/unit/test_migration.py`
 
----
+______________________________________________________________________
 
 ## Phase 2: Multi-Provider Entity Extraction (Week 2)
 
@@ -265,31 +281,37 @@ else:
 ### Tasks
 
 - [ ] **2.1** Create entity extraction engine with cascade logic
+
   - `EntityExtractionEngine` class
   - Provider cascade with fallback
   - Timeout and retry handling
 
 - [ ] **2.2** Implement OpenAI provider (primary)
+
   - Structured outputs with JSON schema
   - ProcessedMemory Pydantic model
   - Error handling and logging
 
 - [ ] **2.3** Implement Anthropic provider (fallback)
+
   - Tool use for structured extraction
   - Same ProcessedMemory schema
   - Failover logic
 
 - [ ] **2.4** Implement pattern-based extractor (final fallback)
+
   - Current regex/keyword approach
   - Always available (no dependencies)
   - Confidence scoring
 
 - [ ] **2.5** Add Ollama provider stub (future)
+
   - Interface defined, not implemented
   - Configuration placeholder
   - Documentation for future addition
 
 - [ ] **2.6** Unit tests for all providers
+
   - Test each provider independently
   - Test cascade logic (OpenAI → Claude → Pattern)
   - Test failover scenarios
@@ -318,14 +340,13 @@ class EntityExtractionEngine:
                 continue
 
         # Final fallback
-        return await self.fallback_extractor.extract_entities(
-            user_input, ai_output
-        )
+        return await self.fallback_extractor.extract_entities(user_input, ai_output)
 ```
 
 ### Provider Implementations
 
 **1. OpenAI Provider:**
+
 ```python
 class OpenAIProvider(LLMProvider):
     async def extract_entities(...) -> ProcessedMemory:
@@ -340,6 +361,7 @@ class OpenAIProvider(LLMProvider):
 ```
 
 **2. Anthropic Provider:**
+
 ```python
 class AnthropicProvider(LLMProvider):
     async def extract_entities(...) -> ProcessedMemory:
@@ -351,6 +373,7 @@ class AnthropicProvider(LLMProvider):
 ```
 
 **3. Pattern-Based:**
+
 ```python
 class PatternBasedExtractor:
     async def extract_entities(...) -> ProcessedMemory:
@@ -389,7 +412,7 @@ class Config:
 - `tests/unit/test_entity_extraction.py`
 - `tests/unit/test_providers.py`
 
----
+______________________________________________________________________
 
 ## Phase 3: Conscious Agent (Week 3-4)
 
@@ -400,11 +423,13 @@ class Config:
 ### Tasks
 
 - [ ] **3.1** Implement Conscious Agent background loop
+
   - 6-hour analysis cycle
   - Async task management
   - Start/stop controls
 
 - [ ] **3.2** Create priority scoring algorithm
+
   - Frequency score (40%)
   - Recency score (30%)
   - Semantic importance (20%)
@@ -412,16 +437,19 @@ class Config:
   - Threshold: 0.75 for promotion
 
 - [ ] **3.3** Implement memory promotion logic
+
   - Long-term → Short-term → Working tier flow
   - Promotion tracking in memory_promotions table
   - Reasoning/justification for each promotion
 
 - [ ] **3.4** Implement memory demotion logic
+
   - Stale memory detection (7+ days no access)
   - Short-term → Long-term demotion
   - Cleanup of working tier
 
 - [ ] **3.5** Integration tests
+
   - Test promotion/demotion workflows
   - Test concurrent access (race conditions)
   - Test scalability (10k+ memories)
@@ -446,20 +474,17 @@ class ConsciousAgent:
         # 4. Demote stale (7+ days no access)
         demoted = await self._demote_stale_memories()
 
-        return {
-            "promoted_count": len(promoted),
-            "demoted_count": len(demoted)
-        }
+        return {"promoted_count": len(promoted), "demoted_count": len(demoted)}
 ```
 
 ### Priority Scoring Formula
 
 ```python
 priority_score = (
-    frequency_score * 0.4 +    # Access count normalized
-    recency_score * 0.3 +      # Exponential decay
-    semantic_score * 0.2 +     # Importance from extraction
-    category_score * 0.1       # Category weight
+    frequency_score * 0.4  # Access count normalized
+    + recency_score * 0.3  # Exponential decay
+    + semantic_score * 0.2  # Importance from extraction
+    + category_score * 0.1  # Category weight
 )
 
 # Category weights:
@@ -477,7 +502,7 @@ priority_score = (
 - `tests/unit/test_conscious_agent.py`
 - `tests/integration/test_memory_tiers.py`
 
----
+______________________________________________________________________
 
 ## Phase 4: Filesystem Integration (Week 5)
 
@@ -488,21 +513,25 @@ priority_score = (
 ### Tasks
 
 - [ ] **4.1** Enhance ProjectActivityMonitor with extraction hooks
+
   - Smart threshold filtering (relevance > 0.7)
   - Critical file pattern detection
   - Duplicate prevention (recently processed files)
 
 - [ ] **4.2** Implement file context builder
+
   - Extract file metadata (path, type, size)
   - Read file snippet (first 50 lines)
   - Determine project context
 
 - [ ] **4.3** Create activity-based importance scoring
+
   - File activity score influences memory importance
   - Recent edits boost priority
   - Frequent changes indicate significance
 
 - [ ] **4.4** Integration tests
+
   - Test file change → extraction workflow
   - Test smart threshold filtering
   - Test critical file detection
@@ -537,7 +566,7 @@ CRITICAL_FILE_PATTERNS = {
     "database": ["db", "database", "migration", "schema"],
     "config": ["config", "settings", "env"],
     "api": ["api", "endpoint", "route", "controller"],
-    "security": ["security", "encrypt", "hash", "crypto"]
+    "security": ["security", "encrypt", "hash", "crypto"],
 }
 ```
 
@@ -547,7 +576,7 @@ CRITICAL_FILE_PATTERNS = {
 - `session_mgmt_mcp/memory/file_context.py`
 - `tests/integration/test_filesystem_extraction.py`
 
----
+______________________________________________________________________
 
 ## Phase 5: Testing & Rollout (Week 6)
 
@@ -558,34 +587,40 @@ CRITICAL_FILE_PATTERNS = {
 ### Tasks
 
 - [ ] **5.1** Comprehensive test suite
+
   - Unit tests (target: >85% coverage)
   - Integration tests (end-to-end workflows)
   - Performance tests (latency, scalability)
 
 - [ ] **5.2** Feature flag deployment
+
   - All features default to `False`
   - Staged enablement plan
   - Rollback procedures
 
 - [ ] **5.3** Gradual rollout (10% → 50% → 100%)
+
   - Day 1-2: Enable schema_v2 (parallel with v1)
   - Day 3-4: Enable LLM extraction (10% of conversations)
   - Day 5-6: Enable Conscious Agent
   - Day 7: Enable filesystem extraction
 
 - [ ] **5.4** Monitoring and metrics
+
   - Track extraction accuracy
   - Monitor API costs
   - Measure latency
   - Collect user feedback
 
 - [ ] **5.5** Documentation updates
+
   - User guide (API key setup, configuration)
   - Developer guide (architecture, testing)
   - Migration guide (v1 → v2)
   - Changelog
 
 - [ ] **5.6** Full production deployment
+
   - Enable all features for 100% of users
   - Announce new capabilities
   - Monitor for issues
@@ -593,6 +628,7 @@ CRITICAL_FILE_PATTERNS = {
 ### Test Coverage Requirements
 
 **Unit Tests (>85% coverage):**
+
 - ✅ Multi-provider cascade
 - ✅ Entity extraction (all providers)
 - ✅ Conscious Agent logic
@@ -601,6 +637,7 @@ CRITICAL_FILE_PATTERNS = {
 - ✅ Smart threshold filtering
 
 **Integration Tests:**
+
 - ✅ End-to-end extraction workflow
 - ✅ Filesystem → extraction → storage
 - ✅ Memory tier promotion/demotion
@@ -608,7 +645,8 @@ CRITICAL_FILE_PATTERNS = {
 - ✅ Concurrent access handling
 
 **Performance Tests:**
-- ✅ Extraction latency (<500ms per provider)
+
+- ✅ Extraction latency (\<500ms per provider)
 - ✅ Cascade fallback speed
 - ✅ Conscious Agent scalability (10k+ memories)
 - ✅ Database query performance
@@ -631,7 +669,7 @@ CRITICAL_FILE_PATTERNS = {
 | **Search Relevance** | 70% | **85%+** |
 | **Retrieval Latency** | 50ms | **20ms** |
 | **API Cost** | $0 | **$5-8/month** |
-| **Provider Cascade Success** | N/A | **<5% fallback to patterns** |
+| **Provider Cascade Success** | N/A | **\<5% fallback to patterns** |
 
 ### Deliverables
 
@@ -641,7 +679,7 @@ CRITICAL_FILE_PATTERNS = {
 - Monitoring dashboard
 - Post-deployment report
 
----
+______________________________________________________________________
 
 ## Migration Strategy (Existing Projects)
 
@@ -650,9 +688,9 @@ CRITICAL_FILE_PATTERNS = {
 **The system will automatically:**
 
 1. **Detect schema version on startup**
-2. **Run migration if needed**
-3. **Preserve all existing data**
-4. **Enable new features gradually**
+1. **Run migration if needed**
+1. **Preserve all existing data**
+1. **Enable new features gradually**
 
 ### Migration Workflow
 
@@ -671,6 +709,7 @@ graph TD
 ### Migration Implementation
 
 **Automatic Detection:**
+
 ```python
 async def check_and_migrate():
     """Auto-detect and migrate on startup."""
@@ -703,6 +742,7 @@ async def check_and_migrate():
 ```
 
 **Migration Script:**
+
 ```python
 async def migrate_v1_to_v2() -> MigrationResult:
     """Migrate v1 data to v2 schema."""
@@ -726,7 +766,7 @@ async def migrate_v1_to_v2() -> MigrationResult:
                 memory_tier="long_term",
                 extracted_by="pattern",  # Legacy data
                 extraction_confidence=0.6,
-                **conv.metadata
+                **conv.metadata,
             )
 
             stats["migrated"] += 1
@@ -745,13 +785,14 @@ async def migrate_v1_to_v2() -> MigrationResult:
         return MigrationResult(
             success=False,
             error=f"Missing data: v1={v1_count}, v2={v2_count}",
-            stats=stats
+            stats=stats,
         )
 ```
 
 ### User-Facing Migration Tools
 
 **1. Migration Status Command:**
+
 ```python
 @mcp.tool()
 async def migration_status() -> dict:
@@ -766,18 +807,16 @@ async def migration_status() -> dict:
             "v1_conversations": await count_v1_conversations(),
             "v2_conversations": await count_v2_conversations(),
             "entities": await count_entities(),
-            "relationships": await count_relationships()
-        }
+            "relationships": await count_relationships(),
+        },
     }
 ```
 
 **2. Manual Migration Trigger:**
+
 ```python
 @mcp.tool()
-async def trigger_migration(
-    create_backup: bool = True,
-    dry_run: bool = False
-) -> dict:
+async def trigger_migration(create_backup: bool = True, dry_run: bool = False) -> dict:
     """Manually trigger migration (with preview)."""
 
     if dry_run:
@@ -787,7 +826,7 @@ async def trigger_migration(
             "dry_run": True,
             "would_migrate": preview.conversation_count,
             "estimated_time": preview.estimated_seconds,
-            "warnings": preview.warnings
+            "warnings": preview.warnings,
         }
 
     # Run actual migration
@@ -800,11 +839,12 @@ async def trigger_migration(
         "success": result.success,
         "migrated": result.stats["migrated"],
         "failed": result.stats["failed"],
-        "duration_seconds": result.duration
+        "duration_seconds": result.duration,
     }
 ```
 
 **3. Rollback Tool:**
+
 ```python
 @mcp.tool()
 async def rollback_migration(backup_id: str) -> dict:
@@ -820,14 +860,15 @@ async def rollback_migration(backup_id: str) -> dict:
         "success": verification.success,
         "restored_version": await get_schema_version(),
         "conversation_count": await count_conversations(),
-        "issues": verification.issues
+        "issues": verification.issues,
     }
 ```
 
 ### Migration Documentation
 
 **User Guide Section:**
-```markdown
+
+````markdown
 ## Migrating to Enhanced Memory Features
 
 ### Automatic Migration
@@ -863,17 +904,19 @@ mcp trigger-migration --create-backup
 
 # Rollback if needed
 mcp rollback-migration --backup-id=<id>
-```
+````
 
 ### After Migration
 
 Once migrated, you'll have access to:
+
 - 🎯 **LLM-powered entity extraction** (85%+ accuracy)
 - 🎯 **Conscious Agent** (background memory optimization)
 - 🎯 **Memory categorization** (facts, preferences, skills, rules, context)
 - 🎯 **Smart tiered search** (working → short-term → long-term)
 - 🎯 **Filesystem integration** (automatic extraction from code changes)
-```
+
+````
 
 ### Zero-Downtime Migration
 
@@ -901,9 +944,9 @@ class DualSchemaDatabase:
             return await self.v2_db.search_tiered(query)
         else:
             return await self.v1_db.search(query)
-```
+````
 
----
+______________________________________________________________________
 
 ## Cost Analysis
 
@@ -917,11 +960,12 @@ class DualSchemaDatabase:
 | **Total** | 5,000 | - | **~$5-6/month** |
 
 **Optional Ollama (Future):**
+
 - Local LLM: $0/month (zero API costs)
 - Requires: Local compute resources
 - Trade-off: Potentially lower accuracy
 
----
+______________________________________________________________________
 
 ## Risk Mitigation
 
@@ -934,47 +978,52 @@ class DualSchemaDatabase:
 | **Entity extraction errors** | Low | Medium | Confidence scoring + manual review |
 | **User confusion** | Low | Low | Documentation + auto-migration |
 
----
+______________________________________________________________________
 
 ## Dependencies
 
 ### Required (No Changes)
+
 - `duckdb>=0.9` ✅ (existing)
 - `pydantic>=2.0` ✅ (existing)
 - `watchdog>=3.0` ✅ (existing)
 
 ### Optional (New - LLM Providers)
+
 - `openai>=1.0.0` (if using OpenAI)
 - `anthropic>=0.25.0` (if using Claude - likely already installed)
 - `ollama` (future - local LLM)
 
 **No breaking changes** - all new dependencies are optional.
 
----
+______________________________________________________________________
 
 ## Documentation Updates
 
 ### To Be Created/Updated
 
 1. **User Guide:**
+
    - [ ] Multi-provider setup instructions
    - [ ] API key configuration
    - [ ] Cost estimation calculator
    - [ ] Migration guide
    - [ ] Troubleshooting
 
-2. **Developer Guide:**
+1. **Developer Guide:**
+
    - [ ] Entity extraction architecture
    - [ ] Conscious Agent internals
    - [ ] Adding new LLM providers
    - [ ] Testing strategies
 
-3. **API Reference:**
+1. **API Reference:**
+
    - [ ] New MCP tools
    - [ ] Configuration options
    - [ ] Migration commands
 
----
+______________________________________________________________________
 
 ## Post-Implementation
 
@@ -994,11 +1043,12 @@ class DualSchemaDatabase:
 - [ ] Entity visualization (knowledge graph UI)
 - [ ] Cross-project entity linking
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
 **Phase 1-5 Complete When:**
+
 - ✅ All tasks marked complete (30 total tasks)
 - ✅ Test coverage >85%
 - ✅ Migration tested with real data
@@ -1007,30 +1057,33 @@ class DualSchemaDatabase:
 - ✅ Success metrics achieved
 
 **Metrics Must Show:**
+
 - ✅ Entity extraction accuracy ≥85%
 - ✅ Memory categorization accuracy ≥90%
 - ✅ Search relevance improvement ≥15% over baseline
 - ✅ Retrieval latency ≤20ms (tiered search)
 - ✅ API costs ≤$10/month
-- ✅ Provider cascade <5% fallback to patterns
+- ✅ Provider cascade \<5% fallback to patterns
 
----
+______________________________________________________________________
 
 ## Notes
 
 **Status Legend:**
+
 - 🔵 Not Started
 - 🟡 In Progress
 - 🟢 Complete
 - 🔴 Blocked
 
 **Update This Document:**
+
 - Mark tasks complete as you finish them
 - Update progress percentages
 - Add notes/learnings in each phase
 - Track blockers and resolutions
 
----
+______________________________________________________________________
 
 **Last Updated:** January 19, 2025
 **Next Review:** Start of implementation
