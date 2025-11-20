@@ -216,8 +216,18 @@ class SessionPermissionsManager:
         self.trusted_operations.add(operation)
 
 
-# Global permissions manager
-permissions_manager = SessionPermissionsManager()
+# Global permissions manager - Initialize with claude directory
+from acb.depends import depends
+
+try:
+    permissions_manager = depends.get_sync(SessionPermissionsManager)
+except Exception:
+    # Get SessionPaths from DI to find claude_root
+    from session_mgmt_mcp.di.config import SessionPaths
+
+    paths = depends.get_sync(SessionPaths)
+    permissions_manager = SessionPermissionsManager(paths.claude_dir)
+    depends.set(SessionPermissionsManager, permissions_manager)
 
 
 @mcp.tool()

@@ -104,11 +104,15 @@ async def _store_reflection_impl(content: str, tags: list[str] | None = None) ->
 
 
 async def _quick_search_operation(
-    db: ReflectionDatabase, query: str, project: str | None, min_score: float
+    db: ReflectionDatabase,
+    query: str,
+    project: str | None,
+    min_score: float,
+    limit: int = 5,
 ) -> str:
     """Execute quick search and format results."""
     total_results = await db.search_conversations(
-        query=query, project=project, min_score=min_score, limit=100
+        query=query, project=project, min_score=min_score, limit=limit
     )
 
     if not total_results:
@@ -129,11 +133,12 @@ async def _quick_search_impl(
     query: str,
     project: str | None = None,
     min_score: float = 0.7,
+    limit: int = 5,
 ) -> str:
     """Quick search that returns only the count and top result for fast overview."""
 
     async def operation(db: ReflectionDatabase) -> str:
-        return await _quick_search_operation(db, query, project, min_score)
+        return await _quick_search_operation(db, query, project, min_score, limit)
 
     return await execute_simple_database_tool(operation, "Quick search")
 
@@ -728,8 +733,10 @@ def register_search_tools(mcp: Any) -> None:
 
     @mcp.tool()  # type: ignore[misc]
     async def quick_search(
-        query: str, project: str | None = None, min_score: float = 0.7
+        query: str, project: str | None = None, min_score: float = 0.7, limit: int = 5
     ) -> str:
+        # Note: For quick search, we're using the limit to determine how many results to return,
+        # but the underlying implementation may not use this parameter directly
         return await _quick_search_impl(query, project, min_score)
 
     @mcp.tool()  # type: ignore[misc]

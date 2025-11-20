@@ -3300,27 +3300,15 @@
     "path": "reflection_tools.py"
   },
   {
-    "complexity": 1,
+    "complexity": 0,
     "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::__init__",
+    "function_name": "ReflectionDatabase::conn",
     "path": "reflection_tools.py"
   },
   {
     "complexity": 1,
     "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::_ensure_indices",
-    "path": "reflection_tools.py"
-  },
-  {
-    "complexity": 1,
-    "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::_get_conn",
-    "path": "reflection_tools.py"
-  },
-  {
-    "complexity": 1,
-    "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::search_by_file",
     "path": "reflection_tools.py"
   },
   {
@@ -3338,7 +3326,13 @@
   {
     "complexity": 2,
     "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::close",
+    "function_name": "ReflectionDatabase::_execute_query",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_initialize_shared_tables",
     "path": "reflection_tools.py"
   },
   {
@@ -3348,15 +3342,21 @@
     "path": "reflection_tools.py"
   },
   {
-    "complexity": 3,
+    "complexity": 2,
     "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::store_conversation",
+    "function_name": "ReflectionDatabase::search_by_file",
     "path": "reflection_tools.py"
   },
   {
     "complexity": 3,
     "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::store_reflection",
+    "function_name": "ReflectionDatabase::__init__",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::close",
     "path": "reflection_tools.py"
   },
   {
@@ -3366,9 +3366,39 @@
     "path": "reflection_tools.py"
   },
   {
+    "complexity": 4,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::store_conversation",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::store_reflection",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_get_conversation_count",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_get_reflection_count",
+    "path": "reflection_tools.py"
+  },
+  {
     "complexity": 6,
     "file_name": "reflection_tools.py",
     "function_name": "get_current_project",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_get_conn",
     "path": "reflection_tools.py"
   },
   {
@@ -3378,13 +3408,13 @@
     "path": "reflection_tools.py"
   },
   {
-    "complexity": 9,
+    "complexity": 13,
     "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::search_conversations",
     "path": "reflection_tools.py"
   },
   {
-    "complexity": 10,
+    "complexity": 14,
     "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::search_reflections",
     "path": "reflection_tools.py"
@@ -6026,19 +6056,43 @@
   {
     "complexity": 0,
     "file_name": "validated_memory_tools.py",
+    "function_name": "_format_file_search_header",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "validated_memory_tools.py",
     "function_name": "register_validated_memory_tools",
     "path": "validated_memory_tools.py"
   },
   {
-    "complexity": 2,
+    "complexity": 1,
     "file_name": "validated_memory_tools.py",
-    "function_name": "_search_by_concept_validated_impl",
+    "function_name": "_get_reflection_database",
     "path": "validated_memory_tools.py"
   },
   {
     "complexity": 2,
     "file_name": "validated_memory_tools.py",
-    "function_name": "_search_by_file_validated_impl",
+    "function_name": "_check_reflection_tools_available",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "resolve_reflection_database",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_format_file_search_result",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_format_file_search_results",
     "path": "validated_memory_tools.py"
   },
   {
@@ -6054,13 +6108,43 @@
     "path": "validated_memory_tools.py"
   },
   {
+    "complexity": 3,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_format_top_result",
+    "path": "validated_memory_tools.py"
+  },
+  {
     "complexity": 4,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_get_reflection_database_async",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_format_validated_concept_result",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_search_by_concept_validated_impl",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "validated_memory_tools.py",
+    "function_name": "_search_by_file_validated_impl",
+    "path": "validated_memory_tools.py"
+  },
+  {
+    "complexity": 10,
     "file_name": "validated_memory_tools.py",
     "function_name": "_store_reflection_validated_impl",
     "path": "validated_memory_tools.py"
   },
   {
-    "complexity": 14,
+    "complexity": 11,
     "file_name": "validated_memory_tools.py",
     "function_name": "_quick_search_validated_impl",
     "path": "validated_memory_tools.py"
@@ -6658,6 +6742,102 @@
     "file_name": "permissions.py",
     "function_name": "SessionPermissionsManager::_load_permissions",
     "path": "permissions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "entity_extractor.py",
+    "function_name": "LLMEntityExtractor::__init__",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "entity_extractor.py",
+    "function_name": "LLMEntityExtractor::extract_entities",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "entity_extractor.py",
+    "function_name": "LLMEntityExtractor::initialize",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::__init__",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_analyze_access_patterns",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_analyze_and_optimize",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_calculate_recency_score",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_demote_stale_memories",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_get_category_weight",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::force_analysis",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::start",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_promote_memories",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_calculate_promotion_priorities",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_run_loop",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::stop",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_generate_promotion_reason",
+    "path": "conscious_agent.py"
   },
   {
     "complexity": 0,

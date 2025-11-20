@@ -652,6 +652,7 @@ def performance_monitor():
         class SimplePerformanceMonitor:
             def __init__(self):
                 self.start_time = None
+                self.execution_times = {}
 
             def start_monitoring(self):
                 self.start_time = time.time()
@@ -663,6 +664,10 @@ def performance_monitor():
                     "peak_memory": 0,
                 }
 
+            def record_execution_time(self, operation_name, execution_time):
+                """Record the time taken for a specific operation."""
+                self.execution_times[operation_name] = execution_time
+
         return SimplePerformanceMonitor()
 
     class PerformanceMonitor:
@@ -670,6 +675,7 @@ def performance_monitor():
             self.process = psutil.Process()
             self.start_time = None
             self.start_memory = None
+            self.execution_times = {}
 
         def start_monitoring(self):
             self.start_time = time.time()
@@ -684,6 +690,10 @@ def performance_monitor():
                 "memory_delta": end_memory - self.start_memory,
                 "peak_memory": end_memory,
             }
+
+        def record_execution_time(self, operation_name, execution_time):
+            """Record the time taken for a specific operation."""
+            self.execution_times[operation_name] = execution_time
 
     return PerformanceMonitor()
 

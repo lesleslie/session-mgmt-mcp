@@ -14,8 +14,12 @@ Refactored to use utility modules for reduced code duplication.
 
 from __future__ import annotations
 
+# ============================================================================
+# Helper Functions
+# ============================================================================
+from contextlib import suppress
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from session_mgmt_mcp.parameter_models import (
     ConceptSearchParams,
@@ -27,9 +31,19 @@ from session_mgmt_mcp.parameter_models import (
 from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
 from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
-# ============================================================================
-# Helper Functions
-# ============================================================================
+if TYPE_CHECKING:
+    from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+
+async def _get_reflection_database() -> ReflectionDatabase | None:
+    """Get reflection database instance with lazy initialization."""
+    try:
+        from session_mgmt_mcp.reflection_tools import get_reflection_database
+
+        return await get_reflection_database()
+    except Exception as e:
+        _get_logger().warning(f"Could not get reflection database: {e}")
+        return None
 
 
 def _format_result_item(res: dict[str, Any], index: int) -> list[str]:
@@ -135,11 +149,22 @@ async def _store_reflection_validated_impl(**params: Any) -> str:
         )
         return "\n".join(lines)
 
-    return await execute_database_tool(
-        operation,
-        formatter,
-        "Store validated reflection",
-    )
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to store reflection: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
 
 
 async def _quick_search_validated_impl(**params: Any) -> str:
@@ -181,19 +206,7 @@ async def _quick_search_validated_impl(**params: Any) -> str:
                 ]
             )
         else:
-            top_result = result["results"][0]
-            lines.extend(
-                [
-                    "📊 Found results (showing top 1)",
-                    f"📝 {top_result['content'][:150]}...",
-                ]
-            )
-            if top_result.get("project"):
-                lines.append(f"📁 Project: {top_result['project']}")
-            if top_result.get("score") is not None:
-                lines.append(f"⭐ Relevance: {top_result['score']:.2f}")
-            if top_result.get("timestamp"):
-                lines.append(f"📅 Date: {top_result['timestamp']}")
+            lines.extend(_format_top_result(result["results"][0]))
 
         _get_logger().info(
             "Validated quick search executed",
@@ -202,11 +215,38 @@ async def _quick_search_validated_impl(**params: Any) -> str:
         )
         return "\n".join(lines)
 
-    return await execute_database_tool(
-        operation,
-        formatter,
-        "Validated quick search",
-    )
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform quick search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+def _format_top_result(top_result: dict[str, Any]) -> list[str]:
+    """Format the top search result."""
+    lines = [
+        "📊 Found results (showing top 1)",
+        f"📝 {top_result['content'][:150]}...",
+    ]
+    if top_result.get("project"):
+        lines.append(f"📁 Project: {top_result['project']}")
+    if top_result.get("score") is not None:
+        lines.append(f"⭐ Relevance: {top_result['score']:.2f}")
+    if top_result.get("timestamp"):
+        lines.append(f"📅 Date: {top_result['timestamp']}")
+
+    return lines
 
 
 async def _search_by_file_validated_impl(**params: Any) -> str:
@@ -249,11 +289,22 @@ async def _search_by_file_validated_impl(**params: Any) -> str:
         )
         return "\n".join(lines)
 
-    return await execute_database_tool(
-        operation,
-        formatter,
-        "Validated file search",
-    )
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform file search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
 
 
 async def _search_by_concept_validated_impl(**params: Any) -> str:
@@ -297,11 +348,152 @@ async def _search_by_concept_validated_impl(**params: Any) -> str:
         )
         return "\n".join(lines)
 
-    return await execute_database_tool(
-        operation,
-        formatter,
-        "Validated concept search",
-    )
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform concept search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+def _format_file_search_header(file_path: str, results: list[dict[str, Any]]) -> str:
+    """Format header for file search results."""
+    lines = [
+        f"📁 Searching conversations about: {file_path}",
+        "=" * 50,
+    ]
+    return "\n".join(lines)
+
+
+def _format_file_search_result(res: dict[str, Any], index: int) -> str:
+    """Format individual file search result."""
+    lines = [
+        "",
+        f"{index}. 📝 {res['content'][:200]}...",
+    ]
+
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Score: {res['score']:.2f}")
+
+    return "\n".join(lines)
+
+
+def _format_file_search_results(results: list[dict[str, Any]], query: str) -> str:
+    """Format all file search results."""
+    if not results:
+        return f"🔍 No conversations found discussing '{query}'"
+
+    lines = [f"📈 Found {len(results)} conversations discussing '{query}':", "=" * 50]
+
+    for i, res in enumerate(results, 1):
+        lines.append(_format_file_search_result(res, i))
+
+    return "\n".join(lines)
+
+
+def _format_validated_concept_result(
+    res: dict[str, Any], index: int, include_files: bool = True
+) -> str:
+    """Format individual concept search result."""
+    lines = [
+        "",
+        f"{index}. 🧠 Concept: {res['content'][:200]}...",
+    ]
+
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+
+    if include_files and res.get("files"):
+        files = res["files"][:5]  # Limit to 5 files
+        lines.append(f"   📄 Related files: {', '.join(files)}")
+
+    return "\n".join(lines)
+
+
+# Global variable to cache reflection tools availability
+_reflection_tools_available: bool | None = None
+
+
+def _check_reflection_tools_available() -> bool:
+    """Check if reflection tools are available and properly installed."""
+    global _reflection_tools_available
+
+    if _reflection_tools_available is not None:
+        return _reflection_tools_available
+
+    try:
+        # Check if reflection database module can be imported
+        import importlib.util
+
+        spec = importlib.util.find_spec("session_mgmt_mcp.reflection_tools")
+        available = spec is not None
+        _reflection_tools_available = available
+        return available
+    except Exception:
+        _reflection_tools_available = False
+        return False
+
+
+async def resolve_reflection_database() -> ReflectionDatabase | None:
+    """Resolve the reflection database instance using dependency injection or fallback."""
+    # Try to get from DI container
+    with suppress(Exception):
+        from typing import cast
+
+        from acb.depends import depends
+        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+
+        db = depends.get_sync(ReflectionDatabase)
+        if db:
+            return cast("ReflectionDatabase", db)
+
+    # Fallback - get a direct instance
+    with suppress(Exception):
+        from session_mgmt_mcp.reflection_tools import get_reflection_database
+
+        return await get_reflection_database()
+
+    return None
+
+
+async def _get_reflection_database_async() -> ReflectionDatabase:
+    """Get reflection database instance with lazy initialization."""
+    if not _check_reflection_tools_available():
+        from session_mgmt_mcp.utils.error_handlers import ValidationError
+
+        msg = "Reflection tools not available. Run: uv sync --extra embeddings"
+        raise ImportError(msg)
+
+    db = await resolve_reflection_database()
+    if not db:
+        from session_mgmt_mcp.utils.error_handlers import ValidationError
+
+        msg = "Reflection tools not available. Run: uv sync --extra embeddings"
+        raise ImportError(msg)
+
+    return db  # type: ignore[return-value]  # Checked for None above
 
 
 # ============================================================================

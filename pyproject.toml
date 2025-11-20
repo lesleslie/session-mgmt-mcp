@@ -33,14 +33,14 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "acb>=0.31.6",
+    "acb>=0.31.7",
     "aiocache>=0.12.3",
     "duckdb>=1.4.2",
-    "fastapi>=0.121.2",
+    "fastapi>=0.121.3",
     "fastmcp>=2.13.1",
     "jinja2>=3.1.6",
     "jinja2-async-environment>=0.18.5",
-    "mcp-common>=0.3.2",
+    "mcp-common>=0.3.3",
     "numpy>=2.3.5",
     "onnxruntime>=1.23.2,<1.24.0.dev",
     "httpx>=0.28.1,<1.0.0",
@@ -492,8 +492,8 @@ test = [
     "pytest-mock>=3.15.1",
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
-    "coverage>=7.11.3",
-    "hypothesis>=6.148.1",
+    "coverage>=7.12.0",
+    "hypothesis>=6.148.2",
     "factory-boy>=3.3.3",
 ]
 lint = [
