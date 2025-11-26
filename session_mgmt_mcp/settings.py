@@ -363,6 +363,79 @@ class SessionMgmtSettings(Settings):  # type: ignore[misc]
         description="Enable hot reloading during development",
     )
 
+    # === Feature Flags (rollout) ===
+    # Default to False; enable gradually and flip to True post-rollout
+    use_schema_v2: bool = Field(
+        default=True,
+        description="Use enhanced schema v2 for memory tables",
+    )
+    enable_llm_entity_extraction: bool = Field(
+        default=True,
+        description="Enable multi-provider LLM entity extraction",
+    )
+    enable_anthropic: bool = Field(
+        default=True,
+        description="Enable Anthropic provider in cascade",
+    )
+    enable_ollama: bool = Field(
+        default=False,
+        description="Enable Ollama provider in cascade",
+    )
+    enable_conscious_agent: bool = Field(
+        default=True,
+        description="Enable background Conscious Agent",
+    )
+    enable_filesystem_extraction: bool = Field(
+        default=True,
+        description="Enable filesystem-triggered entity extraction",
+    )
+
+    # === Extraction Controls ===
+    llm_extraction_timeout: int = Field(
+        default=10,
+        ge=1,
+        le=120,
+        description="Timeout in seconds for LLM extraction requests",
+    )
+    llm_extraction_retries: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        description="Retry attempts per provider before cascading",
+    )
+
+    # === Filesystem Extraction Settings ===
+    filesystem_dedupe_ttl_seconds: int = Field(
+        default=120,
+        ge=10,
+        le=3600,
+        description="Time window to skip reprocessing the same file",
+    )
+    filesystem_max_file_size_bytes: int = Field(
+        default=1_000_000,
+        ge=10_000,
+        le=100_000_000,
+        description="Maximum file size to consider for extraction",
+    )
+    filesystem_ignore_dirs: list[str] = Field(
+        default_factory=lambda: [
+            ".git",
+            "__pycache__",
+            "node_modules",
+            ".venv",
+            "venv",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".ruff_cache",
+            "dist",
+            "build",
+            ".DS_Store",
+            ".idea",
+            ".vscode",
+        ],
+        description="Directory names to ignore for extraction",
+    )
+
     # === Field Validators ===
     @field_validator("database_path", "log_file_path", "global_workspace_path")
     @classmethod

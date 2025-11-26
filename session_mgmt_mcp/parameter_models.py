@@ -714,8 +714,15 @@ def create_mcp_validator(
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         async def wrapper(**params: Any) -> Any:
-            validated_params = validate_mcp_params(model_class, **params)
-            return await func(**validated_params)
+            validated_response = validate_mcp_params(model_class, **params)
+            if not validated_response.is_valid:
+                msg = f"Parameter validation failed: {validated_response.errors}"
+                raise ValueError(msg)
+            if validated_response.params is None:
+                return await func()
+            # Convert the Pydantic model to a dictionary for unpacking
+            params_dict = validated_response.params.model_dump()
+            return await func(**params_dict)
 
         # Preserve function metadata
         wrapper.__name__ = func.__name__

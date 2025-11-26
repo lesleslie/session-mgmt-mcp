@@ -5,13 +5,13 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.server import reflect_on_past
 
 
 # Test-local wrappers delegating to server functions.
 # These wrappers allow tests to patch session_mgmt_mcp.server symbols while
 # invoking local call sites for readability.
 async def get_cached_chunk(cache_key: str, chunk_index: int):
+    # Defer import to avoid early DI configuration
     from session_mgmt_mcp.server import (
         get_cached_chunk as _server_get_cached_chunk,
     )
@@ -36,7 +36,7 @@ async def get_token_usage_stats(hours: int = 24):
             return f"❌ Error getting token usage stats: {e}"
 
     # Optimizer unavailable: mirror server fallback semantics without relying
-    # on server’s bound import-time alias.
+    # on server's bound import-time alias.
     return {"status": "token optimizer unavailable", "period_hours": hours}
 
 
@@ -177,6 +177,7 @@ class TestReflectOnPastOptimization:
     @pytest.mark.asyncio
     async def test_reflect_on_past_with_optimization(self, mock_reflection_db):
         """Test reflect_on_past with token optimization enabled."""
+        # Create the reflect_on_past function with mocked dependencies
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -184,6 +185,9 @@ class TestReflectOnPastOptimization:
             patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
             patch("session_mgmt_mcp.server.track_token_usage") as mock_track,
         ):
+            # Import after patches are applied to avoid DI configuration issues
+            from session_mgmt_mcp.server import reflect_on_past
+
             mock_get_db.return_value = mock_reflection_db
             mock_optimize.return_value = (
                 mock_reflection_db.search_conversations.return_value[
@@ -212,6 +216,9 @@ class TestReflectOnPastOptimization:
     @pytest.mark.asyncio
     async def test_reflect_on_past_optimization_disabled(self, mock_reflection_db):
         """Test reflect_on_past with token optimization disabled."""
+        # Import here to avoid early DI configuration
+        from session_mgmt_mcp.server import reflect_on_past
+
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -235,6 +242,9 @@ class TestReflectOnPastOptimization:
         mock_reflection_db,
     ):
         """Test error handling when optimization fails."""
+        # Import here to avoid early DI configuration
+        from session_mgmt_mcp.server import reflect_on_past
+
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
@@ -260,6 +270,9 @@ class TestReflectOnPastOptimization:
         mock_reflection_db,
     ):
         """Test when token optimizer is not available."""
+        # Import here to avoid early DI configuration
+        from session_mgmt_mcp.server import reflect_on_past
+
         with (
             patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
             patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False),

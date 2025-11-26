@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS memory_entities (
     entity_value TEXT NOT NULL,
     confidence REAL DEFAULT 1.0,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id) ON DELETE CASCADE
+    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id)
 );
 
 -- Entity relationships (Memori pattern)
@@ -107,8 +107,8 @@ CREATE TABLE IF NOT EXISTS memory_relationships (
     relationship_type TEXT NOT NULL,  -- uses, extends, references, related_to
     strength REAL DEFAULT 1.0,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (from_entity_id) REFERENCES memory_entities(id) ON DELETE CASCADE,
-    FOREIGN KEY (to_entity_id) REFERENCES memory_entities(id) ON DELETE CASCADE
+    FOREIGN KEY (from_entity_id) REFERENCES memory_entities(id),
+    FOREIGN KEY (to_entity_id) REFERENCES memory_entities(id)
 );
 
 -- Short-term memory promotion tracking
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS memory_promotions (
     reason TEXT,
     priority_score REAL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id) ON DELETE CASCADE
+    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id)
 );
 
 -- Access patterns tracking (for Conscious Agent)
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS memory_access_log (
     memory_id TEXT NOT NULL,
     access_type TEXT,  -- search, retrieve, promote, demote
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id) ON DELETE CASCADE
+    FOREIGN KEY (memory_id) REFERENCES conversations_v2(id)
 );
 
 -- Indexes for performance
@@ -188,7 +188,7 @@ SELECT
     'context' as category,  -- Default category
     tags,
     timestamp,
-    project
+    NULL as project
 FROM reflections
 WHERE id NOT IN (SELECT id FROM reflections_v2);
 """

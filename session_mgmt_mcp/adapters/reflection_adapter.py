@@ -369,52 +369,83 @@ class ReflectionDatabaseAdapter:
 
         """
         if ONNX_AVAILABLE and self.onnx_session:
-            # Use semantic search with embeddings
-            with suppress(Exception):
-                query_embedding = await self.get_embedding(query)
-                adapter = self._get_adapter()
-
-                # Build filter for project if specified
-                filter_dict = {"type": "conversation"}
-                if project:
-                    filter_dict["project"] = project
-
-                # Search using ACB vector adapter
-                search_results = await adapter.search(
-                    collection=self.collection_name,
-                    query_vector=query_embedding,
-                    limit=limit,
-                    filter_expr=filter_dict,
-                )
-
-                # Convert ACB results to original format
-                # search_results is a list of VectorSearchResult objects (Pydantic BaseModel)
-                results = []
-                for result in search_results:
-                    # Access attributes directly (not .get() - it's a Pydantic model)
-                    score = result.score
-                    if score >= min_score:
-                        meta = result.metadata
-                        results.append(
-                            {
-                                "content": meta.get("content", ""),
-                                "score": float(score),
-                                "timestamp": meta.get("timestamp"),
-                                "project": meta.get("project"),
-                                "metadata": (
-                                    json.loads(meta.get("metadata", "{}"))
-                                    if isinstance(meta.get("metadata"), str)
-                                    else meta.get("metadata", {})
-                                ),
-                            },
-                        )
-
-                return results
-
+            return await self._semantic_search_conversations(
+                query, limit, min_score, project
+            )
         # Fallback to text search (when ONNX unavailable or search failed)
         # This is a simplified version - in production you'd want to use
         # the original text search logic from ReflectionDatabase
         return await self._text_search_conversations(query, limit, project)
+
+    async def _semantic_search_conversations(
+        self,
+        query: str,
+        limit: int,
+        min_score: float,
+        project: str | None,
+    ) -> list[dict[str, t.Any]]:
+        """Perform semantic search using embeddings."""
+        query_embedding = await self.get_embedding(query)
+        try:
+            adapter = self._get_adapter()
+
+            # Build filter for project if specified
+            filter_dict = {"type": "conversation"}
+            if project:
+                filter_dict["project"] = project
+
+            # Search using ACB vector adapter
+            search_results = await adapter.search(
+                collection=self.collection_name,
+                query_vector=query_embedding,
+                limit=limit,
+                filter_expr=filter_dict,
+            )
+
+            # Convert ACB results to original format
+            # search_results is a list of VectorSearchResult objects (Pydantic BaseModel)
+            results = []
+            to_log: list[str] = []
+            for result in search_results:
+                # Access attributes directly (not .get() - it's a Pydantic model)
+                score = result.score
+                if score >= min_score:
+                    meta = result.metadata
+                    from contextlib import suppress
+
+                    with suppress(Exception):
+                        to_log.append(str(result.id))  # type: ignore[attr-defined]
+                    results.append(
+                        {
+                            "content": meta.get("content", ""),
+                            "score": float(score),
+                            "timestamp": meta.get("timestamp"),
+                            "project": meta.get("project"),
+                            "metadata": (
+                                json.loads(meta.get("metadata", "{}"))
+                                if isinstance(meta.get("metadata"), str)
+                                else meta.get("metadata", {})
+                            ),
+                        },
+                    )
+            # Log access for top results (best-effort)
+            self._log_accesses(to_log)
+            return results
+        except Exception:
+            # If semantic search fails, fallback to text search
+            return await self._text_search_conversations(query, limit, project)
+
+    def _log_accesses(self, conv_ids: list[str]) -> None:
+        """Helper to log memory accesses."""
+        from contextlib import suppress
+
+        with suppress(Exception):
+            from session_mgmt_mcp.memory.persistence import (
+                log_memory_access as _log_access,
+            )
+
+            for conv_id in conv_ids:
+                _log_access(conv_id, access_type="search")
 
     async def _text_search_conversations(
         self,

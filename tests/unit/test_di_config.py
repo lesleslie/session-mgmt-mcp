@@ -24,9 +24,13 @@ class TestSessionPathsCreation:
         claude_dir = Path("/tmp/test/.claude")
         logs_dir = Path("/tmp/test/.claude/logs")
         commands_dir = Path("/tmp/test/.claude/commands")
+        data_dir = Path("/tmp/test/.claude/data")
 
         paths = SessionPaths(
-            claude_dir=claude_dir, logs_dir=logs_dir, commands_dir=commands_dir
+            claude_dir=claude_dir,
+            logs_dir=logs_dir,
+            commands_dir=commands_dir,
+            data_dir=data_dir,
         )
 
         assert paths.claude_dir == claude_dir

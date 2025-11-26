@@ -215,6 +215,25 @@ class SessionPermissionsManager:
     def add_trusted_operation(self, operation: str) -> None:
         self.trusted_operations.add(operation)
 
+    def configure_auto_checkpoint(
+        self, enabled: bool = True, frequency: int = 300
+    ) -> bool:
+        """Configure auto-checkpoint settings with security validations."""
+        # Validate frequency is reasonable (between 30 seconds and 1 hour)
+        if frequency < 30 or frequency > 3600:
+            return False
+
+        self.auto_checkpoint = enabled
+        if enabled:
+            self.checkpoint_frequency = frequency
+        return True
+
+    def should_auto_checkpoint(self) -> bool:
+        """Check whether it's time for an auto-checkpoint based on settings."""
+        # This is a simplified version - in real implementation,
+        # we'd check the time since last checkpoint
+        return self.auto_checkpoint
+
 
 # Global permissions manager - Initialize with claude directory
 from acb.depends import depends

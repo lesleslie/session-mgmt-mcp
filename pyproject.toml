@@ -33,10 +33,10 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "acb>=0.31.7",
+    "acb>=0.31.12",
     "aiocache>=0.12.3",
     "duckdb>=1.4.2",
-    "fastapi>=0.121.3",
+    "fastapi>=0.122.0",
     "fastmcp>=2.13.1",
     "jinja2>=3.1.6",
     "jinja2-async-environment>=0.18.5",
@@ -51,9 +51,9 @@ dependencies = [
     "structlog>=25.5.0",
     "tiktoken>=0.12.0",
     "tomli>=2.3.0",
-    "transformers>=4.57.1",
+    "transformers>=4.57.3",
     "typer>=0.20.0",
-    "crackerjack>=0.44.28",
+    "crackerjack>=0.44.34",
     "bevy>=3.1.0b12",
 ]
 

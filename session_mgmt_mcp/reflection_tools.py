@@ -578,54 +578,71 @@ class ReflectionDatabase:
     ) -> list[dict[str, Any]]:
         """Search conversations by text similarity (fallback to text search if no embeddings)."""
         if ONNX_AVAILABLE and self.onnx_session:
-            # Use semantic search with embeddings
-            with suppress(Exception):
-                query_embedding = await self.get_embedding(query)
+            return await self._semantic_search_conversations(
+                query, limit, min_score, project
+            )
+        return await self._text_search_conversations(query, limit, project)
 
-                sql = """
-                    SELECT
-                        id, content, embedding, project, timestamp, metadata,
-                        array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
-                    FROM conversations
-                    WHERE embedding IS NOT NULL
-                """
-                params: list[Any] = [query_embedding]
+    async def _semantic_search_conversations(
+        self, query: str, limit: int, min_score: float, project: str | None
+    ) -> list[dict[str, Any]]:
+        """Semantic search implementation with embeddings."""
+        with suppress(Exception):
+            query_embedding = await self.get_embedding(query)
 
-                if project:
-                    sql += " AND project = ?"
-                    params.append(project)
+            sql = """
+                SELECT
+                    id, content, embedding, project, timestamp, metadata,
+                    array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
+                FROM conversations
+                WHERE embedding IS NOT NULL
+            """
+            params: list[Any] = [query_embedding]
 
-                sql += """
-                    ORDER BY score DESC
-                    LIMIT ?
-                """
-                params.append(limit)
+            if project:
+                sql += " AND project = ?"
+                params.append(project)
 
-                # For synchronized database access in test environments using in-memory DB
-                if self.is_temp_db:
-                    # Use lock to protect database operations for in-memory DB
-                    with self.lock:
-                        results = self._get_conn().execute(sql, params).fetchall()
-                else:
-                    # For normal file-based DB, run in executor for thread safety
-                    results = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: self._get_conn().execute(sql, params).fetchall(),
-                    )
+            sql += """
+                ORDER BY score DESC
+                LIMIT ?
+            """
+            params.append(limit)
 
-                return [
-                    {
-                        "content": row[1],
-                        "score": float(row[6]),
-                        "timestamp": row[4],
-                        "project": row[3],
-                        "metadata": json.loads(row[5]) if row[5] else {},
-                    }
-                    for row in results
-                    if float(row[6]) >= min_score
-                ]
+            # For synchronized database access in test environments using in-memory DB
+            if self.is_temp_db:
+                # Use lock to protect database operations for in-memory DB
+                with self.lock:
+                    results = self._get_conn().execute(sql, params).fetchall()
+            else:
+                # For normal file-based DB, run in executor for thread safety
+                results = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: self._get_conn().execute(sql, params).fetchall(),
+                )
 
-        # Fallback to text search (if ONNX failed or not available)
+            # Build results and log accesses into v2 access log (best-effort)
+            filtered = [row for row in results if float(row[6]) >= min_score]
+            self._log_accesses([str(row[0]) for row in filtered])
+
+            return [
+                {
+                    "content": row[1],
+                    "score": float(row[6]),
+                    "timestamp": row[4],
+                    "project": row[3],
+                    "metadata": json.loads(row[5]) if row[5] else {},
+                }
+                for row in filtered
+            ]
+
+        # If semantic search fails or is not available, fallback to text search
+        return await self._text_search_conversations(query, limit, project)
+
+    async def _text_search_conversations(
+        self, query: str, limit: int, project: str | None
+    ) -> list[dict[str, Any]]:
+        """Fallback text search implementation."""
         search_terms = query.lower().split()
         sql = "SELECT id, content, project, timestamp, metadata FROM conversations"
         params = []
@@ -650,6 +667,7 @@ class ReflectionDatabase:
 
         # Simple text matching score
         matches = []
+        matched_ids: list[str] = []
         for row in results:
             content_lower = row[1].lower()
             score = sum(1 for term in search_terms if term in content_lower) / len(
@@ -666,10 +684,26 @@ class ReflectionDatabase:
                         "metadata": json.loads(row[4]) if row[4] else {},
                     },
                 )
+                with suppress(Exception):
+                    matched_ids.append(str(row[0]))
 
-        # Sort by score and return top matches
+        # Sort by score and return top matches, then log accesses
         matches.sort(key=operator.itemgetter("score"), reverse=True)
-        return matches[:limit]
+        top = matches[:limit]
+        self._log_accesses(matched_ids[:limit])
+        return top
+
+    def _log_accesses(self, conv_ids: list[str]) -> None:
+        """Helper to log memory accesses."""
+        from contextlib import suppress
+
+        with suppress(Exception):
+            from session_mgmt_mcp.memory.persistence import (
+                log_memory_access as _log_access,
+            )
+
+            for conv_id in conv_ids:
+                _log_access(conv_id, access_type="search")
 
     async def search_reflections(
         self,
@@ -807,15 +841,26 @@ class ReflectionDatabase:
                 lambda: self._get_conn().execute(sql, params).fetchall(),
             )
 
-        return [
-            {
-                "content": row[1],
-                "project": row[2],
-                "timestamp": row[3],
-                "metadata": json.loads(row[4]) if row[4] else {},
-            }
-            for row in results
-        ]
+        # Build results and log access for each conversation id
+        output = []
+        for row in results:
+            output.append(
+                {
+                    "content": row[1],
+                    "project": row[2],
+                    "timestamp": row[3],
+                    "metadata": json.loads(row[4]) if row[4] else {},
+                }
+            )
+            from contextlib import suppress
+
+            with suppress(Exception):
+                from session_mgmt_mcp.memory.persistence import (
+                    log_memory_access as _log_access,
+                )
+
+                _log_access(str(row[0]), access_type="search")
+        return output
 
     async def _execute_query(self, query: str, params: list[Any] | None = None) -> list:
         """Execute a raw SQL query and return results."""

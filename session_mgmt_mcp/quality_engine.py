@@ -140,13 +140,16 @@ async def _optimize_reflection_database() -> str:
         )
 
         if db.conn:
+            conn = (
+                db.conn
+            )  # Capture the connection to help mypy understand it's not None
             await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: db.conn.execute("VACUUM"),
+                lambda: conn.execute("VACUUM"),
             )
             await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: db.conn.execute("ANALYZE"),
+                lambda: conn.execute("ANALYZE"),
             )
 
         db_size_after = (
@@ -306,7 +309,7 @@ async def _generate_basic_insights(
 
 async def _add_project_context_insights(insights: list[str]) -> None:
     """Add project context analysis to insights."""
-    from session_mgmt_mcp.server import analyze_project_context
+    from session_mgmt_mcp.server_core import analyze_project_context
 
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
     project_context = await analyze_project_context(current_dir)

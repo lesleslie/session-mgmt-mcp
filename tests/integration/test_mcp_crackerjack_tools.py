@@ -67,6 +67,74 @@ class TestMCPToolExecution:
         """Create MCP server with crackerjack tools."""
         mcp = FastMCP("test-crackerjack")
         register_crackerjack_tools(mcp)
+
+        # Add helper method for programmatic tool calling used in tests
+        async def _call_tool_internal(tool_name: str, arguments: dict | None = None):
+            """Programmatically call a tool by name with provided arguments.
+
+            This method is used in integration tests to call tools directly.
+            """
+            if arguments is None:
+                arguments = {}
+
+            # Access the registered tools from the mcp instance
+            if hasattr(mcp, "get_tools"):
+                tools = await mcp.get_tools()
+            elif hasattr(mcp, "tools"):
+                tools = mcp.tools
+            else:
+                tools = getattr(mcp, "_tools", {})
+
+            if tool_name not in tools:
+                msg = f"Tool '{tool_name}' is not registered"
+                raise ValueError(msg)
+
+            # Get the tool specification
+            tool_spec = tools[tool_name]
+
+            # Extract the tool function from the tool specification
+            if hasattr(tool_spec, "function"):
+                tool_func = tool_spec.function
+            elif isinstance(tool_spec, dict) and "function" in tool_spec:
+                tool_func = tool_spec["function"]
+            elif callable(tool_spec):
+                tool_func = tool_spec
+            else:
+                tool_func = (
+                    getattr(tool_spec, "implementation", None)
+                    or getattr(tool_spec, "handler", None)
+                    or getattr(tool_spec, "__call__", None)
+                )
+                if tool_func is None:
+                    msg = f"Could not extract callable function from tool {tool_name}"
+                    raise ValueError(msg)
+
+            # Get the function signature to validate arguments
+            import inspect
+
+            sig = inspect.signature(tool_func)
+
+            # Filter arguments to only include what the function accepts
+            filtered_args = {}
+            for param_name, param in sig.parameters.items():
+                if param_name in arguments:
+                    filtered_args[param_name] = arguments[param_name]
+                elif param.default is not param.empty:
+                    # Use default value if available
+                    filtered_args[param_name] = param.default
+
+            # Call the function
+            if inspect.iscoroutinefunction(tool_func):
+                return await tool_func(**filtered_args)
+            return tool_func(**filtered_args)
+
+        # Also add a call_tool method that mimics the _call_tool method
+        async def call_tool_internal(tool_name: str, **arguments):
+            return await _call_tool_internal(tool_name, arguments)
+
+        # Attach both methods to the mcp instance
+        mcp._call_tool = _call_tool_internal
+        mcp.call_tool = call_tool_internal
         return mcp
 
     @pytest.mark.asyncio

@@ -19,6 +19,21 @@ from session_mgmt_mcp.utils.git_operations import (
 )
 
 
+def get_session_logger() -> t.Any:
+    """Get the session logger instance.
+
+    This function is used in tests for mocking purposes.
+    """
+    try:
+        logger_class = import_adapter("logger")
+        return depends.get_sync(logger_class)
+    except Exception:
+        # If dependency injection fails, create a basic logger
+        import logging
+
+        return logging.getLogger(__name__)
+
+
 class SessionLifecycleManager:
     """Manages session lifecycle operations."""
 
@@ -31,8 +46,14 @@ class SessionLifecycleManager:
         """
         if logger is None:
             # Fallback for manual instantiation
-            logger_class = import_adapter("logger")
-            logger = depends.get_sync(logger_class)
+            try:
+                logger_class = import_adapter("logger")
+                logger = depends.get_sync(logger_class)
+            except Exception:
+                # If dependency injection fails, create a basic logger
+                import logging
+
+                logger = logging.getLogger(__name__)
 
         self.logger = logger
         self.current_project: str | None = None
@@ -51,13 +72,13 @@ class SessionLifecycleManager:
             templates_dir = Path(__file__).parent.parent.parent / "templates"
             self.templates = TemplatesAdapter(template_dir=templates_dir)
             self.logger.info(
-                "Templates adapter initialized",
-                templates_dir=str(templates_dir),
+                "Templates adapter initialized, templates_dir=%s",
+                str(templates_dir),
             )
         except Exception as e:
             self.logger.warning(
-                "Templates adapter initialization failed, using fallback",
-                error=str(e),
+                "Templates adapter initialization failed, using fallback, error=%s",
+                str(e),
             )
             self.templates = None
 
@@ -301,18 +322,18 @@ class SessionLifecycleManager:
 
             if success and result != "clean":
                 self.logger.info(
-                    "Checkpoint commit created",
-                    project=self.current_project,
-                    commit_hash=result,
-                    quality_score=quality_score,
+                    "Checkpoint commit created, project=%s, commit_hash=%s, quality_score=%d",
+                    self.current_project,
+                    result,
+                    quality_score,
                 )
 
         except Exception as e:
             output.append(f"\n⚠️ Git operations error: {e}")
             self.logger.exception(
-                "Git checkpoint error occurred",
-                error=str(e),
-                project=self.current_project,
+                "Git checkpoint error occurred, error=%s, project=%s",
+                str(e),
+                self.current_project,
             )
 
         return output
@@ -345,25 +366,78 @@ class SessionLifecycleManager:
     async def _read_previous_session_info(
         self, file_path: Path
     ) -> dict[str, t.Any] | None:
-        """Read previous session information from a file."""
+        """Read previous session information from a file - handles both JSON and markdown files."""
         try:
             content = file_path.read_text(encoding="utf-8")
+
+            # Try JSON first
             import json
 
-            data = json.loads(content)
-            # Ensure the return type is properly typed as dict[str, t.Any] | None
-            if isinstance(data, dict):
-                return data  # type: ignore[return-value]
-            return None
-        except (OSError, ValueError):
+            try:
+                data = json.loads(content)
+                # Ensure the return type is properly typed as dict[str, t.Any] | None
+                if isinstance(data, dict):
+                    return data  # type: ignore[return-value]
+                return None
+            except json.JSONDecodeError:
+                # If not JSON, try to parse as markdown handoff file
+                from session_mgmt_mcp.core.lifecycle.session_info import (
+                    parse_session_file,
+                )
+
+                # Parse the markdown file content
+                session_info = await parse_session_file(file_path)
+
+                # Convert SessionInfo to dictionary format expected by the system
+                if session_info.is_complete():
+                    return {
+                        "ended_at": session_info.ended_at,
+                        "quality_score": session_info.quality_score,
+                        "working_directory": session_info.working_directory,
+                        "top_recommendation": session_info.top_recommendation,
+                        "session_id": session_info.session_id,
+                    }
+
+                return None
+        except OSError:
             return None
 
     def _find_latest_handoff_file(self, current_dir: Path) -> Path | None:
-        """Find the latest handoff file in the project."""
+        """Find the latest handoff file in the project - supports both JSON and markdown files."""
+        # Look for markdown handoff files in the current directory (legacy format)
+        legacy_handoff_files = list(current_dir.glob("session_handoff_*.md"))
+        latest_legacy = None
+        if legacy_handoff_files:
+            latest_legacy = max(legacy_handoff_files, key=lambda f: f.stat().st_mtime)
+
+        # Look in the .crackerjack/session/handoff directory for newer markdown files
+        crackerjack_handoff_dir = current_dir / ".crackerjack" / "session" / "handoff"
+        if crackerjack_handoff_dir.exists():
+            handoff_files = list(crackerjack_handoff_dir.glob("session_handoff_*.md"))
+            if handoff_files:
+                latest_nested = max(handoff_files, key=lambda f: f.stat().st_mtime)
+                # Compare with legacy files if present and return the most recent
+                if (
+                    latest_legacy
+                    and latest_nested.stat().st_mtime < latest_legacy.stat().st_mtime
+                ):
+                    return latest_legacy
+                return latest_nested
+        # If the nested directory doesn't exist, return the legacy file if found
+        elif latest_legacy:
+            return latest_legacy
+
+        # Next, look for JSON handoff files anywhere in the directory
         handoff_files = list(current_dir.rglob("*.handoff.json"))
-        if not handoff_files:
-            return None
-        return max(handoff_files, key=lambda f: f.stat().st_mtime)
+        if handoff_files:
+            return max(handoff_files, key=lambda f: f.stat().st_mtime)
+
+        # Finally, fall back to any session-related JSON files
+        session_files = list(current_dir.rglob("*.session.json"))
+        if session_files:
+            return max(session_files, key=lambda f: f.stat().st_mtime)
+
+        return None
 
     async def _get_previous_session_info(
         self,
@@ -386,47 +460,123 @@ class SessionLifecycleManager:
 
     async def analyze_project_context(self, current_dir: Path) -> dict[str, bool]:
         """Analyze project context and return relevant information."""
+        # Ensure current_dir is a Path object
+        current_dir = Path(current_dir)
+
         # This is a basic implementation; could be expanded based on requirements
-        git_exists = (current_dir / ".git").exists()
+        has_git_repo = is_git_repository(
+            current_dir
+        )  # Use the function from git_operations
         has_readme = any(current_dir.glob("README*"))
-        has_requirements = (current_dir / "requirements.txt").is_file() or (
-            current_dir / "pyproject.toml"
-        ).is_file()
-        has_src_dir = (current_dir / "src").is_dir()
+        has_pyproject_toml = (current_dir / "pyproject.toml").is_file()
+        has_setup_py = (current_dir / "setup.py").is_file()
+        has_requirements_txt = (current_dir / "requirements.txt").is_file()
+        has_src_structure = (current_dir / "src").is_dir()
         has_tests = any(current_dir.glob("test*")) or any(current_dir.glob("**/test*"))
+        has_docs = any(current_dir.glob("docs/**")) or any(current_dir.glob("**/*.md"))
+        has_ci_cd = (
+            (current_dir / ".github").exists()
+            or (current_dir / ".gitlab").exists()
+            or (current_dir / ".circleci").exists()
+        )
+        has_venv = (current_dir / ".venv").exists() or (current_dir / "venv").exists()
+        has_python_files = any(current_dir.glob("**/*.py"))
+
+        # Detect commonly used Python web frameworks and libraries
+        requirements_content = ""
+        if (current_dir / "requirements.txt").is_file():
+            requirements_content += (current_dir / "requirements.txt").read_text()
+        if (current_dir / "pyproject.toml").is_file():
+            requirements_content += (current_dir / "pyproject.toml").read_text()
+
+        # Scan Python files for framework imports (first 10 files as suggested by test)
+        python_files = list(current_dir.glob("**/*.py"))[
+            :10
+        ]  # Limit to first 10 Python files
+        for py_file in python_files:
+            try:
+                content = py_file.read_text()
+                requirements_content += content  # Add file content to check for imports
+            except (OSError, UnicodeDecodeError):
+                # Skip files that can't be read
+                continue
+
+        uses_fastapi = "fastapi" in requirements_content.lower()
+        uses_django = "django" in requirements_content.lower()
+        uses_flask = "flask" in requirements_content.lower()
 
         return {
-            "git_exists": git_exists,
+            "has_git_repo": has_git_repo,
             "has_readme": has_readme,
-            "has_requirements": has_requirements,
-            "has_src_dir": has_src_dir,
+            "has_pyproject_toml": has_pyproject_toml,
+            "has_setup_py": has_setup_py,
+            "has_requirements_txt": has_requirements_txt,
+            "has_src_structure": has_src_structure,
             "has_tests": has_tests,
-            "is_python_project": has_requirements,
+            "has_docs": has_docs,
+            "has_ci_cd": has_ci_cd,
+            "has_venv": has_venv,
+            "has_python_files": has_python_files,
+            "uses_fastapi": uses_fastapi,
+            "uses_django": uses_django,
+            "uses_flask": uses_flask,
         }
 
     async def _generate_handoff_documentation(
         self, summary: dict[str, t.Any], quality_data: dict[str, t.Any]
     ) -> str:
         """Generate handoff documentation based on session summary and quality data."""
-        import json
         from datetime import datetime
 
-        handoff_doc = {
-            "session_summary": summary,
-            "quality_data": quality_data,
-            "generated_at": datetime.now().isoformat(),
-            "handoff_type": "session_handoff",
-        }
-        return json.dumps(handoff_doc, indent=2)
+        # Format as markdown document
+        markdown_content = []
+        markdown_content.append(
+            f"# Session Handoff Report - {summary.get('project', 'unknown')}"
+        )
+        markdown_content.append(
+            f"\n**Session ended:** {summary.get('session_end_time', datetime.now().isoformat())}"
+        )
+        markdown_content.append(
+            f"**Final quality score:** {summary.get('final_quality_score', 0)}/100"
+        )
+        markdown_content.append(
+            f"**Working directory:** {summary.get('working_directory', 'N/A')}"
+        )
+        markdown_content.append("")
 
-    def _save_handoff_documentation(self, content: str, current_dir: Path) -> Path:
+        if summary.get("recommendations"):
+            markdown_content.append("## Recommendations")
+            for rec in summary["recommendations"]:
+                markdown_content.append(f"- {rec}")
+            markdown_content.append("")
+
+        # Add quality details
+        breakdown = quality_data.get("breakdown", {})
+        if breakdown:
+            markdown_content.append("## Quality Breakdown")
+            for key, value in breakdown.items():
+                markdown_content.append(f"- {key}: {value}")
+            markdown_content.append("")
+
+        return "\n".join(markdown_content)
+
+    def _save_handoff_documentation(
+        self, content: str, current_dir: Path
+    ) -> Path | None:
         """Save handoff documentation to a file."""
         from datetime import datetime
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        handoff_file = current_dir / f"session_handoff_{timestamp}.json"
-        handoff_file.write_text(content)
-        return handoff_file
+        try:
+            # Ensure the directory exists
+            current_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            handoff_file = current_dir / f"session_handoff_{timestamp}.md"
+            handoff_file.write_text(content)
+            return handoff_file
+        except Exception:
+            # Return None on any failure to save
+            return None
 
     async def initialize_session(
         self,
@@ -448,11 +598,11 @@ class SessionLifecycleManager:
             previous_session_info = await self._get_previous_session_info(current_dir)
 
             self.logger.info(
-                "Session initialized",
-                project=self.current_project,
-                quality_score=quality_score,
-                working_directory=str(current_dir),
-                has_previous_session=previous_session_info is not None,
+                "Session initialized, project=%s, quality_score=%d, working_directory=%s, has_previous_session=%s",
+                self.current_project,
+                quality_score,
+                str(current_dir),
+                previous_session_info is not None,
             )
 
             return {
@@ -467,7 +617,7 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.exception("Session initialization failed", error=str(e))
+            self.logger.exception("Session initialization failed: %s", str(e))
             return {"success": False, "error": str(e)}
 
     def get_previous_quality_score(self, project: str) -> int | None:
@@ -534,11 +684,11 @@ class SessionLifecycleManager:
             quality_output = self.format_quality_results(quality_score, quality_data)
 
             self.logger.info(
-                "Session checkpoint completed",
-                project=self.current_project,
-                quality_score=quality_score,
-                auto_store_decision=auto_store_decision.should_store,
-                auto_store_reason=auto_store_decision.reason.value,
+                "Session checkpoint completed, project=%s, quality_score=%d, auto_store_decision=%s, auto_store_reason=%s",
+                self.current_project,
+                quality_score,
+                auto_store_decision.should_store,
+                auto_store_decision.reason.value,
             )
 
             return {
@@ -552,7 +702,7 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.exception("Session checkpoint failed", error=str(e))
+            self.logger.exception("Session checkpoint failed, error=%s", str(e))
             return {"success": False, "error": str(e)}
 
     async def end_session(
@@ -591,9 +741,9 @@ class SessionLifecycleManager:
             )
 
             self.logger.info(
-                "Session ended",
-                project=self.current_project,
-                final_quality_score=quality_score,
+                "Session ended, project=%s, final_quality_score=%d",
+                self.current_project,
+                quality_score,
             )
 
             summary["handoff_documentation"] = (
@@ -603,7 +753,7 @@ class SessionLifecycleManager:
             return {"success": True, "summary": summary}
 
         except Exception as e:
-            self.logger.exception("Session end failed", error=str(e))
+            self.logger.exception("Session end failed, error=%s", str(e))
             return {"success": False, "error": str(e)}
 
             return None
@@ -647,5 +797,5 @@ class SessionLifecycleManager:
             }
 
         except Exception as e:
-            self.logger.exception("Failed to get session status", error=str(e))
+            self.logger.exception("Failed to get session status, error=%s", str(e))
             return {"success": False, "error": str(e)}

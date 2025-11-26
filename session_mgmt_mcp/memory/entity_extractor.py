@@ -1,8 +1,10 @@
 """
-LLM-Powered Entity Extraction - Memori pattern with OpenAI Structured Outputs.
+LLM-Powered Entity Extraction - Memori pattern with multi-provider cascade.
 
-Replaces session-mgmt's pattern-based extraction with Memori's superior
-LLM-powered approach using Pydantic models and structured outputs.
+Primary: OpenAI → Anthropic → Gemini → Pattern-based fallback.
+
+Uses Pydantic models for typed outputs. Providers are optional; cascade
+skips any unavailable provider gracefully and falls back to patterns.
 """
 
 import asyncio
@@ -173,24 +175,172 @@ class LLMEntityExtractor:
 
         start_time = datetime.now()
 
-        # Build prompt for LLM
-
-        # TODO: Implement LLM-powered entity extraction using structured outputs
-        # For now, return a minimal stub implementation
-        processed_memory = ProcessedMemory(
-            category="context",
-            importance_score=0.5,
-            summary="Conversation recorded",
-            searchable_content=f"{user_input} {ai_output}",
-            reasoning="Placeholder for LLM-powered extraction",
+        # Build prompt requesting JSON compatible with ProcessedMemory
+        system = (
+            "You are an information extraction assistant. Return ONLY valid JSON "
+            "matching this schema keys: {category, subcategory, importance_score, "
+            "summary, searchable_content, reasoning, entities, relationships, "
+            "suggested_tier, tags}. Entities contain {entity_type, entity_value, confidence}. "
+            "Relationships contain {from_entity, to_entity, relationship_type, strength}."
+        )
+        prompt = (
+            f"User: {user_input}\nAssistant: {ai_output}\n"
+            "Extract structured memory now."
         )
 
-        extraction_time = (datetime.now() - start_time).total_seconds() * 1000
+        try:
+            # Prefer OpenAI structured output when available
+            if self.llm_provider == "openai":
+                client = self._client
+                assert client is not None
+                response = await client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_format={"type": "json_object"},
+                )
+                content = response.choices[0].message.content or "{}"
+                pm = ProcessedMemory.model_validate_json(content)
+                processed_memory = pm
+            else:
+                # Unsupported provider in this class; delegate to cascade engine
+                msg = "Unsupported provider in LLMEntityExtractor"
+                raise RuntimeError(msg)
 
+            extraction_time = (datetime.now() - start_time).total_seconds() * 1000
+            return EntityExtractionResult(
+                processed_memory=processed_memory,
+                entities_count=len(processed_memory.entities),
+                relationships_count=len(processed_memory.relationships),
+                extraction_time_ms=extraction_time,
+                llm_provider=self.llm_provider,
+            )
+        except Exception:
+            # Fall back to a minimal default to avoid hard failure
+            logger.info("LLM extraction failed; falling back to default output")
+            processed_memory = ProcessedMemory(
+                category="context",
+                importance_score=0.5,
+                summary="Conversation recorded",
+                searchable_content=f"{user_input} {ai_output}",
+                reasoning="LLM extraction fallback",
+            )
+            extraction_time = (datetime.now() - start_time).total_seconds() * 1000
+            return EntityExtractionResult(
+                processed_memory=processed_memory,
+                entities_count=0,
+                relationships_count=0,
+                extraction_time_ms=extraction_time,
+                llm_provider=self.llm_provider,
+            )
+
+
+class PatternBasedExtractor:
+    """Regex/keyword-based extraction as a no-deps fallback."""
+
+    def _categorize(self, text: str) -> str:
+        lower = text.lower()
+        if any(k in lower for k in ("prefer", "like", "avoid")):
+            return "preferences"
+        if any(k in lower for k in ("skill", "learned", "expert")):
+            return "skills"
+        if any(k in lower for k in ("rule", "policy", "guideline")):
+            return "rules"
+        if any(k in lower for k in ("context", "today", "currently", "now")):
+            return "context"
+        return "facts"
+
+    async def extract_entities(
+        self, user_input: str, ai_output: str
+    ) -> ProcessedMemory:
+        text = f"{user_input}\n{ai_output}"
+        category = self._categorize(text)
+        return ProcessedMemory(
+            category=category,
+            importance_score=0.5,
+            summary="Conversation recorded",
+            searchable_content=text,
+            reasoning="Pattern-based extraction",
+            tags=[category],
+            suggested_tier="long_term",
+        )
+
+
+class EntityExtractionEngine:
+    """Multi-provider extraction with cascade fallback."""
+
+    def __init__(self) -> None:
+        from session_mgmt_mcp.llm_providers import LLMManager, LLMMessage
+        from session_mgmt_mcp.settings import get_settings
+
+        self._LLMMessage = LLMMessage
+        self.manager = LLMManager()
+        self.fallback_extractor = PatternBasedExtractor()
+        settings = get_settings()
+        self.timeout_s = settings.llm_extraction_timeout
+        self.retries = settings.llm_extraction_retries
+
+    async def extract_entities(
+        self, user_input: str, ai_output: str
+    ) -> EntityExtractionResult:
+        system = (
+            "You are an information extraction assistant. Return ONLY valid JSON "
+            "for keys: category, subcategory, importance_score, summary, "
+            "searchable_content, reasoning, entities, relationships, suggested_tier, tags."
+        )
+        from session_mgmt_mcp.llm_providers import LLMMessage
+
+        messages = [
+            LLMMessage(role="system", content=system),
+            LLMMessage(
+                role="user",
+                content=(
+                    "Extract structured memory from the following.\n"
+                    f"User: {user_input}\nAssistant: {ai_output}"
+                ),
+            ),
+        ]
+
+        providers = ["openai", "anthropic", "gemini"]
+        start_time = datetime.now()
+
+        for provider in providers:
+            try:
+                for attempt in range(max(1, self.retries + 1)):
+                    try:
+                        resp = await asyncio.wait_for(
+                            self.manager.generate(
+                                messages, provider=provider, temperature=0.2
+                            ),
+                            timeout=self.timeout_s,
+                        )
+                        break
+                    except Exception:
+                        if attempt >= self.retries:
+                            raise
+                        continue
+                pm = ProcessedMemory.model_validate_json(resp.content)
+                extraction_time = (datetime.now() - start_time).total_seconds() * 1000
+                return EntityExtractionResult(
+                    processed_memory=pm,
+                    entities_count=len(pm.entities),
+                    relationships_count=len(pm.relationships),
+                    extraction_time_ms=extraction_time,
+                    llm_provider=provider,
+                )
+            except Exception as e:
+                logger.warning(f"{provider} extraction failed: {e}")
+                continue
+
+        # Final fallback: pattern-based
+        pm = await self.fallback_extractor.extract_entities(user_input, ai_output)
+        extraction_time = (datetime.now() - start_time).total_seconds() * 1000
         return EntityExtractionResult(
-            processed_memory=processed_memory,
-            entities_count=len(processed_memory.entities),
-            relationships_count=len(processed_memory.relationships),
+            processed_memory=pm,
+            entities_count=len(pm.entities),
+            relationships_count=len(pm.relationships),
             extraction_time_ms=extraction_time,
-            llm_provider=self.llm_provider,
+            llm_provider="pattern",
         )

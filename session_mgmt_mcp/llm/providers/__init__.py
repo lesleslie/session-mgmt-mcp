@@ -6,8 +6,14 @@ This package contains implementations for different LLM providers:
 - Ollama (local models)
 """
 
+from session_mgmt_mcp.llm.providers.anthropic_provider import AnthropicProvider
 from session_mgmt_mcp.llm.providers.gemini_provider import GeminiProvider
 from session_mgmt_mcp.llm.providers.ollama_provider import OllamaProvider
 from session_mgmt_mcp.llm.providers.openai_provider import OpenAIProvider
 
-__all__ = ["GeminiProvider", "OllamaProvider", "OpenAIProvider"]
+__all__ = [
+    "AnthropicProvider",
+    "GeminiProvider",
+    "OllamaProvider",
+    "OpenAIProvider",
+]

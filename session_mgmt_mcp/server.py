@@ -31,7 +31,7 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 from session_mgmt_mcp.di import configure as configure_di
 
-# CRITICAL: Configure DI BEFORE importing anything that uses loggers!
+# CRITICAL: Configure DI BEFORE importing anything that uses DI!
 configure_di()
 
 # Phase 2.5: Import core infrastructure from server_core
@@ -50,9 +50,30 @@ from session_mgmt_mcp.server_core import (
     session_lifecycle as _session_lifecycle_impl,
 )
 
-# Get ACB logger from DI container
-logger_class = import_adapter("logger")
-session_logger = depends.get_sync(logger_class)
+
+# Get ACB logger from DI container (deferred until first use)
+def _get_session_logger():
+    logger_class = import_adapter("logger")
+    try:
+        return depends.get_sync(logger_class)
+    except Exception:
+        # Fallback logger in case of dependency injection issues
+        import logging
+
+        return logging.getLogger(__name__)
+
+
+# Initialize global session_logger as None to prevent undefined variable
+session_logger: Any = None
+
+
+def _get_logger():
+    """Get logger instance with lazy initialization."""
+    global session_logger
+    if session_logger is None:
+        session_logger = _get_session_logger()
+    return session_logger
+
 
 # Check mcp-common exceptions availability (must be defined early for FastMCP import)
 EXCEPTIONS_AVAILABLE = importlib.util.find_spec("mcp_common.exceptions") is not None
@@ -189,7 +210,7 @@ except Exception:
 @asynccontextmanager
 async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
     """Automatic session lifecycle for git repositories only (wrapper)."""
-    async with _session_lifecycle_impl(app, lifecycle_manager, session_logger):
+    async with _session_lifecycle_impl(app, lifecycle_manager, _get_logger()):
         yield
 
 
@@ -210,15 +231,28 @@ if RATE_LIMITING_AVAILABLE:
     )
     # Use public API (Phase 3.1 C1 fix: standardize middleware access)
     mcp.add_middleware(rate_limiter)
-    session_logger.info("Rate limiting enabled: 10 req/sec, burst 30")
+    _get_logger().info("Rate limiting enabled: 10 req/sec, burst 30")
 
 # Register extracted tool modules following crackerjack architecture patterns
 # Import LLM provider validation (Phase 3 Security Hardening)
+from session_mgmt_mcp.config.feature_flags import get_feature_flags as get_rollout_flags
+from session_mgmt_mcp.memory.migration import (
+    migrate_v1_to_v2 as _migrate_v1_to_v2,
+)
+from session_mgmt_mcp.memory.migration import (
+    needs_migration as _needs_migration,
+)
+
 from .llm.security import validate_llm_api_keys_at_startup
 from .tools import (
+    register_access_log_tools,
+    register_conscious_agent_tools,
     register_crackerjack_tools,
+    register_extraction_tools,
+    register_feature_flags_tools,
     register_knowledge_graph_tools,
     register_llm_tools,
+    register_migration_tools,
     register_monitoring_tools,
     register_prompt_tools,
     register_search_tools,
@@ -234,15 +268,97 @@ from .utils import (
 )
 
 # Register all extracted tool modules
-register_search_tools(mcp)
+register_access_log_tools(mcp)
+register_conscious_agent_tools(mcp)
 register_crackerjack_tools(mcp)
+register_extraction_tools(mcp)
+register_feature_flags_tools(mcp)
 register_knowledge_graph_tools(mcp)  # DuckPGQ knowledge graph tools
 register_llm_tools(mcp)
+register_migration_tools(mcp)
 register_monitoring_tools(mcp)
 register_prompt_tools(mcp)
+register_search_tools(mcp)
 register_serverless_tools(mcp)
 register_session_tools(mcp)
 register_team_tools(mcp)
+
+
+# Add helper method for programmatic tool calling used in tests
+async def _call_tool(mcp_instance, tool_name: str, arguments: dict | None = None):
+    """Programmatically call a tool by name with provided arguments.
+
+    This method is used in integration tests to call tools directly.
+    """
+    if arguments is None:
+        arguments = {}
+
+    # Access the registered tools from mcp instance
+    # This might vary by FastMCP version - try multiple methods
+    if hasattr(mcp_instance, "get_tools"):
+        tools = await mcp_instance.get_tools()
+    elif hasattr(mcp_instance, "tools"):
+        tools = mcp_instance.tools
+    else:
+        # Fallback - use the internal tool registry
+        tools = getattr(mcp_instance, "_tools", {})
+
+    if tool_name not in tools:
+        msg = f"Tool '{tool_name}' is not registered"
+        raise ValueError(msg)
+
+    # Get the tool specification
+    tool_spec = tools[tool_name]
+
+    # Extract the tool function from the tool specification
+    # The structure might be different depending on FastMCP version
+    if hasattr(tool_spec, "function"):
+        # For Pydantic Tool model
+        tool_func = tool_spec.function
+    elif isinstance(tool_spec, dict) and "function" in tool_spec:
+        # If tool_spec is a dictionary containing the function
+        tool_func = tool_spec["function"]
+    elif callable(tool_spec):
+        # Direct function
+        tool_func = tool_spec
+    else:
+        # Try to get the implementation from different possible attributes
+        tool_func = (
+            getattr(tool_spec, "implementation", None)
+            or getattr(tool_spec, "handler", None)
+            or getattr(tool_spec, "__call__", None)
+        )
+        if tool_func is None:
+            msg = f"Could not extract callable function from tool {tool_name}"
+            raise ValueError(msg)
+
+    # Get the function signature to validate arguments
+    import inspect
+
+    sig = inspect.signature(tool_func)
+
+    # Filter arguments to only include what the function accepts
+    filtered_args = {}
+    for param_name, param in sig.parameters.items():
+        if param_name in arguments:
+            filtered_args[param_name] = arguments[param_name]
+        elif param.default is not param.empty:
+            # Use default value if available
+            filtered_args[param_name] = param.default
+
+    # Call the function
+    if inspect.iscoroutinefunction(tool_func):
+        return await tool_func(**filtered_args)
+    return tool_func(**filtered_args)
+
+
+# Attach the method to the mcp instance as a bound method
+async def _call_tool_bound(tool_name: str, arguments: dict | None = None):
+    """Bound _call_tool method for the mcp instance."""
+    return await _call_tool(mcp, tool_name, arguments)
+
+
+mcp._call_tool = _call_tool_bound
 
 
 async def reflect_on_past(
@@ -282,7 +398,7 @@ async def _initialize_reflection_database() -> Any | None:
     try:
         return await get_reflection_database()
     except Exception as exc:  # pragma: no cover - defensive logging
-        session_logger.exception(
+        _get_logger().exception(
             "Failed to initialize reflection database",
             exc_info=exc,
         )
@@ -306,7 +422,7 @@ async def _search_conversations(
                 min_score=min_score,
             )
     except Exception as exc:
-        session_logger.exception("Reflection search failed", extra={"query": query})
+        _get_logger().exception("Reflection search failed", extra={"query": query})
         return f"❌ Error searching conversations: {exc}"
 
 
@@ -333,7 +449,7 @@ async def _optimize_results(
         )
         return results, optimization_info
     except Exception as exc:
-        session_logger.warning(
+        _get_logger().warning(
             "Token optimization failed for reflect_on_past",
             extra={"error": str(exc)},
         )
@@ -387,7 +503,7 @@ async def initialize_new_features() -> None:
         advanced_search_engine,
         app_config,
     ) = await _initialize_new_features_impl(
-        session_logger,
+        _get_logger(),
         multi_project_coordinator,
         advanced_search_engine,
         app_config,
@@ -424,7 +540,7 @@ async def calculate_quality_score(project_dir: Path | None = None) -> dict[str, 
 async def health_check() -> dict[str, Any]:
     """Comprehensive health check for MCP server and toolkit availability (wrapper)."""
     return await _health_check_impl(
-        session_logger,
+        _get_logger(),
         permissions_manager,
         validate_claude_directory,
     )
@@ -485,21 +601,37 @@ def _perform_startup_validation() -> None:
     try:
         validate_llm_api_keys_at_startup()
     except (ImportError, ValueError) as e:
-        session_logger.warning(
+        _get_logger().warning(
             f"LLM API key validation skipped (optional feature): {e}",
         )
     except Exception:
-        session_logger.exception("Unexpected error during LLM validation")
+        _get_logger().exception("Unexpected error during LLM validation")
 
 
 def _initialize_features() -> None:
     """Initialize optional features on startup."""
     try:
+        # Optionally run auto-migration when v2 is enabled via rollout flags
+        try:
+            flags = get_rollout_flags()
+            if flags.use_schema_v2 and _needs_migration():
+                _get_logger().info("Auto-migration: v1 detected, migrating to v2...")
+                res = _migrate_v1_to_v2()
+                if res.success:
+                    _get_logger().info("Migration complete", extra={"stats": res.stats})
+                else:
+                    _get_logger().warning(
+                        "Migration failed; continuing with legacy schema",
+                        extra={"error": res.error},
+                    )
+        except Exception as e:
+            _get_logger().warning(f"Migration check error (optional): {e}")
+
         asyncio.run(initialize_new_features())
     except (ImportError, RuntimeError) as e:
-        session_logger.warning(f"Feature initialization skipped (optional): {e}")
+        _get_logger().warning(f"Feature initialization skipped (optional): {e}")
     except Exception:
-        session_logger.exception("Unexpected error during feature init")
+        _get_logger().exception("Unexpected error during feature init")
 
 
 def _build_feature_list() -> list[str]:

@@ -527,6 +527,54 @@ pip install session-mgmt-mcp
 
 ## 📚 Related Documentation
 
+## 🧱 Migration & Schema Tools
+
+### `/session-mgmt:migration_status`
+
+Inspect schema version (v1/v2), migration history, and counts.
+
+### `/session-mgmt:trigger_migration`
+
+Run v1 → v2 migration (supports `--create_backup_first` and `--dry_run`).
+
+### `/session-mgmt:rollback_migration`
+
+Restore the database from a previous backup path.
+
+## 📥 Extraction & Persistence
+
+### `/session-mgmt:extract_and_store_memory`
+
+Multi-provider extraction (OpenAI→Anthropic→Gemini→pattern) and persistence into v2 tables.
+
+Parameters include `activity_score` (0–1) to blend with LLM importance (70/30).
+
+## 🧠 Conscious Agent
+
+### `/session-mgmt:start_conscious_agent` / `/session-mgmt:stop_conscious_agent`
+
+Start/stop background optimization (analysis, promotions/demotions).
+
+### `/session-mgmt:force_conscious_analysis`
+
+Run one-time analysis; returns promoted/demoted counts.
+
+## 📊 Access Metrics
+
+### `/session-mgmt:access_log_stats`
+
+Inspect recent access activity with breakdowns `by_type` and `by_provider` and top memory candidates.
+
+## 🧩 Feature Flags & Rollout
+
+### `/session-mgmt:feature_flags_status`
+
+Show current feature flags for schema_v2, extraction, providers, agent, and filesystem integration.
+
+### `/session-mgmt:rollout_plan`
+
+Staged enablement plan with daily steps and rollback guidance.
+
 - **[README.md](../../README.md)** - Project overview with complete tool inventory (70+ tools)
 - **[Quick Start Guide](QUICK_START.md)** - Get up and running in 5 minutes
 - **[MCP Schema Reference](../reference/MCP_SCHEMA_REFERENCE.md)** - Complete API reference

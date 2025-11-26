@@ -274,7 +274,7 @@ def reset_di_container():
 
                             cls = SessionLogger
                         elif cls == "SessionPermissionsManager":
-                            from session_mgmt_mcp.server_core import (
+                            from session_mgmt_mcp.core.permissions import (
                                 SessionPermissionsManager,
                             )
 
@@ -314,8 +314,10 @@ def reset_di_container():
                         continue
 
                 # Remove from container if present
-                with suppress(KeyError, TypeError):
+                try:
                     container.instances.pop(cls, None)
+                except (KeyError, TypeError):
+                    pass
 
             # Reset configuration flag
             import session_mgmt_mcp.di as di_module

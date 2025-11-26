@@ -23,7 +23,15 @@ from session_mgmt_mcp.llm import (
     StreamGenerationOptions,
 )
 
-# Re-export security utilities for backwards compatibility
+# Re-export for backwards compatibility
+__all__ = [
+    "LLMManager",
+    "LLMMessage",
+    "LLMProvider",
+    "LLMResponse",
+    "StreamChunk",
+    "StreamGenerationOptions",
+]
 
 
 class LLMManager:
@@ -40,7 +48,8 @@ class LLMManager:
         config: dict[str, Any] = {
             "providers": {},
             "default_provider": "openai",
-            "fallback_providers": ["gemini", "ollama"],
+            # Plan cascade: openai -> anthropic -> gemini (-> ollama future)
+            "fallback_providers": ["anthropic", "gemini", "ollama"],
         }
 
         if config_path and Path(config_path).exists():
@@ -54,6 +63,12 @@ class LLMManager:
             config["providers"]["openai"] = {
                 "api_key": os.getenv("OPENAI_API_KEY"),
                 "default_model": "gpt-4",
+            }
+
+        if not config["providers"].get("anthropic"):
+            config["providers"]["anthropic"] = {
+                "api_key": os.getenv("ANTHROPIC_API_KEY"),
+                "default_model": "claude-3-5-haiku-20241022",
             }
 
         if not config["providers"].get("gemini"):
@@ -74,6 +89,10 @@ class LLMManager:
         """Initialize all configured providers."""
         provider_classes = {
             "openai": OpenAIProvider,
+            "anthropic": __import__(
+                "session_mgmt_mcp.llm.providers.anthropic_provider",
+                fromlist=["AnthropicProvider"],
+            ).AnthropicProvider,
             "gemini": GeminiProvider,
             "ollama": OllamaProvider,
         }

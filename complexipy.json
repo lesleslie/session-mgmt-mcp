@@ -80,6 +80,12 @@
   {
     "complexity": 0,
     "file_name": "server.py",
+    "function_name": "_call_tool_bound",
+    "path": "server.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server.py",
     "function_name": "health_check",
     "path": "server.py"
   },
@@ -105,6 +111,18 @@
     "complexity": 1,
     "file_name": "server.py",
     "function_name": "_display_stdio_startup",
+    "path": "server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_get_logger",
+    "path": "server.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "server.py",
+    "function_name": "_get_session_logger",
     "path": "server.py"
   },
   {
@@ -144,12 +162,6 @@
     "path": "server.py"
   },
   {
-    "complexity": 2,
-    "file_name": "server.py",
-    "function_name": "_initialize_features",
-    "path": "server.py"
-  },
-  {
     "complexity": 3,
     "file_name": "server.py",
     "function_name": "_optimize_results",
@@ -177,6 +189,18 @@
     "complexity": 7,
     "file_name": "server.py",
     "function_name": "reflect_on_past",
+    "path": "server.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "server.py",
+    "function_name": "_initialize_features",
+    "path": "server.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "server.py",
+    "function_name": "_call_tool",
     "path": "server.py"
   },
   {
@@ -1370,6 +1394,12 @@
   {
     "complexity": 1,
     "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::_ensure_recent_table",
+    "path": "app_monitor.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "app_monitor.py",
     "function_name": "ProjectActivityMonitor::__init__",
     "path": "app_monitor.py"
   },
@@ -1416,6 +1446,18 @@
     "path": "app_monitor.py"
   },
   {
+    "complexity": 3,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::_estimate_relevance",
+    "path": "app_monitor.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::_passes_threshold",
+    "path": "app_monitor.py"
+  },
+  {
     "complexity": 4,
     "file_name": "app_monitor.py",
     "function_name": "ApplicationMonitor::_analyze_events",
@@ -1431,18 +1473,6 @@
     "complexity": 5,
     "file_name": "app_monitor.py",
     "function_name": "ApplicationMonitor::_aggregate_event_data",
-    "path": "app_monitor.py"
-  },
-  {
-    "complexity": 5,
-    "file_name": "app_monitor.py",
-    "function_name": "IDEFileHandler::on_modified",
-    "path": "app_monitor.py"
-  },
-  {
-    "complexity": 5,
-    "file_name": "app_monitor.py",
-    "function_name": "IDEFileHandler::should_ignore",
     "path": "app_monitor.py"
   },
   {
@@ -1476,9 +1506,27 @@
     "path": "app_monitor.py"
   },
   {
+    "complexity": 8,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::_recently_processed_persisted",
+    "path": "app_monitor.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::should_ignore",
+    "path": "app_monitor.py"
+  },
+  {
     "complexity": 13,
     "file_name": "app_monitor.py",
     "function_name": "BrowserDocumentationMonitor::extract_documentation_context",
+    "path": "app_monitor.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "app_monitor.py",
+    "function_name": "IDEFileHandler::on_modified",
     "path": "app_monitor.py"
   },
   {
@@ -1598,12 +1646,6 @@
   {
     "complexity": 9,
     "file_name": "llm_providers.py",
-    "function_name": "LLMManager::_load_config",
-    "path": "llm_providers.py"
-  },
-  {
-    "complexity": 9,
-    "file_name": "llm_providers.py",
     "function_name": "LLMManager::_stream_from_primary_provider",
     "path": "llm_providers.py"
   },
@@ -1617,6 +1659,12 @@
     "complexity": 10,
     "file_name": "llm_providers.py",
     "function_name": "LLMManager::_stream_from_fallback_providers",
+    "path": "llm_providers.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "llm_providers.py",
+    "function_name": "LLMManager::_load_config",
     "path": "llm_providers.py"
   },
   {
@@ -1976,6 +2024,12 @@
   {
     "complexity": 0,
     "file_name": "server_optimized.py",
+    "function_name": "SessionPermissionsManager::should_auto_checkpoint",
+    "path": "server_optimized.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "server_optimized.py",
     "function_name": "_get_default_compaction_reason",
     "path": "server_optimized.py"
   },
@@ -2013,6 +2067,12 @@
     "complexity": 2,
     "file_name": "server_optimized.py",
     "function_name": "_evaluate_python_project_heuristic",
+    "path": "server_optimized.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "server_optimized.py",
+    "function_name": "SessionPermissionsManager::configure_auto_checkpoint",
     "path": "server_optimized.py"
   },
   {
@@ -3114,12 +3174,6 @@
     "path": "parameter_models.py"
   },
   {
-    "complexity": 0,
-    "file_name": "parameter_models.py",
-    "function_name": "create_mcp_validator",
-    "path": "parameter_models.py"
-  },
-  {
     "complexity": 1,
     "file_name": "parameter_models.py",
     "function_name": "TagParams::_validate_tag_length",
@@ -3246,6 +3300,12 @@
     "path": "parameter_models.py"
   },
   {
+    "complexity": 7,
+    "file_name": "parameter_models.py",
+    "function_name": "create_mcp_validator",
+    "path": "parameter_models.py"
+  },
+  {
     "complexity": 8,
     "file_name": "parameter_models.py",
     "function_name": "validate_and_expand_path",
@@ -3338,13 +3398,19 @@
   {
     "complexity": 2,
     "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_log_accesses",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::get_embedding",
     "path": "reflection_tools.py"
   },
   {
     "complexity": 2,
     "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::search_by_file",
+    "function_name": "ReflectionDatabase::search_conversations",
     "path": "reflection_tools.py"
   },
   {
@@ -3357,6 +3423,18 @@
     "complexity": 3,
     "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::close",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::search_by_file",
+    "path": "reflection_tools.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_semantic_search_conversations",
     "path": "reflection_tools.py"
   },
   {
@@ -3390,6 +3468,12 @@
     "path": "reflection_tools.py"
   },
   {
+    "complexity": 5,
+    "file_name": "reflection_tools.py",
+    "function_name": "ReflectionDatabase::_text_search_conversations",
+    "path": "reflection_tools.py"
+  },
+  {
     "complexity": 6,
     "file_name": "reflection_tools.py",
     "function_name": "get_current_project",
@@ -3405,12 +3489,6 @@
     "complexity": 8,
     "file_name": "reflection_tools.py",
     "function_name": "ReflectionDatabase::initialize",
-    "path": "reflection_tools.py"
-  },
-  {
-    "complexity": 13,
-    "file_name": "reflection_tools.py",
-    "function_name": "ReflectionDatabase::search_conversations",
     "path": "reflection_tools.py"
   },
   {
@@ -5023,6 +5101,54 @@
   },
   {
     "complexity": 0,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_access_type_stats",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_recent_accesses",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_top_memories",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_distinct_memories",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_total_accesses",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "access_log_tools.py",
+    "function_name": "register_access_log_tools",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "access_log_tools.py",
+    "function_name": "_get_provider_stats",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "access_log_tools.py",
+    "function_name": "_build_query_config",
+    "path": "access_log_tools.py"
+  },
+  {
+    "complexity": 0,
     "file_name": "memory_tools.py",
     "function_name": "_format_score",
     "path": "memory_tools.py"
@@ -5514,6 +5640,12 @@
     "path": "recommendation_engine.py"
   },
   {
+    "complexity": 7,
+    "file_name": "migration_tools.py",
+    "function_name": "register_migration_tools",
+    "path": "migration_tools.py"
+  },
+  {
     "complexity": 0,
     "file_name": "prompt_tools.py",
     "function_name": "_create_prompt_handler",
@@ -5760,12 +5892,6 @@
     "path": "session_tools.py"
   },
   {
-    "complexity": 1,
-    "file_name": "session_tools.py",
-    "function_name": "register_session_tools",
-    "path": "session_tools.py"
-  },
-  {
     "complexity": 2,
     "file_name": "session_tools.py",
     "function_name": "SessionOutputBuilder::add_status_item",
@@ -5799,6 +5925,12 @@
     "complexity": 3,
     "file_name": "session_tools.py",
     "function_name": "_start_impl",
+    "path": "session_tools.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "session_tools.py",
+    "function_name": "register_session_tools",
     "path": "session_tools.py"
   },
   {
@@ -5880,6 +6012,18 @@
     "path": "session_tools.py"
   },
   {
+    "complexity": 6,
+    "file_name": "entity_extraction_tools.py",
+    "function_name": "register_extraction_tools",
+    "path": "entity_extraction_tools.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "conscious_agent_tools.py",
+    "function_name": "register_conscious_agent_tools",
+    "path": "conscious_agent_tools.py"
+  },
+  {
     "complexity": 0,
     "file_name": "history_cache.py",
     "function_name": "get_cache",
@@ -5896,6 +6040,12 @@
     "file_name": "health_tools.py",
     "function_name": "get_health_status",
     "path": "health_tools.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "feature_flags_tools.py",
+    "function_name": "register_feature_flags_tools",
+    "path": "feature_flags_tools.py"
   },
   {
     "complexity": 0,
@@ -6446,18 +6596,6 @@
   {
     "complexity": 0,
     "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::_generate_handoff_documentation",
-    "path": "session_manager.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::_save_handoff_documentation",
-    "path": "session_manager.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "session_manager.py",
     "function_name": "SessionLifecycleManager::_setup_claude_directories",
     "path": "session_manager.py"
   },
@@ -6470,12 +6608,6 @@
   {
     "complexity": 1,
     "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::__init__",
-    "path": "session_manager.py"
-  },
-  {
-    "complexity": 1,
-    "file_name": "session_manager.py",
     "function_name": "SessionLifecycleManager::_calculate_tool_score",
     "path": "session_manager.py"
   },
@@ -6483,6 +6615,12 @@
     "complexity": 1,
     "file_name": "session_manager.py",
     "function_name": "SessionLifecycleManager::_initialize_templates",
+    "path": "session_manager.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_save_handoff_documentation",
     "path": "session_manager.py"
   },
   {
@@ -6510,15 +6648,15 @@
     "path": "session_manager.py"
   },
   {
-    "complexity": 2,
+    "complexity": 1,
     "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::_find_latest_handoff_file",
+    "function_name": "get_session_logger",
     "path": "session_manager.py"
   },
   {
     "complexity": 2,
     "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::analyze_project_context",
+    "function_name": "SessionLifecycleManager::__init__",
     "path": "session_manager.py"
   },
   {
@@ -6531,12 +6669,6 @@
     "complexity": 3,
     "file_name": "session_manager.py",
     "function_name": "SessionLifecycleManager::_calculate_permissions_score",
-    "path": "session_manager.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "session_manager.py",
-    "function_name": "SessionLifecycleManager::_read_previous_session_info",
     "path": "session_manager.py"
   },
   {
@@ -6567,6 +6699,30 @@
     "complexity": 5,
     "file_name": "session_manager.py",
     "function_name": "SessionLifecycleManager::perform_git_checkpoint",
+    "path": "session_manager.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_generate_handoff_documentation",
+    "path": "session_manager.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_read_previous_session_info",
+    "path": "session_manager.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::analyze_project_context",
+    "path": "session_manager.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "session_manager.py",
+    "function_name": "SessionLifecycleManager::_find_latest_handoff_file",
     "path": "session_manager.py"
   },
   {
@@ -6716,7 +6872,7 @@
   {
     "complexity": 0,
     "file_name": "permissions.py",
-    "function_name": "SessionPermissionsManager::trust_operation",
+    "function_name": "SessionPermissionsManager::should_auto_checkpoint",
     "path": "permissions.py"
   },
   {
@@ -6732,6 +6888,12 @@
     "path": "permissions.py"
   },
   {
+    "complexity": 1,
+    "file_name": "permissions.py",
+    "function_name": "SessionPermissionsManager::trust_operation",
+    "path": "permissions.py"
+  },
+  {
     "complexity": 2,
     "file_name": "permissions.py",
     "function_name": "SessionPermissionsManager::__init__",
@@ -6744,6 +6906,60 @@
     "path": "permissions.py"
   },
   {
+    "complexity": 2,
+    "file_name": "permissions.py",
+    "function_name": "SessionPermissionsManager::configure_auto_checkpoint",
+    "path": "permissions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "persistence.py",
+    "function_name": "_connect",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "persistence.py",
+    "function_name": "_insert_conversation",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "persistence.py",
+    "function_name": "_new_id",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "persistence.py",
+    "function_name": "insert_processed_memory",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "persistence.py",
+    "function_name": "log_memory_access",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "persistence.py",
+    "function_name": "_insert_entities",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "persistence.py",
+    "function_name": "_insert_relationships",
+    "path": "persistence.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "entity_extractor.py",
+    "function_name": "EntityExtractionEngine::__init__",
+    "path": "entity_extractor.py"
+  },
+  {
     "complexity": 0,
     "file_name": "entity_extractor.py",
     "function_name": "LLMEntityExtractor::__init__",
@@ -6751,6 +6967,12 @@
   },
   {
     "complexity": 0,
+    "file_name": "entity_extractor.py",
+    "function_name": "PatternBasedExtractor::extract_entities",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 4,
     "file_name": "entity_extractor.py",
     "function_name": "LLMEntityExtractor::extract_entities",
     "path": "entity_extractor.py"
@@ -6762,15 +6984,27 @@
     "path": "entity_extractor.py"
   },
   {
-    "complexity": 0,
-    "file_name": "conscious_agent.py",
-    "function_name": "ConsciousAgent::__init__",
-    "path": "conscious_agent.py"
+    "complexity": 4,
+    "file_name": "entity_extractor.py",
+    "function_name": "PatternBasedExtractor::_categorize",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "entity_extractor.py",
+    "function_name": "EntityExtractionEngine::extract_entities",
+    "path": "entity_extractor.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "file_context.py",
+    "function_name": "build_file_context",
+    "path": "file_context.py"
   },
   {
     "complexity": 0,
     "file_name": "conscious_agent.py",
-    "function_name": "ConsciousAgent::_analyze_access_patterns",
+    "function_name": "ConsciousAgent::__init__",
     "path": "conscious_agent.py"
   },
   {
@@ -6788,12 +7022,6 @@
   {
     "complexity": 0,
     "file_name": "conscious_agent.py",
-    "function_name": "ConsciousAgent::_demote_stale_memories",
-    "path": "conscious_agent.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "conscious_agent.py",
     "function_name": "ConsciousAgent::_get_category_weight",
     "path": "conscious_agent.py"
   },
@@ -6801,6 +7029,12 @@
     "complexity": 0,
     "file_name": "conscious_agent.py",
     "function_name": "ConsciousAgent::force_analysis",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_demote_stale_memories",
     "path": "conscious_agent.py"
   },
   {
@@ -6838,6 +7072,132 @@
     "file_name": "conscious_agent.py",
     "function_name": "ConsciousAgent::_generate_promotion_reason",
     "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "conscious_agent.py",
+    "function_name": "ConsciousAgent::_analyze_access_patterns",
+    "path": "conscious_agent.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_connect",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_ensure_meta",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_handle_dry_run",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_handle_migration_exception",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_handle_migration_failure",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "_handle_migration_success",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "create_v2_schema",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "needs_migration",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "restore_backup",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "migration.py",
+    "function_name": "update_schema_version",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "migration.py",
+    "function_name": "create_backup",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "migration.py",
+    "function_name": "get_schema_version",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "migration.py",
+    "function_name": "get_migration_status",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "migration.py",
+    "function_name": "count_v1_conversations",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "migration.py",
+    "function_name": "count_v2_conversations",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "migration.py",
+    "function_name": "_perform_migration",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "migration.py",
+    "function_name": "migrate_v1_to_v2",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "migration.py",
+    "function_name": "_get_schema_version",
+    "path": "migration.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "feature_flags.py",
+    "function_name": "get_feature_flags",
+    "path": "feature_flags.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "feature_flags.py",
+    "function_name": "_get_env_bool",
+    "path": "feature_flags.py"
   },
   {
     "complexity": 0,
@@ -8924,7 +9284,19 @@
   {
     "complexity": 2,
     "file_name": "reflection_adapter.py",
+    "function_name": "ReflectionDatabaseAdapter::_log_accesses",
+    "path": "reflection_adapter.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_adapter.py",
     "function_name": "ReflectionDatabaseAdapter::get_embedding",
+    "path": "reflection_adapter.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "reflection_adapter.py",
+    "function_name": "ReflectionDatabaseAdapter::search_conversations",
     "path": "reflection_adapter.py"
   },
   {
@@ -8937,6 +9309,12 @@
     "complexity": 5,
     "file_name": "reflection_adapter.py",
     "function_name": "ReflectionDatabaseAdapter::store_reflection",
+    "path": "reflection_adapter.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "reflection_adapter.py",
+    "function_name": "ReflectionDatabaseAdapter::_semantic_search_conversations",
     "path": "reflection_adapter.py"
   },
   {
@@ -8955,12 +9333,6 @@
     "complexity": 11,
     "file_name": "reflection_adapter.py",
     "function_name": "ReflectionDatabaseAdapter::initialize",
-    "path": "reflection_adapter.py"
-  },
-  {
-    "complexity": 12,
-    "file_name": "reflection_adapter.py",
-    "function_name": "ReflectionDatabaseAdapter::search_conversations",
     "path": "reflection_adapter.py"
   },
   {
@@ -9724,6 +10096,48 @@
     "file_name": "ollama_provider.py",
     "function_name": "OllamaProvider::_extract_chunk_content",
     "path": "ollama_provider.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::get_models",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::stream_generate",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::__init__",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::_get_client",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::_convert_messages",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::is_available",
+    "path": "anthropic_provider.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "anthropic_provider.py",
+    "function_name": "AnthropicProvider::generate",
+    "path": "anthropic_provider.py"
   },
   {
     "complexity": 0,

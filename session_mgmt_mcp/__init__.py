@@ -15,25 +15,16 @@ with suppress(ImportError):
     from .core.permissions import (
         SessionPermissionsManager,
     )
-    from .quality_engine import (
-        QualityEngine,
-        QualityScoreResult,
-    )
-    from .server_core import (
-        MCPServerCore,
-        SessionLogger,  # type: ignore[attr-defined]
-    )
+    # QualityScoreResult is not directly exposed from quality_engine as it doesn't exist
+    # MCPServerCore does not exist in server_core
+from .utils.logging import SessionLogger
 
 __version__ = "0.7.4"
 
 __all__ = [
     # Advanced features
     "AdvancedFeaturesHub",
-    # Core components
-    "MCPServerCore",
-    # Quality engine
-    "QualityEngine",
-    "QualityScoreResult",
+    # Core components are not directly exposed
     "SessionLogger",
     "SessionPermissionsManager",
     # Package metadata

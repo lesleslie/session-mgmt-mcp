@@ -836,13 +836,19 @@ def register_session_tools(mcp_server: FastMCP) -> None:
         import platform
         import time
 
+        try:
+            working_directory = str(Path.cwd())
+        except FileNotFoundError:
+            # Handle case where current working directory doesn't exist
+            working_directory = "[Current directory unavailable]"
+
         health_info = {
             "server_status": "✅ Active",
             "timestamp": time.time(),
             "platform": platform.system(),
             "python_version": platform.python_version(),
             "process_id": os.getpid(),
-            "working_directory": str(Path.cwd()),
+            "working_directory": working_directory,
         }
 
         return f"""🏥 MCP Server Health Check
@@ -864,7 +870,12 @@ Timestamp: {health_info["timestamp"]}
         try:
             # Check if we can access basic file system info
             home_dir = Path.home()
-            current_dir = Path.cwd()
+
+            try:
+                current_dir = Path.cwd()
+            except FileNotFoundError:
+                # Handle case where current working directory doesn't exist
+                current_dir = Path("[Current directory unavailable]")
 
             return f"""📊 Session-mgmt MCP Server Information
 ===========================================

@@ -18,7 +18,6 @@ from unittest.mock import patch
 
 import pytest
 from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-from session_mgmt_mcp.server import SessionPermissionsManager
 from tests.fixtures.data_factories import SecurityTestDataFactory
 
 
@@ -29,6 +28,8 @@ class TestSessionPermissionSecurity:
     @pytest.fixture
     def permissions_manager(self, tmp_path):
         """Create clean permissions manager for security testing."""
+        from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+
         claude_dir = tmp_path / ".claude"
         claude_dir.mkdir(exist_ok=True)
         manager = SessionPermissionsManager(claude_dir)
@@ -59,6 +60,8 @@ class TestSessionPermissionSecurity:
 
     def test_permission_isolation_between_sessions(self, tmp_path):
         """Test that permissions are isolated between different sessions."""
+        from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+
         # Create multiple permission managers (simulating different sessions)
         claude_dir1 = tmp_path / ".claude1"
         claude_dir1.mkdir(exist_ok=True)

@@ -151,17 +151,82 @@ class ConsciousAgent:
             list[MemoryAccessPattern]: Access patterns for all memories
 
         """
-        # Query reflection database for access statistics
-        # This would use the existing ReflectionDatabase schema
-        patterns: list[MemoryAccessPattern] = []
+        # Query DuckDB for access patterns in v2 tables
+        import duckdb  # Local import to avoid hard dep when unused
+        from session_mgmt_mcp.settings import get_settings
 
-        # TODO: Implement actual database queries
-        # For now, return empty list
-        # In real implementation:
-        # 1. Query conversation access logs
-        # 2. Calculate access velocity (accesses per hour)
-        # 3. Determine semantic importance (based on embedding similarity)
-        # 4. Categorize memories (facts, preferences, etc.)
+        patterns: list[MemoryAccessPattern] = []
+        try:
+            conn = duckdb.connect(
+                get_settings().database_path,
+                config={"allow_unsigned_extensions": True},
+            )
+        except Exception:
+            return patterns
+
+        try:
+            rows = conn.execute(
+                """
+                WITH base AS (
+                    SELECT
+                        l.memory_id,
+                        COUNT(*) AS access_count,
+                        MIN(l.timestamp) AS first_access,
+                        MAX(l.timestamp) AS last_accessed
+                    FROM memory_access_log l
+                    GROUP BY l.memory_id
+                )
+                SELECT
+                    b.memory_id,
+                    b.access_count,
+                    b.first_access,
+                    b.last_accessed,
+                    c.category,
+                    COALESCE(c.importance_score, 0.5) AS importance
+                FROM base b
+                JOIN conversations_v2 c ON c.id = b.memory_id
+                """
+            ).fetchall()
+
+            now = datetime.now()
+            for r in rows:
+                memory_id = str(r[0])
+                access_count = int(r[1])
+                first_access = r[2]
+                last_accessed = r[3]
+                category = str(r[4])
+                importance = float(r[5])
+
+                try:
+                    # Compute accesses per hour since first access
+                    hours = max((now - first_access).total_seconds() / 3600.0, 1e-6)
+                    velocity = access_count / hours
+                except Exception:
+                    velocity = float(access_count)
+
+                # Coerce last_accessed to datetime if needed
+                if not isinstance(last_accessed, datetime):
+                    try:
+                        last_accessed = datetime.fromisoformat(str(last_accessed))
+                    except Exception:
+                        last_accessed = now
+
+                patterns.append(
+                    MemoryAccessPattern(
+                        memory_id=memory_id,
+                        access_count=access_count,
+                        last_accessed=last_accessed,
+                        access_velocity=velocity,
+                        semantic_importance=importance,
+                        category=category,
+                    )
+                )
+        except Exception:
+            # If tables missing or query fails, return empty list
+            return []
+        finally:
+            with contextlib.suppress(Exception):
+                conn.close()
 
         return patterns
 
@@ -293,16 +358,31 @@ class ConsciousAgent:
         """
         promoted: list[str] = []
 
+        import duckdb
+        from session_mgmt_mcp.settings import get_settings
+
         for candidate in candidates:
             try:
-                # Update memory tier in database
-                # TODO: Implement actual database update
-                # await self.reflection_db.update_memory_tier(
-                #     candidate.memory_id,
-                #     tier="short_term",
-                #     reason=candidate.reason
-                # )
-
+                conn = duckdb.connect(
+                    get_settings().database_path,
+                    config={"allow_unsigned_extensions": True},
+                )
+                conn.execute(
+                    "UPDATE conversations_v2 SET memory_tier='short_term' WHERE id=?",
+                    [candidate.memory_id],
+                )
+                conn.execute(
+                    "INSERT INTO memory_promotions (id, memory_id, from_tier, to_tier, reason, priority_score) VALUES (?, ?, ?, ?, ?, ?)",
+                    [
+                        f"prom_{candidate.memory_id}",
+                        candidate.memory_id,
+                        candidate.current_tier,
+                        "short_term",
+                        candidate.reason,
+                        candidate.priority_score,
+                    ],
+                )
+                conn.close()
                 promoted.append(candidate.memory_id)
                 logger.debug(
                     f"Promoted memory {candidate.memory_id}: {candidate.reason}"
@@ -323,21 +403,32 @@ class ConsciousAgent:
         """
         demoted: list[str] = []
 
-        # Query for stale short-term memories (not accessed in 7+ days)
-        # TODO: Implement actual database query
-        # stale_memories = await self.reflection_db.find_stale_memories(
-        #     tier="short_term",
-        #     stale_threshold_days=7
-        # )
+        import duckdb
+        from session_mgmt_mcp.settings import get_settings
 
-        # for memory_id in stale_memories:
-        #     await self.reflection_db.update_memory_tier(
-        #         memory_id,
-        #         tier="long_term",
-        #         reason="stale (not accessed in 7+ days)"
-        #     )
-        #     demoted.append(memory_id)
-
+        conn = duckdb.connect(
+            get_settings().database_path, config={"allow_unsigned_extensions": True}
+        )
+        rows = conn.execute(
+            """
+            SELECT c.id
+            FROM conversations_v2 c
+            LEFT JOIN (
+                SELECT memory_id, MAX(timestamp) AS last_access
+                FROM memory_access_log
+                GROUP BY memory_id
+            ) a ON a.memory_id = c.id
+            WHERE c.memory_tier='short_term'
+              AND (a.last_access IS NULL OR a.last_access < NOW() - INTERVAL 7 DAY)
+            """
+        ).fetchall()
+        for (mid,) in rows:
+            conn.execute(
+                "UPDATE conversations_v2 SET memory_tier='long_term' WHERE id=?",
+                [mid],
+            )
+            demoted.append(str(mid))
+        conn.close()
         return demoted
 
     async def force_analysis(self) -> dict[str, Any]:

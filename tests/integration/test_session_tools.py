@@ -16,16 +16,59 @@ class TestSessionToolsRegistration:
     @pytest.fixture
     async def mcp_server(self):
         """Create MCP server with session tools registered."""
+        import asyncio
+        from unittest.mock import AsyncMock
+
         mcp = FastMCP("test-session")
         register_session_tools(mcp)
+
+        # Add a call_tool method for testing purposes
+        async def call_tool(tool_name, arguments=None):
+            if arguments is None:
+                arguments = {}
+
+            # Get the registered tools
+            tools = await mcp.get_tools()
+            if tool_name not in tools:
+                msg = f"Tool '{tool_name}' not found"
+                raise ValueError(msg)
+
+            # Get the tool object and call it properly
+            tool_obj = tools[tool_name]
+
+            # FastMCP tools are often wrapped in special function tool objects
+            # that have the actual function in the 'fn' attribute
+            if hasattr(tool_obj, "fn"):
+                # Extract the underlying function
+                actual_func = tool_obj.fn
+                if asyncio.iscoroutinefunction(actual_func):
+                    return await actual_func(**arguments)
+                return actual_func(**arguments)
+            if callable(tool_obj) or callable(tool_obj):
+                # Directly call the tool object
+                if asyncio.iscoroutinefunction(tool_obj):
+                    return await tool_obj(**arguments)
+                return tool_obj(**arguments)
+            # If it's not directly callable, it might be a FunctionTool-like object
+            # with an execute method or similar interface
+            if hasattr(tool_obj, "execute"):
+                return await tool_obj.execute(**arguments)
+            msg = f"Tool object {type(tool_obj)} is not callable and has no execute method"
+            raise TypeError(msg)
+
+        # Attach the method to the instance
+        mcp.call_tool = call_tool
+
         return mcp
 
     @pytest.mark.asyncio
     async def test_session_tools_registered(self, mcp_server):
         """Test that session tools are properly registered."""
         # Get list of registered tools
-        tools = mcp_server.list_tools()
-        tool_names = [tool["name"] for tool in tools]
+        tools = await mcp_server.get_tools()
+        tool_names = list(
+            tools.keys()
+        )  # get_tools returns a dict of tool_name -> Tool object
 
         # Should have session tools
         expected_tools = [
@@ -44,70 +87,63 @@ class TestSessionToolsRegistration:
     @pytest.mark.asyncio
     async def test_start_tool_exists(self, mcp_server):
         """Test that start tool is accessible."""
-        tools = mcp_server.list_tools()
+        tools = await mcp_server.get_tools()
 
         # Find the start tool
-        start_tool = next(
-            (tool for tool in tools if tool["name"] == "start"),
-            None,
-        )
-
+        start_tool = tools.get("start")
         assert start_tool is not None, "start tool not found"
 
         # Check tool has expected parameters
         expected_params = ["working_directory"]
-        if "properties" in start_tool["inputSchema"]:
-            list(start_tool["inputSchema"]["properties"].keys())
+        if (
+            hasattr(start_tool, "input_schema")
+            and "properties" in start_tool.input_schema
+        ):
+            list(start_tool.input_schema["properties"].keys())
             for param in expected_params:
                 # Parameter might be optional, so just verify schema exists
-                assert "inputSchema" in start_tool
+                assert hasattr(start_tool, "input_schema")
 
     @pytest.mark.asyncio
     async def test_checkpoint_tool_exists(self, mcp_server):
         """Test that checkpoint tool is accessible."""
-        tools = mcp_server.list_tools()
+        tools = await mcp_server.get_tools()
 
         # Find the checkpoint tool
-        checkpoint_tool = next(
-            (tool for tool in tools if tool["name"] == "checkpoint"),
-            None,
-        )
+        checkpoint_tool = tools.get("checkpoint")
 
         assert checkpoint_tool is not None, "checkpoint tool not found"
 
     @pytest.mark.asyncio
     async def test_end_tool_exists(self, mcp_server):
         """Test that end tool is accessible."""
-        tools = mcp_server.list_tools()
+        tools = await mcp_server.get_tools()
 
         # Find the end tool
-        end_tool = next(
-            (tool for tool in tools if tool["name"] == "end"),
-            None,
-        )
+        end_tool = tools.get("end")
 
         assert end_tool is not None, "end tool not found"
 
     @pytest.mark.asyncio
     async def test_status_tool_exists(self, mcp_server):
         """Test that status tool is accessible."""
-        tools = mcp_server.list_tools()
+        tools = await mcp_server.get_tools()
 
         # Find the status tool
-        status_tool = next(
-            (tool for tool in tools if tool["name"] == "status"),
-            None,
-        )
+        status_tool = tools.get("status")
 
         assert status_tool is not None, "status tool not found"
 
         # Check tool has expected parameters
         expected_params = ["working_directory"]
-        if "properties" in status_tool["inputSchema"]:
-            list(status_tool["inputSchema"]["properties"].keys())
+        if (
+            hasattr(status_tool, "input_schema")
+            and "properties" in status_tool.input_schema
+        ):
+            list(status_tool.input_schema["properties"].keys())
             for param in expected_params:
                 # Parameter might be optional, so just verify schema exists
-                assert "inputSchema" in status_tool
+                assert hasattr(status_tool, "input_schema")
 
 
 class TestSessionToolExecution:
@@ -116,13 +152,54 @@ class TestSessionToolExecution:
     @pytest.fixture
     async def mcp_server(self):
         """Create MCP server with session tools."""
+        import asyncio
+
         mcp = FastMCP("test-session-execution")
         register_session_tools(mcp)
+
+        # Add a call_tool method for testing purposes
+        async def call_tool(tool_name, arguments=None):
+            if arguments is None:
+                arguments = {}
+
+            # Get the registered tools
+            tools = await mcp.get_tools()
+            if tool_name not in tools:
+                msg = f"Tool '{tool_name}' not found"
+                raise ValueError(msg)
+
+            # Get the tool object and call it properly
+            tool_obj = tools[tool_name]
+
+            # FastMCP tools are often wrapped in special function tool objects
+            # that have the actual function in the 'fn' attribute
+            if hasattr(tool_obj, "fn"):
+                # Extract the underlying function
+                actual_func = tool_obj.fn
+                if asyncio.iscoroutinefunction(actual_func):
+                    return await actual_func(**arguments)
+                return actual_func(**arguments)
+            if callable(tool_obj) or callable(tool_obj):
+                # Directly call the tool object
+                if asyncio.iscoroutinefunction(tool_obj):
+                    return await tool_obj(**arguments)
+                return tool_obj(**arguments)
+            # If it's not directly callable, it might be a FunctionTool-like object
+            # with an execute method or similar interface
+            if hasattr(tool_obj, "execute"):
+                return await tool_obj.execute(**arguments)
+            msg = f"Tool object {type(tool_obj)} is not callable and has no execute method"
+            raise TypeError(msg)
+
+        # Attach the method to the instance
+        mcp.call_tool = call_tool
+
         return mcp
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_start_tool_execution(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_start_tool_execution(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test start tool execution."""
         # Setup mock result
         mock_result = {
@@ -158,8 +235,9 @@ class TestSessionToolExecution:
         assert "85/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_start_tool_failure(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_start_tool_failure(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test start tool execution with failure."""
         # Setup mock result
         mock_result = {
@@ -177,8 +255,11 @@ class TestSessionToolExecution:
         assert "Initialization failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_checkpoint_tool_execution(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_checkpoint_tool_execution(
+        self, mock_get_session_manager, mcp_server
+    ):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test checkpoint tool execution."""
         # Setup mock result
         mock_result = {
@@ -202,8 +283,9 @@ class TestSessionToolExecution:
         assert "88/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_checkpoint_tool_failure(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_checkpoint_tool_failure(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test checkpoint tool execution with failure."""
         # Setup mock result
         mock_result = {
@@ -221,8 +303,9 @@ class TestSessionToolExecution:
         assert "Checkpoint failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_end_tool_execution(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_end_tool_execution(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test end tool execution."""
         # Setup mock result
         mock_result = {
@@ -251,8 +334,9 @@ class TestSessionToolExecution:
         assert "90/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_end_tool_failure(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_end_tool_failure(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test end tool execution with failure."""
         # Setup mock result
         mock_result = {
@@ -270,8 +354,9 @@ class TestSessionToolExecution:
         assert "End session failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_status_tool_execution(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_status_tool_execution(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test status tool execution."""
         # Setup mock result
         mock_result = {
@@ -311,8 +396,9 @@ class TestSessionToolExecution:
         assert "82/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools.session_manager")
-    async def test_status_tool_failure(self, mock_session_manager, mcp_server):
+    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    async def test_status_tool_failure(self, mock_get_session_manager, mcp_server):
+        mock_session_manager = mock_get_session_manager.return_value
         """Test status tool execution with failure."""
         # Setup mock result
         mock_result = {
@@ -336,8 +422,48 @@ class TestUtilityTools:
     @pytest.fixture
     async def mcp_server(self):
         """Create MCP server with session tools."""
+        import asyncio
+
         mcp = FastMCP("test-utility-tools")
         register_session_tools(mcp)
+
+        # Add a call_tool method for testing purposes
+        async def call_tool(tool_name, arguments=None):
+            if arguments is None:
+                arguments = {}
+
+            # Get the registered tools
+            tools = await mcp.get_tools()
+            if tool_name not in tools:
+                msg = f"Tool '{tool_name}' not found"
+                raise ValueError(msg)
+
+            # Get the tool object and call it properly
+            tool_obj = tools[tool_name]
+
+            # FastMCP tools are often wrapped in special function tool objects
+            # that have the actual function in the 'fn' attribute
+            if hasattr(tool_obj, "fn"):
+                # Extract the underlying function
+                actual_func = tool_obj.fn
+                if asyncio.iscoroutinefunction(actual_func):
+                    return await actual_func(**arguments)
+                return actual_func(**arguments)
+            if callable(tool_obj) or callable(tool_obj):
+                # Directly call the tool object
+                if asyncio.iscoroutinefunction(tool_obj):
+                    return await tool_obj(**arguments)
+                return tool_obj(**arguments)
+            # If it's not directly callable, it might be a FunctionTool-like object
+            # with an execute method or similar interface
+            if hasattr(tool_obj, "execute"):
+                return await tool_obj.execute(**arguments)
+            msg = f"Tool object {type(tool_obj)} is not callable and has no execute method"
+            raise TypeError(msg)
+
+        # Attach the method to the instance
+        mcp.call_tool = call_tool
+
         return mcp
 
     @pytest.mark.asyncio

@@ -54,6 +54,9 @@ class ProjectActivityMonitor:
 
     def __init__(self, project_paths: list[str] | None = None) -> None:
         """Initialize activity monitor."""
+        from session_mgmt_mcp.settings import get_settings
+
+        self._settings = get_settings()
         self.project_paths = project_paths or []
         self.db_path = str(Path.home() / ".claude" / "data" / "activity.db")
         self.observers: list[Any] = []
@@ -182,21 +185,21 @@ class IDEFileHandler(FileSystemEventHandler):
 
     def __init__(self, monitor: ProjectActivityMonitor) -> None:
         self.monitor = monitor
-        self.ignore_patterns = {
-            ".git",
-            "__pycache__",
-            "node_modules",
-            ".venv",
-            "venv",
-            ".pytest_cache",
-            ".mypy_cache",
-            ".ruff_cache",
-            "dist",
-            "build",
-            ".DS_Store",
-            ".idea",
-            ".vscode/settings.json",
+        # Merge settings-driven ignore dirs
+        self.ignore_patterns = set(self.monitor._settings.filesystem_ignore_dirs)
+        self.ignore_patterns.add(".vscode/settings.json")
+
+        # Critical file patterns for smart thresholding
+        self.critical_patterns = {
+            "auth": ["auth", "login", "session", "jwt", "oauth"],
+            "database": ["db", "database", "migration", "schema"],
+            "config": ["config", "settings", "env"],
+            "api": ["api", "endpoint", "route", "controller"],
+            "security": ["security", "encrypt", "hash", "crypto"],
         }
+        self._recent_ttl_seconds = int(
+            self.monitor._settings.filesystem_dedupe_ttl_seconds
+        )
 
     def should_ignore(self, file_path: str) -> bool:
         """Check if file should be ignored."""
@@ -211,7 +214,14 @@ class IDEFileHandler(FileSystemEventHandler):
         if path.suffix not in self.monitor.ide_extensions:
             return True
 
-        # Ignore temporary files
+        # Ignore large or temporary files
+        max_size = int(self.monitor._settings.filesystem_max_file_size_bytes)
+        try:
+            if path.exists() and path.is_file() and path.stat().st_size > max_size:
+                return True
+        except Exception:
+            pass
+
         return bool(path.name.startswith(".") or path.name.endswith("~"))
 
     def on_modified(self, event: Any) -> None:
@@ -237,10 +247,120 @@ class IDEFileHandler(FileSystemEventHandler):
                 "change_type": "modified",
             },
             project_path=project_path,
-            relevance_score=0.8,
+            relevance_score=self._estimate_relevance(src_path),
         )
 
         self.monitor.add_activity(activity_event)
+
+        # Optionally trigger extraction based on feature flags and threshold
+        from session_mgmt_mcp.config.feature_flags import get_feature_flags
+
+        flags = get_feature_flags()
+        if flags.enable_filesystem_extraction and flags.enable_llm_entity_extraction:
+            # Defer import to avoid heavy deps if disabled
+            try:
+                import asyncio as _asyncio
+
+                from session_mgmt_mcp.memory.file_context import build_file_context
+                from session_mgmt_mcp.tools.entity_extraction_tools import (
+                    extract_and_store_memory as _extract,
+                )
+
+                # Simple heuristic: only process high relevance or critical files
+                if self._passes_threshold(activity_event):
+                    # Persistent de-duplication using activity DB
+                    if self._recently_processed_persisted(str(src_path)):
+                        return
+
+                    # Build file context and include snippet in extraction input
+                    ctx = build_file_context(event.src_path)
+                    snippet = ctx.get("snippet", "")
+                    # Fire-and-forget extraction; real integration would pass file context
+                    _asyncio.create_task(
+                        _extract(
+                            user_input=f"Updated file: {src_path.name}\nContext: {ctx['metadata']}",
+                            ai_output=snippet,
+                            project=project_path,
+                            activity_score=activity_event.relevance_score,
+                        )
+                    )
+            except Exception:
+                # Non-fatal in monitor
+                pass
+
+    def _recently_processed_persisted(self, file_path: str) -> bool:
+        """Check and update persistent recent-extractions cache.
+
+        Returns True if the given file was processed within the TTL window.
+        """
+        try:
+            # Use the same SQLite DB as activity log
+            import sqlite3 as _sql
+            from time import time as _now
+
+            self._ensure_recent_table()
+            with _sql.connect(self.monitor.db_path) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT last_extracted FROM recent_extractions WHERE file_path=?",
+                    (file_path,),
+                )
+                row = cur.fetchone()
+                now = int(_now())
+                if row:
+                    last = int(row[0])
+                    if now - last < self._recent_ttl_seconds:
+                        return True
+                    # Update timestamp
+                    cur.execute(
+                        "UPDATE recent_extractions SET last_extracted=? WHERE file_path=?",
+                        (now, file_path),
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO recent_extractions (file_path, last_extracted) VALUES (?, ?)",
+                        (file_path, now),
+                    )
+                conn.commit()
+        except Exception:
+            # On any error, fall back to allowing processing to avoid missing events
+            return False
+        return False
+
+    def _ensure_recent_table(self) -> None:
+        """Ensure the persistent recent_extractions table exists."""
+        try:
+            import sqlite3 as _sql
+
+            with _sql.connect(self.monitor.db_path) as conn:
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS recent_extractions (
+                        file_path TEXT PRIMARY KEY,
+                        last_extracted INTEGER
+                    )
+                    """
+                )
+        except Exception:
+            pass
+
+    def _estimate_relevance(self, path: Path) -> float:
+        name = path.name.lower()
+        for keywords in self.critical_patterns.values():
+            if any(k in name for k in keywords):
+                return 0.95
+        return 0.8
+
+    def _passes_threshold(self, event: ActivityEvent) -> bool:
+        # Base threshold
+        if event.relevance_score < 0.7:
+            return False
+        # Stricter threshold for non-critical files
+        name = event.details.get("file_name", "").lower()
+        critical = any(
+            any(k in name for k in kw) for kw in self.critical_patterns.values()
+        )
+        return not (not critical and event.relevance_score < 0.9)
 
 
 class BrowserDocumentationMonitor:
