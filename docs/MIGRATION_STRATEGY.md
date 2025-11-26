@@ -29,13 +29,12 @@ This guide explains how session-mgmt-mcp migrates legacy `conversations` and `re
 ## Rollout
 
 1. Run with feature flags OFF (default)
-2. Migrate data while v1 continues to work
-3. Enable `use_schema_v2` once validated
-4. Gradually enable LLM extraction and conscious agent
+1. Migrate data while v1 continues to work
+1. Enable `use_schema_v2` once validated
+1. Gradually enable LLM extraction and conscious agent
 
 ## Safety
 
 - Migration is idempotent and best-effort
 - Stats and errors recorded in `schema_migrations`
 - Rollback by restoring the DB backup
-
