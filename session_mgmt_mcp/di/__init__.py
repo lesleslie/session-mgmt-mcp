@@ -90,31 +90,48 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
     """
     from acb.adapters import import_adapter
 
-    # Import ACB's Logger class (returns the class, not instance)
-    logger_class = import_adapter("logger")
+    # Import ACB's Logger class (returns the instance, not class)
+    logger_instance = import_adapter("logger")
 
     if not force:
         with suppress(KeyError, AttributeError, RuntimeError):
             # RuntimeError: when adapter requires async (re-register)
-            existing = depends.get_sync(logger_class)
+            existing = depends.get_sync("acb_logger")
             # Only skip if we already have a Logger instance (not just the module name string)
-            if isinstance(existing, logger_class):
+            if existing is not None and hasattr(existing, "add"):
                 return
-
-    # Create logger instance (ACB logger takes no init args)
-    logger_instance = logger_class()
 
     # Configure logger with file sink, falling back to a temp directory when
     # the default home-based location is not writable (e.g., sandboxed tests).
     log_file = logs_dir / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
     try:
-        logger_instance.add(
-            str(log_file),
-            level="INFO",
-            rotation="1 day",
-            retention="7 days",
-            compression="gz",
-        )
+        # The ACB logger adapter returns a configured logger instance,
+        # but for file logging we might need to configure it differently
+        # depending on the actual logger implementation (loguru, logly, etc.)
+        if hasattr(logger_instance, "add"):
+            # For loguru-like loggers
+            logger_instance.add(
+                str(log_file),
+                level="INFO",
+                rotation="1 day",
+                retention="7 days",
+                compression="gz",
+            )
+        elif hasattr(logger_instance, "setLevel") and hasattr(
+            logger_instance, "addHandler"
+        ):
+            # For logging module loggers
+            import logging
+            from logging.handlers import RotatingFileHandler
+
+            # Create rotating file handler
+            handler = RotatingFileHandler(
+                str(log_file),
+                maxBytes=10 * 1024 * 1024,  # 10MB
+                backupCount=7,
+            )
+            handler.setLevel(logging.INFO)
+            logger_instance.addHandler(handler)
     except Exception:
         # Fallback: use a temp logs directory under the system temp path
         tmp_logs = Path(tempfile.gettempdir()) / "session-mgmt-mcp" / "logs"
@@ -123,16 +140,34 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
         log_file = (
             tmp_logs / f"session_management_{datetime.now().strftime('%Y%m%d')}.log"
         )
-        logger_instance.add(
-            str(log_file),
-            level="INFO",
-            rotation="1 day",
-            retention="7 days",
-            compression="gz",
-        )
+        with suppress(Exception):
+            if hasattr(logger_instance, "add"):
+                # For loguru-like loggers
+                logger_instance.add(
+                    str(log_file),
+                    level="INFO",
+                    rotation="1 day",
+                    retention="7 days",
+                    compression="gz",
+                )
+            elif hasattr(logger_instance, "setLevel") and hasattr(
+                logger_instance, "addHandler"
+            ):
+                # For logging module loggers
+                import logging
+                from logging.handlers import RotatingFileHandler
 
-    # Register the instance using the class we imported
-    depends.set(logger_class, logger_instance)
+                # Create rotating file handler
+                handler = RotatingFileHandler(
+                    str(log_file),
+                    maxBytes=10 * 1024 * 1024,  # 10MB
+                    backupCount=7,
+                )
+                handler.setLevel(logging.INFO)
+                logger_instance.addHandler(handler)
+
+    # Register the instance using a string key to avoid the dependency resolution issue
+    depends.set("acb_logger", logger_instance)
 
 
 def _register_session_logger(logs_dir: Path, force: bool) -> None:

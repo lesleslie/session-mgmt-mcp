@@ -50,7 +50,7 @@ class TestDataFactory:
         return {
             "id": reflection_id or str(uuid.uuid4()),
             "content": content or f"Test reflection at {datetime.now()}",
-            "tags": tags or ["test", "example"],
+            "tags": tags if tags is not None else ["test", "example"],
         }
 
     @staticmethod
@@ -80,6 +80,56 @@ class TestDataFactory:
             )
             for i in range(count)
         ]
+
+    @staticmethod
+    def bulk_reflections(
+        count: int = 10,
+        tags: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Generate bulk test reflections."""
+        return [
+            TestDataFactory.reflection(
+                content=f"Bulk reflection {i}",
+                tags=tags or [f"bulk-tag-{i % 3}", "test"],
+            )
+            for i in range(count)
+        ]
+
+    @staticmethod
+    def realistic_project_structure(base_path: Path) -> dict[str, Path]:
+        """Create a realistic project structure for testing."""
+        project_files = {
+            "pyproject.toml": base_path / "pyproject.toml",
+            "README.md": base_path / "README.md",
+            "src": base_path / "src",
+            "tests": base_path / "tests",
+            "docs": base_path / "docs",
+        }
+
+        # Create directories
+        project_files["src"].mkdir(parents=True, exist_ok=True)
+        project_files["tests"].mkdir(parents=True, exist_ok=True)
+        project_files["docs"].mkdir(parents=True, exist_ok=True)
+
+        # Create files with realistic content
+        project_files["pyproject.toml"].write_text(
+            '[project]\nname = "test-project"\nversion = "0.1.0"\n'
+        )
+        project_files["README.md"].write_text(
+            "# Test Project\n\nThis is a test project."
+        )
+
+        # Create a source file
+        (project_files["src"] / "main.py").write_text(
+            'def main():\n    print("Hello, world!")\n'
+        )
+
+        # Create a test file
+        (project_files["tests"] / "test_main.py").write_text(
+            "def test_main():\n    assert True\n"
+        )
+
+        return project_files
 
 
 class AsyncTestHelper:
@@ -229,6 +279,16 @@ class MockingHelper:
         return mocks
 
     @staticmethod
+    def mock_onnx_session_with_specific_return(return_value: np.ndarray | None = None):
+        """Create ONNX session mock with specific return value."""
+        mock_onnx = Mock()
+        if return_value is None:
+            rng = np.random.default_rng(42)
+            return_value = rng.random((1, 384)).astype(np.float32)
+        mock_onnx.run.return_value = [return_value]
+        return mock_onnx
+
+    @staticmethod
     @asynccontextmanager
     async def mock_mcp_server():
         """Create mock MCP server context manager."""
@@ -256,6 +316,89 @@ class MockingHelper:
             exists=Mock(return_value=True),
             unlink=Mock(),
         )
+
+    @staticmethod
+    def patch_system_dependencies():
+        """Create patches for system dependencies that might not be available."""
+        return patch.multiple(
+            "session_mgmt_mcp.reflection_tools",
+            ONNX_AVAILABLE=True,  # Default to True for tests
+        )
+
+
+class ChaosTestHelper:
+    """Helper utilities for chaos engineering tests."""
+
+    @staticmethod
+    async def simulate_network_failure():
+        """Simulate network failure for testing resilience."""
+        from unittest.mock import Mock
+
+        import httpx
+
+        mock_client = Mock()
+        mock_client.get = AsyncMock(side_effect=httpx.ConnectError("Connection failed"))
+        mock_client.post = AsyncMock(
+            side_effect=httpx.ConnectError("Connection failed")
+        )
+
+        return mock_client
+
+    @staticmethod
+    async def simulate_database_failure():
+        """Simulate database failure for testing error handling."""
+        from unittest.mock import MagicMock, Mock
+
+        mock_db = Mock()
+        mock_db.store_conversation = AsyncMock(
+            side_effect=Exception("Database unavailable")
+        )
+        mock_db.search_conversations = AsyncMock(
+            side_effect=Exception("Database unavailable")
+        )
+
+        return mock_db
+
+    @staticmethod
+    async def simulate_resource_exhaustion():
+        """Simulate resource exhaustion (memory, CPU)."""
+        # This would be used in context managers to temporarily trigger resource exhaustion
+        return Mock()
+
+
+class PropertyTestHelper:
+    """Helper utilities for property-based testing with Hypothesis."""
+
+    @staticmethod
+    def validate_conversation_structure(conversation: dict[str, Any]) -> bool:
+        """Validate conversation structure for property tests."""
+        required_keys = {"id", "content", "project", "timestamp"}
+        return (
+            isinstance(conversation, dict)
+            and required_keys.issubset(conversation.keys())
+            and isinstance(conversation["id"], str)
+            and len(conversation["id"]) > 10  # At least UUID length
+            and isinstance(conversation["content"], str)
+            and isinstance(conversation["project"], str)
+        )
+
+    @staticmethod
+    def validate_reflection_structure(reflection: dict[str, Any]) -> bool:
+        """Validate reflection structure for property tests."""
+        required_keys = {"id", "content", "tags"}
+        return (
+            isinstance(reflection, dict)
+            and required_keys.issubset(reflection.keys())
+            and isinstance(reflection["id"], str)
+            and isinstance(reflection["content"], str)
+            and isinstance(reflection["tags"], list)
+            and all(isinstance(tag, str) for tag in reflection["tags"])
+        )
+
+    @staticmethod
+    def validate_similarity_range(score: float) -> bool:
+        """Validate similarity score is in valid range [0, 1]."""
+        return 0.0 <= score <= 1.0
 
 
 class AssertionHelper:
@@ -358,6 +501,114 @@ class PerformanceHelper:
             "total": sum(times),
         }
 
+    @staticmethod
+    def calculate_performance_stats(times: list[float]) -> dict[str, float]:
+        """Calculate comprehensive performance statistics."""
+        if not times:
+            return {}
+
+        return {
+            "count": len(times),
+            "mean": sum(times) / len(times),
+            "min": min(times),
+            "max": max(times),
+            "total": sum(times),
+            "std_dev": (
+                sum((t - sum(times) / len(times)) ** 2 for t in times) / len(times)
+            )
+            ** 0.5
+            if len(times) > 1
+            else 0.0,
+            "p95": sorted(times)[int(0.95 * len(times))] if times else 0,
+        }
+
+
+class ValidationHelper:
+    """Helper utilities for data validation testing."""
+
+    @staticmethod
+    def validate_json_serializable(obj: Any) -> bool:
+        """Check if an object is JSON serializable."""
+        import json
+
+        try:
+            json.loads(json.dumps(obj, default=str))
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def validate_uuid_format(uuid_str: str) -> bool:
+        """Validate UUID format."""
+        import uuid
+
+        try:
+            uuid.UUID(uuid_str)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def validate_iso_datetime_format(datetime_str: str) -> bool:
+        """Validate ISO datetime format."""
+        from datetime import datetime
+
+        try:
+            datetime.fromisoformat(datetime_str)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def validate_email_format(email: str) -> bool:
+        """Basic email format validation."""
+        import re
+
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        return re.match(pattern, email) is not None
+
+    @staticmethod
+    def validate_url_format(url: str) -> bool:
+        """Basic URL format validation."""
+        import re
+
+        pattern = r"^https?://(?:[-\w.])+(?:\:[0-9]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?$"
+        return re.match(pattern, url) is not None
+
+
+class TestCoverageHelper:
+    """Helper utilities for improving test coverage."""
+
+    @staticmethod
+    def get_uncovered_methods(class_or_module) -> list[str]:
+        """Get methods that might need more test coverage."""
+        uncovered = []
+
+        for name in dir(class_or_module):
+            attr = getattr(class_or_module, name)
+            if callable(attr) and not name.startswith("_"):
+                # This is a simplified check - in practice, you'd use coverage data
+                uncovered.append(name)
+
+        return uncovered
+
+    @staticmethod
+    def generate_edge_case_inputs() -> list[Any]:
+        """Generate common edge case inputs for testing."""
+        return [
+            None,
+            "",
+            0,
+            [],
+            {},
+            -1,
+            float("inf"),
+            float("-inf"),
+            float("nan"),
+            "   ",  # whitespace only
+            "a" * 10000,  # very long string
+        ]
+
 
 # Pytest fixtures using helpers
 @pytest.fixture
@@ -367,9 +618,57 @@ def test_data_factory():
 
 
 @pytest.fixture
+def validation_helper():
+    """Provide ValidationHelper instance."""
+    return ValidationHelper
+
+
+@pytest.fixture
+def chaos_helper():
+    """Provide ChaosTestHelper instance."""
+    return ChaosTestHelper
+
+
+@pytest.fixture
+def property_helper():
+    """Provide PropertyTestHelper instance."""
+    return PropertyTestHelper
+
+
+@pytest.fixture
+def coverage_helper():
+    """Provide TestCoverageHelper instance."""
+    return TestCoverageHelper
+
+
+@pytest.fixture
 def async_helper():
     """Provide AsyncTestHelper instance."""
     return AsyncTestHelper
+
+
+@pytest.fixture
+def db_helper():
+    """Provide DatabaseTestHelper instance."""
+    return DatabaseTestHelper
+
+
+@pytest.fixture
+def mock_helper():
+    """Provide MockingHelper instance."""
+    return MockingHelper
+
+
+@pytest.fixture
+def assert_helper():
+    """Provide AssertionHelper instance."""
+    return AssertionHelper
+
+
+@pytest.fixture
+def perf_helper():
+    """Provide PerformanceHelper instance."""
+    return PerformanceHelper
 
 
 @pytest.fixture

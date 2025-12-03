@@ -53,9 +53,8 @@ from session_mgmt_mcp.server_core import (
 
 # Get ACB logger from DI container (deferred until first use)
 def _get_session_logger():
-    logger_class = import_adapter("logger")
     try:
-        return depends.get_sync(logger_class)
+        return depends.get_sync("acb_logger")
     except Exception:
         # Fallback logger in case of dependency injection issues
         import logging

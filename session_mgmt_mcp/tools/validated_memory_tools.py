@@ -19,7 +19,7 @@ from __future__ import annotations
 # ============================================================================
 from contextlib import suppress
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from session_mgmt_mcp.parameter_models import (
     ConceptSearchParams,
@@ -32,10 +32,14 @@ from session_mgmt_mcp.utils.error_handlers import ValidationError, _get_logger
 from session_mgmt_mcp.utils.tool_wrapper import execute_database_tool
 
 if TYPE_CHECKING:
+    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
     from session_mgmt_mcp.reflection_tools import ReflectionDatabase
 
+# Define type alias for backward compatibility during migration
+ReflectionDatabaseType = Union["ReflectionDatabase", "ReflectionDatabaseAdapter"]
 
-async def _get_reflection_database() -> ReflectionDatabase | None:
+
+async def _get_reflection_database() -> ReflectionDatabaseType | None:
     """Get reflection database instance with lazy initialization."""
     try:
         from session_mgmt_mcp.reflection_tools import get_reflection_database
@@ -456,7 +460,7 @@ def _check_reflection_tools_available() -> bool:
         return False
 
 
-async def resolve_reflection_database() -> ReflectionDatabase | None:
+async def resolve_reflection_database() -> ReflectionDatabaseType | None:
     """Resolve the reflection database instance using dependency injection or fallback."""
     # Try to get from DI container
     with suppress(Exception):
@@ -478,7 +482,7 @@ async def resolve_reflection_database() -> ReflectionDatabase | None:
     return None
 
 
-async def _get_reflection_database_async() -> ReflectionDatabase:
+async def _get_reflection_database_async() -> ReflectionDatabaseType:
     """Get reflection database instance with lazy initialization."""
     if not _check_reflection_tools_available():
         from session_mgmt_mcp.utils.error_handlers import ValidationError

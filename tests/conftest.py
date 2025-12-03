@@ -376,6 +376,27 @@ async def temp_claude_dir() -> AsyncGenerator[Path]:
                 yield claude_dir
 
 
+@pytest.fixture(scope="session")
+async def shared_temp_db_path() -> AsyncGenerator[str]:
+    """Session-scoped temporary database path to reduce file operations."""
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
+        db_path = tmp.name
+
+    yield db_path
+
+    # Cleanup
+    try:
+        db_path_obj = Path(db_path)
+        if db_path_obj.exists():
+            db_path_obj.unlink()
+    except (OSError, PermissionError):
+        # On Windows, file might still be locked
+        pass
+
+
 @pytest.fixture
 async def reflection_db(temp_db_path: str) -> AsyncGenerator[ReflectionDatabase]:
     """Provide initialized ReflectionDatabase instance."""
@@ -432,6 +453,41 @@ async def reflection_db_with_data(
     reflection_db._test_reflection_ids = reflection_ids
 
     return reflection_db
+
+
+@pytest.fixture(scope="session")
+async def shared_reflection_db() -> AsyncGenerator[ReflectionDatabase]:
+    """Session-scoped ReflectionDatabase for tests that can share data."""
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
+        db_path = tmp.name
+
+    db = ReflectionDatabase(db_path=db_path)
+    await db.initialize()
+
+    try:
+        # Pre-populate with common test data
+        test_conversations = [
+            "Shared test conversation 1",
+            "Shared test conversation 2",
+            "Shared test conversation 3",
+        ]
+
+        for content in test_conversations:
+            await db.store_conversation(content, {"project": "shared-test"})
+
+        yield db
+    finally:
+        db.close()
+        # Cleanup
+        try:
+            db_path_obj = Path(db_path)
+            if db_path_obj.exists():
+                db_path_obj.unlink()
+        except (OSError, PermissionError):
+            pass
 
 
 @pytest.fixture

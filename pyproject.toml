@@ -55,6 +55,7 @@ dependencies = [
     "typer>=0.20.0",
     "crackerjack>=0.44.34",
     "bevy>=3.1.0b12",
+    "logly>=0.1.6",
 ]
 
 [project.license]

@@ -4056,12 +4056,6 @@
     "path": "resource_cleanup.py"
   },
   {
-    "complexity": 4,
-    "file_name": "resource_cleanup.py",
-    "function_name": "cleanup_logging_handlers",
-    "path": "resource_cleanup.py"
-  },
-  {
     "complexity": 5,
     "file_name": "resource_cleanup.py",
     "function_name": "cleanup_file_handles",
@@ -4089,6 +4083,12 @@
     "complexity": 9,
     "file_name": "resource_cleanup.py",
     "function_name": "cleanup_temp_files",
+    "path": "resource_cleanup.py"
+  },
+  {
+    "complexity": 22,
+    "file_name": "resource_cleanup.py",
+    "function_name": "cleanup_logging_handlers",
     "path": "resource_cleanup.py"
   },
   {
@@ -6554,12 +6554,6 @@
   {
     "complexity": 5,
     "file_name": "__init__.py",
-    "function_name": "_register_logger",
-    "path": "__init__.py"
-  },
-  {
-    "complexity": 5,
-    "file_name": "__init__.py",
     "function_name": "_register_session_logger",
     "path": "__init__.py"
   },
@@ -6567,6 +6561,12 @@
     "complexity": 5,
     "file_name": "__init__.py",
     "function_name": "_register_vector_adapter",
+    "path": "__init__.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "__init__.py",
+    "function_name": "_register_logger",
     "path": "__init__.py"
   },
   {

@@ -53,6 +53,8 @@ except ImportError:
 import operator
 
 import numpy as np
+# Import the new adapter for replacement
+from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 class ReflectionDatabase:
@@ -959,15 +961,19 @@ class ReflectionDatabase:
             )
 
 
-# Global database instance
-_reflection_db: ReflectionDatabase | None = None
+# Global database adapter instance
+_reflection_db: ReflectionDatabaseAdapter | None = None
 
 
-async def get_reflection_database() -> ReflectionDatabase:
-    """Get or create reflection database instance."""
+async def get_reflection_database() -> ReflectionDatabaseAdapter:
+    """Get or create reflection database adapter instance.
+
+    DEPRECATED: This function is deprecated and will be removed in a future release.
+    Use the ReflectionDatabaseAdapter directly with dependency injection instead.
+    """
     global _reflection_db
     if _reflection_db is None:
-        _reflection_db = ReflectionDatabase()
+        _reflection_db = ReflectionDatabaseAdapter()
         await _reflection_db.initialize()
     return _reflection_db
 
