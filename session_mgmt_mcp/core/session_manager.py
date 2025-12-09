@@ -756,8 +756,6 @@ class SessionLifecycleManager:
             self.logger.exception("Session end failed, error=%s", str(e))
             return {"success": False, "error": str(e)}
 
-            return None
-
     async def get_session_status(
         self,
         working_directory: str | None = None,

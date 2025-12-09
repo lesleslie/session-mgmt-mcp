@@ -35,6 +35,97 @@ _FAIL_MARKERS = frozenset(["❌", "Failed"])
 _ALL_MARKERS = _PASS_MARKERS | _FAIL_MARKERS
 
 
+def _validate_line(stripped: str, original_line: str) -> None:
+    """Validate basic line requirements.
+
+    Args:
+        stripped: The stripped line to validate
+        original_line: The original line for error messages
+
+    Raises:
+        ParseError: If validation fails
+
+    """
+    if not stripped:
+        msg = "Cannot parse empty line"
+        raise ParseError(msg)
+
+
+def _extract_parts(stripped: str, original_line: str) -> tuple[str, str]:
+    """Extract left part and status marker from line.
+
+    Args:
+        stripped: The stripped line to parse
+        original_line: The original line for error messages
+
+    Returns:
+        Tuple of (left_part, status_marker)
+
+    Raises:
+        ParseError: If parts cannot be extracted
+
+    """
+    parts = stripped.rsplit(maxsplit=1)
+
+    if len(parts) == 1:
+        if parts[0] in _ALL_MARKERS:
+            msg = "No hook name found before status marker"
+            raise ParseError(msg)
+        msg = f"Line has no space-separated status marker: {original_line!r}"
+        raise ParseError(msg)
+
+    if len(parts) != 2:
+        msg = f"Line has no space-separated status marker: {original_line!r}"
+        raise ParseError(msg)
+
+    return parts[0], parts[1]
+
+
+def _validate_status_marker(status_marker: str) -> bool:
+    """Validate status marker and return pass status.
+
+    Args:
+        status_marker: The status marker to validate
+
+    Returns:
+        True if passed, False if failed
+
+    Raises:
+        ParseError: If status marker is invalid
+
+    """
+    if status_marker not in _ALL_MARKERS:
+        msg = f"Unknown status marker: {status_marker!r}"
+        raise ParseError(msg)
+    return status_marker in _PASS_MARKERS
+
+
+def _extract_hook_name(left_part: str) -> str:
+    """Extract hook name from left part by stripping padding dots.
+
+    Args:
+        left_part: The left part of the parsed line
+
+    Returns:
+        The extracted hook name
+
+    Raises:
+        ParseError: If hook name cannot be extracted
+
+    """
+    if not left_part:
+        msg = "No hook name found before status marker"
+        raise ParseError(msg)
+
+    hook_name = left_part.rstrip(".")
+
+    if not hook_name:
+        msg = "Hook name consists entirely of dots"
+        raise ParseError(msg)
+
+    return hook_name
+
+
 def parse_hook_line(line: str) -> HookResult:
     """Parse a crackerjack hook output line into name and status.
 
@@ -66,61 +157,12 @@ def parse_hook_line(line: str) -> HookResult:
         ParseError: If line is empty, has no valid status marker, or is malformed
 
     """
-    # Handle empty/whitespace-only lines
     stripped = line.strip()
-    if not stripped:
-        msg = "Cannot parse empty line"
-        raise ParseError(msg)
+    _validate_line(stripped, line)
 
-    # Step 1: Extract status marker from end (reverse parse)
-    # Status markers are always at the end after a space
-    parts = stripped.rsplit(maxsplit=1)
-
-    if len(parts) == 1:
-        # Only one part means no space in the line
-        # Check if it's just a status marker without hook name
-        if parts[0] in _ALL_MARKERS:
-            msg = "No hook name found before status marker"
-            raise ParseError(msg)
-        msg = f"Line has no space-separated status marker: {line!r}"
-        raise ParseError(msg)
-
-    if len(parts) != 2:
-        msg = f"Line has no space-separated status marker: {line!r}"
-        raise ParseError(msg)
-
-    left_part, status_marker = parts
-
-    # Step 2: Validate status marker
-    if status_marker not in _ALL_MARKERS:
-        msg = f"Unknown status marker: {status_marker!r}"
-        raise ParseError(msg)
-
-    passed = status_marker in _PASS_MARKERS
-
-    # Step 3: Extract hook name from left part
-    # The left part is: hook_name + padding_dots
-    # We need to strip the padding dots from the right
-    if not left_part:
-        msg = "No hook name found before status marker"
-        raise ParseError(msg)
-
-    # Remove padding dots by stripping from the right
-    # The hook name is everything before the continuous sequence of dots
-    hook_name = left_part.rstrip(".")
-
-    # Validate that we actually found a hook name
-    if not hook_name:
-        msg = "Hook name consists entirely of dots"
-        raise ParseError(msg)
-
-    # Edge case: Ensure there were actually padding dots
-    # (otherwise the format is invalid - should have padding)
-    if hook_name == left_part:
-        # No dots were stripped, which means no padding - this might be valid
-        # for very short hook names, but we should warn
-        # For production, we'll allow it but could add logging here
-        pass
+    left_part, status_marker = _extract_parts(stripped, line)
+    passed = _validate_status_marker(status_marker)
+    hook_name = _extract_hook_name(left_part)
 
     return HookResult(hook_name=hook_name, passed=passed)
 

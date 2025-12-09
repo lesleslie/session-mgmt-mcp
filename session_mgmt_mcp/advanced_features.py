@@ -656,9 +656,13 @@ async def git_worktree_add(
     create_branch: bool = False,
 ) -> str:
     """Create a new git worktree."""
-    # Import session_logger from server
-    from .server import session_logger
+    from acb import depends
+
+    from .utils.logging import SessionLogger
     from .worktree_manager import WorktreeManager
+
+    # Get session logger from DI container
+    session_logger = depends.get_sync(SessionLogger)
 
     working_dir = Path(working_directory or str(Path.cwd()))
     new_path = Path(path)
@@ -709,9 +713,13 @@ async def git_worktree_remove(
     force: bool = False,
 ) -> str:
     """Remove an existing git worktree."""
-    # Import session_logger from server
-    from .server import session_logger
+    from acb import depends
+
+    from .utils.logging import SessionLogger
     from .worktree_manager import WorktreeManager
+
+    # Get session logger from DI container
+    session_logger = depends.get_sync(SessionLogger)
 
     working_dir = Path(working_directory or str(Path.cwd()))
     remove_path = Path(path)
@@ -755,11 +763,13 @@ async def git_worktree_remove(
 
 async def git_worktree_switch(from_path: str, to_path: str) -> str:
     """Switch context between git worktrees with session preservation."""
-    from pathlib import Path
+    from acb import depends
 
-    # Import session_logger from server
-    from .server import session_logger
+    from .utils.logging import SessionLogger
     from .worktree_manager import WorktreeManager
+
+    # Get session logger from DI container
+    session_logger = depends.get_sync(SessionLogger)
 
     manager = WorktreeManager(session_logger=session_logger)
 

@@ -306,27 +306,37 @@ def _parse_crackerjack_output(output: str) -> tuple[list[str], list[str]]:
     """Parse crackerjack output to extract passed and failed hooks."""
     from .hook_parser import ParseError, parse_hook_output
 
+    try:
+        return _parse_with_structured_results(output)
+    except ParseError:
+        return _parse_with_line_scanner(output)
+
+
+def _parse_with_structured_results(output: str) -> tuple[list[str], list[str]]:
+    """Parse Crackerjack results using the structured hook parser."""
+    from .hook_parser import parse_hook_output
+
     passed_hooks: list[str] = []
     failed_hooks: list[str] = []
 
-    try:
-        results = parse_hook_output(output)
-        for result in results:
-            if result.passed:
-                passed_hooks.append(result.hook_name)
-            else:
-                failed_hooks.append(result.hook_name)
-    except ParseError:
-        # Fallback to original parsing if the robust parser fails
-        lines = output.split("\n")
-        for line in lines:
-            # Look for hook lines in format like:
-            # ruff-format....................................................... ✅
-            # bandit............................................................ ❌
-            if _should_parse_line(line):
-                hook_name = _extract_hook_name(line)
-                if hook_name:
-                    _categorize_hook(hook_name, line, passed_hooks, failed_hooks)
+    results = parse_hook_output(output)
+    for result in results:
+        (passed_hooks if result.passed else failed_hooks).append(result.hook_name)
+    return passed_hooks, failed_hooks
+
+
+def _parse_with_line_scanner(output: str) -> tuple[list[str], list[str]]:
+    """Fallback parser that scans output line-by-line."""
+    passed_hooks: list[str] = []
+    failed_hooks: list[str] = []
+
+    for line in output.split("\n"):
+        if not _should_parse_line(line):
+            continue
+
+        hook_name = _extract_hook_name(line)
+        if hook_name:
+            _categorize_hook(hook_name, line, passed_hooks, failed_hooks)
 
     return passed_hooks, failed_hooks
 
@@ -363,36 +373,31 @@ def _categorize_hook(
 def _parse_hook_results_table(output: str) -> str:
     """Parse and extract detailed hook results tables from output."""
     lines = output.split("\n")
-    results_table = []
-    in_results_table = False
+    results = []
+    in_section = False
 
     for line in lines:
-        # Look for the results table after stages
-        if "Fast Hook Results:" in line or "Comprehensive Hook Results:" in line:
-            in_results_table = True
-            results_table.append(line)
+        if _is_results_section_header(line):
+            in_section = True
+            results.append(line)
             continue
 
-        if in_results_table:
-            # End the results table if we encounter a new section or empty line after results
-            if line.strip() == "" and results_table and results_table[-1].strip() != "":
-                # Continue if this is just a separator line in the results table
-                pass
-            elif "⏳ Started:" in line or (
-                "----------------------------------------------------------------------"
-                in line
-                and results_table
-            ):
-                # End the results section when we reach a new stage
-                break
-            # Check if this line looks like a results entry (contains ::)
-            elif "::" in line or line.strip() == "":
-                results_table.append(line)
-            else:
-                # If it's not a results line, end parsing
-                break
+        if not in_section:
+            continue
 
-    return "\n".join(results_table) if results_table else ""
+        if _is_new_section_start(line):
+            break
+        if _should_add_to_results(line):
+            results.append(line)
+        else:
+            break
+
+    return "\n".join(results) if results else ""
+
+
+def _is_results_section_header(line: str) -> bool:
+    """Determine whether the line marks the start of a results section."""
+    return "Fast Hook Results:" in line or "Comprehensive Hook Results:" in line
 
 
 def _parse_hook_stage_results(output: str) -> str:

@@ -567,16 +567,11 @@ class KnowledgeGraphDatabase:
 
         conn = self._get_conn()
 
-        # Build query based on direction
-        if direction == "outgoing":
-            where_clause = "WHERE r.from_entity = ?"
-        elif direction == "incoming":
-            where_clause = "WHERE r.to_entity = ?"
-        else:  # both
-            where_clause = "WHERE (r.from_entity = ? OR r.to_entity = ?)"
-
-        if relation_type:
-            where_clause += " AND r.relation_type = ?"
+        where_clause, params = self._build_relationship_filters(
+            direction,
+            relation_type,
+            entity,
+        )
 
         # Build SQL safely - all user input is parameterized via params list
         sql = (
@@ -588,17 +583,6 @@ class KnowledgeGraphDatabase:
             + where_clause
             + " ORDER BY r.created_at DESC"
         )
-
-        # Build parameters tuple based on direction and relation_type
-        if direction == "both":
-            if relation_type:
-                params: tuple[str, ...] = (entity["id"], entity["id"], relation_type)
-            else:
-                params = (entity["id"], entity["id"])
-        elif relation_type:
-            params = (entity["id"], relation_type)
-        else:
-            params = (entity["id"],)
 
         results = conn.execute(sql, params).fetchall()
 
@@ -626,6 +610,30 @@ class KnowledgeGraphDatabase:
                 },
             )
         return relationships
+
+    def _build_relationship_filters(
+        self,
+        direction: str,
+        relation_type: str | None,
+        entity: dict[str, Any],
+    ) -> tuple[str, tuple[str, ...]]:
+        """Build WHERE clause and parameters for relationship queries."""
+        entity_id = entity["id"]
+        if direction == "outgoing":
+            base_clause = "WHERE r.from_entity = ?"
+            params: tuple[str, ...] = (entity_id,)
+        elif direction == "incoming":
+            base_clause = "WHERE r.to_entity = ?"
+            params = (entity_id,)
+        else:
+            base_clause = "WHERE (r.from_entity = ? OR r.to_entity = ?)"
+            params = (entity_id, entity_id)
+
+        if relation_type:
+            base_clause += " AND r.relation_type = ?"
+            params = (*params, relation_type)
+
+        return base_clause, params
 
     async def find_path(
         self,

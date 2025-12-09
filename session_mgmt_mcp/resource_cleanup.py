@@ -252,43 +252,34 @@ async def cleanup_logging_handlers() -> None:
     try:
         import logging
 
-        # Flush and close all handlers (use .copy() for clarity - refurb FURB145)
         for handler in logging.root.handlers.copy():
-            try:
-                # Check if this is a special proxy type that needs different cleanup
-                if hasattr(handler, "remove") and not hasattr(handler, "flush"):
-                    # Handle _LoggerProxy or similar objects that have remove but not flush/close
-                    # This requires a handler_id parameter, which we may not have
-                    # In this case, we skip the handler to avoid the error
-                    continue
-                if hasattr(handler, "flush") and hasattr(handler, "close"):
-                    # Standard logging handler interface
-                    handler.flush()
-                    handler.close()
-                # For handlers that don't conform to standard interface, try the close method
-                elif hasattr(handler, "close"):
-                    handler.close()
-                # or try flush method if not close
-                elif hasattr(handler, "flush"):
-                    handler.flush()
-            except TypeError as e:
-                # Catch specific TypeError for _LoggerProxy.remove() missing handler_id
-                if "_LoggerProxy.remove()" in str(
-                    e
-                ) and "missing 1 required positional argument: 'handler_id'" in str(e):
-                    # This handler requires special handling, skip it to avoid the error
-                    continue
-                # Otherwise, re-raise the TypeError as it might be a different issue
-                raise
-            except Exception as e:
-                # Can't log errors during logging cleanup, print to stderr
-                print(f"Error closing log handler: {e}", file=__import__("sys").stderr)
+            _cleanup_handler(handler)
 
         logger.debug("Logging handler cleanup completed successfully")
 
     except Exception:
         logger.exception("Error during logging handler cleanup")
         raise
+
+
+def _cleanup_handler(handler: t.Any) -> None:
+    """Detach, flush, and close a single logging handler safely."""
+    try:
+        if hasattr(handler, "remove") and not hasattr(handler, "flush"):
+            return
+        if hasattr(handler, "flush") and hasattr(handler, "close"):
+            handler.flush()
+            handler.close()
+        elif hasattr(handler, "close"):
+            handler.close()
+        elif hasattr(handler, "flush"):
+            handler.flush()
+    except TypeError as e:
+        if "_LoggerProxy.remove()" in str(e) and "handler_id" in str(e):
+            return
+        raise
+    except Exception as e:
+        print(f"Error closing log handler: {e}", file=__import__("sys").stderr)
 
 
 def register_all_cleanup_handlers(

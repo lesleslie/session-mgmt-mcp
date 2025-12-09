@@ -430,45 +430,70 @@ class BrowserDocumentationMonitor:
             path = parsed.path
 
             context["domain"] = domain
-
-            # Determine technology and relevance
-            if "python" in domain or "python" in path:
-                context["technology"] = "python"
-                context["relevance"] = 0.9
-            elif (
-                "javascript" in path
-                or "js" in path
-                or domain in {"developer.mozilla.org", "nodejs.org"}
-            ):
-                context["technology"] = "javascript"
-                context["relevance"] = 0.8
-            elif "rust" in domain or "docs.rs" in domain:
-                context["technology"] = "rust"
-                context["relevance"] = 0.8
-            elif any(
-                framework in domain for framework in ("django", "flask", "fastapi")
-            ):
-                context["technology"] = "python-web"
-                context["relevance"] = 0.9
-            elif any(
-                framework in domain
-                for framework in ("react", "vue", "angular", "svelte")
-            ):
-                context["technology"] = "frontend"
-                context["relevance"] = 0.8
-
-            # Extract topic from path
-            path_parts = [p for p in path.split("/") if p]
-            if path_parts:
-                context["topic"] = (
-                    path_parts[-1]
-                    if path_parts[-1] != "index.html"
-                    else path_parts[-2]
-                    if len(path_parts) > 1
-                    else ""
-                )
+            technology, relevance = self._determine_technology(domain, path)
+            context["technology"] = technology
+            context["relevance"] = relevance
+            context["topic"] = self._extract_topic(path)
 
         return context
+
+    def _determine_technology(self, domain: str, path: str) -> tuple[str, float]:
+        """Return technology label and relevance score for a domain/path."""
+        normalized_path = path.lower()
+        normalized_domain = domain.lower()
+
+        tech_rules = [
+            (
+                "python" in normalized_domain or "python" in normalized_path,
+                "python",
+                0.9,
+            ),
+            (
+                "javascript" in normalized_path
+                or "js" in normalized_path
+                or normalized_domain in {"developer.mozilla.org", "nodejs.org"},
+                "javascript",
+                0.8,
+            ),
+            (
+                "rust" in normalized_domain or "docs.rs" in normalized_domain,
+                "rust",
+                0.8,
+            ),
+            (
+                any(
+                    framework in normalized_domain
+                    for framework in ("django", "flask", "fastapi")
+                ),
+                "python-web",
+                0.9,
+            ),
+            (
+                any(
+                    framework in normalized_domain
+                    for framework in ("react", "vue", "angular", "svelte")
+                ),
+                "frontend",
+                0.8,
+            ),
+        ]
+
+        for condition, label, relevance in tech_rules:
+            if condition:
+                return label, relevance
+
+        return "", 0.0
+
+    def _extract_topic(self, path: str) -> str:
+        """Derive topic from a URL path."""
+        path_parts = [p for p in path.split("/") if p]
+        if not path_parts:
+            return ""
+
+        tail = path_parts[-1]
+        if tail == "index.html" and len(path_parts) > 1:
+            return path_parts[-2]
+        return tail
 
     def add_browser_activity(self, url: str, title: str = "") -> None:
         """Add browser navigation activity."""

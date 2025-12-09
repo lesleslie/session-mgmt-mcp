@@ -309,7 +309,7 @@ async def _generate_basic_insights(
 
 async def _add_project_context_insights(insights: list[str]) -> None:
     """Add project context analysis to insights."""
-    from session_mgmt_mcp.server_core import analyze_project_context
+    from session_mgmt_mcp.utils.project_analysis import analyze_project_context
 
     current_dir = Path(os.environ.get("PWD", Path.cwd()))
     project_context = await analyze_project_context(current_dir)

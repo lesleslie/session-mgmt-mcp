@@ -286,13 +286,14 @@ async def initialize_new_features(
         Tuple of (multi_project_coordinator, advanced_search_engine, app_config)
 
     """
-    # Import availability flags
-    from session_mgmt_mcp.server import (
-        ADVANCED_SEARCH_AVAILABLE,
-        CONFIG_AVAILABLE,
-        MULTI_PROJECT_AVAILABLE,
-        REFLECTION_TOOLS_AVAILABLE,
-    )
+    # Import feature detection
+    from session_mgmt_mcp.core.features import get_feature_flags
+
+    _features = get_feature_flags()
+    ADVANCED_SEARCH_AVAILABLE = _features["ADVANCED_SEARCH_AVAILABLE"]
+    CONFIG_AVAILABLE = _features["CONFIG_AVAILABLE"]
+    MULTI_PROJECT_AVAILABLE = _features["MULTI_PROJECT_AVAILABLE"]
+    REFLECTION_TOOLS_AVAILABLE = _features["REFLECTION_TOOLS_AVAILABLE"]
 
     # Auto-setup git working directory for enhanced DX
     await auto_setup_git_working_directory(session_logger)
@@ -339,53 +340,19 @@ async def initialize_new_features(
     return multi_project_coordinator, advanced_search_engine, app_config
 
 
-async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
-    """Analyze project structure and context with enhanced error handling."""
-    try:
-        # Ensure project_dir exists and is accessible
-        if not project_dir.exists():
-            return {
-                "python_project": False,
-                "git_repo": False,
-                "has_tests": False,
-                "has_docs": False,
-                "has_requirements": False,
-                "has_uv_lock": False,
-                "has_mcp_config": False,
-            }
+# Re-export for backward compatibility
+from session_mgmt_mcp.utils.project_analysis import (
+    analyze_project_context as _analyze_project_context,
+)
 
-        return {
-            "python_project": (project_dir / "pyproject.toml").exists(),
-            "git_repo": (project_dir / ".git").exists(),
-            "has_tests": any(project_dir.glob("test*"))
-            or any(project_dir.glob("**/test*")),
-            "has_docs": (project_dir / "README.md").exists()
-            or any(project_dir.glob("docs/**")),
-            "has_requirements": (project_dir / "requirements.txt").exists(),
-            "has_uv_lock": (project_dir / "uv.lock").exists(),
-            "has_mcp_config": (project_dir / ".mcp.json").exists(),
-        }
-    except (OSError, PermissionError) as e:
-        # Log error but return safe defaults
-        if SERVERPANELS_AVAILABLE:
-            ServerPanels.warning(
-                title="Project Analysis Warning",
-                message=f"Could not analyze project context for {project_dir}",
-                details=[
-                    f"Error type: {type(e).__name__}",
-                    f"Error: {e}",
-                    "Using safe default values",
-                ],
-            )
-        return {
-            "python_project": False,
-            "git_repo": False,
-            "has_tests": False,
-            "has_docs": False,
-            "has_requirements": False,
-            "has_uv_lock": False,
-            "has_mcp_config": False,
-        }
+
+async def analyze_project_context(project_dir: Path) -> dict[str, bool]:
+    """Analyze project structure and context with enhanced error handling.
+
+    This is a backward-compatibility wrapper that delegates to the utility module.
+    Direct imports from session_mgmt_mcp.utils.project_analysis are preferred.
+    """
+    return await _analyze_project_context(project_dir)
 
 
 # =====================================
@@ -399,11 +366,12 @@ async def health_check(
     validate_claude_directory: Any,
 ) -> dict[str, Any]:
     """Comprehensive health check for MCP server and toolkit availability."""
-    # Import availability flags
-    from session_mgmt_mcp.server import (
-        CRACKERJACK_INTEGRATION_AVAILABLE,
-        SESSION_MANAGEMENT_AVAILABLE,
-    )
+    # Import feature detection
+    from session_mgmt_mcp.core.features import get_feature_flags
+
+    _features = get_feature_flags()
+    CRACKERJACK_INTEGRATION_AVAILABLE = _features["CRACKERJACK_INTEGRATION_AVAILABLE"]
+    SESSION_MANAGEMENT_AVAILABLE = _features["SESSION_MANAGEMENT_AVAILABLE"]
 
     health_status: dict[str, Any] = {
         "overall_healthy": True,

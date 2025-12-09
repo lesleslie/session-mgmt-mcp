@@ -49,57 +49,75 @@ def _stage_and_commit_files(
     files_to_stage: list[str] | None = None,
 ) -> tuple[bool, list[str]]:
     """Stage files and create commit with given message."""
-    output = []
-
+    output: list[str] = []
     try:
-        # Stage files
-        if files_to_stage:
-            for file_path in files_to_stage:
-                stage_cmd = ["git", "add", file_path]
-                result = subprocess.run(
-                    stage_cmd,
-                    cwd=current_dir,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                if result.returncode != 0:
-                    output.append(
-                        f"⚠️ Failed to stage {file_path}: {result.stderr.strip()}",
-                    )
-        else:
-            # Stage all changes
-            stage_cmd = ["git", "add", "-A"]
-            result = subprocess.run(
-                stage_cmd,
-                cwd=current_dir,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode != 0:
-                output.append(f"⚠️ Failed to stage changes: {result.stderr.strip()}")
-                return False, output
+        stage_success = _stage_files(current_dir, files_to_stage, output)
+        if not stage_success:
+            return False, output
 
-        # Create commit
-        commit_cmd = ["git", "commit", "-m", commit_message]
-        result = subprocess.run(
-            commit_cmd,
-            cwd=current_dir,
-            capture_output=True,
-            text=True,
-            check=False,
+        return _commit_staged_changes(current_dir, commit_message, output)
+    except Exception as exc:
+        output.append(f"❌ Git operation error: {exc}")
+        return False, output
+
+
+def _stage_files(
+    current_dir: Path,
+    files_to_stage: list[str] | None,
+    output: list[str],
+) -> bool:
+    """Stage specified files or all changes."""
+    if files_to_stage:
+        return all(
+            _run_git_command(["git", "add", file_path], current_dir, output)
+            for file_path in files_to_stage
         )
 
-        if result.returncode == 0:
-            output.append(f"✅ Committed changes: {commit_message}")
-            return True, output
-        output.append(f"⚠️ Commit failed: {result.stderr.strip()}")
-        return False, output
+    if _run_git_command(["git", "add", "-A"], current_dir, output):
+        return True
 
-    except Exception as e:
-        output.append(f"❌ Git operation error: {e}")
-        return False, output
+    output.append("⚠️ Failed to stage changes")
+    return False
+
+
+def _commit_staged_changes(
+    current_dir: Path,
+    commit_message: str,
+    output: list[str],
+) -> tuple[bool, list[str]]:
+    """Commit staged changes and update output log."""
+    success = _run_git_command(
+        ["git", "commit", "-m", commit_message], current_dir, output
+    )
+    if success:
+        output.append(f"✅ Committed changes: {commit_message}")
+        return True, output
+
+    output.append("⚠️ Commit failed")
+    return False, output
+
+
+def _run_git_command(
+    command: list[str],
+    current_dir: Path,
+    output: list[str],
+) -> bool:
+    """Run a git command and append stderr output when it fails."""
+    result = subprocess.run(
+        command,
+        cwd=current_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode == 0:
+        return True
+
+    stderr = result.stderr.strip()
+    if stderr:
+        output.append(f"⚠️ {' '.join(command[1:3])} failed: {stderr}")
+    return False
 
 
 def _optimize_git_repository(current_dir: Path) -> list[str]:

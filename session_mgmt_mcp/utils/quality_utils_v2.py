@@ -316,55 +316,58 @@ def _calculate_tooling_score(project_dir: Path) -> dict[str, Any]:
 
 
 def _calculate_maturity_score(project_dir: Path) -> dict[str, Any]:
-    """Calculate project maturity score (0-15 points).
-
-    Components:
-    - testing_infra: 5 pts (tests/ + conftest.py + >10 tests)
-    - documentation: 5 pts (README + docs/ OR inline docstrings >50%)
-    - ci_cd_pipeline: 5 pts (.github/workflows + passing status)
-    """
+    """Calculate project maturity score (0-15 points)."""
     score = 0
     details = {}
 
-    # Testing infrastructure (5 pts)
+    testing_score, testing_details = _evaluate_testing_infra(project_dir)
+    documentation_score, documentation_details = _evaluate_documentation(project_dir)
+    ci_score, ci_details = _evaluate_ci_cd(project_dir)
+
+    score += testing_score + documentation_score + ci_score
+    details.update(testing_details)
+    details.update(documentation_details)
+    details.update(ci_details)
+
+    return {"score": score, "details": details}
+
+
+def _evaluate_testing_infra(project_dir: Path) -> tuple[int, dict[str, str]]:
+    """Return score/details describing testing infrastructure maturity."""
     test_dirs = list(project_dir.glob("test*"))
-    if test_dirs:
-        test_dir = test_dirs[0]
-        has_conftest = (test_dir / "conftest.py").exists()
-        test_files = list(test_dir.rglob("test_*.py"))
+    if not test_dirs:
+        return 0, {"testing": "none"}
 
-        if has_conftest and len(test_files) >= 10:
-            score += 5
-            details["testing"] = f"comprehensive ({len(test_files)} test files)"
-        elif len(test_files) >= 5:
-            score += 3
-            details["testing"] = f"moderate ({len(test_files)} test files)"
-        elif test_files:
-            score += 1
-            details["testing"] = f"basic ({len(test_files)} test files)"
-    else:
-        details["testing"] = "none"
+    test_dir = test_dirs[0]
+    has_conftest = (test_dir / "conftest.py").exists()
+    test_files = list(test_dir.rglob("test_*.py"))
 
-    # Documentation (5 pts)
+    if has_conftest and len(test_files) >= 10:
+        return 5, {"testing": f"comprehensive ({len(test_files)} test files)"}
+    if len(test_files) >= 5:
+        return 3, {"testing": f"moderate ({len(test_files)} test files)"}
+    if test_files:
+        return 1, {"testing": f"basic ({len(test_files)} test files)"}
+    return 0, {"testing": "none"}
+
+
+def _evaluate_documentation(project_dir: Path) -> tuple[int, dict[str, str]]:
+    """Return documentation maturity score and details."""
     has_readme = (project_dir / "README.md").exists()
-    has_docs_dir = (project_dir / "docs").exists()
+    docs_dir = project_dir / "docs"
 
-    if has_readme and has_docs_dir:
-        # Check docs completeness
-        doc_files = list((project_dir / "docs").rglob("*.md"))
+    if has_readme and docs_dir.exists():
+        doc_files = list(docs_dir.rglob("*.md"))
         if len(doc_files) >= 5:
-            score += 5
-            details["documentation"] = f"comprehensive ({len(doc_files)} docs)"
-        else:
-            score += 3
-            details["documentation"] = f"basic ({len(doc_files)} docs)"
-    elif has_readme:
-        score += 2
-        details["documentation"] = "README only"
-    else:
-        details["documentation"] = "none"
+            return 5, {"documentation": f"comprehensive ({len(doc_files)} docs)"}
+        return 3, {"documentation": f"basic ({len(doc_files)} docs)"}
+    if has_readme:
+        return 2, {"documentation": "README only"}
+    return 0, {"documentation": "none"}
 
-    # CI/CD (5 pts)
+
+def _evaluate_ci_cd(project_dir: Path) -> tuple[int, dict[str, str]]:
+    """Return CI/CD maturity score and details."""
     github_workflows = project_dir / ".github" / "workflows"
     gitlab_ci = project_dir / ".gitlab-ci.yml"
 
@@ -373,18 +376,12 @@ def _calculate_maturity_score(project_dir: Path) -> dict[str, Any]:
             github_workflows.glob("*.yaml"),
         )
         if len(workflow_files) >= 2:
-            score += 5
-            details["ci_cd"] = f"github actions ({len(workflow_files)} workflows)"
-        elif workflow_files:
-            score += 3
-            details["ci_cd"] = "github actions (1 workflow)"
+            return 5, {"ci_cd": f"github actions ({len(workflow_files)} workflows)"}
+        if workflow_files:
+            return 3, {"ci_cd": "github actions (1 workflow)"}
     elif gitlab_ci.exists():
-        score += 4
-        details["ci_cd"] = "gitlab ci"
-    else:
-        details["ci_cd"] = "none"
-
-    return {"score": score, "details": details}
+        return 4, {"ci_cd": "gitlab ci"}
+    return 0, {"ci_cd": "none"}
 
 
 async def _calculate_dev_velocity(project_dir: Path) -> DevVelocityScore:
@@ -407,93 +404,92 @@ async def _calculate_dev_velocity(project_dir: Path) -> DevVelocityScore:
 
 def _analyze_git_activity(project_dir: Path) -> dict[str, Any]:
     """Analyze git activity (0-10 points)."""
-    score = 0
-    details = {}
-
     git_dir = project_dir / ".git"
     if not git_dir.exists():
-        details["activity"] = "no git repository"
-        return {"score": 0, "details": details}
+        return {"score": 0, "details": {"activity": "no git repository"}}
 
     try:
-        # Get commit history for last 30 days
-        since_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-        result = subprocess.run(
-            [
-                "git",
-                "log",
-                f"--since={since_date}",
-                "--pretty=format:%s",
-                "--no-merges",
-            ],
-            check=False,
-            cwd=project_dir,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
+        commits = _collect_recent_commits(project_dir)
+    except Exception as exc:
+        return {"score": 0, "details": {"error": f"git analysis failed: {exc}"}}
 
-        if result.returncode == 0:
-            commits = result.stdout.strip().split("\n") if result.stdout.strip() else []
-            commit_count = len(commits)
+    frequency_score, frequency_details = _score_commit_frequency(commits)
+    quality_score, quality_details = _score_commit_quality(commits)
 
-            # Commit frequency score (0-5)
-            if commit_count >= 20:
-                score += 5
-                details["frequency"] = f"active ({commit_count} commits/month)"
-            elif commit_count >= 10:
-                score += 4
-                details["frequency"] = f"regular ({commit_count} commits/month)"
-            elif commit_count >= 5:
-                score += 2
-                details["frequency"] = f"occasional ({commit_count} commits/month)"
-            else:
-                score += 1
-                details["frequency"] = f"sparse ({commit_count} commits/month)"
+    # Balance both metrics evenly (0-5 each)
+    total_score = frequency_score + quality_score
+    details = frequency_details | quality_details
+    return {"score": total_score, "details": details}
 
-            # Commit quality score (0-5)
-            conventional_commits = sum(
-                1
-                for msg in commits
-                if re.match(  # REGEX OK: conventional commits pattern validation
-                    r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:",
-                    msg,
-                )
-            )
 
-            if conventional_commits >= commit_count * 0.8:
-                score += 5
-                details["quality"] = (
-                    f"excellent ({conventional_commits}/{commit_count} conventional)"
-                )
-            elif conventional_commits >= commit_count * 0.5:
-                score += 3
-                details["quality"] = (
-                    f"good ({conventional_commits}/{commit_count} conventional)"
-                )
-            else:
-                score += 1
-                details["quality"] = (
-                    f"basic ({conventional_commits}/{commit_count} conventional)"
-                )
+def _collect_recent_commits(project_dir: Path) -> list[str]:
+    """Return commit messages for the last 30 days."""
+    since_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    result = subprocess.run(
+        ["git", "log", f"--since={since_date}", "--pretty=format:%s", "--no-merges"],
+        check=False,
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
 
-    except Exception as e:
-        details["error"] = f"git analysis failed: {e}"
+    if result.returncode != 0 or not result.stdout.strip():
+        return []
+    return result.stdout.strip().split("\n")
 
-    return {"score": score, "details": details}
+
+def _score_commit_frequency(commits: list[str]) -> tuple[int, dict[str, str]]:
+    """Score commit frequency (0-5) with descriptive details."""
+    commit_count = len(commits)
+    if commit_count >= 20:
+        return 5, {"frequency": f"active ({commit_count} commits/month)"}
+    if commit_count >= 10:
+        return 4, {"frequency": f"regular ({commit_count} commits/month)"}
+    if commit_count >= 5:
+        return 2, {"frequency": f"occasional ({commit_count} commits/month)"}
+    if commit_count > 0:
+        return 1, {"frequency": f"sparse ({commit_count} commits/month)"}
+    return 0, {"frequency": "no recent commits"}
+
+
+def _score_commit_quality(commits: list[str]) -> tuple[int, dict[str, str]]:
+    """Score conventional commit adherence (0-5)."""
+    if not commits:
+        return 0, {"quality": "no data"}
+
+    conventional = sum(
+        1
+        for msg in commits
+        if re.match(r"^(feat|fix|docs|style|refactor|test|chore)(\(.*\))?:", msg)
+    )
+    commit_count = len(commits)
+
+    if conventional >= commit_count * 0.8:
+        return 5, {"quality": f"excellent ({conventional}/{commit_count} conventional)"}
+    if conventional >= commit_count * 0.5:
+        return 3, {"quality": f"good ({conventional}/{commit_count} conventional)"}
+    if commit_count > 0:
+        return 1, {"quality": f"basic ({conventional}/{commit_count} conventional)"}
+    return 0, {"quality": "no data"}
 
 
 def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
     """Analyze development patterns (0-10 points)."""
-    score = 0
-    details = {}
-
     git_dir = project_dir / ".git"
     if not git_dir.exists():
         return {"score": 0, "details": {"patterns": "no git repository"}}
 
+    issue_score, issue_details = _score_issue_tracking(project_dir)
+    branch_score, branch_details = _score_branch_strategy(project_dir)
+
+    details = issue_details | branch_details
+    return {"score": issue_score + branch_score, "details": details}
+
+
+def _score_issue_tracking(project_dir: Path) -> tuple[int, dict[str, str]]:
+    """Analyze recent commits for issue references."""
     try:
-        # Issue tracking (0-5)
         result = subprocess.run(
             ["git", "log", "--oneline", "-n", "50", "--no-merges"],
             check=False,
@@ -502,28 +498,27 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
             text=True,
             timeout=5,
         )
+    except Exception as exc:
+        return 0, {"issue_tracking": f"analysis failed: {exc}"}
 
-        if result.returncode == 0:
-            commits = result.stdout.strip().split("\n")
-            issue_refs = sum(
-                1 for msg in commits if re.search(r"#\d+", msg)
-            )  # REGEX OK: issue reference pattern
+    if result.returncode != 0 or not result.stdout.strip():
+        return 0, {"issue_tracking": "no data"}
 
-            if issue_refs >= len(commits) * 0.5:
-                score += 5
-                details["issue_tracking"] = (
-                    f"excellent ({issue_refs}/{len(commits)} refs)"
-                )
-            elif issue_refs >= len(commits) * 0.25:
-                score += 3
-                details["issue_tracking"] = f"good ({issue_refs}/{len(commits)} refs)"
-            elif issue_refs > 0:
-                score += 1
-                details["issue_tracking"] = f"basic ({issue_refs}/{len(commits)} refs)"
-            else:
-                details["issue_tracking"] = "none"
+    commits = result.stdout.strip().split("\n")
+    issue_refs = sum(1 for msg in commits if re.search(r"#\d+", msg))
 
-        # Branch strategy (0-5)
+    if issue_refs >= len(commits) * 0.5:
+        return 5, {"issue_tracking": f"excellent ({issue_refs}/{len(commits)} refs)"}
+    if issue_refs >= len(commits) * 0.25:
+        return 3, {"issue_tracking": f"good ({issue_refs}/{len(commits)} refs)"}
+    if issue_refs > 0:
+        return 1, {"issue_tracking": f"basic ({issue_refs}/{len(commits)} refs)"}
+    return 0, {"issue_tracking": "none"}
+
+
+def _score_branch_strategy(project_dir: Path) -> tuple[int, dict[str, str]]:
+    """Evaluate branch naming strategy for feature work."""
+    try:
         result = subprocess.run(
             ["git", "branch", "-a"],
             check=False,
@@ -532,29 +527,24 @@ def _analyze_dev_patterns(project_dir: Path) -> dict[str, Any]:
             text=True,
             timeout=5,
         )
+    except Exception as exc:
+        return 0, {"branch_strategy": f"analysis failed: {exc}"}
 
-        if result.returncode == 0:
-            branches = result.stdout.strip().split("\n")
-            feature_branches = [b for b in branches if "feature/" in b or "feat/" in b]
+    if result.returncode != 0 or not result.stdout.strip():
+        return 0, {"branch_strategy": "no data"}
 
-            if len(feature_branches) >= 3:
-                score += 5
-                details["branch_strategy"] = (
-                    f"feature branches ({len(feature_branches)} active)"
-                )
-            elif feature_branches:
-                score += 3
-                details["branch_strategy"] = (
-                    f"some feature branches ({len(feature_branches)})"
-                )
-            else:
-                score += 1
-                details["branch_strategy"] = "main-only development"
+    branches = result.stdout.strip().split("\n")
+    feature_branches = [b for b in branches if "feature/" in b or "feat/" in b]
 
-    except Exception as e:
-        details["error"] = f"pattern analysis failed: {e}"
-
-    return {"score": score, "details": details}
+    if len(feature_branches) >= 3:
+        return 5, {
+            "branch_strategy": f"feature branches ({len(feature_branches)} active)"
+        }
+    if feature_branches:
+        return 3, {
+            "branch_strategy": f"some feature branches ({len(feature_branches)})"
+        }
+    return 1, {"branch_strategy": "main-only development"}
 
 
 async def _calculate_security(project_dir: Path) -> SecurityScore:

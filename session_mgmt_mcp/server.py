@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import inspect
 import os
 import sys
 import warnings
@@ -284,68 +285,61 @@ register_team_tools(mcp)
 
 
 # Add helper method for programmatic tool calling used in tests
-async def _call_tool(mcp_instance, tool_name: str, arguments: dict | None = None):
-    """Programmatically call a tool by name with provided arguments.
-
-    This method is used in integration tests to call tools directly.
-    """
-    if arguments is None:
-        arguments = {}
-
-    # Access the registered tools from mcp instance
-    # This might vary by FastMCP version - try multiple methods
+async def _resolve_tool_registry(mcp_instance) -> dict[str, Any]:
+    """Return the registered tool mapping for an MCP instance."""
     if hasattr(mcp_instance, "get_tools"):
-        tools = await mcp_instance.get_tools()
-    elif hasattr(mcp_instance, "tools"):
-        tools = mcp_instance.tools
-    else:
-        # Fallback - use the internal tool registry
-        tools = getattr(mcp_instance, "_tools", {})
+        return await mcp_instance.get_tools()
+    if hasattr(mcp_instance, "tools"):
+        return mcp_instance.tools
+    return getattr(mcp_instance, "_tools", {})
+
+
+def _resolve_tool_callable(tool_spec: Any, tool_name: str):
+    """Extract the callable implementation from a tool spec."""
+    if hasattr(tool_spec, "function"):
+        return tool_spec.function
+    if isinstance(tool_spec, dict) and "function" in tool_spec:
+        return tool_spec["function"]
+    if callable(tool_spec):
+        return tool_spec
+
+    candidate = (
+        getattr(tool_spec, "implementation", None)
+        or getattr(tool_spec, "handler", None)
+        or getattr(tool_spec, "__call__", None)
+    )
+    if candidate is None:
+        msg = f"Could not extract callable function from tool {tool_name}"
+        raise ValueError(msg)
+    return candidate
+
+
+def _build_tool_arguments(
+    tool_func: Any, provided_args: dict[str, Any]
+) -> dict[str, Any]:
+    """Filter provided args to match the callable signature."""
+    sig = inspect.signature(tool_func)
+    filtered_args: dict[str, Any] = {}
+    for param_name, param in sig.parameters.items():
+        if param_name in provided_args:
+            filtered_args[param_name] = provided_args[param_name]
+        elif param.default is not param.empty:
+            filtered_args[param_name] = param.default
+    return filtered_args
+
+
+async def _call_tool(mcp_instance, tool_name: str, arguments: dict | None = None):
+    """Programmatically call a tool by name with provided arguments."""
+    provided_args = arguments or {}
+    tools = await _resolve_tool_registry(mcp_instance)
 
     if tool_name not in tools:
         msg = f"Tool '{tool_name}' is not registered"
         raise ValueError(msg)
 
-    # Get the tool specification
-    tool_spec = tools[tool_name]
+    tool_func = _resolve_tool_callable(tools[tool_name], tool_name)
+    filtered_args = _build_tool_arguments(tool_func, provided_args)
 
-    # Extract the tool function from the tool specification
-    # The structure might be different depending on FastMCP version
-    if hasattr(tool_spec, "function"):
-        # For Pydantic Tool model
-        tool_func = tool_spec.function
-    elif isinstance(tool_spec, dict) and "function" in tool_spec:
-        # If tool_spec is a dictionary containing the function
-        tool_func = tool_spec["function"]
-    elif callable(tool_spec):
-        # Direct function
-        tool_func = tool_spec
-    else:
-        # Try to get the implementation from different possible attributes
-        tool_func = (
-            getattr(tool_spec, "implementation", None)
-            or getattr(tool_spec, "handler", None)
-            or getattr(tool_spec, "__call__", None)
-        )
-        if tool_func is None:
-            msg = f"Could not extract callable function from tool {tool_name}"
-            raise ValueError(msg)
-
-    # Get the function signature to validate arguments
-    import inspect
-
-    sig = inspect.signature(tool_func)
-
-    # Filter arguments to only include what the function accepts
-    filtered_args = {}
-    for param_name, param in sig.parameters.items():
-        if param_name in arguments:
-            filtered_args[param_name] = arguments[param_name]
-        elif param.default is not param.empty:
-            # Use default value if available
-            filtered_args[param_name] = param.default
-
-    # Call the function
     if inspect.iscoroutinefunction(tool_func):
         return await tool_func(**filtered_args)
     return tool_func(**filtered_args)

@@ -714,88 +714,72 @@ class ReflectionDatabase:
         min_score: float = 0.7,
     ) -> list[dict[str, Any]]:
         """Search stored reflections by semantic similarity with text fallback."""
-        if ONNX_AVAILABLE and self.onnx_session:
-            # Try semantic search first
-            with suppress(Exception):
-                query_embedding = await self.get_embedding(query)
+        results = await self._semantic_reflection_search(query, limit, min_score)
+        if results is not None:
+            return results
 
-                sql = """
-                    SELECT
-                        id, content, embedding, tags, timestamp, metadata,
-                        array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
-                    FROM reflections
-                    WHERE embedding IS NOT NULL
-                    ORDER BY score DESC
-                    LIMIT ?
-                """
+        return await self._text_reflection_search(query, limit)
 
-                # For synchronized database access in test environments using in-memory DB
-                if self.is_temp_db:
-                    # Use lock to protect database operations for in-memory DB
-                    with self.lock:
-                        results = (
-                            self._get_conn()
-                            .execute(sql, [query_embedding, limit])
-                            .fetchall()
-                        )
-                else:
-                    # For normal file-based DB, run in executor for thread safety
-                    results = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: self._get_conn()
-                        .execute(sql, [query_embedding, limit])
-                        .fetchall(),
-                    )
+    async def _semantic_reflection_search(
+        self,
+        query: str,
+        limit: int,
+        min_score: float,
+    ) -> list[dict[str, Any]] | None:
+        """Run semantic reflection search if ONNX embeddings available."""
+        if not (ONNX_AVAILABLE and self.onnx_session):
+            return None
 
-                semantic_results = [
-                    {
-                        "content": row[1],
-                        "score": float(row[6]),
-                        "tags": row[3] or [],
-                        "timestamp": row[4],
-                        "metadata": json.loads(row[5]) if row[5] else {},
-                    }
-                    for row in results
-                    if float(row[6]) >= min_score
-                ]
+        with suppress(Exception):
+            query_embedding = await self.get_embedding(query)
+            sql = """
+                SELECT
+                    id, content, embedding, tags, timestamp, metadata,
+                    array_cosine_similarity(embedding, CAST(? AS FLOAT[384])) as score
+                FROM reflections
+                WHERE embedding IS NOT NULL
+                ORDER BY score DESC
+                LIMIT ?
+            """
 
-                # If semantic search found results, return them
-                if semantic_results:
-                    return semantic_results
+            results = await self._execute_query(sql, [query_embedding, limit])
+            semantic_results = [
+                {
+                    "content": row[1],
+                    "score": float(row[6]),
+                    "tags": row[3] or [],
+                    "timestamp": row[4],
+                    "metadata": json.loads(row[5]) if row[5] else {},
+                }
+                for row in results
+                if float(row[6]) >= min_score
+            ]
 
-        # Fallback to text search for reflections
-        search_terms = query.lower().split()
+            if semantic_results:
+                return semantic_results
+        return None
+
+    async def _text_reflection_search(
+        self,
+        query: str,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        """Fallback text search for reflections."""
         sql = "SELECT id, content, tags, timestamp, metadata FROM reflections ORDER BY timestamp DESC"
+        results = await self._execute_query(sql)
 
-        # For synchronized database access in test environments using in-memory DB
-        if self.is_temp_db:
-            # Use lock to protect database operations for in-memory DB
-            with self.lock:
-                results = self._get_conn().execute(sql).fetchall()
-        else:
-            # For normal file-based DB, run in executor for thread safety
-            results = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self._get_conn().execute(sql).fetchall(),
-            )
-
-        # Simple text matching score for reflections
+        search_terms = query.lower().split()
         matches = []
         for row in results:
-            content_lower = row[1].lower()
-            tags_lower = " ".join(row[2] or []).lower()
-            combined_text = f"{content_lower} {tags_lower}"
+            combined_text = f"{row[1].lower()} {' '.join(row[2] or []).lower()}"
+            score = (
+                sum(1 for term in search_terms if term in combined_text)
+                / len(search_terms)
+                if search_terms
+                else 1.0
+            )
 
-            # Calculate match score
-            if search_terms:
-                score = sum(1 for term in search_terms if term in combined_text) / len(
-                    search_terms,
-                )
-            else:
-                # For empty query, return all results with score 1.0
-                score = 1.0
-
-            if score > 0:  # At least one term matches or empty query
+            if score > 0:
                 matches.append(
                     {
                         "content": row[1],
@@ -806,9 +790,25 @@ class ReflectionDatabase:
                     },
                 )
 
-        # Sort by score and return top matches
         matches.sort(key=operator.itemgetter("score"), reverse=True)
         return matches[:limit]
+
+    async def _execute_query(
+        self,
+        sql: str,
+        params: list[Any] | None = None,
+    ) -> list[Any]:
+        """Execute a query with locking or async executor based on DB type."""
+        params = params or []
+        if self.is_temp_db:
+            with self.lock:
+                return self._get_conn().execute(sql, params).fetchall()
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self._get_conn().execute(sql, params).fetchall(),
+        )
 
     async def search_by_file(
         self,
