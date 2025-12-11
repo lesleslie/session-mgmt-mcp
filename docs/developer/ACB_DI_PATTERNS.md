@@ -2,13 +2,13 @@
 
 **Version:** 1.0
 **Last Updated:** 2025-10-29
-**Applies To:** session-mgmt-mcp with ACB/Bevy DI
+**Applies To:** session-buddy with ACB/Bevy DI
 
 ______________________________________________________________________
 
 ## Overview
 
-This guide documents best practices and patterns for using dependency injection (DI) with the ACB (Asynchronous Component Base) framework and Bevy container in session-mgmt-mcp. These patterns were developed during Week 7 refactoring to address limitations with string-based keys and bevy's async/await handling.
+This guide documents best practices and patterns for using dependency injection (DI) with the ACB (Asynchronous Component Base) framework and Bevy container in session-buddy. These patterns were developed during Week 7 refactoring to address limitations with string-based keys and bevy's async/await handling.
 
 ______________________________________________________________________
 
@@ -129,7 +129,7 @@ ______________________________________________________________________
 **Implementation:**
 
 ```python
-# session_mgmt_mcp/di/config.py
+# session_buddy/di/config.py
 from dataclasses import dataclass
 from pathlib import Path
 import os
@@ -163,7 +163,7 @@ class SessionPaths:
         self.commands_dir.mkdir(parents=True, exist_ok=True)
 
 
-# session_mgmt_mcp/di/__init__.py
+# session_buddy/di/__init__.py
 from acb.depends import depends
 from .config import SessionPaths
 
@@ -199,7 +199,7 @@ from bevy import get_container
 from acb.depends import depends
 
 if TYPE_CHECKING:
-    from session_mgmt_mcp.core import SessionLifecycleManager
+    from session_buddy.core import SessionLifecycleManager
 
 
 def get_session_manager() -> SessionLifecycleManager:
@@ -209,7 +209,7 @@ def get_session_manager() -> SessionLifecycleManager:
         Uses direct container access to avoid bevy's async event
         loop issues when called from async contexts or module level.
     """
-    from session_mgmt_mcp.core import SessionLifecycleManager
+    from session_buddy.core import SessionLifecycleManager
 
     # Check container directly (no async issues)
     container = get_container()
@@ -254,8 +254,8 @@ session_manager = get_session_manager()  # ✅ Works during import
 async def get_reflection_database() -> ReflectionDatabase | None:
     """Resolve reflection database via DI, creating it on demand."""
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-        from session_mgmt_mcp.reflection_tools import (
+        from session_buddy.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import (
             get_reflection_database as load_database,
         )
     except ImportError:
@@ -363,7 +363,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
         Accepts Path directly instead of resolving from DI,
         making dependencies explicit and easier to test.
     """
-    from session_mgmt_mcp.utils.logging import SessionLogger
+    from session_buddy.utils.logging import SessionLogger
 
     if not force:
         # Check if already registered
@@ -650,5 +650,5 @@ ______________________________________________________________________
 - 1.0 (2025-10-29): Initial version based on Week 7 refactoring
 
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Framework:** ACB (Asynchronous Component Base) with Bevy DI

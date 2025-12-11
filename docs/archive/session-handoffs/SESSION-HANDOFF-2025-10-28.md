@@ -29,10 +29,10 @@ ______________________________________________________________________
 **14 Test Collection Errors** blocking entire test suite:
 
 ```
-ERROR session_mgmt_mcp/tests/integration/test_monitoring.py::TestMonitoringTools
-ERROR session_mgmt_mcp/tests/integration/test_session_lifecycle.py
-ERROR session_mgmt_mcp/tests/unit/test_health_checks.py
-ERROR session_mgmt_mcp/tests/unit/test_resource_cleanup.py
+ERROR session_buddy/tests/integration/test_monitoring.py::TestMonitoringTools
+ERROR session_buddy/tests/integration/test_session_lifecycle.py
+ERROR session_buddy/tests/unit/test_health_checks.py
+ERROR session_buddy/tests/unit/test_resource_cleanup.py
 ... (10 more)
 ```
 
@@ -48,7 +48,7 @@ During Phase 2.7 DI refactoring, `SessionLogger` registration moved but tests we
 
 ```python
 # OLD (working):
-from session_mgmt_mcp.server import SessionLogger
+from session_buddy.server import SessionLogger
 
 logger = SessionLogger()
 
@@ -113,7 +113,7 @@ ______________________________________________________________________
 
 **Tasks:**
 
-1. [ ] Run: `pytest --cov=session_mgmt_mcp --cov-report=term-missing`
+1. [ ] Run: `pytest --cov=session_buddy --cov-report=term-missing`
 1. [ ] Measure actual coverage (expect 40-50%, not broken 14.4%)
 1. [ ] Set coverage ratchet in CI: `--cov-fail-under=40`
 1. [ ] Document coverage gaps for Week 4-6 work
@@ -136,7 +136,7 @@ ______________________________________________________________________
 **1. Test Fixtures** (`tests/conftest.py`)
 
 ```python
-# Current location: /Users/les/Projects/session-mgmt-mcp/tests/conftest.py
+# Current location: /Users/les/Projects/session-buddy/tests/conftest.py
 # What to fix: Add SessionLogger mock to DI container
 
 
@@ -144,7 +144,7 @@ ______________________________________________________________________
 def mock_session_logger():
     """Mock SessionLogger for tests."""
     from unittest.mock import MagicMock
-    from session_mgmt_mcp.utils.logging import SessionLogger
+    from session_buddy.utils.logging import SessionLogger
     from acb.depends import depends
 
     mock_logger = MagicMock(spec=SessionLogger)
@@ -161,12 +161,12 @@ pytest --co -q 2>&1 | grep "ERROR" | cut -d: -f1 | sort -u
 
 # Common pattern to fix in each:
 # OLD:
-from session_mgmt_mcp.server import SessionLogger
+from session_buddy.server import SessionLogger
 logger = SessionLogger()
 
 # NEW:
 from acb.depends import depends
-from session_mgmt_mcp.utils.logging import SessionLogger
+from session_buddy.utils.logging import SessionLogger
 
 def test_something(mock_session_logger):  # Add fixture
     logger = depends.get_sync(SessionLogger)
@@ -196,7 +196,7 @@ pytest tests/integration/test_monitoring.py -v --tb=short
 pytest -v --tb=short
 
 # Check coverage (after test fixes)
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 ```
 
 ### Git Status
@@ -216,7 +216,7 @@ git status
 
 ```bash
 # Type checking
-mypy session_mgmt_mcp/
+mypy session_buddy/
 
 # Linting
 ruff check .
@@ -260,7 +260,7 @@ def mock_session_logger():
 **Symptom:**
 
 ```
-ImportError: cannot import name 'SessionLogger' from 'session_mgmt_mcp.server'
+ImportError: cannot import name 'SessionLogger' from 'session_buddy.server'
 ```
 
 **Root Cause:**
@@ -271,10 +271,10 @@ Update imports:
 
 ```python
 # OLD:
-from session_mgmt_mcp.server import SessionLogger
+from session_buddy.server import SessionLogger
 
 # NEW:
-from session_mgmt_mcp.utils.logging import SessionLogger
+from session_buddy.utils.logging import SessionLogger
 ```
 
 ### Issue 3: Test Fixtures Missing DI Context
@@ -358,7 +358,7 @@ ______________________________________________________________________
 **First Command to Run:**
 
 ```bash
-cd /Users/les/Projects/session-mgmt-mcp
+cd /Users/les/Projects/session-buddy
 pytest --co -q 2>&1 | tee test-collection-errors.log
 ```
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.tools.protocols module.
+"""Test suite for session_buddy.tools.protocols module.
 
 Tests protocol definitions and type checking.
 """

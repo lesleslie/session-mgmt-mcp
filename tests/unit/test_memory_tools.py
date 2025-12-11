@@ -9,7 +9,7 @@ Phase: Week 1 Day 2 - Quick Win Coverage (84% → 90%+)
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from session_mgmt_mcp.tools.memory_tools import (
+from session_buddy.tools.memory_tools import (
     _format_stats_new,
     _format_stats_old,
     _quick_search_impl,
@@ -29,7 +29,7 @@ class TestStoreReflectionImpl:
     async def test_store_reflection_when_tools_unavailable(self):
         """Test storing reflection when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -40,7 +40,7 @@ class TestStoreReflectionImpl:
     async def test_store_reflection_success(self):
         """Test successful reflection storage."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -49,7 +49,7 @@ class TestStoreReflectionImpl:
         mock_db.store_reflection = AsyncMock(return_value="test-id-123")
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _store_reflection_impl("Test content", ["tag1", "tag2"])
@@ -65,7 +65,7 @@ class TestStoreReflectionImpl:
     async def test_store_reflection_failure(self):
         """Test reflection storage failure."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -74,7 +74,7 @@ class TestStoreReflectionImpl:
         mock_db.store_reflection = AsyncMock(side_effect=Exception("Database error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _store_reflection_impl("Test content")
@@ -86,7 +86,7 @@ class TestStoreReflectionImpl:
     async def test_store_reflection_without_tags(self):
         """Test storing reflection without tags."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -95,7 +95,7 @@ class TestStoreReflectionImpl:
         mock_db.store_reflection = AsyncMock(return_value="test-id-456")
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _store_reflection_impl("Test content without tags")
@@ -114,7 +114,7 @@ class TestQuickSearchImpl:
     async def test_quick_search_when_tools_unavailable(self):
         """Test quick search when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -125,7 +125,7 @@ class TestQuickSearchImpl:
     async def test_quick_search_with_results(self):
         """Test quick search with results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -142,7 +142,7 @@ class TestQuickSearchImpl:
         mock_db.search_conversations = AsyncMock(return_value=mock_results)
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _quick_search_impl("test query", min_score=0.7)
@@ -159,7 +159,7 @@ class TestQuickSearchImpl:
     async def test_quick_search_no_results(self):
         """Test quick search with no results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -168,7 +168,7 @@ class TestQuickSearchImpl:
         mock_db.search_conversations = AsyncMock(return_value=[])
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _quick_search_impl("nonexistent query")
@@ -180,7 +180,7 @@ class TestQuickSearchImpl:
     async def test_quick_search_with_exception(self):
         """Test quick search with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -189,7 +189,7 @@ class TestQuickSearchImpl:
         mock_db.search_conversations = AsyncMock(side_effect=Exception("Search error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _quick_search_impl("test query")
@@ -204,7 +204,7 @@ class TestSearchSummaryImpl:
     async def test_search_summary_when_tools_unavailable(self):
         """Test search summary when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -215,7 +215,7 @@ class TestSearchSummaryImpl:
     async def test_search_summary_with_results(self):
         """Test search summary with results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -244,7 +244,7 @@ class TestSearchSummaryImpl:
         mock_db.search_conversations = AsyncMock(return_value=mock_results)
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_summary_impl("test query")
@@ -261,7 +261,7 @@ class TestSearchSummaryImpl:
     async def test_search_summary_no_results(self):
         """Test search summary with no results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -270,7 +270,7 @@ class TestSearchSummaryImpl:
         mock_db.search_conversations = AsyncMock(return_value=[])
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_summary_impl("nonexistent query")
@@ -281,7 +281,7 @@ class TestSearchSummaryImpl:
     async def test_search_summary_with_exception(self):
         """Test search summary with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -290,7 +290,7 @@ class TestSearchSummaryImpl:
         mock_db.search_conversations = AsyncMock(side_effect=Exception("Search error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_summary_impl("test query")
@@ -305,7 +305,7 @@ class TestSearchByFileImpl:
     async def test_search_by_file_when_tools_unavailable(self):
         """Test search by file when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -316,7 +316,7 @@ class TestSearchByFileImpl:
     async def test_search_by_file_with_results(self):
         """Test search by file with results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -333,7 +333,7 @@ class TestSearchByFileImpl:
         mock_db.search_conversations = AsyncMock(return_value=mock_results)
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_file_impl("test_file.py", limit=5)
@@ -349,7 +349,7 @@ class TestSearchByFileImpl:
     async def test_search_by_file_no_results(self):
         """Test search by file with no results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -358,7 +358,7 @@ class TestSearchByFileImpl:
         mock_db.search_conversations = AsyncMock(return_value=[])
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_file_impl("nonexistent.py")
@@ -369,7 +369,7 @@ class TestSearchByFileImpl:
     async def test_search_by_file_with_exception(self):
         """Test search by file with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -378,7 +378,7 @@ class TestSearchByFileImpl:
         mock_db.search_conversations = AsyncMock(side_effect=Exception("Search error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_file_impl("test_file.py")
@@ -393,7 +393,7 @@ class TestSearchByConceptImpl:
     async def test_search_by_concept_when_tools_unavailable(self):
         """Test search by concept when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -404,7 +404,7 @@ class TestSearchByConceptImpl:
     async def test_search_by_concept_with_results(self):
         """Test search by concept with results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -421,7 +421,7 @@ class TestSearchByConceptImpl:
         mock_db.search_conversations = AsyncMock(return_value=mock_results)
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_concept_impl("authentication", limit=5)
@@ -437,7 +437,7 @@ class TestSearchByConceptImpl:
     async def test_search_by_concept_no_results(self):
         """Test search by concept with no results."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -446,7 +446,7 @@ class TestSearchByConceptImpl:
         mock_db.search_conversations = AsyncMock(return_value=[])
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_concept_impl("nonexistent_concept")
@@ -457,7 +457,7 @@ class TestSearchByConceptImpl:
     async def test_search_by_concept_with_exception(self):
         """Test search by concept with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -466,7 +466,7 @@ class TestSearchByConceptImpl:
         mock_db.search_conversations = AsyncMock(side_effect=Exception("Search error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _search_by_concept_impl("authentication")
@@ -481,7 +481,7 @@ class TestReflectionStatsImpl:
     async def test_reflection_stats_when_tools_unavailable(self):
         """Test reflection stats when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -492,7 +492,7 @@ class TestReflectionStatsImpl:
     async def test_reflection_stats_success(self):
         """Test successful reflection stats retrieval."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -509,7 +509,7 @@ class TestReflectionStatsImpl:
         mock_db.get_stats = AsyncMock(return_value=mock_stats)
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _reflection_stats_impl()
@@ -522,7 +522,7 @@ class TestReflectionStatsImpl:
     async def test_reflection_stats_with_exception(self):
         """Test reflection stats with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -531,7 +531,7 @@ class TestReflectionStatsImpl:
         mock_db.get_stats = AsyncMock(side_effect=Exception("Stats error"))
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             result = await _reflection_stats_impl()
@@ -546,7 +546,7 @@ class TestResetReflectionDatabaseImpl:
     async def test_reset_reflection_database_when_tools_unavailable(self):
         """Test reset reflection database when tools are unavailable."""
         # Set the global state to False
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = False
 
@@ -557,7 +557,7 @@ class TestResetReflectionDatabaseImpl:
     async def test_reset_reflection_database_success(self):
         """Test successful reflection database reset."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
@@ -567,11 +567,11 @@ class TestResetReflectionDatabaseImpl:
         mock_db.conn.close = AsyncMock()
 
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             return_value=mock_db,
         ):
             # Set up the global database instance
-            from session_mgmt_mcp.tools import memory_tools
+            from session_buddy.tools import memory_tools
 
             memory_tools._reflection_db = mock_db
 
@@ -586,13 +586,13 @@ class TestResetReflectionDatabaseImpl:
     async def test_reset_reflection_database_with_exception(self):
         """Test reflection database reset with exception."""
         # Set the global state to True
-        from session_mgmt_mcp.tools import memory_tools
+        from session_buddy.tools import memory_tools
 
         memory_tools._reflection_tools_available = True
 
         # Mock the database to raise an exception
         with patch(
-            "session_mgmt_mcp.tools.memory_tools._get_reflection_database",
+            "session_buddy.tools.memory_tools._get_reflection_database",
             side_effect=Exception("Reset error"),
         ):
             result = await _reset_reflection_database_impl()

@@ -102,7 +102,7 @@ The extraction maintains 100% backwards compatibility through:
 
 ```text
 # Phase 2.4: Import advanced feature tools from advanced_features module
-from session_mgmt_mcp.advanced_features import (
+from session_buddy.advanced_features import (
     # Natural Language Scheduling Tools (5 MCP tools)
     create_natural_reminder,
     list_user_reminders,
@@ -186,7 +186,7 @@ set_connection_info(connection_info)
 
 - `typing` - Type hints and annotations
 - `pathlib.Path` - File path handling
-- Various session_mgmt_mcp modules (lazy imports):
+- Various session_buddy modules (lazy imports):
   - `.natural_scheduler` - Natural language scheduling
   - `.interruption_manager` - Interruption tracking
   - `.multi_project_coordinator` - Multi-project features

@@ -2,7 +2,7 @@
 
 **Date:** 2025-10-28
 **Reviewer:** Python Architecture Specialist
-**Scope:** session-mgmt-mcp + mcp-common unified plan
+**Scope:** session-buddy + mcp-common unified plan
 
 ______________________________________________________________________
 
@@ -12,7 +12,7 @@ ______________________________________________________________________
 
 **Key Finding:** Plans are **over-specified** for current needs. Both projects have solid implementations that exceed documented plans, but **knowledge graph integration** (DuckPGQ) is actively in progress and should be prioritized.
 
-**Critical Gap Identified:** Missing unified view of **cross-project dependencies** between session-mgmt-mcp and mcp-common adoption timeline.
+**Critical Gap Identified:** Missing unified view of **cross-project dependencies** between session-buddy and mcp-common adoption timeline.
 
 ______________________________________________________________________
 
@@ -49,7 +49,7 @@ ______________________________________________________________________
 ### Circular Dependency Analysis
 
 ```
-session-mgmt-mcp (depends on)
+session-buddy (depends on)
     ├── mcp-common (local file path)
     │   ├── acb>=0.25.2 ✅
     │   ├── fastmcp>=2 ✅
@@ -62,7 +62,7 @@ session-mgmt-mcp (depends on)
 
 **Risk:** 🟡 **MEDIUM** - Local file path dependency `mcp-common @ file:///Users/les/Projects/mcp-common` prevents distribution until mcp-common is published to PyPI
 
-**Recommendation:** Publish mcp-common v2.0.0 to PyPI **before** session-mgmt-mcp v1.0.0 release
+**Recommendation:** Publish mcp-common v2.0.0 to PyPI **before** session-buddy v1.0.0 release
 
 ### DuckPGQ Knowledge Graph Status
 
@@ -70,7 +70,7 @@ session-mgmt-mcp (depends on)
 
 ✅ **IMPLEMENTED** (668 lines):
 
-- `/Users/les/Projects/session-mgmt-mcp/session_mgmt_mcp/knowledge_graph_db.py` (668 lines)
+- `/Users/les/Projects/session-buddy/session_buddy/knowledge_graph_db.py` (668 lines)
   - `KnowledgeGraphDatabase` class with DuckPGQ integration
   - SQL/PGQ property graph schema
   - Entity CRUD operations
@@ -80,7 +80,7 @@ session-mgmt-mcp (depends on)
 
 ✅ **MCP TOOLS IMPLEMENTED** (672 lines):
 
-- `/Users/les/Projects/session-mgmt-mcp/session_mgmt_mcp/tools/knowledge_graph_tools.py` (672 lines)
+- `/Users/les/Projects/session-buddy/session_buddy/tools/knowledge_graph_tools.py` (672 lines)
   - 9 MCP tools fully registered with FastMCP
   - Entity extraction patterns (projects, libraries, technologies, concepts)
   - Batch operations support
@@ -175,7 +175,7 @@ ______________________________________________________________________
 
 **CRITICAL INSIGHT:** Plans target **85% coverage** but current trajectory shows:
 
-- **Baseline:** 34.6% (session-mgmt-mcp)
+- **Baseline:** 34.6% (session-buddy)
 - **Target:** 85%
 - **Gap:** +50.4 percentage points
 - **Estimated Effort:** 8-12 weeks (per plan)
@@ -187,7 +187,7 @@ ______________________________________________________________________
 
 1. **Establish mcp-common baseline** (measure current coverage)
 1. **Create coverage ratchet** for both projects (never decrease)
-1. **Dedicate 2-3 weeks** to bring session-mgmt-mcp to 60% minimum
+1. **Dedicate 2-3 weeks** to bring session-buddy to 60% minimum
 1. **Parallel effort:** Test mcp-common adapters to 85%+
 
 ______________________________________________________________________
@@ -198,10 +198,10 @@ ______________________________________________________________________
 
 | Task | Project | Effort | Priority | Justification |
 |------|---------|--------|----------|---------------|
-| **Complete DuckPGQ migration script** | session-mgmt-mcp | 2-3 hours | P0 | Feature 80% done, migration unlocks usage |
-| **Test coverage to 60%** | session-mgmt-mcp | 2-3 weeks | P0 | Production risk, regression prevention |
-| **Publish mcp-common to PyPI** | mcp-common | 1-2 days | P0 | Unblocks session-mgmt-mcp distribution |
-| **Create KNOWLEDGE_GRAPH_INTEGRATION.md** | session-mgmt-mcp | 2-3 hours | P1 | Referenced in README, user-facing |
+| **Complete DuckPGQ migration script** | session-buddy | 2-3 hours | P0 | Feature 80% done, migration unlocks usage |
+| **Test coverage to 60%** | session-buddy | 2-3 weeks | P0 | Production risk, regression prevention |
+| **Publish mcp-common to PyPI** | mcp-common | 1-2 days | P0 | Unblocks session-buddy distribution |
+| **Create KNOWLEDGE_GRAPH_INTEGRATION.md** | session-buddy | 2-3 hours | P1 | Referenced in README, user-facing |
 
 **Estimated Total:** **3-4 weeks**
 
@@ -209,7 +209,7 @@ ______________________________________________________________________
 
 | Task | Project | Effort | Priority | Justification |
 |------|---------|--------|----------|---------------|
-| **Test coverage to 85%** | session-mgmt-mcp | 6-8 weeks | P1 | Comprehensive safety net |
+| **Test coverage to 85%** | session-buddy | 6-8 weeks | P1 | Comprehensive safety net |
 | **Test mcp-common adapters** | mcp-common | 2-3 weeks | P1 | Foundation library must be solid |
 | **Security hardening review** | both | 1 week | P1 | Production security baseline |
 | **Integration tests across projects** | both | 1-2 weeks | P2 | Validate session-mgmt uses mcp-common correctly |
@@ -220,9 +220,9 @@ ______________________________________________________________________
 
 | Task | Project | Effort | Assessment | Recommendation |
 |------|---------|--------|------------|----------------|
-| **ACB Template System** | session-mgmt-mcp | 2-3 weeks | 🟡 **YAGNI?** | Defer until requirement proven |
-| **ACB Event System** | session-mgmt-mcp | 4-5 weeks | 🟡 **YAGNI?** | Defer indefinitely |
-| **ACB Query Interface** | session-mgmt-mcp | 3-4 weeks | 🟡 **YAGNI?** | Defer indefinitely |
+| **ACB Template System** | session-buddy | 2-3 weeks | 🟡 **YAGNI?** | Defer until requirement proven |
+| **ACB Event System** | session-buddy | 4-5 weeks | 🟡 **YAGNI?** | Defer indefinitely |
+| **ACB Query Interface** | session-buddy | 3-4 weeks | 🟡 **YAGNI?** | Defer indefinitely |
 | **Integrate 6 standalone servers** | mcp-common | 9-10 weeks | 🟡 **Organizational** | Separate from core development |
 
 **Assessment:** These are **over-engineering** risks based on **hypothetical future needs** rather than current requirements
@@ -253,7 +253,7 @@ ______________________________________________________________________
 
 ### Short-Term (Next 2-3 Weeks)
 
-4. **Bring session-mgmt-mcp to 60% coverage** (2-3 weeks)
+4. **Bring session-buddy to 60% coverage** (2-3 weeks)
 
    - Focus on zero-coverage files (7 files identified)
    - Add integration tests for knowledge graph tools
@@ -262,7 +262,7 @@ ______________________________________________________________________
 1. **Publish mcp-common v2.0.0 to PyPI** (1-2 days)
 
    - Create release workflow
-   - Update session-mgmt-mcp dependency from file path
+   - Update session-buddy dependency from file path
    - Enable public distribution
 
 ### Medium-Term (Next 4-8 Weeks)
@@ -274,7 +274,7 @@ ______________________________________________________________________
    - API key validation patterns
    - Dependency security scan
 
-1. **Test coverage to 85% (session-mgmt-mcp)** (4-6 weeks)
+1. **Test coverage to 85% (session-buddy)** (4-6 weeks)
 
    - Comprehensive test suite
    - Property-based testing for complex logic
@@ -362,7 +362,7 @@ ______________________________________________________________________
 **Current:**
 
 ```
-session-mgmt-mcp → mcp-common (local file path)
+session-buddy → mcp-common (local file path)
                  → acb>=0.25.2
                  → duckdb>=0.9
                  → fastmcp>=2
@@ -373,7 +373,7 @@ session-mgmt-mcp → mcp-common (local file path)
 **Resolution Path:**
 
 1. Publish mcp-common v2.0.0 to PyPI
-1. Update session-mgmt-mcp dependency to `mcp-common>=2.0.0`
+1. Update session-buddy dependency to `mcp-common>=2.0.0`
 1. Remove local file path reference
 
 **Circular Dependency Check:** ✅ **NONE DETECTED** - Clean dependency tree
@@ -400,13 +400,13 @@ ______________________________________________________________________
 - Complete DuckPGQ migration script (2-3 hours)
 - Create KNOWLEDGE_GRAPH_INTEGRATION.md (2-3 hours)
 - Measure mcp-common test coverage (30 min)
-- Begin test coverage improvements (session-mgmt-mcp)
+- Begin test coverage improvements (session-buddy)
 
 **Week 2-3:**
 
-- Test coverage to 60% (session-mgmt-mcp)
+- Test coverage to 60% (session-buddy)
 - Publish mcp-common v2.0.0 to PyPI
-- Update session-mgmt-mcp dependency
+- Update session-buddy dependency
 
 **Week 4-6:**
 
@@ -433,7 +433,7 @@ ______________________________________________________________________
 **Short-Term (4 weeks):**
 
 - DuckPGQ migration script complete ✅
-- Test coverage > 60% (session-mgmt-mcp) ✅
+- Test coverage > 60% (session-buddy) ✅
 - mcp-common published to PyPI ✅
 - Security review complete ✅
 
@@ -442,7 +442,7 @@ ______________________________________________________________________
 - Test coverage > 85% (both projects) ✅
 - Integration tests comprehensive ✅
 - Documentation complete (including knowledge graph) ✅
-- Production-ready release (session-mgmt-mcp v1.0.0) ✅
+- Production-ready release (session-buddy v1.0.0) ✅
 
 ______________________________________________________________________
 

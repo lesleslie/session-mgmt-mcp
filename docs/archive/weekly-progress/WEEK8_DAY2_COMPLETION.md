@@ -256,7 +256,7 @@ ______________________________________________________________________
 Main function testing with different scenarios:
 
 ```text
-@patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
+@patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
 async def test_calculate_quality_score_v2_with_perfect_metrics(
     self, mock_metrics: AsyncMock, tmp_path: Path
 ):

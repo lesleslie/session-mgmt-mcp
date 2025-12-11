@@ -25,7 +25,7 @@ class TestContextDetectorInit:
 
     def test_context_detector_has_indicators(self) -> None:
         """Should initialize with context indicators."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
 
@@ -36,7 +36,7 @@ class TestContextDetectorInit:
 
     def test_context_detector_has_project_types(self) -> None:
         """Should initialize with project type patterns."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
 
@@ -54,7 +54,7 @@ class TestContextDetectorHelperMethods:
 
     def test_initialize_context_creates_structure(self, tmp_path: Path) -> None:
         """Should create basic context structure."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         result = detector._initialize_context(tmp_path)
@@ -68,7 +68,7 @@ class TestContextDetectorHelperMethods:
 
     def test_resolve_working_path_with_explicit_dir(self, tmp_path: Path) -> None:
         """Should use explicit working directory."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         result = detector._resolve_working_path(str(tmp_path))
@@ -77,7 +77,7 @@ class TestContextDetectorHelperMethods:
 
     def test_resolve_working_path_with_pwd_env(self, tmp_path: Path) -> None:
         """Should use PWD environment variable when available."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
 
@@ -88,7 +88,7 @@ class TestContextDetectorHelperMethods:
 
     def test_resolve_working_path_defaults_to_cwd(self) -> None:
         """Should default to current working directory."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
 
@@ -99,7 +99,7 @@ class TestContextDetectorHelperMethods:
 
     def test_should_ignore_file_ignores_git_directory(self, tmp_path: Path) -> None:
         """Should ignore .git directories."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         git_file = tmp_path / ".git" / "config"
@@ -108,7 +108,7 @@ class TestContextDetectorHelperMethods:
 
     def test_should_ignore_file_ignores_venv(self, tmp_path: Path) -> None:
         """Should ignore .venv directories."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         venv_file = tmp_path / ".venv" / "lib" / "python3.13" / "site-packages"
@@ -117,7 +117,7 @@ class TestContextDetectorHelperMethods:
 
     def test_should_ignore_file_ignores_pycache(self, tmp_path: Path) -> None:
         """Should ignore __pycache__ directories."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         cache_file = tmp_path / "src" / "__pycache__" / "module.pyc"
@@ -126,7 +126,7 @@ class TestContextDetectorHelperMethods:
 
     def test_should_ignore_file_ignores_pyc_files(self, tmp_path: Path) -> None:
         """Should ignore .pyc files."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         pyc_file = tmp_path / "module.pyc"
@@ -135,7 +135,7 @@ class TestContextDetectorHelperMethods:
 
     def test_should_ignore_file_allows_python_files(self, tmp_path: Path) -> None:
         """Should not ignore .py files."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         py_file = tmp_path / "module.py"
@@ -151,7 +151,7 @@ class TestFindIndicators:
 
     def test_find_indicators_matches_file(self, tmp_path: Path) -> None:
         """Should find matching file indicators."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create test file
         (tmp_path / "pyproject.toml").touch()
@@ -163,7 +163,7 @@ class TestFindIndicators:
 
     def test_find_indicators_matches_directory(self, tmp_path: Path) -> None:
         """Should find matching directory indicators."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create test directory
         (tmp_path / "tests").mkdir()
@@ -175,7 +175,7 @@ class TestFindIndicators:
 
     def test_find_indicators_matches_glob(self, tmp_path: Path) -> None:
         """Should find matching glob patterns."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create test files
         (tmp_path / "main.py").touch()
@@ -189,7 +189,7 @@ class TestFindIndicators:
 
     def test_find_indicators_limits_glob_results(self, tmp_path: Path) -> None:
         """Should limit glob results to 3 matches."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create many test files
         for i in range(10):
@@ -205,7 +205,7 @@ class TestFindIndicators:
         self, tmp_path: Path
     ) -> None:
         """Should return empty list when no indicators found."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         result = detector._find_indicators(tmp_path, ["nonexistent.txt"])
@@ -221,7 +221,7 @@ class TestLanguageAndToolDetection:
 
     def test_detect_python_language(self, tmp_path: Path) -> None:
         """Should detect Python project."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create Python indicators
         (tmp_path / "pyproject.toml").touch()
@@ -236,7 +236,7 @@ class TestLanguageAndToolDetection:
 
     def test_detect_javascript_language(self, tmp_path: Path) -> None:
         """Should detect JavaScript project."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create JavaScript indicators
         (tmp_path / "package.json").touch()
@@ -250,7 +250,7 @@ class TestLanguageAndToolDetection:
 
     def test_detect_git_tool(self, tmp_path: Path) -> None:
         """Should detect Git as development tool."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create Git indicator
         (tmp_path / ".gitignore").touch()
@@ -263,7 +263,7 @@ class TestLanguageAndToolDetection:
 
     def test_detect_docker_tool(self, tmp_path: Path) -> None:
         """Should detect Docker as development tool."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create Docker indicator
         (tmp_path / "Dockerfile").touch()
@@ -276,7 +276,7 @@ class TestLanguageAndToolDetection:
 
     def test_detect_multiple_languages(self, tmp_path: Path) -> None:
         """Should detect multiple programming languages."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create multiple language indicators
         (tmp_path / "main.py").touch()
@@ -294,7 +294,7 @@ class TestLanguageAndToolDetection:
         self, tmp_path: Path
     ) -> None:
         """Should increase confidence score for each detected item."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create multiple indicators
         (tmp_path / "pyproject.toml").touch()
@@ -317,7 +317,7 @@ class TestProjectTypeDetection:
 
     def test_calculate_project_type_score_for_files(self, tmp_path: Path) -> None:
         """Should calculate score based on file existence."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create MCP server indicators
         (tmp_path / ".mcp.json").touch()
@@ -329,7 +329,7 @@ class TestProjectTypeDetection:
 
     def test_calculate_project_type_score_for_directories(self, tmp_path: Path) -> None:
         """Should calculate score based on directory existence."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create API directories
         (tmp_path / "api").mkdir()
@@ -342,7 +342,7 @@ class TestProjectTypeDetection:
 
     def test_calculate_project_type_score_for_path_name(self, tmp_path: Path) -> None:
         """Should add partial score for matching path names."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         # "fastmcp" in path name should get 0.5 score
@@ -353,7 +353,7 @@ class TestProjectTypeDetection:
 
     def test_detect_mcp_server_project_type(self, tmp_path: Path) -> None:
         """Should detect MCP server project type."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create MCP server indicators
         (tmp_path / ".mcp.json").touch()
@@ -366,7 +366,7 @@ class TestProjectTypeDetection:
 
     def test_detect_api_project_type(self, tmp_path: Path) -> None:
         """Should detect API project type."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create API indicators
         (tmp_path / "api").mkdir()
@@ -381,7 +381,7 @@ class TestProjectTypeDetection:
 
     def test_detect_cli_tool_project_type(self, tmp_path: Path) -> None:
         """Should detect CLI tool project type."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create CLI tool indicators
         (tmp_path / "cli").mkdir()
@@ -395,7 +395,7 @@ class TestProjectTypeDetection:
 
     def test_detect_best_matching_project_type(self, tmp_path: Path) -> None:
         """Should select project type with highest score."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create indicators for multiple types (MCP server has more specific indicators)
         (tmp_path / ".mcp.json").touch()
@@ -417,7 +417,7 @@ class TestRecentFilesDetection:
 
     def test_get_recent_files_finds_recently_modified(self, tmp_path: Path) -> None:
         """Should find recently modified files."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create test file
         test_file = tmp_path / "recent.txt"
@@ -432,7 +432,7 @@ class TestRecentFilesDetection:
 
     def test_get_recent_files_includes_metadata(self, tmp_path: Path) -> None:
         """Should include file metadata."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create test file
         test_file = tmp_path / "test.txt"
@@ -449,7 +449,7 @@ class TestRecentFilesDetection:
 
     def test_get_recent_files_limits_to_10(self, tmp_path: Path) -> None:
         """Should limit results to 10 files."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create many test files
         for i in range(20):
@@ -462,7 +462,7 @@ class TestRecentFilesDetection:
 
     def test_get_recent_files_ignores_venv_files(self, tmp_path: Path) -> None:
         """Should ignore .venv files."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create .venv file (should be ignored)
         venv_dir = tmp_path / ".venv" / "lib"
@@ -480,7 +480,7 @@ class TestRecentFilesDetection:
 
     def test_get_recent_files_handles_permission_errors(self, tmp_path: Path) -> None:
         """Should handle permission errors gracefully."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
 
@@ -498,7 +498,7 @@ class TestGitInfoDetection:
 
     def test_get_git_info_returns_empty_when_not_git_repo(self, tmp_path: Path) -> None:
         """Should return empty dict when not a Git repository."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         result = detector._get_git_info(tmp_path)
@@ -507,7 +507,7 @@ class TestGitInfoDetection:
 
     def test_get_git_info_detects_github_platform(self, tmp_path: Path) -> None:
         """Should detect GitHub platform from config."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create mock Git directory with GitHub config
         git_dir = tmp_path / ".git"
@@ -522,7 +522,7 @@ class TestGitInfoDetection:
 
     def test_get_git_info_detects_gitlab_platform(self, tmp_path: Path) -> None:
         """Should detect GitLab platform from config."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create mock Git directory with GitLab config
         git_dir = tmp_path / ".git"
@@ -537,7 +537,7 @@ class TestGitInfoDetection:
 
     def test_determine_git_platform_defaults_to_git(self) -> None:
         """Should default to 'git' when platform unknown."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         detector = ContextDetector()
         result = detector._determine_git_platform("some other content")
@@ -553,7 +553,7 @@ class TestWorktreeDetection:
 
     def test_format_worktree_info_creates_dict(self) -> None:
         """Should format worktree information as dictionary."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create mock worktree info
         mock_worktree = Mock()
@@ -575,7 +575,7 @@ class TestWorktreeDetection:
 
     def test_get_all_worktrees_info_formats_list(self) -> None:
         """Should format list of worktrees."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create mock worktrees
         mock_wt1 = Mock()
@@ -591,7 +591,7 @@ class TestWorktreeDetection:
         detector = ContextDetector()
 
         with patch(
-            "session_mgmt_mcp.context_manager.list_worktrees",
+            "session_buddy.context_manager.list_worktrees",
             return_value=[mock_wt1, mock_wt2],
         ):
             result = detector._get_all_worktrees_info(Path("/test"), mock_wt1)
@@ -613,7 +613,7 @@ class TestDetectCurrentContext:
         self, tmp_path: Path
     ) -> None:
         """Should return complete context structure."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create minimal project structure
         (tmp_path / "pyproject.toml").touch()
@@ -632,7 +632,7 @@ class TestDetectCurrentContext:
 
     def test_detect_current_context_with_git_repo(self, tmp_path: Path) -> None:
         """Should include Git information for Git repositories."""
-        from session_mgmt_mcp.context_manager import ContextDetector
+        from session_buddy.context_manager import ContextDetector
 
         # Create Git repository structure
         git_dir = tmp_path / ".git"
@@ -655,7 +655,7 @@ class TestRelevanceScorerInit:
 
     def test_relevance_scorer_has_weights(self) -> None:
         """Should initialize with scoring weights."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
 
@@ -673,7 +673,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_project_match_with_name_match(self) -> None:
         """Should score project name matches."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"project_name": "session-mgmt-mcp"}
@@ -687,7 +687,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_project_match_no_match(self) -> None:
         """Should return zero when project doesn't match."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"project_name": "project-a"}
@@ -700,7 +700,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_language_match_with_python(self) -> None:
         """Should score language matches."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"detected_languages": ["python", "javascript"]}
@@ -712,7 +712,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_language_match_no_languages(self) -> None:
         """Should return zero when no languages detected."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"detected_languages": []}
@@ -724,7 +724,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_tool_match_with_git(self) -> None:
         """Should score tool matches."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"detected_tools": ["git", "docker"]}
@@ -736,7 +736,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_file_match_with_recent_files(self) -> None:
         """Should score matches with recent files."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {
@@ -753,7 +753,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_recency_for_today(self) -> None:
         """Should give full recency score for today's conversations."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         conversation = {"timestamp": datetime.now().isoformat()}
@@ -764,7 +764,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_recency_for_last_week(self) -> None:
         """Should give partial recency score for last week."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         # 5 days ago
@@ -778,7 +778,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_recency_for_old_conversation(self) -> None:
         """Should give zero recency score for old conversations."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         # 30 days ago
@@ -791,7 +791,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_recency_handles_invalid_timestamp(self) -> None:
         """Should handle invalid timestamp gracefully."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         conversation = {"timestamp": "invalid-date"}
@@ -802,7 +802,7 @@ class TestRelevanceScoringMethods:
 
     def test_get_project_keywords_returns_mappings(self) -> None:
         """Should return project keyword mappings."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         keywords = scorer._get_project_keywords()
@@ -814,7 +814,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_project_keywords_with_mcp_server(self) -> None:
         """Should score MCP server project keywords."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"project_type": "mcp_server"}
@@ -826,7 +826,7 @@ class TestRelevanceScoringMethods:
 
     def test_score_project_keywords_no_project_type(self) -> None:
         """Should return zero when no project type."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         context = {"project_type": None}
@@ -845,7 +845,7 @@ class TestScoreConversationRelevance:
 
     def test_score_conversation_relevance_combines_scores(self) -> None:
         """Should combine multiple scoring factors."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         conversation = {
@@ -869,7 +869,7 @@ class TestScoreConversationRelevance:
 
     def test_score_conversation_relevance_caps_at_one(self) -> None:
         """Should cap relevance score at 1.0."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         # Perfect match scenario
@@ -893,7 +893,7 @@ class TestScoreConversationRelevance:
 
     def test_score_conversation_relevance_zero_for_no_match(self) -> None:
         """Should return low score when nothing matches."""
-        from session_mgmt_mcp.context_manager import RelevanceScorer
+        from session_buddy.context_manager import RelevanceScorer
 
         scorer = RelevanceScorer()
         # 30 days old, no matching content
@@ -925,7 +925,7 @@ class TestAutoContextLoaderInit:
     @pytest.mark.asyncio
     async def test_auto_context_loader_initialization(self) -> None:
         """Should initialize with required components."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         mock_db = AsyncMock()
         loader = AutoContextLoader(mock_db)
@@ -946,7 +946,7 @@ class TestGenerateContextHash:
     @pytest.mark.asyncio
     async def test_generate_context_hash_creates_hash(self) -> None:
         """Should generate hash from context."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         mock_db = AsyncMock()
         loader = AutoContextLoader(mock_db)
@@ -967,7 +967,7 @@ class TestGenerateContextHash:
     @pytest.mark.asyncio
     async def test_generate_context_hash_consistent_for_same_context(self) -> None:
         """Should generate same hash for same context."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         mock_db = AsyncMock()
         loader = AutoContextLoader(mock_db)
@@ -990,7 +990,7 @@ class TestGenerateContextHash:
         self,
     ) -> None:
         """Should generate different hash for different context."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         mock_db = AsyncMock()
         loader = AutoContextLoader(mock_db)
@@ -1028,7 +1028,7 @@ class TestLoadRelevantContext:
         self, tmp_path: Path
     ) -> None:
         """Should return complete result structure."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create test project structure
         (tmp_path / "pyproject.toml").touch()
@@ -1049,7 +1049,7 @@ class TestLoadRelevantContext:
     @pytest.mark.asyncio
     async def test_load_relevant_context_uses_cache(self, tmp_path: Path) -> None:
         """Should use cached results within timeout."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         mock_db = AsyncMock()
         mock_db.conn = None
@@ -1070,7 +1070,7 @@ class TestLoadRelevantContext:
         self, tmp_path: Path
     ) -> None:
         """Should limit results to max_conversations."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Mock database with many conversations
         mock_db = AsyncMock()
@@ -1107,7 +1107,7 @@ class TestLoadRelevantContext:
         self, tmp_path: Path
     ) -> None:
         """Should filter conversations by minimum relevance."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create test project
         (tmp_path / "pyproject.toml").touch()
@@ -1156,7 +1156,7 @@ class TestGetContextSummary:
     @pytest.mark.asyncio
     async def test_get_context_summary_returns_string(self, tmp_path: Path) -> None:
         """Should return formatted summary string."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create test project
         (tmp_path / "pyproject.toml").touch()
@@ -1173,7 +1173,7 @@ class TestGetContextSummary:
     @pytest.mark.asyncio
     async def test_get_context_summary_includes_languages(self, tmp_path: Path) -> None:
         """Should include detected languages."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create Python project
         (tmp_path / "pyproject.toml").touch()
@@ -1189,7 +1189,7 @@ class TestGetContextSummary:
     @pytest.mark.asyncio
     async def test_get_context_summary_includes_git_info(self, tmp_path: Path) -> None:
         """Should include Git information when available."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create Git repository
         git_dir = tmp_path / ".git"
@@ -1212,7 +1212,7 @@ class TestGetContextSummary:
         self, tmp_path: Path
     ) -> None:
         """Should include confidence score."""
-        from session_mgmt_mcp.context_manager import AutoContextLoader
+        from session_buddy.context_manager import AutoContextLoader
 
         # Create project with indicators
         (tmp_path / "pyproject.toml").touch()

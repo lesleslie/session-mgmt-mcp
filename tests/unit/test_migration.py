@@ -4,11 +4,11 @@ import typing as t
 from datetime import datetime
 
 import duckdb
-from session_mgmt_mcp.memory.migration import (
+from session_buddy.memory.migration import (
     get_schema_version,
     migrate_v1_to_v2,
 )
-from session_mgmt_mcp.memory.schema_v2 import SCHEMA_V2_SQL
+from session_buddy.memory.schema_v2 import SCHEMA_V2_SQL
 
 
 def _create_v1_schema(conn: duckdb.DuckDBPyConnection) -> None:

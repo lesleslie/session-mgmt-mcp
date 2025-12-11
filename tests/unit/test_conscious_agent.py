@@ -4,7 +4,7 @@ import typing as t
 
 import duckdb
 import pytest
-from session_mgmt_mcp.memory.conscious_agent import ConsciousAgent
+from session_buddy.memory.conscious_agent import ConsciousAgent
 
 
 @pytest.mark.asyncio
@@ -63,7 +63,7 @@ async def test_conscious_agent_promotes_and_demotes(
     conn.close()
 
     # Patch settings to use tmp db
-    from session_mgmt_mcp import settings as settings_mod
+    from session_buddy import settings as settings_mod
 
     fake = type("S", (), {"database_path": str(db_path)})
     monkeypatch.setattr(settings_mod, "get_settings", lambda: fake)

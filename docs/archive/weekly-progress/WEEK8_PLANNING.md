@@ -426,7 +426,7 @@ def reset_di_container():
 @pytest.fixture
 async def mock_mcp_server(tmp_path):
     """Create isolated MCP server for testing."""
-    from session_mgmt_mcp.server import mcp
+    from session_buddy.server import mcp
 
     # Configure with test environment
     os.environ["HOME"] = str(tmp_path)
@@ -664,5 +664,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 8 Planning - Test Coverage Improvement

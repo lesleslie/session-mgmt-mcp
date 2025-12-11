@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+"""Example integration of parameter validation models with MCP tools.
+
+This module demonstrates how to integrate Pydantic parameter validation
+models with existing MCP tools for improved type safety and error handling.
+
+Following crackerjack patterns:
+- EVERY LINE IS A LIABILITY: Clean, focused tool implementations
+- DRY: Reusable validation across all tools
+- KISS: Simple integration without over-engineering
+
+Refactored to use utility modules for reduced code duplication.
+"""
+
+from __future__ import annotations
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+from contextlib import suppress
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Union
+
+from session_buddy.parameter_models import (
+    ConceptSearchParams,
+    FileSearchParams,
+    ReflectionStoreParams,
+    SearchQueryParams,
+    validate_mcp_params,
+)
+from session_buddy.utils.error_handlers import ValidationError, _get_logger
+from session_buddy.utils.tool_wrapper import execute_database_tool
+
+if TYPE_CHECKING:
+    from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
+    from session_buddy.reflection_tools import ReflectionDatabase
+
+# Define type alias for backward compatibility during migration
+ReflectionDatabaseType = Union["ReflectionDatabase", "ReflectionDatabaseAdapter"]
+
+
+async def _get_reflection_database() -> ReflectionDatabaseType | None:
+    """Get reflection database instance with lazy initialization."""
+    try:
+        from session_buddy.reflection_tools import get_reflection_database
+
+        return await get_reflection_database()
+    except Exception as e:
+        _get_logger().warning(f"Could not get reflection database: {e}")
+        return None
+
+
+def _format_result_item(res: dict[str, Any], index: int) -> list[str]:
+    """Format a single search result item."""
+    lines = [f"\n{index}. 📝 {res['content'][:200]}..."]
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+    return lines
+
+
+def _format_search_results(results: list[dict[str, Any]]) -> list[str]:
+    """Format search results with common structure."""
+    if not results:
+        return [
+            "🔍 No conversations found about this file",
+            "💡 The file might not have been discussed in previous sessions",
+        ]
+
+    lines = [f"📈 Found {len(results)} relevant conversations:"]
+    for i, res in enumerate(results, 1):
+        lines.extend(_format_result_item(res, i))
+    return lines
+
+
+def _format_concept_results(
+    results: list[dict[str, Any]], include_files: bool
+) -> list[str]:
+    """Format concept search results with optional file information."""
+    if not results:
+        return [
+            "🔍 No conversations found about this concept",
+            "💡 Try related terms or broader concepts",
+        ]
+
+    lines = [f"📈 Found {len(results)} related conversations:"]
+    for i, res in enumerate(results, 1):
+        item_lines = [f"\n{i}. 📝 {res['content'][:250]}..."]
+        if res.get("project"):
+            item_lines.append(f"   📁 Project: {res['project']}")
+        if res.get("score") is not None:
+            item_lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+        if res.get("timestamp"):
+            item_lines.append(f"   📅 Date: {res['timestamp']}")
+        if include_files and res.get("files"):
+            files = res["files"][:3]
+            if files:
+                item_lines.append(f"   📄 Files: {', '.join(files)}")
+        lines.extend(item_lines)
+    return lines
+
+
+# ============================================================================
+# Validated Tool Implementations
+# ============================================================================
+
+
+async def _store_reflection_validated_impl(**params: Any) -> str:
+    """Implementation for store_reflection tool with parameter validation."""
+    from typing import cast
+
+    # Validate parameters using Pydantic model
+    validated = validate_mcp_params(ReflectionStoreParams, **params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = cast("ReflectionStoreParams", validated.params)
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """Store reflection operation."""
+        reflection_id = await db.store_reflection(
+            params_obj.content,
+            tags=params_obj.tags,
+        )
+        return {
+            "success": True,
+            "id": reflection_id,
+            "content": params_obj.content,
+            "tags": params_obj.tags,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    def formatter(result: dict[str, Any]) -> str:
+        """Format reflection storage result."""
+        lines = [
+            "💾 Reflection stored successfully!",
+            f"🆔 ID: {result['id']}",
+            f"📝 Content: {result['content'][:100]}...",
+        ]
+        if result["tags"]:
+            lines.append(f"🏷️  Tags: {', '.join(result['tags'])}")
+        lines.append(f"📅 Stored: {result['timestamp']}")
+
+        _get_logger().info(
+            "Validated reflection stored",
+            reflection_id=result["id"],
+            content_length=len(result["content"]),
+            tags_count=len(result["tags"]),
+        )
+        return "\n".join(lines)
+
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to store reflection: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+async def _quick_search_validated_impl(**params: Any) -> str:
+    """Implementation for quick_search tool with parameter validation."""
+    from typing import cast
+
+    # Validate parameters
+    validated = validate_mcp_params(SearchQueryParams, **params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = cast("SearchQueryParams", validated.params)
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """Quick search operation."""
+        results = await db.search_conversations(
+            query=params_obj.query,
+            project=params_obj.project,
+            min_score=params_obj.min_score,
+            limit=1,
+        )
+
+        return {
+            "query": params_obj.query,
+            "results": results,
+            "total_count": len(results),
+        }
+
+    def formatter(result: dict[str, Any]) -> str:
+        """Format quick search results."""
+        lines = [f"🔍 Quick search for: '{result['query']}'"]
+
+        if not result["results"]:
+            lines.extend(
+                [
+                    "🔍 No results found",
+                    "💡 Try adjusting your search terms or lowering min_score",
+                ]
+            )
+        else:
+            lines.extend(_format_top_result(result["results"][0]))
+
+        _get_logger().info(
+            "Validated quick search executed",
+            query=result["query"],
+            results_count=result["total_count"],
+        )
+        return "\n".join(lines)
+
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform quick search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+def _format_top_result(top_result: dict[str, Any]) -> list[str]:
+    """Format the top search result."""
+    lines = [
+        "📊 Found results (showing top 1)",
+        f"📝 {top_result['content'][:150]}...",
+    ]
+    if top_result.get("project"):
+        lines.append(f"📁 Project: {top_result['project']}")
+    if top_result.get("score") is not None:
+        lines.append(f"⭐ Relevance: {top_result['score']:.2f}")
+    if top_result.get("timestamp"):
+        lines.append(f"📅 Date: {top_result['timestamp']}")
+
+    return lines
+
+
+async def _search_by_file_validated_impl(**params: Any) -> str:
+    """Implementation for search_by_file tool with parameter validation."""
+    from typing import cast
+
+    # Validate parameters
+    validated = validate_mcp_params(FileSearchParams, **params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = cast("FileSearchParams", validated.params)
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """File search operation."""
+        results = await db.search_conversations(
+            query=params_obj.file_path,
+            project=params_obj.project,
+            limit=params_obj.limit,
+        )
+
+        return {
+            "file_path": params_obj.file_path,
+            "results": results,
+        }
+
+    def formatter(result: dict[str, Any]) -> str:
+        """Format file search results."""
+        file_path = result["file_path"]
+        results = result["results"]
+
+        lines = [f"📁 Searching conversations about: {file_path}", "=" * 50]
+        lines.extend(_format_search_results(results))
+
+        _get_logger().info(
+            "Validated file search executed",
+            file_path=file_path,
+            results_count=len(results),
+        )
+        return "\n".join(lines)
+
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform file search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+async def _search_by_concept_validated_impl(**params: Any) -> str:
+    """Implementation for search_by_concept tool with parameter validation."""
+    from typing import cast
+
+    # Validate parameters
+    validated = validate_mcp_params(ConceptSearchParams, **params)
+    if not validated.is_valid:
+        msg = f"Parameter validation failed: {validated.errors}"
+        raise ValidationError(msg)
+
+    params_obj = cast("ConceptSearchParams", validated.params)
+
+    async def operation(db: Any) -> dict[str, Any]:
+        """Concept search operation."""
+        results = await db.search_conversations(
+            query=params_obj.concept,
+            project=params_obj.project,
+            limit=params_obj.limit,
+        )
+
+        return {
+            "concept": params_obj.concept,
+            "include_files": params_obj.include_files,
+            "results": results,
+        }
+
+    def formatter(result: dict[str, Any]) -> str:
+        """Format concept search results."""
+        concept = result["concept"]
+        results = result["results"]
+
+        lines = [f"🧠 Searching for concept: '{concept}'", "=" * 50]
+        lines.extend(_format_concept_results(results, result["include_files"]))
+
+        _get_logger().info(
+            "Validated concept search executed",
+            concept=concept,
+            results_count=len(results),
+        )
+        return "\n".join(lines)
+
+    # Check if tools are available
+    if not _check_reflection_tools_available():
+        return "❌ Reflection tools not available. Install with: `uv sync --extra embeddings`\n💡 This enables conversation memory and semantic search capabilities."
+
+    try:
+        # Get database instance and execute operation
+        db = await _get_reflection_database_async()
+        if not db:
+            return "❌ Failed to connect to reflection database"
+
+        result = await operation(db)
+        return formatter(result)
+    except Exception as e:
+        error_msg = f"Failed to perform concept search: {e}"
+        _get_logger().error(error_msg)
+        return error_msg
+
+
+def _format_file_search_header(file_path: str, results: list[dict[str, Any]]) -> str:
+    """Format header for file search results."""
+    lines = [
+        f"📁 Searching conversations about: {file_path}",
+        "=" * 50,
+    ]
+    return "\n".join(lines)
+
+
+def _format_file_search_result(res: dict[str, Any], index: int) -> str:
+    """Format individual file search result."""
+    lines = [
+        "",
+        f"{index}. 📝 {res['content'][:200]}...",
+    ]
+
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Score: {res['score']:.2f}")
+
+    return "\n".join(lines)
+
+
+def _format_file_search_results(results: list[dict[str, Any]], query: str) -> str:
+    """Format all file search results."""
+    if not results:
+        return f"🔍 No conversations found discussing '{query}'"
+
+    lines = [f"📈 Found {len(results)} conversations discussing '{query}':", "=" * 50]
+
+    for i, res in enumerate(results, 1):
+        lines.append(_format_file_search_result(res, i))
+
+    return "\n".join(lines)
+
+
+def _format_validated_concept_result(
+    res: dict[str, Any], index: int, include_files: bool = True
+) -> str:
+    """Format individual concept search result."""
+    lines = [
+        "",
+        f"{index}. 🧠 Concept: {res['content'][:200]}...",
+    ]
+
+    if res.get("timestamp"):
+        lines.append(f"   📅 Date: {res['timestamp']}")
+
+    if res.get("project"):
+        lines.append(f"   📁 Project: {res['project']}")
+
+    if res.get("score") is not None:
+        lines.append(f"   ⭐ Relevance: {res['score']:.2f}")
+
+    if include_files and res.get("files"):
+        files = res["files"][:5]  # Limit to 5 files
+        lines.append(f"   📄 Related files: {', '.join(files)}")
+
+    return "\n".join(lines)
+
+
+# Global variable to cache reflection tools availability
+_reflection_tools_available: bool | None = None
+
+
+def _check_reflection_tools_available() -> bool:
+    """Check if reflection tools are available and properly installed."""
+    global _reflection_tools_available
+
+    if _reflection_tools_available is not None:
+        return _reflection_tools_available
+
+    try:
+        # Check if reflection database module can be imported
+        import importlib.util
+
+        spec = importlib.util.find_spec("session_buddy.reflection_tools")
+        available = spec is not None
+        _reflection_tools_available = available
+        return available
+    except Exception:
+        _reflection_tools_available = False
+        return False
+
+
+async def resolve_reflection_database() -> ReflectionDatabaseType | None:
+    """Resolve the reflection database instance using dependency injection or fallback."""
+    # Try to get from DI container
+    with suppress(Exception):
+        from typing import cast
+
+        from acb.depends import depends
+        from session_buddy.reflection_tools import ReflectionDatabase
+
+        db = depends.get_sync(ReflectionDatabase)
+        if db:
+            return cast("ReflectionDatabase", db)
+
+    # Fallback - get a direct instance
+    with suppress(Exception):
+        from session_buddy.reflection_tools import get_reflection_database
+
+        return await get_reflection_database()
+
+    return None
+
+
+async def _get_reflection_database_async() -> ReflectionDatabaseType:
+    """Get reflection database instance with lazy initialization."""
+    if not _check_reflection_tools_available():
+        from session_buddy.utils.error_handlers import ValidationError
+
+        msg = "Reflection tools not available. Run: uv sync --extra embeddings"
+        raise ImportError(msg)
+
+    db = await resolve_reflection_database()
+    if not db:
+        from session_buddy.utils.error_handlers import ValidationError
+
+        msg = "Reflection tools not available. Run: uv sync --extra embeddings"
+        raise ImportError(msg)
+
+    return db  # type: ignore[return-value]  # Checked for None above
+
+
+# ============================================================================
+# MCP Tool Registration
+# ============================================================================
+
+
+def register_validated_memory_tools(mcp_server: Any) -> None:
+    """Register all validated memory tools with the MCP server.
+
+    These tools demonstrate parameter validation using Pydantic models
+    while using the same utility-based refactoring patterns as other tools.
+    """
+
+    @mcp_server.tool()  # type: ignore[misc]
+    async def store_reflection_validated(**params: Any) -> str:
+        """Store a reflection with validated parameters.
+
+        This demonstrates how to integrate Pydantic parameter validation
+        with MCP tools for improved type safety.
+        """
+        return await _store_reflection_validated_impl(**params)
+
+    @mcp_server.tool()  # type: ignore[misc]
+    async def quick_search_validated(**params: Any) -> str:
+        """Quick search with validated parameters."""
+        return await _quick_search_validated_impl(**params)
+
+    @mcp_server.tool()  # type: ignore[misc]
+    async def search_by_file_validated(**params: Any) -> str:
+        """Search by file with validated parameters."""
+        return await _search_by_file_validated_impl(**params)
+
+    @mcp_server.tool()  # type: ignore[misc]
+    async def search_by_concept_validated(**params: Any) -> str:
+        """Search by concept with validated parameters."""
+        return await _search_by_concept_validated_impl(**params)

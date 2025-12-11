@@ -22,7 +22,7 @@ class TestSessionOutputBuilder:
 
     def test_builder_initialization(self) -> None:
         """Should initialize with empty sections list."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         assert isinstance(builder.sections, list)
@@ -30,7 +30,7 @@ class TestSessionOutputBuilder:
 
     def test_add_header_creates_formatted_header(self) -> None:
         """Should add header with separator."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         builder.add_header("Test Header")
@@ -40,7 +40,7 @@ class TestSessionOutputBuilder:
 
     def test_add_section_adds_title_and_items(self) -> None:
         """Should add section with title and items."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         builder.add_section("Test Section", ["item1", "item2"])
@@ -52,7 +52,7 @@ class TestSessionOutputBuilder:
 
     def test_add_status_item_with_success(self) -> None:
         """Should add status item with success icon."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         builder.add_status_item("Feature", True, "enabled")
@@ -64,7 +64,7 @@ class TestSessionOutputBuilder:
 
     def test_add_status_item_with_failure(self) -> None:
         """Should add status item with failure icon."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         builder.add_status_item("Feature", False)
@@ -75,7 +75,7 @@ class TestSessionOutputBuilder:
 
     def test_build_joins_sections(self) -> None:
         """Should join all sections with newlines."""
-        from session_mgmt_mcp.tools.session_tools import SessionOutputBuilder
+        from session_buddy.tools.session_tools import SessionOutputBuilder
 
         builder = SessionOutputBuilder()
         builder.add_simple_item("Line 1")
@@ -90,7 +90,7 @@ class TestSessionSetupResults:
 
     def test_dataclass_initialization(self) -> None:
         """Should initialize with default values."""
-        from session_mgmt_mcp.tools.session_tools import SessionSetupResults
+        from session_buddy.tools.session_tools import SessionSetupResults
 
         results = SessionSetupResults()
 
@@ -100,7 +100,7 @@ class TestSessionSetupResults:
 
     def test_dataclass_with_values(self) -> None:
         """Should store provided values."""
-        from session_mgmt_mcp.tools.session_tools import SessionSetupResults
+        from session_buddy.tools.session_tools import SessionSetupResults
 
         results = SessionSetupResults(
             uv_setup=["setup line"],
@@ -118,7 +118,7 @@ class TestSessionManagerAccess:
 
     def test_get_session_manager_returns_instance(self) -> None:
         """Should return SessionLifecycleManager instance."""
-        from session_mgmt_mcp.tools.session_tools import _get_session_manager
+        from session_buddy.tools.session_tools import _get_session_manager
 
         manager = _get_session_manager()
 
@@ -127,7 +127,7 @@ class TestSessionManagerAccess:
 
     def test_session_manager_global_is_set(self) -> None:
         """Should have global session_manager variable."""
-        from session_mgmt_mcp.tools.session_tools import session_manager
+        from session_buddy.tools.session_tools import session_manager
 
         assert session_manager is not None
 
@@ -137,9 +137,9 @@ class TestCreateSessionShortcuts:
 
     def test_creates_shortcuts_in_claude_directory(self, tmp_path: Path) -> None:
         """Should create shortcuts in ~/.claude/commands/."""
-        from session_mgmt_mcp.tools.session_tools import _create_session_shortcuts
+        from session_buddy.tools.session_tools import _create_session_shortcuts
 
-        with patch("session_mgmt_mcp.tools.session_tools.Path.home") as mock_home:
+        with patch("session_buddy.tools.session_tools.Path.home") as mock_home:
             mock_home.return_value = tmp_path
             result = _create_session_shortcuts()
 
@@ -156,9 +156,9 @@ class TestCreateSessionShortcuts:
 
     def test_detects_existing_shortcuts(self, tmp_path: Path) -> None:
         """Should detect when shortcuts already exist."""
-        from session_mgmt_mcp.tools.session_tools import _create_session_shortcuts
+        from session_buddy.tools.session_tools import _create_session_shortcuts
 
-        with patch("session_mgmt_mcp.tools.session_tools.Path.home") as mock_home:
+        with patch("session_buddy.tools.session_tools.Path.home") as mock_home:
             mock_home.return_value = tmp_path
 
             # Create shortcuts first
@@ -176,10 +176,10 @@ class TestWorkingDirectoryDetection:
 
     def test_check_environment_variables_finds_claude_working_dir(self) -> None:
         """Should find CLAUDE_WORKING_DIR environment variable."""
-        from session_mgmt_mcp.tools.session_tools import _check_environment_variables
+        from session_buddy.tools.session_tools import _check_environment_variables
 
         with patch.dict("os.environ", {"CLAUDE_WORKING_DIR": "/test/dir"}):
-            with patch("session_mgmt_mcp.tools.session_tools.Path") as mock_path:
+            with patch("session_buddy.tools.session_tools.Path") as mock_path:
                 mock_path.return_value.exists.return_value = True
                 result = _check_environment_variables()
 
@@ -188,7 +188,7 @@ class TestWorkingDirectoryDetection:
 
     def test_check_working_dir_file_reads_temp_file(self, tmp_path: Path) -> None:
         """Should read working directory from temp file."""
-        from session_mgmt_mcp.tools.session_tools import _check_working_dir_file
+        from session_buddy.tools.session_tools import _check_working_dir_file
 
         with patch("tempfile.gettempdir") as mock_temp:
             mock_temp.return_value = str(tmp_path)
@@ -198,7 +198,7 @@ class TestWorkingDirectoryDetection:
             test_dir = "/test/project/dir"
             working_dir_file.write_text(test_dir)
 
-            with patch("session_mgmt_mcp.tools.session_tools.Path") as mock_path_cls:
+            with patch("session_buddy.tools.session_tools.Path") as mock_path_cls:
                 # Mock Path().exists() to return True
                 mock_path = MagicMock()
                 mock_path.exists.return_value = True
@@ -211,7 +211,7 @@ class TestWorkingDirectoryDetection:
 
     def test_is_git_repository_detects_git(self, tmp_path: Path) -> None:
         """Should detect git repositories."""
-        from session_mgmt_mcp.tools.session_tools import _is_git_repository
+        from session_buddy.tools.session_tools import _is_git_repository
 
         # Create .git directory
         git_dir = tmp_path / ".git"
@@ -221,7 +221,7 @@ class TestWorkingDirectoryDetection:
 
     def test_is_git_repository_rejects_non_git(self, tmp_path: Path) -> None:
         """Should reject non-git directories."""
-        from session_mgmt_mcp.tools.session_tools import _is_git_repository
+        from session_buddy.tools.session_tools import _is_git_repository
 
         assert _is_git_repository(tmp_path) is False
 
@@ -232,10 +232,10 @@ class TestStartTool:
     @pytest.mark.asyncio
     async def test_start_impl_returns_formatted_output(self) -> None:
         """Should return formatted initialization output."""
-        from session_mgmt_mcp.tools.session_tools import _start_impl
+        from session_buddy.tools.session_tools import _start_impl
 
         with patch(
-            "session_mgmt_mcp.tools.session_tools.session_manager"
+            "session_buddy.tools.session_tools.session_manager"
         ) as mock_manager:
             mock_manager.initialize_session = AsyncMock(
                 return_value={
@@ -250,12 +250,12 @@ class TestStartTool:
             )
 
             with patch(
-                "session_mgmt_mcp.tools.session_tools._setup_uv_dependencies"
+                "session_buddy.tools.session_tools._setup_uv_dependencies"
             ) as mock_uv:
                 mock_uv.return_value = ["UV setup complete"]
 
                 with patch(
-                    "session_mgmt_mcp.tools.session_tools._create_session_shortcuts"
+                    "session_buddy.tools.session_tools._create_session_shortcuts"
                 ) as mock_shortcuts:
                     mock_shortcuts.return_value = {
                         "created": True,
@@ -275,10 +275,10 @@ class TestCheckpointTool:
     @pytest.mark.asyncio
     async def test_checkpoint_impl_performs_checkpoint(self) -> None:
         """Should perform checkpoint and return formatted output."""
-        from session_mgmt_mcp.tools.session_tools import _checkpoint_impl
+        from session_buddy.tools.session_tools import _checkpoint_impl
 
         with patch(
-            "session_mgmt_mcp.tools.session_tools.session_manager"
+            "session_buddy.tools.session_tools.session_manager"
         ) as mock_manager:
             mock_manager.current_project = "test-project"
             mock_manager.checkpoint_session = AsyncMock(
@@ -292,7 +292,7 @@ class TestCheckpointTool:
             )
 
             with patch(
-                "session_mgmt_mcp.tools.session_tools._handle_auto_compaction"
+                "session_buddy.tools.session_tools._handle_auto_compaction"
             ) as mock_compact:
                 mock_compact.return_value = None
 
@@ -308,10 +308,10 @@ class TestEndTool:
     @pytest.mark.asyncio
     async def test_end_impl_ends_session(self) -> None:
         """Should end session and return formatted output."""
-        from session_mgmt_mcp.tools.session_tools import _end_impl
+        from session_buddy.tools.session_tools import _end_impl
 
         with patch(
-            "session_mgmt_mcp.tools.session_tools.session_manager"
+            "session_buddy.tools.session_tools.session_manager"
         ) as mock_manager:
             mock_manager.end_session = AsyncMock(
                 return_value={
@@ -339,10 +339,10 @@ class TestStatusTool:
     @pytest.mark.asyncio
     async def test_status_impl_returns_status(self) -> None:
         """Should return comprehensive session status."""
-        from session_mgmt_mcp.tools.session_tools import _status_impl
+        from session_buddy.tools.session_tools import _status_impl
 
         with patch(
-            "session_mgmt_mcp.tools.session_tools.session_manager"
+            "session_buddy.tools.session_tools.session_manager"
         ) as mock_manager:
             mock_manager.get_session_status = AsyncMock(
                 return_value={
@@ -384,7 +384,7 @@ class TestHelperFunctions:
 
     def test_setup_uv_dependencies_detects_uv(self, tmp_path: Path) -> None:
         """Should detect UV and pyproject.toml."""
-        from session_mgmt_mcp.tools.session_tools import _setup_uv_dependencies
+        from session_buddy.tools.session_tools import _setup_uv_dependencies
 
         # Create pyproject.toml
         (tmp_path / "pyproject.toml").write_text("[project]")
@@ -402,7 +402,7 @@ class TestHelperFunctions:
 
     def test_setup_uv_dependencies_handles_no_uv(self, tmp_path: Path) -> None:
         """Should handle missing UV gracefully."""
-        from session_mgmt_mcp.tools.session_tools import _setup_uv_dependencies
+        from session_buddy.tools.session_tools import _setup_uv_dependencies
 
         with patch("shutil.which") as mock_which:
             mock_which.return_value = None
@@ -422,7 +422,7 @@ class TestHealthCheckTools:
         # Access via register function pattern
         from unittest.mock import MagicMock
 
-        from session_mgmt_mcp.tools.session_tools import _get_session_manager
+        from session_buddy.tools.session_tools import _get_session_manager
 
         mock_mcp = MagicMock()
         tools = {}
@@ -436,7 +436,7 @@ class TestHealthCheckTools:
 
         mock_mcp.tool = mock_tool
 
-        from session_mgmt_mcp.tools.session_tools import register_session_tools
+        from session_buddy.tools.session_tools import register_session_tools
 
         register_session_tools(mock_mcp)
 
@@ -466,7 +466,7 @@ class TestHealthCheckTools:
 
         mock_mcp.tool = mock_tool
 
-        from session_mgmt_mcp.tools.session_tools import register_session_tools
+        from session_buddy.tools.session_tools import register_session_tools
 
         register_session_tools(mock_mcp)
 

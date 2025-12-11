@@ -21,7 +21,7 @@ class TestDataClasses:
 
     def test_stream_generation_options_defaults(self) -> None:
         """Should create options with sensible defaults."""
-        from session_mgmt_mcp.llm_providers import StreamGenerationOptions
+        from session_buddy.llm_providers import StreamGenerationOptions
 
         options = StreamGenerationOptions()
 
@@ -33,7 +33,7 @@ class TestDataClasses:
 
     def test_stream_generation_options_immutable(self) -> None:
         """Should be frozen/immutable dataclass."""
-        from session_mgmt_mcp.llm_providers import StreamGenerationOptions
+        from session_buddy.llm_providers import StreamGenerationOptions
 
         options = StreamGenerationOptions(temperature=0.5)
 
@@ -42,7 +42,7 @@ class TestDataClasses:
 
     def test_stream_chunk_content_chunk(self) -> None:
         """Should create content chunk."""
-        from session_mgmt_mcp.llm_providers import StreamChunk
+        from session_buddy.llm_providers import StreamChunk
 
         chunk = StreamChunk.content_chunk("Hello", provider="openai")
 
@@ -52,7 +52,7 @@ class TestDataClasses:
 
     def test_stream_chunk_error_chunk(self) -> None:
         """Should create error chunk."""
-        from session_mgmt_mcp.llm_providers import StreamChunk
+        from session_buddy.llm_providers import StreamChunk
 
         chunk = StreamChunk.error_chunk("Connection failed")
 
@@ -62,7 +62,7 @@ class TestDataClasses:
 
     def test_llm_message_auto_timestamp(self) -> None:
         """Should auto-generate timestamp."""
-        from session_mgmt_mcp.llm_providers import LLMMessage
+        from session_buddy.llm_providers import LLMMessage
 
         msg = LLMMessage(role="user", content="Hello")
 
@@ -72,7 +72,7 @@ class TestDataClasses:
 
     def test_llm_message_custom_timestamp(self) -> None:
         """Should accept custom timestamp."""
-        from session_mgmt_mcp.llm_providers import LLMMessage
+        from session_buddy.llm_providers import LLMMessage
 
         custom_time = "2024-01-01T12:00:00"
         msg = LLMMessage(role="assistant", content="Hi", timestamp=custom_time)
@@ -81,7 +81,7 @@ class TestDataClasses:
 
     def test_llm_response_structure(self) -> None:
         """Should create response with all fields."""
-        from session_mgmt_mcp.llm_providers import LLMResponse
+        from session_buddy.llm_providers import LLMResponse
 
         response = LLMResponse(
             content="Response text",
@@ -99,7 +99,7 @@ class TestDataClasses:
 
     def test_llm_response_auto_metadata(self) -> None:
         """Should auto-initialize metadata."""
-        from session_mgmt_mcp.llm_providers import LLMResponse
+        from session_buddy.llm_providers import LLMResponse
 
         response = LLMResponse(
             content="Test",
@@ -118,7 +118,7 @@ class TestLLMProviderBase:
 
     def test_provider_initialization(self) -> None:
         """Should initialize provider with config."""
-        from session_mgmt_mcp.llm_providers import OpenAIProvider
+        from session_buddy.llm_providers import OpenAIProvider
 
         config = {"api_key": "test-key", "model": "gpt-4"}
         provider = OpenAIProvider(config)
@@ -128,7 +128,7 @@ class TestLLMProviderBase:
 
     def test_provider_name_extraction(self) -> None:
         """Should extract provider name from class name."""
-        from session_mgmt_mcp.llm_providers import GeminiProvider, OllamaProvider
+        from session_buddy.llm_providers import GeminiProvider, OllamaProvider
 
         gemini = GeminiProvider({"api_key": "test"})
         ollama = OllamaProvider({"base_url": "http://localhost:11434"})
@@ -142,7 +142,7 @@ class TestOpenAIProvider:
 
     def test_init_with_api_key(self) -> None:
         """Should initialize with API key."""
-        from session_mgmt_mcp.llm_providers import OpenAIProvider
+        from session_buddy.llm_providers import OpenAIProvider
 
         provider = OpenAIProvider({"api_key": "sk-test123"})
 
@@ -151,7 +151,7 @@ class TestOpenAIProvider:
 
     def test_convert_messages_format(self) -> None:
         """Should convert messages to OpenAI format."""
-        from session_mgmt_mcp.llm_providers import LLMMessage, OpenAIProvider
+        from session_buddy.llm_providers import LLMMessage, OpenAIProvider
 
         provider = OpenAIProvider({"api_key": "test"})
         messages = [
@@ -169,7 +169,7 @@ class TestOpenAIProvider:
 
     def test_get_models_list(self) -> None:
         """Should return list of available models."""
-        from session_mgmt_mcp.llm_providers import OpenAIProvider
+        from session_buddy.llm_providers import OpenAIProvider
 
         provider = OpenAIProvider({"api_key": "test"})
         models = provider.get_models()
@@ -181,7 +181,7 @@ class TestOpenAIProvider:
     @pytest.mark.asyncio
     async def test_is_available_with_api_key(self) -> None:
         """Should check availability based on API key."""
-        from session_mgmt_mcp.llm_providers import OpenAIProvider
+        from session_buddy.llm_providers import OpenAIProvider
 
         # With API key
         provider = OpenAIProvider({"api_key": "sk-test123"})
@@ -199,7 +199,7 @@ class TestGeminiProvider:
 
     def test_init_with_api_key(self) -> None:
         """Should initialize with API key."""
-        from session_mgmt_mcp.llm_providers import GeminiProvider
+        from session_buddy.llm_providers import GeminiProvider
 
         provider = GeminiProvider({"api_key": "test-gemini-key"})
 
@@ -208,7 +208,7 @@ class TestGeminiProvider:
 
     def test_convert_messages_gemini_format(self) -> None:
         """Should convert messages to Gemini format."""
-        from session_mgmt_mcp.llm_providers import GeminiProvider, LLMMessage
+        from session_buddy.llm_providers import GeminiProvider, LLMMessage
 
         provider = GeminiProvider({"api_key": "test"})
         messages = [
@@ -223,7 +223,7 @@ class TestGeminiProvider:
 
     def test_get_models_list(self) -> None:
         """Should return list of Gemini models."""
-        from session_mgmt_mcp.llm_providers import GeminiProvider
+        from session_buddy.llm_providers import GeminiProvider
 
         provider = GeminiProvider({"api_key": "test"})
         models = provider.get_models()
@@ -236,7 +236,7 @@ class TestGeminiProvider:
     @pytest.mark.asyncio
     async def test_is_available_with_api_key(self) -> None:
         """Should check availability based on API key."""
-        from session_mgmt_mcp.llm_providers import GeminiProvider
+        from session_buddy.llm_providers import GeminiProvider
 
         # With API key
         provider = GeminiProvider({"api_key": "test-key"})
@@ -254,7 +254,7 @@ class TestOllamaProvider:
 
     def test_init_with_base_url(self) -> None:
         """Should initialize with base URL."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -263,7 +263,7 @@ class TestOllamaProvider:
 
     def test_init_default_base_url(self) -> None:
         """Should use default base URL if not provided."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({})
 
@@ -273,7 +273,7 @@ class TestOllamaProvider:
 
     def test_convert_messages_format(self) -> None:
         """Should convert messages to Ollama format."""
-        from session_mgmt_mcp.llm_providers import LLMMessage, OllamaProvider
+        from session_buddy.llm_providers import LLMMessage, OllamaProvider
 
         provider = OllamaProvider({})
         messages = [
@@ -291,7 +291,7 @@ class TestOllamaProvider:
     @pytest.mark.asyncio
     async def test_is_available_checks_connection(self) -> None:
         """Should check Ollama server availability."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -305,7 +305,7 @@ class TestLLMManager:
 
     def test_manager_initialization(self) -> None:
         """Should initialize manager with config."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         # LLMManager takes config_path (str), not config dict
         manager = LLMManager(config_path=None)
@@ -315,7 +315,7 @@ class TestLLMManager:
 
     def test_manager_loads_providers(self) -> None:
         """Should load configured providers."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         # LLMManager loads from environment variables by default
         manager = LLMManager(config_path=None)
@@ -328,7 +328,7 @@ class TestLLMManager:
 
     def test_manager_default_provider(self) -> None:
         """Should set default provider from config."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         manager = LLMManager(config_path=None)
 
@@ -338,7 +338,7 @@ class TestLLMManager:
 
     def test_manager_fallback_order(self) -> None:
         """Should configure fallback provider order."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         manager = LLMManager(config_path=None)
 
@@ -349,7 +349,7 @@ class TestLLMManager:
     @pytest.mark.asyncio
     async def test_manager_generate_with_default_provider(self) -> None:
         """Should generate using default provider."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         manager = LLMManager(config_path=None)
 
@@ -360,7 +360,7 @@ class TestLLMManager:
     @pytest.mark.asyncio
     async def test_manager_fallback_on_failure(self) -> None:
         """Should support fallback configuration."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         manager = LLMManager(config_path=None)
 
@@ -375,7 +375,7 @@ class TestProviderAvailability:
     @pytest.mark.asyncio
     async def test_check_multiple_providers(self) -> None:
         """Should check availability of multiple providers."""
-        from session_mgmt_mcp.llm_providers import LLMManager
+        from session_buddy.llm_providers import LLMManager
 
         manager = LLMManager(config_path=None)
 
@@ -394,7 +394,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_missing_api_key(self) -> None:
         """Should handle missing API key gracefully."""
-        from session_mgmt_mcp.llm_providers import OpenAIProvider
+        from session_buddy.llm_providers import OpenAIProvider
 
         provider = OpenAIProvider({})  # No API key
 
@@ -405,7 +405,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_network_error(self) -> None:
         """Should handle network errors gracefully."""
-        from session_mgmt_mcp.llm_providers import LLMMessage, OllamaProvider
+        from session_buddy.llm_providers import LLMMessage, OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://invalid:99999"})
 
@@ -416,7 +416,7 @@ class TestErrorHandling:
 
     def test_invalid_message_role(self) -> None:
         """Should validate message roles."""
-        from session_mgmt_mcp.llm_providers import LLMMessage
+        from session_buddy.llm_providers import LLMMessage
 
         # Standard roles should work
         msg = LLMMessage(role="user", content="Test")

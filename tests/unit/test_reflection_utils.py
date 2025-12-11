@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from session_mgmt_mcp.utils.reflection_utils import (
+from session_buddy.utils.reflection_utils import (
     AutoStoreDecision,
     CheckpointReason,
     format_auto_store_summary,

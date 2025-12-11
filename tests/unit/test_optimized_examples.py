@@ -67,14 +67,14 @@ async def test_quality_scoring_parametrized(
 
     Uses factory pattern + parametrization for comprehensive coverage.
     """
-    from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+    from session_buddy.core.session_manager import SessionLifecycleManager
 
     # Create project with features
     project_dir = mock_project_factory(temp_test_dir, project_features)
 
     manager = SessionLifecycleManager(logger=Mock())
 
-    with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
+    with patch("session_buddy.server.permissions_manager") as mock_perms:
         mock_perms.trusted_operations = set()
 
         quality = await manager.calculate_quality_score(project_dir=project_dir)

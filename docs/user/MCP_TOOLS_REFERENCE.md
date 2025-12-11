@@ -415,7 +415,7 @@ Large responses are automatically managed:
 # Ensure all dependencies are installed (embeddings are included by default)
 uv sync
 # or
-pip install session-mgmt-mcp
+pip install session-buddy
 ```
 
 #### "No conversations found"
@@ -586,4 +586,4 @@ ______________________________________________________________________
 
 *This reference covers all **70+ MCP tools** provided by session-mgmt. For implementation details, see the codebase.*
 
-**Need help?** Use `/session-mgmt:status` to diagnose issues or check [GitHub Issues](https://github.com/lesleslie/session-mgmt-mcp/issues) for support.
+**Need help?** Use `/session-mgmt:status` to diagnose issues or check [GitHub Issues](https://github.com/lesleslie/session-buddy/issues) for support.

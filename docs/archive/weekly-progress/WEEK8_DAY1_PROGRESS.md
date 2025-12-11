@@ -59,7 +59,7 @@ ______________________________________________________________________
 def reset_di_container():
     yield
     try:
-        from session_mgmt_mcp.di import reset as reset_di
+        from session_buddy.di import reset as reset_di
 
         reset_di()
     except Exception:
@@ -87,7 +87,7 @@ def reset_di_container():
     # Clean up BEFORE test to ensure monkeypatch can take effect
     try:
         from bevy import get_container
-        from session_mgmt_mcp.di import SessionPaths
+        from session_buddy.di import SessionPaths
 
         container = get_container()
 
@@ -115,7 +115,7 @@ def reset_di_container():
                 container.instances.pop(cls, None)
 
         # Reset configuration flag BEFORE test so monkeypatch can work
-        import session_mgmt_mcp.di as di_module
+        import session_buddy.di as di_module
 
         di_module._configured = False
 
@@ -137,7 +137,7 @@ def reset_di_container():
             pass
 
         # Reset configuration flag again
-        import session_mgmt_mcp.di as di_module
+        import session_buddy.di as di_module
 
         di_module._configured = False
 
@@ -274,7 +274,7 @@ def cleanup_singleton(cls):
 def _import_singleton_class(cls_name: str):
     """Dynamically import singleton class by name."""
     if cls_name == "SessionLogger":
-        from session_mgmt_mcp.utils.logging import SessionLogger
+        from session_buddy.utils.logging import SessionLogger
 
         return SessionLogger
     # ... other classes
@@ -561,5 +561,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 8 Day 1 - Test Isolation Fixed ✅

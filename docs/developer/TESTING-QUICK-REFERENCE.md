@@ -1,6 +1,6 @@
 # Testing Quick Reference Guide
 
-Quick commands and patterns for testing session-mgmt-mcp
+Quick commands and patterns for testing session-buddy
 
 ## Running Tests
 
@@ -8,7 +8,7 @@ Quick commands and patterns for testing session-mgmt-mcp
 
 ```bash
 pytest
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 ```
 
 ### Run New Comprehensive Tests
@@ -37,13 +37,13 @@ pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatab
 pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatabaseStorage::test_store_conversation -xvs
 
 # With coverage
-pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatabaseStorage -v --cov=session_mgmt_mcp
+pytest tests/unit/test_reflection_database_comprehensive.py::TestReflectionDatabaseStorage -v --cov=session_buddy
 ```
 
 ### Quick Coverage Check
 
 ```bash
-pytest --cov=session_mgmt_mcp -q
+pytest --cov=session_buddy -q
 ```
 
 ## Test File Organization
@@ -204,7 +204,7 @@ pytest tests/unit/test_search_tools.py -v       # TODO
 
 ## Useful References
 
-- **Database API:** session_mgmt_mcp/reflection_tools.py
+- **Database API:** session_buddy/reflection_tools.py
 - **Test Files:** tests/unit/test\_\*\_comprehensive.py
 - **Progress Report:** docs/TEST-IMPROVEMENT-PROGRESS.md
 - **Final Summary:** docs/TEST-IMPROVEMENT-FINAL-SUMMARY.md
@@ -227,7 +227,7 @@ pytest --tb=short  # Shorter error messages
 ### Generate Coverage Report
 
 ```bash
-pytest --cov=session_mgmt_mcp --cov-report=html
+pytest --cov=session_buddy --cov-report=html
 # Open htmlcov/index.html in browser
 ```
 

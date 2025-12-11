@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ### Module Overview
 
-- **File:** `session_mgmt_mcp/tools/session_tools.py`
+- **File:** `session_buddy/tools/session_tools.py`
 - **Size:** 872 lines, 36 total functions
 - **Public APIs:** 8 MCP tools (start, checkpoint, end, status, health_check, ping, server_info)
 - **Complexity:** High - session lifecycle management, git integration, UV dependency setup
@@ -83,7 +83,7 @@ ______________________________________________________________________
 
 ### Module Overview
 
-- **File:** `session_mgmt_mcp/advanced_features.py`
+- **File:** `session_buddy/advanced_features.py`
 - **Size:** 835 lines, 27 total functions/classes
 - **Public APIs:** 17+ async MCP tools (natural scheduling, multi-project, search, git worktrees)
 - **Complexity:** High - optional dependencies, dynamic imports, error handling
@@ -184,7 +184,7 @@ ______________________________________________________________________
 ```text
 @pytest.mark.asyncio
 async def test_async_mcp_tool(self) -> None:
-    from session_mgmt_mcp.tools.session_tools import tool_function
+    from session_buddy.tools.session_tools import tool_function
 
     with patch("module.dependency") as mock_dep:
         mock_dep.return_value = expected_value
@@ -197,7 +197,7 @@ async def test_async_mcp_tool(self) -> None:
 ```text
 @pytest.mark.asyncio
 async def test_optional_dependency_unavailable(self) -> None:
-    from session_mgmt_mcp.advanced_features import function_with_optional_dep
+    from session_buddy.advanced_features import function_with_optional_dep
 
     with patch("builtins.__import__", side_effect=ImportError):
         result = await function_with_optional_dep()
@@ -209,9 +209,9 @@ async def test_optional_dependency_unavailable(self) -> None:
 ```text
 @pytest.mark.asyncio
 async def test_git_worktree_operation(self) -> None:
-    from session_mgmt_mcp.advanced_features import git_worktree_add
+    from session_buddy.advanced_features import git_worktree_add
 
-    with patch("session_mgmt_mcp.worktree_manager.WorktreeManager") as mock_cls:
+    with patch("session_buddy.worktree_manager.WorktreeManager") as mock_cls:
         mock_manager = AsyncMock()
         mock_manager.create_worktree = AsyncMock(return_value={...})
         mock_cls.return_value = mock_manager
@@ -392,6 +392,6 @@ ______________________________________________________________________
 
 **Report Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Day 2 - Session Tools & Advanced Features Coverage
 **Status:** ✅ Complete - All Targets Exceeded

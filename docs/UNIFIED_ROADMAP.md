@@ -1,4 +1,4 @@
-# Unified Roadmap: mcp-common + session-mgmt-mcp
+# Unified Roadmap: mcp-common + session-buddy
 
 **Date**: 2025-10-28
 **Duration**: 16 weeks
@@ -11,9 +11,9 @@ ______________________________________________________________________
 This roadmap unifies two complementary efforts:
 
 1. **mcp-common**: ACB-native foundation library for 9 MCP servers
-1. **session-mgmt-mcp**: Pilot implementation and validation sandbox
+1. **session-buddy**: Pilot implementation and validation sandbox
 
-**Key Insight**: session-mgmt-mcp validates patterns BEFORE they're extracted to mcp-common and rolled out ecosystem-wide.
+**Key Insight**: session-buddy validates patterns BEFORE they're extracted to mcp-common and rolled out ecosystem-wide.
 
 ______________________________________________________________________
 
@@ -68,7 +68,7 @@ ______________________________________________________________________
 
 **Track 1 (Critical Path)**:
 
-- [x] Day 1-3: Implement HTTPClientAdapter in session-mgmt-mcp ✅ **DONE**
+- [x] Day 1-3: Implement HTTPClientAdapter in session-buddy ✅ **DONE**
 - [ ] Day 4: Load testing (validate 11x performance improvement)
 - [ ] Day 5: Integration testing with real traffic patterns
 - [ ] Document HTTPClientAdapter patterns for extraction
@@ -105,7 +105,7 @@ ______________________________________________________________________
   - excalidraw-mcp (also fix hardcoded paths)
   - opera-cloud-mcp
   - raindropio-mcp (already best practices, minimal changes)
-  - session-mgmt-mcp (already using it)
+  - session-buddy (already using it)
 
 **Track 2 (Parallel)**:
 
@@ -131,7 +131,7 @@ ______________________________________________________________________
 **Track 1 (Critical Path)**:
 
 - [ ] Day 1-3: session-mgmt Phase 2.7 - ACB Dependency Injection
-  - Implement `session_mgmt_mcp/di/` package
+  - Implement `session_buddy/di/` package
   - Apply `depends.inject` to core, quality, tool layers
   - Migration: Server core, tool modules to DI
 - [ ] Day 4: Validate DI patterns (70%+ coverage on new code)
@@ -193,7 +193,7 @@ ______________________________________________________________________
 - [ ] Day 1-3: Apply DI + patterns to remaining servers
   - unifi-mcp (most complex, thorough testing needed)
   - excalidraw-mcp (hybrid Python/TypeScript architecture)
-  - session-mgmt-mcp (already using patterns, formalize)
+  - session-buddy (already using patterns, formalize)
 - [ ] Day 4: ACB-integrated servers enhancement
   - Add rate limiting to ACB mcp
   - Simplify crackerjack mcp (use shared RateLimiter)
@@ -221,7 +221,7 @@ ______________________________________________________________________
 
 **Track 3 (Deep Integration)**:
 
-- [ ] Week 7: Build `session_mgmt_mcp/templates/` hierarchy
+- [ ] Week 7: Build `session_buddy/templates/` hierarchy
   - Register Jinja2 loader via DI
   - Document data models for template families
   - Create TemplateRenderer service
@@ -247,7 +247,7 @@ ______________________________________________________________________
 
 **Track 3 (Deep Integration)**:
 
-- [ ] Week 9: Create `session_mgmt_mcp/adapters/database.py`
+- [ ] Week 9: Create `session_buddy/adapters/database.py`
   - ACB query client with connection pooling
   - Query composition helpers
   - Parameterized builders
@@ -278,7 +278,7 @@ ______________________________________________________________________
 
 - [ ] Week 11: Map lifecycle hooks to EventBus
   - Define canonical event schema
-  - Implement `session_mgmt_mcp/events.py`
+  - Implement `session_buddy/events.py`
   - EventBus configuration via DI
 - [ ] Week 12: Refactor listeners
   - Server core subscribers
@@ -416,7 +416,7 @@ ______________________________________________________________________
 
 **Success Criteria**:
 
-- session-mgmt-mcp is world-class reference implementation
+- session-buddy is world-class reference implementation
 - Ecosystem average quality 85/100
 - Zero critical issues across all 9 servers
 
@@ -429,7 +429,7 @@ ______________________________________________________________________
 ### Current State (Week 2)
 
 ```
-session-mgmt-mcp Metrics
+session-buddy Metrics
 ├── Quality Score:        71/100
 ├── Architecture:         90/100 ✅ (modular)
 ├── ACB Integration:      0/10 (Phase 2.7 starting)
@@ -452,7 +452,7 @@ Ecosystem Metrics
 ### Target State (Week 6 - Milestone 2)
 
 ```
-session-mgmt-mcp Metrics
+session-buddy Metrics
 ├── Quality Score:        75/100 (+4)
 ├── Architecture:         90/100 (maintained)
 ├── ACB Integration:      6/10 (+6)
@@ -475,7 +475,7 @@ Ecosystem Metrics
 ### Final State (Week 16 - Milestone 3)
 
 ```
-session-mgmt-mcp Metrics
+session-buddy Metrics
 ├── Quality Score:        95/100 (+24 from start)
 ├── Architecture:         95/100 (+5)
 ├── ACB Integration:      9/10 (+9)
@@ -577,7 +577,7 @@ ______________________________________________________________________
 - **8GB+ RAM** - For embedding model
 - **10GB+ disk** - For test data
 
-**Status**: ✅ All dependencies already met in session-mgmt-mcp
+**Status**: ✅ All dependencies already met in session-buddy
 
 ______________________________________________________________________
 

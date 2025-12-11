@@ -9,7 +9,7 @@ ______________________________________________________________________
 
 ## Executive Summary
 
-We're migrating session-mgmt-mcp's configuration system from custom Pydantic config (657 lines) to ACB Settings framework. This document presents architectural options, trade-offs, and a recommended migration strategy.
+We're migrating session-buddy's configuration system from custom Pydantic config (657 lines) to ACB Settings framework. This document presents architectural options, trade-offs, and a recommended migration strategy.
 
 **Key Decision Points:**
 
@@ -27,7 +27,7 @@ ______________________________________________________________________
 
 ### Architecture Overview
 
-**File:** `session_mgmt_mcp/config.py` (657 lines)
+**File:** `session_buddy/config.py` (657 lines)
 
 **Structure:**
 
@@ -72,7 +72,7 @@ ______________________________________________________________________
     └── Environment variable support (SESSION_MGMT_ prefix)
 ```
 
-**Configuration Source:** `pyproject.toml` → `[tool.session-mgmt-mcp]` section
+**Configuration Source:** `pyproject.toml` → `[tool.session-buddy]` section
 
 **Environment Variables:**
 
@@ -389,11 +389,11 @@ ______________________________________________________________________
 
 ```toml
 # pyproject.toml
-[tool.session-mgmt-mcp]
+[tool.session-buddy]
 debug = false
 server_host = "localhost"
 
-[tool.session-mgmt-mcp.database]
+[tool.session-buddy.database]
 path = "~/.claude/data/reflection.duckdb"
 connection_timeout = 30
 enable_multi_project = true
@@ -497,8 +497,8 @@ ______________________________________________________________________
 
 1. **Day 3:** Update all imports
 
-   - Replace `from session_mgmt_mcp.config import get_config` globally
-   - Update to `from session_mgmt_mcp.config import settings`
+   - Replace `from session_buddy.config import get_config` globally
+   - Update to `from session_buddy.config import settings`
    - Fix 50+ import sites across codebase
 
 1. **Day 4:** Test and validate
@@ -808,7 +808,7 @@ ______________________________________________________________________
 
 **Deliverables:**
 
-1. **New file:** `session_mgmt_mcp/config_v2.py` (~150 lines)
+1. **New file:** `session_buddy/config_v2.py` (~150 lines)
 
    ```text
    from acb.config import Settings
@@ -822,12 +822,12 @@ ______________________________________________________________________
            - settings/session-mgmt.yaml (base config, committed)
            - settings/local.yaml (local overrides, gitignored)
 
-           Fallback: [tool.session-mgmt-mcp] in pyproject.toml
+           Fallback: [tool.session-buddy] in pyproject.toml
 
        Priority Order:
            1. settings/local.yaml (highest - local overrides)
            2. settings/session-mgmt.yaml (base configuration)
-           3. pyproject.toml [tool.session-mgmt-mcp] (fallback)
+           3. pyproject.toml [tool.session-buddy] (fallback)
            4. Defaults from this class (lowest)
        """
 
@@ -869,11 +869,11 @@ ______________________________________________________________________
            return load_settings_with_fallback(cls, settings_dir)
    ```
 
-1. **New file:** `session_mgmt_mcp/config_compat.py` (~100 lines)
+1. **New file:** `session_buddy/config_compat.py` (~100 lines)
 
 ```text
    from functools import cached_property
-   from session_mgmt_mcp.config_v2 import SessionMgmtSettings
+   from session_buddy.config_v2 import SessionMgmtSettings
 
 
    class DatabaseConfig:
@@ -910,7 +910,7 @@ ______________________________________________________________________
        # ... other nested views ...
 ```
 
-1. **New file:** `session_mgmt_mcp/loader.py` (~150 lines)
+1. **New file:** `session_buddy/loader.py` (~150 lines)
 
    ```text
    from pathlib import Path
@@ -958,7 +958,7 @@ ______________________________________________________________________
 
    ```yaml
    # settings/session-mgmt.yaml (committed)
-   # Base configuration for session-mgmt-mcp
+   # Base configuration for session-buddy
 
    # Server settings
    debug: false
@@ -1021,8 +1021,8 @@ ______________________________________________________________________
 
 ```python
 # Step 1: Update config.py to provide both APIs
-from session_mgmt_mcp.config_v2 import SessionMgmtSettings
-from session_mgmt_mcp.config_compat import SessionMgmtConfig
+from session_buddy.config_v2 import SessionMgmtSettings
+from session_buddy.config_compat import SessionMgmtConfig
 
 # New API (recommended)
 settings = SessionMgmtSettings.load()
@@ -1179,7 +1179,7 @@ ______________________________________________________________________
 
 - **Risk:** Other projects depend on nested config API (`config.database.path`)
 - **Mitigation:** Backwards compatibility layer (keeps old API working)
-- **Detection:** Check for importers: `git grep "from session_mgmt_mcp.config import get_config"`
+- **Detection:** Check for importers: `git grep "from session_buddy.config import get_config"`
 
 **2. Environment Variable Breakage**
 
@@ -1391,7 +1391,7 @@ ______________________________________________________________________
 
 ```python
 # Current usage in server.py
-from session_mgmt_mcp.config import get_config
+from session_buddy.config import get_config
 
 config = get_config()
 
@@ -1405,7 +1405,7 @@ log_level = config.logging.level
 
 ```python
 # New usage with ACB Settings
-from session_mgmt_mcp.config import SessionMgmtSettings
+from session_buddy.config import SessionMgmtSettings
 
 settings = SessionMgmtSettings.load()
 
@@ -1419,7 +1419,7 @@ log_level = settings.logging_level
 
 ```python
 # Backwards compatible (uses compat layer)
-from session_mgmt_mcp.config import get_config
+from session_buddy.config import get_config
 
 config = get_config()  # DeprecationWarning
 
@@ -1468,7 +1468,7 @@ ______________________________________________________________________
 
 ## References
 
-- **Current Config:** `session_mgmt_mcp/config.py` (657 lines)
+- **Current Config:** `session_buddy/config.py` (657 lines)
 - **ACB Settings:** `acb/config.py` (943 lines framework)
 - **Crackerjack Reference:** `crackerjack/config/settings.py` (269 lines)
 - **Crackerjack Loader:** `crackerjack/config/loader.py` (194 lines)

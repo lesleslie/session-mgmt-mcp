@@ -145,7 +145,7 @@ class TestAuthenticationAndAuthorization:
     def test_permission_system_bypass_attempts(self):
         """Test attempts to bypass permission systems."""
         # Import the session permissions manager
-        from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+        from session_buddy.core.permissions import SessionPermissionsManager
 
         # Create a new permissions manager instance
         perms_manager = SessionPermissionsManager()
@@ -162,7 +162,7 @@ class TestAuthenticationAndAuthorization:
         # This is a conceptual test - in reality, this would test specific access controls
         # For now, we'll just verify that the database properly handles access patterns
         async with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase(db_path=tmp.name)
             await db.initialize()
@@ -212,7 +212,7 @@ class TestResourceConsumption:
         import time
 
         # Create a temporary database for this test
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         async with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
             db = ReflectionDatabase(db_path=tmp.name)
@@ -241,7 +241,7 @@ class TestDataIntegrity:
         import asyncio
 
         # Create a shared database for concurrent access testing
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         async with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
             db = ReflectionDatabase(db_path=tmp.name)
@@ -269,7 +269,7 @@ class TestDataIntegrity:
 
     async def test_data_recovery_after_crash_simulation(self):
         """Test data recovery after crash simulation."""
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
             db_path = tmp.name

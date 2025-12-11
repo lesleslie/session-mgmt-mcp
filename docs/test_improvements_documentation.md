@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the improvements made to the test suite for the session-mgmt-mcp project. The goal was to enhance test coverage, add robust testing patterns, and improve overall test quality.
+This document details the improvements made to the test suite for the session-buddy project. The goal was to enhance test coverage, add robust testing patterns, and improve overall test quality.
 
 ## New Test Categories Added
 
@@ -104,7 +104,7 @@ To run the complete test suite:
 uv run pytest
 
 # Run tests with coverage
-uv run pytest --cov=session_mgmt_mcp --cov-report=html
+uv run pytest --cov=session_buddy --cov-report=html
 
 # Run performance tests specifically
 uv run pytest tests/performance/

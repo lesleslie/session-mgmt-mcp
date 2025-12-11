@@ -24,7 +24,7 @@ Phase 5 targets the remaining large files identified in Phase 4 planning. These 
 **Expected Structure:**
 
 ```
-session_mgmt_mcp/utils/search/
+session_buddy/utils/search/
 ├── facets.py          # Faceted search filtering
 ├── aggregations.py    # Statistical aggregations
 ├── indexing.py        # FTS5 indexing utilities
@@ -48,11 +48,11 @@ ______________________________________________________________________
 **Expected Structure:**
 
 ```
-session_mgmt_mcp/core/tools/
+session_buddy/core/tools/
 ├── registration.py    # Tool registration logic
 └── __init__.py        # Exports
 
-session_mgmt_mcp/core/
+session_buddy/core/
 ├── initialization.py  # Server initialization
 ├── config.py          # Configuration management
 ├── health.py          # Health checks
@@ -74,7 +74,7 @@ ______________________________________________________________________
 **Expected Structure:**
 
 ```
-session_mgmt_mcp/utils/scheduler/
+session_buddy/utils/scheduler/
 ├── time_parser.py     # Natural language time parsing
 ├── reminders.py       # Reminder system
 ├── queue.py           # Task queue management

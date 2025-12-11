@@ -313,7 +313,7 @@ Key lesson: Always await async initialization in fixtures before yielding to tes
 
 ```text
 # Correct way to mock DI-injected dependencies
-with patch("session_mgmt_mcp.server.session_logger") as mock_logger:
+with patch("session_buddy.server.session_logger") as mock_logger:
     mock_logger.info = MagicMock()
     result = await health_check()
 ```

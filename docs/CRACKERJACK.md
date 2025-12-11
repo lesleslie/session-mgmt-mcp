@@ -1,6 +1,6 @@
 # Crackerjack Integration
 
-This document provides comprehensive guidance on session-mgmt-mcp's deep integration with [Crackerjack](https://github.com/lesleslie/crackerjack), the AI-driven Python development platform.
+This document provides comprehensive guidance on session-buddy's deep integration with [Crackerjack](https://github.com/lesleslie/crackerjack), the AI-driven Python development platform.
 
 ## Table of Contents
 
@@ -147,7 +147,7 @@ ______________________________________________________________________
          │ MCP Protocol
          ▼
 ┌─────────────────────────────────┐
-│  session-mgmt-mcp MCP Server    │
+│  session-buddy MCP Server    │
 │                                 │
 │  ┌───────────────────────────┐ │
 │  │  crackerjack_tools.py     │ │
@@ -510,7 +510,7 @@ ______________________________________________________________________
 
 ### MCP Server Settings
 
-**Location:** `session_mgmt_mcp/config.py`
+**Location:** `session_buddy/config.py`
 
 ```python
 # Crackerjack integration settings
@@ -521,7 +521,7 @@ CRACKERJACK_MAX_RETRIES = 3
 
 ### Hook Parser Settings
 
-**Location:** `session_mgmt_mcp/tools/hook_parser.py`
+**Location:** `session_buddy/tools/hook_parser.py`
 
 ```python
 # Status markers (frozen sets for performance)
@@ -652,9 +652,9 @@ ______________________________________________________________________
 
 **Solutions:**
 
-1. Check MCP server running: `pgrep -fl session-mgmt-mcp`
+1. Check MCP server running: `pgrep -fl session-buddy`
 1. Restart MCP server
-1. Check logs: `tail -f ~/.claude/logs/session-mgmt-mcp.log`
+1. Check logs: `tail -f ~/.claude/logs/session-buddy.log`
 
 ### Hook Parsing Fails
 
@@ -698,7 +698,7 @@ print(f"Cache hit rate: {perf_stats['cache_hit_rate']:.1f}%")
 import logging
 
 # Enable debug logging
-logging.getLogger("session_mgmt_mcp.crackerjack_integration").setLevel(logging.DEBUG)
+logging.getLogger("session_buddy.crackerjack_integration").setLevel(logging.DEBUG)
 
 # Execute with verbose output
 result = await execute_crackerjack_command("test", verbose=True, capture_progress=True)
@@ -762,9 +762,9 @@ ______________________________________________________________________
 
 **Project Files:**
 
-- Integration module: `session_mgmt_mcp/crackerjack_integration.py`
-- MCP tools: `session_mgmt_mcp/tools/crackerjack_tools.py`
-- Hook parser: `session_mgmt_mcp/tools/hook_parser.py`
+- Integration module: `session_buddy/crackerjack_integration.py`
+- MCP tools: `session_buddy/tools/crackerjack_tools.py`
+- Hook parser: `session_buddy/tools/hook_parser.py`
 
 **Testing:**
 

@@ -33,7 +33,7 @@ class TestKnowledgeGraphAdapterInit:
 
     def test_adapter_init_with_explicit_path(self) -> None:
         """Should initialize with explicit database path."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -46,7 +46,7 @@ class TestKnowledgeGraphAdapterInit:
 
     def test_adapter_init_without_path(self) -> None:
         """Should initialize without database path (uses config later)."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -58,7 +58,7 @@ class TestKnowledgeGraphAdapterInit:
 
     def test_adapter_init_with_path_object(self, tmp_path: Path) -> None:
         """Should accept Path object as database path."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -76,7 +76,7 @@ class TestContextManagers:
 
     def test_sync_context_manager_raises_error(self, tmp_path: Path) -> None:
         """Should raise error when using sync context manager."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -93,7 +93,7 @@ class TestContextManagers:
     @pytest.mark.asyncio
     async def test_async_context_manager_initializes(self, tmp_path: Path) -> None:
         """Should initialize when entering async context manager."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -113,7 +113,7 @@ class TestContextManagers:
         self, tmp_path: Path
     ) -> None:
         """Should cleanup connection even if exception occurs."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -137,7 +137,7 @@ class TestDatabasePathResolution:
 
     def test_get_db_path_uses_acb_config(self, tmp_path: Path) -> None:
         """Should use ACB config path when available."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -149,7 +149,7 @@ class TestDatabasePathResolution:
         adapter = KnowledgeGraphDatabaseAdapter()
 
         with patch(
-            "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+            "session_buddy.adapters.knowledge_graph_adapter.depends.get_sync",
             return_value=mock_config,
         ):
             result = adapter._get_db_path()
@@ -158,7 +158,7 @@ class TestDatabasePathResolution:
 
     def test_get_db_path_falls_back_to_instance_path(self, tmp_path: Path) -> None:
         """Should fall back to instance path when ACB config unavailable."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -167,7 +167,7 @@ class TestDatabasePathResolution:
 
         # Mock depends.get_sync to raise exception (ACB config unavailable)
         with patch(
-            "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+            "session_buddy.adapters.knowledge_graph_adapter.depends.get_sync",
             side_effect=Exception("ACB not configured"),
         ):
             result = adapter._get_db_path()
@@ -176,7 +176,7 @@ class TestDatabasePathResolution:
 
     def test_get_db_path_uses_default_when_no_path(self, tmp_path: Path) -> None:
         """Should use default path when no instance path or ACB config."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -185,11 +185,11 @@ class TestDatabasePathResolution:
         # Mock depends.get_sync to raise exception and Path.home()
         with (
             patch(
-                "session_mgmt_mcp.adapters.knowledge_graph_adapter.depends.get_sync",
+                "session_buddy.adapters.knowledge_graph_adapter.depends.get_sync",
                 side_effect=Exception("ACB not configured"),
             ),
             patch(
-                "session_mgmt_mcp.adapters.knowledge_graph_adapter.Path.home",
+                "session_buddy.adapters.knowledge_graph_adapter.Path.home",
                 return_value=tmp_path,
             ),
         ):
@@ -210,7 +210,7 @@ class TestInitialization:
     @pytest.mark.asyncio
     async def test_initialize_creates_connection(self, tmp_path: Path) -> None:
         """Should create DuckDB connection."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -227,7 +227,7 @@ class TestInitialization:
     @pytest.mark.asyncio
     async def test_initialize_creates_schema(self, tmp_path: Path) -> None:
         """Should create knowledge graph schema."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -250,7 +250,7 @@ class TestInitialization:
     @pytest.mark.asyncio
     async def test_initialize_idempotent(self, tmp_path: Path) -> None:
         """Should be safe to call initialize multiple times."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -277,7 +277,7 @@ class TestCloseAndCleanup:
     @pytest.mark.asyncio
     async def test_close_closes_connection(self, tmp_path: Path) -> None:
         """Should close DuckDB connection."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -292,7 +292,7 @@ class TestCloseAndCleanup:
 
     def test_close_when_not_initialized(self) -> None:
         """Should handle close when connection is None."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -304,7 +304,7 @@ class TestCloseAndCleanup:
     @pytest.mark.asyncio
     async def test_destructor_closes_connection(self, tmp_path: Path) -> None:
         """Should close connection in destructor."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -331,7 +331,7 @@ class TestEntityOperations:
         """Should create entity with observations."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -355,7 +355,7 @@ class TestEntityOperations:
         """Should create entity with properties."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -380,7 +380,7 @@ class TestEntityOperations:
         """Should find entity by name."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -403,7 +403,7 @@ class TestEntityOperations:
     @pytest.mark.asyncio
     async def test_find_entity_not_found(self, tmp_path: Path) -> None:
         """Should return None when entity not found."""
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -419,7 +419,7 @@ class TestEntityOperations:
         """Should add observation to existing entity."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -446,7 +446,7 @@ class TestEntityOperations:
         """Should search entities by query."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -488,7 +488,7 @@ class TestRelationshipOperations:
         """Should create relationship between entities."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -523,7 +523,7 @@ class TestRelationshipOperations:
         """Should create relationship with properties."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -561,7 +561,7 @@ class TestRelationshipOperations:
         """Should get all relationships for an entity."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -594,7 +594,7 @@ class TestRelationshipOperations:
         """Should find paths between entities."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -629,7 +629,7 @@ class TestStatistics:
         """Should get statistics for empty graph."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 
@@ -650,7 +650,7 @@ class TestStatistics:
         """Should get accurate statistics."""
         import time
 
-        from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+        from session_buddy.adapters.knowledge_graph_adapter import (
             KnowledgeGraphDatabaseAdapter,
         )
 

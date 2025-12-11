@@ -35,13 +35,13 @@ This document outlines the implementation of automatic session lifecycle managem
 
 ### Phase 1: Core Server Changes
 
-#### 1.1 Add Lifespan Management (session_mgmt_mcp/server.py)
+#### 1.1 Add Lifespan Management (session_buddy/server.py)
 
 ```python
 @mcp.lifespan
 async def session_lifecycle():
     """Automatic session lifecycle for git repositories only"""
-    from session_mgmt_mcp.utils.git_operations import is_git_repository, get_git_root
+    from session_buddy.utils.git_operations import is_git_repository, get_git_root
 
     current_dir = Path(os.getcwd())
 

@@ -29,7 +29,7 @@ class TestSessionInitialization:
     async def test_initialize_session_basic(self):
         """Test basic session initialization."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -46,7 +46,7 @@ class TestSessionInitialization:
     async def test_initialize_session_sets_current_project(self):
         """Test that initialization sets current project."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -62,7 +62,7 @@ class TestSessionInitialization:
     async def test_initialize_session_creates_claude_dir(self):
         """Test that initialization creates .claude directory."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -83,7 +83,7 @@ class TestProjectContextAnalysis:
     async def test_analyze_project_context_empty_dir(self):
         """Test analyzing empty project directory."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -99,7 +99,7 @@ class TestProjectContextAnalysis:
     async def test_analyze_project_context_with_structure(self):
         """Test analyzing project with structure."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmppath = Path(tmpdir)
@@ -121,7 +121,7 @@ class TestProjectContextAnalysis:
     async def test_analyze_project_context_python_files(self):
         """Test project context with Python files."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmppath = Path(tmpdir)
@@ -143,7 +143,7 @@ class TestQualityAssessment:
     async def test_calculate_quality_score(self):
         """Test quality score calculation."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -157,7 +157,7 @@ class TestQualityAssessment:
     async def test_perform_quality_assessment(self):
         """Test quality assessment workflow."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -179,7 +179,7 @@ class TestQualityHistoryTracking:
     async def test_record_quality_score(self):
         """Test recording quality scores."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
             assert "test_project" not in manager._quality_history
@@ -194,7 +194,7 @@ class TestQualityHistoryTracking:
     async def test_record_multiple_scores(self):
         """Test recording multiple quality scores."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -210,7 +210,7 @@ class TestQualityHistoryTracking:
     async def test_get_previous_quality_score(self):
         """Test retrieving previous quality score."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
             manager.record_quality_score("project", 80)
@@ -224,7 +224,7 @@ class TestQualityHistoryTracking:
     async def test_quality_history_limits_to_10(self):
         """Test that quality history is limited to last 10 scores."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -247,7 +247,7 @@ class TestSessionCheckpoint:
     async def test_checkpoint_session_basic(self):
         """Test basic session checkpoint."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -262,7 +262,7 @@ class TestSessionCheckpoint:
     async def test_checkpoint_session_returns_output(self):
         """Test that checkpoint returns formatted output."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -277,7 +277,7 @@ class TestSessionCheckpoint:
     async def test_checkpoint_records_quality_score(self):
         """Test that checkpoint records quality score."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -298,7 +298,7 @@ class TestSessionEnd:
     async def test_end_session_basic(self):
         """Test basic session ending."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -312,7 +312,7 @@ class TestSessionEnd:
     async def test_end_session_generates_handoff(self):
         """Test that session end generates handoff documentation."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -328,7 +328,7 @@ class TestSessionEnd:
     async def test_end_session_creates_handoff_file(self):
         """Test that handoff documentation file is created."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -349,7 +349,7 @@ class TestSessionStatus:
     async def test_get_session_status_basic(self):
         """Test getting session status."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -365,7 +365,7 @@ class TestSessionStatus:
     async def test_get_session_status_includes_health(self):
         """Test that status includes system health checks."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -387,7 +387,7 @@ class TestQualityFormatting:
     async def test_format_quality_results(self):
         """Test formatting quality results for display."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -406,7 +406,7 @@ class TestQualityFormatting:
     async def test_format_quality_results_high_score(self):
         """Test formatting output for high quality score."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
             quality_data = {
@@ -436,7 +436,7 @@ class TestSessionInfoDataclass:
     async def test_session_info_empty(self):
         """Test creating empty SessionInfo."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionInfo
+            from session_buddy.core.session_manager import SessionInfo
 
             info = SessionInfo.empty()
             assert info.session_id == ""
@@ -447,7 +447,7 @@ class TestSessionInfoDataclass:
     async def test_session_info_from_dict(self):
         """Test creating SessionInfo from dictionary."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionInfo
+            from session_buddy.core.session_manager import SessionInfo
 
             data = {
                 "session_id": "sess_123",
@@ -471,7 +471,7 @@ class TestConcurrentSessions:
     async def test_multiple_managers_independent(self):
         """Test that multiple managers maintain independent state."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager1 = SessionLifecycleManager()
             manager2 = SessionLifecycleManager()
@@ -487,7 +487,7 @@ class TestConcurrentSessions:
     async def test_concurrent_checkpoints(self):
         """Test concurrent checkpoint operations."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()

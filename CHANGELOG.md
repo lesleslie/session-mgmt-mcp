@@ -326,7 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Testing
 
-- session_mgmt_mcp: Update 7 files
+- session_buddy: Update 7 files
 
 ### Internal
 

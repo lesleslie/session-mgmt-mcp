@@ -31,7 +31,7 @@ ______________________________________________________________________
 - `.get()` method calls with sensible defaults
 - Graceful degradation when fields are missing
 
-**Location:** session_mgmt_mcp/core/session_manager.py:313-346
+**Location:** session_buddy/core/session_manager.py:313-346
 
 **Test Validation:** All 3 TestSessionCheckpoint tests now passing ✅
 
@@ -367,7 +367,7 @@ ______________________________________________________________________
 
 ### Modified Files (1)
 
-- `session_mgmt_mcp/core/session_manager.py` (lines 313-346)
+- `session_buddy/core/session_manager.py` (lines 313-346)
   - Fixed trust score KeyError bug with defensive programming
   - Added proper error handling for missing fields
   - Maintained backward compatibility

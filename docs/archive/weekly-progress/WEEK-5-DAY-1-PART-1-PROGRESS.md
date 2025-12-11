@@ -100,7 +100,7 @@ ______________________________________________________________________
 
 ## Coverage Analysis
 
-**Module:** `session_mgmt_mcp/quality_engine.py`
+**Module:** `session_buddy/quality_engine.py`
 
 ```
 Statements:  490 total
@@ -291,7 +291,7 @@ async def test_async_function(self, tmp_path: Path) -> None:
 ### 2. Dataclass Mocking
 
 ```text
-from session_mgmt_mcp.utils.quality_utils_v2 import (
+from session_buddy.utils.quality_utils_v2 import (
     QualityScoreV2,
     ProjectHealthScore,
     # ... all component classes
@@ -427,6 +427,6 @@ ______________________________________________________________________
 
 **Report Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Day 1 - Quality Engine Coverage
 **Status:** ✅ Complete - Target Exceeded

@@ -19,7 +19,7 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_returns_dict(self) -> None:
         """Should return dictionary with health status."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         # Mock health checks to return healthy components
         mock_components = [
@@ -32,7 +32,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -47,14 +47,14 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_liveness_check(self) -> None:
         """Should perform liveness check when ready=False (default)."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = [
             {"name": "test", "status": "healthy", "message": "OK"},
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -71,14 +71,14 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_readiness_check(self) -> None:
         """Should perform readiness check when ready=True."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = [
             {"name": "test", "status": "healthy", "message": "OK"},
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -95,12 +95,12 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_includes_version(self) -> None:
         """Should include version information."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = []
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -114,12 +114,12 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_includes_uptime(self) -> None:
         """Should calculate and include uptime seconds."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = []
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -132,7 +132,7 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_includes_components(self) -> None:
         """Should include component health checks in response."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = [
             {"name": "database", "status": "healthy", "message": "DB OK"},
@@ -140,7 +140,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -155,7 +155,7 @@ class TestGetHealthStatus:
         self,
     ) -> None:
         """Liveness check should be loose - only UNHEALTHY fails."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         # Mock components with degraded status (should still pass liveness)
         mock_components = [
@@ -163,7 +163,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -178,7 +178,7 @@ class TestGetHealthStatus:
         self,
     ) -> None:
         """Readiness check should be strict - only HEALTHY passes."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         # Mock components with degraded status (should fail readiness)
         mock_components = [
@@ -186,7 +186,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -199,16 +199,16 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_handles_version_import_error(self) -> None:
         """Should handle missing version gracefully."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = []
 
         # Mock version import failure
         with (
             patch(
-                "session_mgmt_mcp.health_checks.get_all_health_checks"
+                "session_buddy.health_checks.get_all_health_checks"
             ) as mock_checks,
-            patch.dict("sys.modules", {"session_mgmt_mcp": MagicMock()}),
+            patch.dict("sys.modules", {"session_buddy": MagicMock()}),
         ):
             mock_checks.return_value = mock_components
 
@@ -221,12 +221,12 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_includes_timestamp(self) -> None:
         """Should include ISO timestamp in response."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = []
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -242,12 +242,12 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_with_empty_components(self) -> None:
         """Should handle empty component list gracefully."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = []
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -260,7 +260,7 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_with_many_components(self) -> None:
         """Should handle multiple health check components."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         # Create many mock components
         mock_components = [
@@ -269,7 +269,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -281,7 +281,7 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_preserves_component_metadata(self) -> None:
         """Should preserve component latency and other metadata."""
-        from session_mgmt_mcp.tools.health_tools import get_health_status
+        from session_buddy.tools.health_tools import get_health_status
 
         mock_components = [
             {
@@ -294,7 +294,7 @@ class TestGetHealthStatus:
         ]
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -309,7 +309,7 @@ class TestGetHealthStatus:
     @pytest.mark.asyncio
     async def test_get_health_status_server_start_time_constant(self) -> None:
         """Should use constant server start time for uptime calculation."""
-        from session_mgmt_mcp.tools.health_tools import (
+        from session_buddy.tools.health_tools import (
             _SERVER_START_TIME,
             get_health_status,
         )
@@ -317,7 +317,7 @@ class TestGetHealthStatus:
         mock_components = []
 
         with patch(
-            "session_mgmt_mcp.health_checks.get_all_health_checks"
+            "session_buddy.health_checks.get_all_health_checks"
         ) as mock_checks:
             mock_checks.return_value = mock_components
 
@@ -339,14 +339,14 @@ class TestHealthToolsModule:
 
     def test_module_exports_get_health_status(self) -> None:
         """Should export get_health_status in __all__."""
-        from session_mgmt_mcp.tools import health_tools
+        from session_buddy.tools import health_tools
 
         assert hasattr(health_tools, "__all__")
         assert "get_health_status" in health_tools.__all__
 
     def test_module_has_server_start_time(self) -> None:
         """Should have _SERVER_START_TIME module variable."""
-        from session_mgmt_mcp.tools import health_tools
+        from session_buddy.tools import health_tools
 
         assert hasattr(health_tools, "_SERVER_START_TIME")
         assert isinstance(health_tools._SERVER_START_TIME, float)

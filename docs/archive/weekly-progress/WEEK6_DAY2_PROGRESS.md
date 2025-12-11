@@ -381,7 +381,7 @@ ______________________________________________________________________
 
 ### Modified Files (Day 1 + Day 2)
 
-2. **`session_mgmt_mcp/di/__init__.py`** (3 locations)
+2. **`session_buddy/di/__init__.py`** (3 locations)
 
    - Fixed environment variable handling for test compatibility
 
@@ -425,5 +425,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 6 Day 2 - Security Testing

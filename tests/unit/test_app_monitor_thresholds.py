@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 from pathlib import Path
 
-from session_mgmt_mcp.app_monitor import (
+from session_buddy.app_monitor import (
     ActivityEvent,
     IDEFileHandler,
     ProjectActivityMonitor,

@@ -457,5 +457,5 @@ ______________________________________________________________________
 **Status:** ✅ Week 5 Days 1-2 - COMPLETE
 **Completed:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 - Advanced Feature Coverage

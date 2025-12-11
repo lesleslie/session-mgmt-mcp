@@ -1,6 +1,6 @@
 # Migration Guides
 
-Step-by-step guides for migrating between versions and adopting new patterns in session-mgmt-mcp.
+Step-by-step guides for migrating between versions and adopting new patterns in session-buddy.
 
 ## Available Migration Guides
 
@@ -25,10 +25,10 @@ Before migrating, assess your current implementation:
 
 ```bash
 # Check current version
-python -c "import session_mgmt_mcp; print(session_mgmt_mcp.__version__)"
+python -c "import session_buddy; print(session_buddy.__version__)"
 
 # Review active features
-python -c "from session_mgmt_mcp.health_checks import get_all_health_checks; import asyncio; asyncio.run(get_all_health_checks())"
+python -c "from session_buddy.health_checks import get_all_health_checks; import asyncio; asyncio.run(get_all_health_checks())"
 ```
 
 ### 2. Plan Migration

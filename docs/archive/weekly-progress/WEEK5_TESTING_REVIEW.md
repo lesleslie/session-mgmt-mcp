@@ -419,7 +419,7 @@ from hypothesis import given, strategies as st
 @given(st.lists(st.text(min_size=1), min_size=1, max_size=2000))
 def test_activity_buffer_bounded(file_paths):
     """Property: Activity buffer should never exceed 1000 events."""
-    from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+    from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
     monitor = ProjectActivityMonitor()
 
@@ -440,7 +440,7 @@ def test_activity_buffer_bounded(file_paths):
 @given(st.integers(min_value=1, max_value=120), st.integers(min_value=1, max_value=10))
 def test_recent_activity_time_boundary(minutes_ago, num_events):
     """Property: Recent activity should only include events within time window."""
-    from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+    from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
     monitor = ProjectActivityMonitor()
     now = datetime.now()
@@ -630,7 +630,7 @@ def test_property_based(...):
 # test_app_monitor.py additions
 def test_activity_buffer_performance(benchmark):
     """Benchmark activity buffer operations."""
-    from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+    from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
     monitor = ProjectActivityMonitor()
 

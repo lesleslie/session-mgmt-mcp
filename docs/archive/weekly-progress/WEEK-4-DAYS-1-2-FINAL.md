@@ -116,7 +116,7 @@ ______________________________________________________________________
 
 # Fix: Added mock to prevent detection
 with (
-    patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
+    patch("session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
     patch("importlib.util.find_spec", return_value=None),  # ← Added
 ):
     result = await check_dependencies_health()
@@ -280,7 +280,7 @@ pytest tests/unit/test_health_checks.py --no-cov -v
 
 # Measure coverage using coverage.py directly
 coverage run -m pytest tests/unit/test_health_checks.py --no-cov -q
-coverage report --include="session_mgmt_mcp/health_checks.py" -m
+coverage report --include="session_buddy/health_checks.py" -m
 ```
 
 **Benefits:**
@@ -369,7 +369,7 @@ Comprehensive module testing requires three distinct levels, each with different
 
 ```text
 # Goal: Test logic and edge cases
-@patch("session_mgmt_mcp.health_checks.get_reflection_database")
+@patch("session_buddy.health_checks.get_reflection_database")
 async def test_database_healthy(mock_db):
     mock_db.return_value.get_stats.return_value = {"count": 100}
     result = await check_database_health()
@@ -863,7 +863,7 @@ pytest tests/unit/test_module.py --no-cov -v
 
 # Measure coverage for specific module
 coverage run -m pytest tests/unit/test_module.py --no-cov -q
-coverage report --include="session_mgmt_mcp/module.py" -m
+coverage report --include="session_buddy/module.py" -m
 
 # Measure total coverage
 coverage run -m pytest tests/functional/ tests/unit/test_*.py --no-cov -q

@@ -24,13 +24,13 @@ Successfully added comprehensive Pydantic parameter validation models for MCP to
 
 #### ✅ New Files Created
 
-1. **`session_mgmt_mcp/parameter_models.py`** (266 lines)
+1. **`session_buddy/parameter_models.py`** (266 lines)
 
    - Complete Pydantic parameter validation models library
    - Reusable models for common MCP tool parameter patterns
    - Helper functions for validation and integration
 
-1. **`session_mgmt_mcp/tools/validated_memory_tools.py`** (190 lines)
+1. **`session_buddy/tools/validated_memory_tools.py`** (190 lines)
 
    - Practical integration examples showing parameter validation in action
    - Demonstrates migration from manual validation to Pydantic models
@@ -52,7 +52,7 @@ Successfully added comprehensive Pydantic parameter validation models for MCP to
 
 ### 1. Basic Parameter Validation
 
-The `session_mgmt_mcp.parameter_models` module provides:
+The `session_buddy.parameter_models` module provides:
 
 - **Reusable Pydantic models** for common parameter patterns
 - **Type-safe validation** with descriptive error messages
@@ -60,7 +60,7 @@ The `session_mgmt_mcp.parameter_models` module provides:
 - **Integration helpers** for easy adoption
 
 ```text
-from session_mgmt_mcp.parameter_models import SearchQueryParams, validate_mcp_params
+from session_buddy.parameter_models import SearchQueryParams, validate_mcp_params
 
 
 @mcp.tool()
@@ -143,7 +143,7 @@ async def store_reflection(content: str, tags: list[str] | None = None) -> str:
 ### After: Pydantic Validation
 
 ```text
-from session_mgmt_mcp.parameter_models import ReflectionStoreParams, validate_mcp_params
+from session_buddy.parameter_models import ReflectionStoreParams, validate_mcp_params
 
 
 @mcp.tool()
@@ -331,7 +331,7 @@ The validation system provides clear, actionable error messages:
 ```text
 import pytest
 from pydantic import ValidationError
-from session_mgmt_mcp.parameter_models import SearchQueryParams
+from session_buddy.parameter_models import SearchQueryParams
 
 
 def test_valid_search_params():
@@ -419,7 +419,7 @@ Create custom models for specific use cases:
 
 ```python
 from pydantic import BaseModel, Field
-from session_mgmt_mcp.parameter_models import NonEmptyStringMixin, PathValidationMixin
+from session_buddy.parameter_models import NonEmptyStringMixin, PathValidationMixin
 
 
 class CustomToolParams(BaseModel, NonEmptyStringMixin, PathValidationMixin):
@@ -526,12 +526,12 @@ This comprehensive parameter validation implementation provides a production-rea
 - **Enhances user experience** with clear error messages
 - **Maintains code quality** following crackerjack principles
 
-The parameter validation system is now ready for integration across all MCP tools in the session-mgmt-mcp project, with complete documentation, testing, and examples available for immediate use.
+The parameter validation system is now ready for integration across all MCP tools in the session-buddy project, with complete documentation, testing, and examples available for immediate use.
 
 ## Examples in Action
 
 See the complete examples in:
 
-- `session_mgmt_mcp/tools/validated_memory_tools.py` - Full integration examples
+- `session_buddy/tools/validated_memory_tools.py` - Full integration examples
 - `tests/unit/test_parameter_models.py` - Comprehensive test suite
-- `session_mgmt_mcp/parameter_models.py` - All available models and utilities
+- `session_buddy/parameter_models.py` - All available models and utilities

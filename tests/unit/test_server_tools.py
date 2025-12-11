@@ -22,7 +22,7 @@ class TestMCPToolRegistration:
 
     def test_session_tools_registration(self, mock_fastmcp_server: Mock):
         """Session management tools are registered correctly."""
-        from session_mgmt_mcp.tools import register_session_tools
+        from session_buddy.tools import register_session_tools
 
         # Register tools
         register_session_tools(mock_fastmcp_server)
@@ -34,7 +34,7 @@ class TestMCPToolRegistration:
 
     def test_search_tools_registration(self, mock_fastmcp_server: Mock):
         """Search tools are registered correctly."""
-        from session_mgmt_mcp.tools import register_search_tools
+        from session_buddy.tools import register_search_tools
 
         # Register tools
         register_search_tools(mock_fastmcp_server)
@@ -44,7 +44,7 @@ class TestMCPToolRegistration:
 
     def test_crackerjack_tools_registration(self, mock_fastmcp_server: Mock):
         """Crackerjack integration tools are registered correctly."""
-        from session_mgmt_mcp.tools import register_crackerjack_tools
+        from session_buddy.tools import register_crackerjack_tools
 
         # Register tools
         register_crackerjack_tools(mock_fastmcp_server)
@@ -54,7 +54,7 @@ class TestMCPToolRegistration:
 
     def test_llm_tools_registration(self, mock_fastmcp_server: Mock):
         """LLM provider tools are registered correctly."""
-        from session_mgmt_mcp.tools import register_llm_tools
+        from session_buddy.tools import register_llm_tools
 
         # Register tools
         register_llm_tools(mock_fastmcp_server)
@@ -64,7 +64,7 @@ class TestMCPToolRegistration:
 
     def test_knowledge_graph_tools_registration(self, mock_fastmcp_server: Mock):
         """Knowledge graph tools are registered correctly."""
-        from session_mgmt_mcp.tools import register_knowledge_graph_tools
+        from session_buddy.tools import register_knowledge_graph_tools
 
         # Register tools
         register_knowledge_graph_tools(mock_fastmcp_server)
@@ -74,7 +74,7 @@ class TestMCPToolRegistration:
 
     def test_all_tool_modules_registration(self, mock_fastmcp_server: Mock):
         """All tool modules can be registered without errors."""
-        from session_mgmt_mcp.tools import (
+        from session_buddy.tools import (
             register_crackerjack_tools,
             register_knowledge_graph_tools,
             register_llm_tools,
@@ -109,7 +109,7 @@ class TestMCPServerInitialization:
         """FastMCP server initializes with correct name and lifespan."""
         # Import causes initialization
         try:
-            from session_mgmt_mcp.server import mcp
+            from session_buddy.server import mcp
 
             # Server should be initialized
             assert mcp is not None
@@ -123,7 +123,7 @@ class TestMCPServerInitialization:
     def test_server_has_lifespan_handler(self):
         """Server is initialized with lifespan handler."""
         try:
-            from session_mgmt_mcp.server import session_lifecycle
+            from session_buddy.server import session_lifecycle
 
             # Lifespan handler should exist
             assert session_lifecycle is not None
@@ -134,7 +134,7 @@ class TestMCPServerInitialization:
     def test_feature_flags_initialized(self):
         """Feature flags are properly initialized."""
         try:
-            from session_mgmt_mcp.server import (
+            from session_buddy.server import (
                 CRACKERJACK_INTEGRATION_AVAILABLE,
                 LLM_PROVIDERS_AVAILABLE,
                 REFLECTION_TOOLS_AVAILABLE,
@@ -152,7 +152,7 @@ class TestMCPServerInitialization:
     def test_rate_limiting_configuration(self):
         """Rate limiting middleware is configured if available."""
         try:
-            from session_mgmt_mcp.server import RATE_LIMITING_AVAILABLE, mcp
+            from session_buddy.server import RATE_LIMITING_AVAILABLE, mcp
 
             if RATE_LIMITING_AVAILABLE and hasattr(mcp, "middleware"):
                 # Rate limiting should be configured
@@ -166,12 +166,12 @@ class TestMCPServerInitialization:
 class TestToolParameterValidation:
     """Test tool parameter validation and type checking."""
 
-    @patch("session_mgmt_mcp.tools.session_tools._start_impl")
+    @patch("session_buddy.tools.session_tools._start_impl")
     async def test_start_tool_accepts_valid_directory(
         self, mock_start: AsyncMock, tmp_path: Path
     ):
         """Start tool accepts valid working directory parameter."""
-        from session_mgmt_mcp.tools.session_tools import register_session_tools
+        from session_buddy.tools.session_tools import register_session_tools
 
         # Mock implementation
         mock_start.return_value = "Session started"
@@ -202,12 +202,12 @@ class TestToolParameterValidation:
         # Verify implementation was called
         mock_start.assert_called_once_with(str(tmp_path))
 
-    @patch("session_mgmt_mcp.tools.session_tools._checkpoint_impl")
+    @patch("session_buddy.tools.session_tools._checkpoint_impl")
     async def test_checkpoint_tool_accepts_none_directory(
         self, mock_checkpoint: AsyncMock
     ):
         """Checkpoint tool accepts None for working_directory (uses PWD)."""
-        from session_mgmt_mcp.tools.session_tools import register_session_tools
+        from session_buddy.tools.session_tools import register_session_tools
 
         # Mock implementation
         mock_checkpoint.return_value = "Checkpoint created"
@@ -243,12 +243,12 @@ class TestToolParameterValidation:
 class TestToolErrorHandling:
     """Test tool error handling and response formatting."""
 
-    @patch("session_mgmt_mcp.tools.session_tools._start_impl")
+    @patch("session_buddy.tools.session_tools._start_impl")
     async def test_start_tool_handles_implementation_errors(
         self, mock_start: AsyncMock
     ):
         """Start tool handles errors from implementation gracefully."""
-        from session_mgmt_mcp.tools.session_tools import register_session_tools
+        from session_buddy.tools.session_tools import register_session_tools
 
         # Mock implementation to raise error
         mock_start.side_effect = Exception("Initialization failed")
@@ -284,14 +284,14 @@ class TestTokenOptimizerFallbacks:
 
     def test_token_optimizer_available_flag(self):
         """TOKEN_OPTIMIZER_AVAILABLE flag is properly set."""
-        from session_mgmt_mcp.server import TOKEN_OPTIMIZER_AVAILABLE
+        from session_buddy.server import TOKEN_OPTIMIZER_AVAILABLE
 
         # Flag should be boolean
         assert isinstance(TOKEN_OPTIMIZER_AVAILABLE, bool)
 
     async def test_optimize_search_response_fallback(self):
         """optimize_search_response has fallback implementation."""
-        from session_mgmt_mcp.server import optimize_search_response
+        from session_buddy.server import optimize_search_response
 
         # Call fallback
         results = [{"content": "test"}]
@@ -303,7 +303,7 @@ class TestTokenOptimizerFallbacks:
 
     async def test_track_token_usage_fallback(self):
         """track_token_usage has fallback implementation."""
-        from session_mgmt_mcp.server import track_token_usage
+        from session_buddy.server import track_token_usage
 
         # Call fallback (should not raise)
         result = await track_token_usage("test_operation", 100, 200)
@@ -313,7 +313,7 @@ class TestTokenOptimizerFallbacks:
 
     async def test_get_cached_chunk_fallback(self):
         """get_cached_chunk has fallback implementation."""
-        from session_mgmt_mcp.server import get_cached_chunk
+        from session_buddy.server import get_cached_chunk
 
         # Call fallback
         result = await get_cached_chunk("test_key", 0)
@@ -323,7 +323,7 @@ class TestTokenOptimizerFallbacks:
 
     async def test_get_token_usage_stats_fallback(self):
         """get_token_usage_stats has fallback implementation."""
-        from session_mgmt_mcp.server import (
+        from session_buddy.server import (
             TOKEN_OPTIMIZER_AVAILABLE,
             get_token_usage_stats,
         )
@@ -341,7 +341,7 @@ class TestTokenOptimizerFallbacks:
     async def test_optimize_memory_usage_fallback(self):
         """optimize_memory_usage has fallback implementation."""
         try:
-            from session_mgmt_mcp.server import optimize_memory_usage
+            from session_buddy.server import optimize_memory_usage
 
             # Call function
             result = await optimize_memory_usage(strategy="auto", dry_run=True)
@@ -357,10 +357,10 @@ class TestTokenOptimizerFallbacks:
 class TestReflectOnPastFunction:
     """Test reflect_on_past search function."""
 
-    @patch("session_mgmt_mcp.reflection_tools.ReflectionDatabase")
+    @patch("session_buddy.reflection_tools.ReflectionDatabase")
     async def test_reflect_on_past_with_valid_params(self, mock_db_class: Mock):
         """reflect_on_past accepts valid parameters and calls database."""
-        from session_mgmt_mcp.server import REFLECTION_TOOLS_AVAILABLE, reflect_on_past
+        from session_buddy.server import REFLECTION_TOOLS_AVAILABLE, reflect_on_past
 
         if not REFLECTION_TOOLS_AVAILABLE:
             pytest.skip("Reflection tools not available in test environment")
@@ -382,7 +382,7 @@ class TestReflectOnPastFunction:
 
     async def test_reflect_on_past_handles_unavailable_tools(self):
         """reflect_on_past handles unavailable reflection tools gracefully."""
-        from session_mgmt_mcp.server import REFLECTION_TOOLS_AVAILABLE, reflect_on_past
+        from session_buddy.server import REFLECTION_TOOLS_AVAILABLE, reflect_on_past
 
         if not REFLECTION_TOOLS_AVAILABLE:
             # Should return error message

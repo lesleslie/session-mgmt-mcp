@@ -18,14 +18,14 @@ uv sync --group dev
 uv sync
 
 # Run server directly as a module
-python -m session_mgmt_mcp.server
+python -m session_buddy.server
 
 # Run server with debug logging
-PYTHONPATH=. python -m session_mgmt_mcp.server --debug
+PYTHONPATH=. python -m session_buddy.server --debug
 
 # Verify installation
-python -c "from session_mgmt_mcp.server import mcp; print('✅ MCP server ready')"
-python -c "from session_mgmt_mcp.reflection_tools import ReflectionDatabase; print('✅ Memory system ready')"
+python -c "from session_buddy.server import mcp; print('✅ MCP server ready')"
+python -c "from session_buddy.reflection_tools import ReflectionDatabase; print('✅ Memory system ready')"
 ```
 
 ### Quick Start Development
@@ -78,13 +78,13 @@ pytest tests/unit/test_session_permissions.py -v -s
 pytest -n auto
 
 # Coverage reporting
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # Development debugging mode (keeps test data)
 pytest -v --tb=short
 
 # Fail build if coverage below 85%
-pytest --cov=session_mgmt_mcp --cov-fail-under=85
+pytest --cov=session_buddy --cov-fail-under=85
 
 # Run tests with custom timeout
 pytest --timeout=300
@@ -100,7 +100,7 @@ uv sync --group dev && \
   crackerjack typecheck
 
 # Full quality gate (run before PR)
-pytest --cov=session_mgmt_mcp --cov-fail-under=85 && \
+pytest --cov=session_buddy --cov-fail-under=85 && \
   crackerjack security && \
   crackerjack complexity
 
@@ -108,7 +108,7 @@ pytest --cov=session_mgmt_mcp --cov-fail-under=85 && \
 python -c "
 import logging
 logging.basicConfig(level=logging.DEBUG)
-from session_mgmt_mcp.server import mcp
+from session_buddy.server import mcp
 print('Server debug check complete')
 "
 ```
@@ -170,7 +170,7 @@ This pattern can be applied to other fast local databases (SQLite, in-memory cac
 **Dependency Injection Migration** (**Phase 2.7 Days 1-4 completed**)
 
 - Migrated from manual singleton management to ACB dependency injection
-- Centralized DI configuration in `session_mgmt_mcp/di/` module with `configure()` function
+- Centralized DI configuration in `session_buddy/di/` module with `configure()` function
 - Provides container-based access via `depends.get_sync(ClassName)` for testable, modular code
 - Benefits: Improved testability, reduced coupling, simplified lifecycle management
 
@@ -486,10 +486,10 @@ CREATE TABLE reflections (
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/path/to/session-mgmt-mcp"
+        "PYTHONPATH": "/path/to/session-buddy"
       }
     }
   }
@@ -603,7 +603,7 @@ pytest tests/integration/
 pytest -m performance
 
 # Run with coverage
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # Quick development tests (exclude slow tests)
 pytest -m "not slow"
@@ -729,7 +729,7 @@ This project integrates deeply with [Crackerjack](https://github.com/lesleslie/c
 1. Add integration tests for MCP tool workflows in `tests/integration/`
 1. Add functional tests for complete features in `tests/functional/`
 1. Use `tests/fixtures/` for test data factories and mock fixtures
-1. Ensure coverage is maintained via `pytest --cov=session_mgmt_mcp`
+1. Ensure coverage is maintained via `pytest --cov=session_buddy`
 
 ## Configuration Files
 
@@ -850,10 +850,10 @@ async def example_tool(param1: str, param2: int | None = None) -> dict[str, Any]
 
 ```bash
 # Check imports
-python -c "import session_mgmt_mcp; print('✅ Package imports successfully')"
+python -c "import session_buddy; print('✅ Package imports successfully')"
 
 # Verify FastMCP setup
-python -c "from session_mgmt_mcp.server import mcp; print('✅ MCP server configured')"
+python -c "from session_buddy.server import mcp; print('✅ MCP server configured')"
 
 # Check for missing dependencies
 python -c "
@@ -870,7 +870,7 @@ except ImportError as e:
 ```bash
 # Test embedding system
 python -c "
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 import asyncio
 
 async def test():
@@ -920,7 +920,7 @@ print(f'Memory usage: {psutil.Process(os.getpid()).memory_info().rss / 1024 / 10
 "
 
 # Enable detailed logging
-PYTHONPATH=. python -m session_mgmt_mcp.server --debug
+PYTHONPATH=. python -m session_buddy.server --debug
 ```
 
 ### Development Environment Setup Issues
@@ -993,7 +993,7 @@ When working with this codebase, remember these architectural patterns:
 
 <!-- CRACKERJACK INTEGRATION START -->
 
-## Crackerjack Integration for session-mgmt-mcp
+## Crackerjack Integration for session-buddy
 
 This project uses crackerjack for Python project management and quality assurance.
 

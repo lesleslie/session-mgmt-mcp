@@ -22,7 +22,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_project_patterns(self) -> None:
         """Should extract kebab-case project names."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -36,7 +36,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_library_patterns(self) -> None:
         """Should extract common library names."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -51,7 +51,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_technology_patterns(self) -> None:
         """Should extract technology names."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -66,7 +66,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_concept_patterns(self) -> None:
         """Should extract concept phrases."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -80,7 +80,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_multiple_pattern_types(self) -> None:
         """Should extract multiple pattern types simultaneously."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -99,7 +99,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_case_insensitive(self) -> None:
         """Should extract patterns case-insensitively."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -113,7 +113,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_from_empty_context(self) -> None:
         """Should return empty dict for empty context."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -124,7 +124,7 @@ class TestExtractPatternsFromContext:
 
     def test_extract_no_matches(self) -> None:
         """Should return empty dict when no patterns match."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _extract_patterns_from_context,
         )
 
@@ -144,7 +144,7 @@ class TestFormatEntityTypes:
 
     def test_format_single_entity_type(self) -> None:
         """Should format single entity type."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_types
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_types
 
         entity_types = {"project": 5}
 
@@ -158,7 +158,7 @@ class TestFormatEntityTypes:
 
     def test_format_multiple_entity_types(self) -> None:
         """Should format multiple entity types."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_types
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_types
 
         entity_types = {"project": 10, "library": 5, "technology": 3}
 
@@ -173,7 +173,7 @@ class TestFormatEntityTypes:
 
     def test_format_empty_entity_types(self) -> None:
         """Should return empty list for empty entity types."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_types
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_types
 
         result = _format_entity_types({})
 
@@ -181,7 +181,7 @@ class TestFormatEntityTypes:
 
     def test_format_none_entity_types(self) -> None:
         """Should handle None gracefully."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_types
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_types
 
         # Function expects dict, but test defensive behavior
         result = _format_entity_types({})
@@ -197,7 +197,7 @@ class TestFormatRelationshipTypes:
 
     def test_format_single_relationship_type(self) -> None:
         """Should format single relationship type."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _format_relationship_types,
         )
 
@@ -213,7 +213,7 @@ class TestFormatRelationshipTypes:
 
     def test_format_multiple_relationship_types(self) -> None:
         """Should format multiple relationship types."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _format_relationship_types,
         )
 
@@ -230,7 +230,7 @@ class TestFormatRelationshipTypes:
 
     def test_format_empty_relationship_types(self) -> None:
         """Should return empty list for empty relationship types."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _format_relationship_types,
         )
 
@@ -247,7 +247,7 @@ class TestFormatEntityResult:
 
     def test_format_entity_with_observations(self) -> None:
         """Should format entity with observations."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_result
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_result
 
         entity = {
             "name": "FastMCP",
@@ -266,7 +266,7 @@ class TestFormatEntityResult:
 
     def test_format_entity_without_observations(self) -> None:
         """Should format entity without observations."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_result
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_result
 
         entity = {"name": "TestEntity", "entity_type": "concept", "observations": []}
 
@@ -279,7 +279,7 @@ class TestFormatEntityResult:
 
     def test_format_entity_long_observation(self) -> None:
         """Should truncate long observations."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_entity_result
+        from session_buddy.tools.knowledge_graph_tools import _format_entity_result
 
         long_text = "x" * 100
         entity = {
@@ -304,7 +304,7 @@ class TestFormatBatchResults:
 
     def test_format_all_succeeded(self) -> None:
         """Should format when all entities created successfully."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_batch_results
+        from session_buddy.tools.knowledge_graph_tools import _format_batch_results
 
         created = ["Entity1", "Entity2", "Entity3"]
         failed: list[tuple[str, str]] = []
@@ -320,7 +320,7 @@ class TestFormatBatchResults:
 
     def test_format_all_failed(self) -> None:
         """Should format when all entities failed."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_batch_results
+        from session_buddy.tools.knowledge_graph_tools import _format_batch_results
 
         created: list[str] = []
         failed = [("Entity1", "Error1"), ("Entity2", "Error2")]
@@ -335,7 +335,7 @@ class TestFormatBatchResults:
 
     def test_format_mixed_results(self) -> None:
         """Should format mix of successes and failures."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_batch_results
+        from session_buddy.tools.knowledge_graph_tools import _format_batch_results
 
         created = ["Success1", "Success2"]
         failed = [("Failed1", "Error message")]
@@ -348,7 +348,7 @@ class TestFormatBatchResults:
 
     def test_format_many_created(self) -> None:
         """Should truncate when more than 10 created."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_batch_results
+        from session_buddy.tools.knowledge_graph_tools import _format_batch_results
 
         created = [f"Entity{i}" for i in range(15)]
         failed: list[tuple[str, str]] = []
@@ -361,7 +361,7 @@ class TestFormatBatchResults:
 
     def test_format_many_failed(self) -> None:
         """Should truncate when more than 5 failed."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import _format_batch_results
+        from session_buddy.tools.knowledge_graph_tools import _format_batch_results
 
         created: list[str] = []
         failed = [(f"Entity{i}", f"Error{i}") for i in range(10)]
@@ -382,7 +382,7 @@ class TestAutoCreateEntityIfNew:
     @pytest.mark.asyncio
     async def test_create_when_entity_not_exists(self) -> None:
         """Should create entity when it doesn't exist."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _auto_create_entity_if_new,
         )
 
@@ -402,7 +402,7 @@ class TestAutoCreateEntityIfNew:
     @pytest.mark.asyncio
     async def test_skip_when_entity_exists(self) -> None:
         """Should not create entity when it already exists."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _auto_create_entity_if_new,
         )
 
@@ -422,7 +422,7 @@ class TestAutoCreateEntityIfNew:
     @pytest.mark.asyncio
     async def test_create_with_default_observation(self) -> None:
         """Should create entity with default observation."""
-        from session_mgmt_mcp.tools.knowledge_graph_tools import (
+        from session_buddy.tools.knowledge_graph_tools import (
             _auto_create_entity_if_new,
         )
 

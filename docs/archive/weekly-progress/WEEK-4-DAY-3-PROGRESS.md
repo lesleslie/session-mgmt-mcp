@@ -39,7 +39,7 @@ ______________________________________________________________________
 - **Error**: `AttributeError: 'SessionLogger' object has no attribute 'critical'`
 - **Root Cause**: SessionLogger missing critical() method called by shutdown_manager
 - **Fix**: Added critical() method to SessionLogger class
-- **Location**: `session_mgmt_mcp/utils/logging.py:82-86`
+- **Location**: `session_buddy/utils/logging.py:82-86`
 
 **Result:**
 
@@ -107,7 +107,7 @@ ______________________________________________________________________
 
 #### DuckDB CASCADE Constraint Bug
 
-**File:** `session_mgmt_mcp/knowledge_graph_db.py`
+**File:** `session_buddy/knowledge_graph_db.py`
 **Lines:** 172-186
 
 **Problem:**
@@ -141,7 +141,7 @@ FOREIGN KEY (to_entity) REFERENCES kg_entities(id)
 
 #### SessionLogger critical() Method
 
-**File:** `session_mgmt_mcp/utils/logging.py`
+**File:** `session_buddy/utils/logging.py`
 **Lines:** 82-86
 
 **Added Method:**
@@ -293,7 +293,7 @@ coverage run -m pytest tests/unit/test_resource_cleanup.py tests/unit/test_shutd
 coverage run -m pytest tests/unit/test_knowledge_graph_db.py --no-cov -v
 
 # Check knowledge graph coverage
-coverage report --include="session_mgmt_mcp/knowledge_graph_db.py"
+coverage report --include="session_buddy/knowledge_graph_db.py"
 ```
 
 ### Coverage Measurement
@@ -315,12 +315,12 @@ ______________________________________________________________________
 
 ### Production Code
 
-1. **session_mgmt_mcp/utils/logging.py**
+1. **session_buddy/utils/logging.py**
 
    - Added: `critical()` method (lines 82-86)
    - Impact: Fixed shutdown manager critical logging
 
-1. **session_mgmt_mcp/knowledge_graph_db.py**
+1. **session_buddy/knowledge_graph_db.py**
 
    - Modified: Foreign key constraints (lines 182-184)
    - Removed: `ON DELETE CASCADE` clauses
@@ -480,5 +480,5 @@ ______________________________________________________________________
 
 **Generated:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 4 - Test Coverage Expansion

@@ -14,7 +14,7 @@ Day 1 focused on creating the foundation for ACB DI refactoring by implementing 
 
 ### ✅ Created SessionPaths Dataclass
 
-**File Created:** `session_mgmt_mcp/di/config.py` (99 lines)
+**File Created:** `session_buddy/di/config.py` (99 lines)
 
 **Key Features:**
 
@@ -329,10 +329,10 @@ The `SessionPaths` class is now ready for integration with the DI system:
 
 ### Next Steps (Day 2):
 
-1. **Update `session_mgmt_mcp/di/__init__.py`:**
+1. **Update `session_buddy/di/__init__.py`:**
 
    ```python
-   from session_mgmt_mcp.di.config import SessionPaths
+   from session_buddy.di.config import SessionPaths
 
 
    def configure(*, force: bool = False) -> None:
@@ -352,7 +352,7 @@ ______________________________________________________________________
 
 ## Files Created
 
-1. **`session_mgmt_mcp/di/config.py`** (99 lines)
+1. **`session_buddy/di/config.py`** (99 lines)
 
    - SessionPaths frozen dataclass
    - Factory method and directory management
@@ -454,7 +454,7 @@ ______________________________________________________________________
 
 **Day 2 Implementation:**
 
-1. **Update DI Configuration** (`session_mgmt_mcp/di/__init__.py`)
+1. **Update DI Configuration** (`session_buddy/di/__init__.py`)
 
    - Import SessionPaths
    - Replace string keys with SessionPaths instances
@@ -475,5 +475,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Day 1 - Type-Safe Configuration ✅ Complete

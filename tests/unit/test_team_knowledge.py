@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.team_knowledge module.
+"""Test suite for session_buddy.team_knowledge module.
 
 Tests team collaboration and knowledge sharing features.
 """

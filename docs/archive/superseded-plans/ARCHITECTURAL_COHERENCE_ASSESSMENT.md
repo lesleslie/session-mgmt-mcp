@@ -2,7 +2,7 @@
 
 **Date**: 2025-10-28
 **Reviewer**: Architecture Council
-**Scope**: Unified Plan Integration (mcp-common + session-mgmt-mcp)
+**Scope**: Unified Plan Integration (mcp-common + session-buddy)
 
 ______________________________________________________________________
 
@@ -10,9 +10,9 @@ ______________________________________________________________________
 
 **Verdict**: ✅ **ARCHITECTURALLY SOUND** - Plans are compatible with strategic dependency ordering required
 
-**Key Finding**: The session-mgmt-mcp plan is effectively **Phase 0** of the broader mcp-common rollout, making it a **pilot implementation** rather than a parallel effort.
+**Key Finding**: The session-buddy plan is effectively **Phase 0** of the broader mcp-common rollout, making it a **pilot implementation** rather than a parallel effort.
 
-**Critical Insight**: Recent "extra" work (DuckPGQ, health checks, shutdown) represents **strategic technical debt reduction** that makes session-mgmt-mcp a stronger foundation for validating mcp-common patterns.
+**Critical Insight**: Recent "extra" work (DuckPGQ, health checks, shutdown) represents **strategic technical debt reduction** that makes session-buddy a stronger foundation for validating mcp-common patterns.
 
 ______________________________________________________________________
 
@@ -25,7 +25,7 @@ MCP Ecosystem (9 servers across 6 projects)
 ├── Standalone Servers (6)
 │   ├── raindropio-mcp (86/100) - Best practices reference
 │   ├── excalidraw-mcp (82/100) - Hybrid architecture
-│   ├── session-mgmt-mcp (72/100) - Complex, feature-rich ← FOCUS
+│   ├── session-buddy (72/100) - Complex, feature-rich ← FOCUS
 │   ├── opera-cloud-mcp (68/100) - API integration
 │   ├── mailgun-mcp (64/100) - Critical HTTP bug
 │   └── unifi-mcp (58/100) - Broken tools
@@ -38,7 +38,7 @@ MCP Ecosystem (9 servers across 6 projects)
 
 ### Role Clarification
 
-| Aspect | session-mgmt-mcp | mcp-common |
+| Aspect | session-buddy | mcp-common |
 |--------|------------------|------------|
 | **Purpose** | Session management for Claude Code | Shared foundation for all 9 servers |
 | **Scope** | 1 server (pilot) | 9 servers (ecosystem) |
@@ -54,9 +54,9 @@ ______________________________________________________________________
 
 #### Level 0: Foundation (mcp-common Phase 1, Weeks 1-2)
 
-**Status**: ✅ **PARTIALLY COMPLETE** in session-mgmt-mcp (ahead of schedule!)
+**Status**: ✅ **PARTIALLY COMPLETE** in session-buddy (ahead of schedule!)
 
-| Component | mcp-common Plan | session-mgmt-mcp Status | Blocker? |
+| Component | mcp-common Plan | session-buddy Status | Blocker? |
 |-----------|----------------|-------------------------|----------|
 | **ACB Installation** | Week 1, Day 1 | ✅ **DONE** | No |
 | **HTTPClientAdapter** | Week 1 | 🟡 **IN PROGRESS** (Week 2 Days 1-3) | **YES** - mailgun depends |
@@ -64,7 +64,7 @@ ______________________________________________________________________
 | **ServerPanels** | Week 1 | ⚠️ **NOT STARTED** | No (UI only) |
 | **Testing Utilities** | Week 1 | 🟡 **PARTIAL** | No |
 
-**Key Insight**: session-mgmt-mcp is **AHEAD** on config/ACB but **BEHIND** on HTTP adapter. This is intentional - HTTP adapter needs battle-testing before broader rollout.
+**Key Insight**: session-buddy is **AHEAD** on config/ACB but **BEHIND** on HTTP adapter. This is intentional - HTTP adapter needs battle-testing before broader rollout.
 
 #### Level 1: HTTP Client Pattern (mcp-common Phase 2, Week 2)
 
@@ -72,11 +72,11 @@ ______________________________________________________________________
 
 **Blockers**:
 
-- ❌ **HTTPClientAdapter not production-ready** - Being developed/tested in session-mgmt-mcp
+- ❌ **HTTPClientAdapter not production-ready** - Being developed/tested in session-buddy
 - ❌ **Connection pooling patterns not validated** - Needs real-world usage data
-- ❌ **DI integration pattern not finalized** - session-mgmt-mcp establishing pattern
+- ❌ **DI integration pattern not finalized** - session-buddy establishing pattern
 
-**Timeline Impact**: mailgun-mcp fix **CANNOT proceed** until HTTPClientAdapter validated in session-mgmt-mcp (Week 2 Days 3-5 testing phase)
+**Timeline Impact**: mailgun-mcp fix **CANNOT proceed** until HTTPClientAdapter validated in session-buddy (Week 2 Days 3-5 testing phase)
 
 #### Level 2: Rate Limiting (mcp-common Phase 3, Week 3)
 
@@ -107,13 +107,13 @@ ______________________________________________________________________
 
 1. **Rate Limiter Extraction** (crackerjack → mcp-common)
 
-   - No dependencies on session-mgmt-mcp
+   - No dependencies on session-buddy
    - Source code exists and is battle-tested
    - Timeline: Week 3 (mcp-common)
 
 1. **Security Middleware Development** (new → mcp-common)
 
-   - No dependencies on session-mgmt-mcp
+   - No dependencies on session-buddy
    - Can be validated later in session-mgmt
    - Timeline: Weeks 3-4 (mcp-common)
 
@@ -128,9 +128,9 @@ ______________________________________________________________________
 1. **HTTPClientAdapter** (session-mgmt → validate → mcp-common → ecosystem)
 
    ```
-   Week 2 Days 1-3: Implement in session-mgmt-mcp
+   Week 2 Days 1-3: Implement in session-buddy
          ↓
-   Week 2 Days 4-5: Test/validate in session-mgmt-mcp
+   Week 2 Days 4-5: Test/validate in session-buddy
          ↓
    Week 3 Day 1: Extract to mcp-common
          ↓
@@ -142,7 +142,7 @@ ______________________________________________________________________
 1. **ACB Dependency Injection Pattern** (session-mgmt Phase 2.7 → mcp-common → ecosystem)
 
    ```
-   Phase 2.7 (1 week): Validate DI in session-mgmt-mcp
+   Phase 2.7 (1 week): Validate DI in session-buddy
          ↓
    Week 4: Extract DI patterns to mcp-common
          ↓
@@ -152,7 +152,7 @@ ______________________________________________________________________
 1. **Template System** (session-mgmt Phase 3.1 → maybe mcp-common)
 
    ```
-   Weeks 7-8: Implement in session-mgmt-mcp
+   Weeks 7-8: Implement in session-buddy
          ↓
    Week 9: Evaluate for mcp-common inclusion
          ↓
@@ -277,10 +277,10 @@ ______________________________________________________________________
 
 **Status**: ⚠️ **ACTIVE** - Currently resolving
 
-**Resolution Strategy**: ✅ **CORRECT** - Being implemented in session-mgmt-mcp FIRST
+**Resolution Strategy**: ✅ **CORRECT** - Being implemented in session-buddy FIRST
 
 ```
-Week 2 Days 1-3: Implement HTTPClientAdapter in session-mgmt-mcp
+Week 2 Days 1-3: Implement HTTPClientAdapter in session-buddy
 Week 2 Days 4-5: Validate with real-world usage
 Week 3 Day 1:   Extract to mcp-common (proven pattern)
 Week 3+:        Apply to ecosystem
@@ -364,7 +364,7 @@ ______________________________________________________________________
 **Exit Criteria**:
 
 - ✅ HTTPClientAdapter validated with connection pooling (11x improvement)
-- ✅ DI patterns proven in session-mgmt-mcp (Phase 2.7 complete)
+- ✅ DI patterns proven in session-buddy (Phase 2.7 complete)
 - ✅ mcp-common v2.0.0 released with validated patterns
 
 #### Track 2: Parallel Infrastructure (Can Proceed Independently)
@@ -421,7 +421,7 @@ ______________________________________________________________________
 
 **Exit Criteria**:
 
-- ✅ session-mgmt-mcp quality score 95/100
+- ✅ session-buddy quality score 95/100
 - ✅ Test coverage 85%+
 - ✅ Template system operational (if validated for broader use)
 
@@ -525,7 +525,7 @@ ______________________________________________________________________
 #### Original Plans
 
 - **mcp-common**: 10 weeks (ecosystem-wide)
-- **session-mgmt-mcp**: 16 weeks (standalone)
+- **session-buddy**: 16 weeks (standalone)
 - **Total**: 26 weeks if done serially
 
 #### Recommended Unified Plan
@@ -552,7 +552,7 @@ ______________________________________________________________________
 - ✅ HTTPClientAdapter proven (11x performance improvement in session-mgmt)
 - ✅ DI patterns validated (Phase 2.7 complete)
 - ✅ mcp-common v2.0.0 released
-- ✅ session-mgmt-mcp using mcp-common adapters
+- ✅ session-buddy using mcp-common adapters
 
 **Go/No-Go Decision**:
 
@@ -584,7 +584,7 @@ ______________________________________________________________________
 - ✅ ACB integration 9/10
 - ✅ Production ready
 
-**Success Criteria**: session-mgmt-mcp is world-class reference implementation
+**Success Criteria**: session-buddy is world-class reference implementation
 
 ### Recommended Work Prioritization
 
@@ -627,7 +627,7 @@ ______________________________________________________________________
 
 ### Current State Assessment
 
-#### session-mgmt-mcp (Post-Phase 2)
+#### session-buddy (Post-Phase 2)
 
 ```
 Quality: 71/100
@@ -644,7 +644,7 @@ LOC: 28,113 (stable, modular)
 ```
 Status: HTTPClientAdapter implementation
 Progress: Foundation adapters being built
-Pattern Source: session-mgmt-mcp validation
+Pattern Source: session-buddy validation
 Timeline: On track for Week 1 completion
 ```
 
@@ -682,7 +682,7 @@ Timeline: On track for Week 1 completion
 
 **Success Criteria**:
 
-- session-mgmt-mcp ACB integration 9/10
+- session-buddy ACB integration 9/10
 - Templates operational and tested
 - Query/Events validated for potential mcp-common inclusion
 
@@ -699,7 +699,7 @@ Timeline: On track for Week 1 completion
 
 **Success Criteria**:
 
-- session-mgmt-mcp quality 95/100
+- session-buddy quality 95/100
 - All 9 servers using mcp-common
 - Average ecosystem quality 85/100 (+11 from current 74)
 
@@ -753,7 +753,7 @@ ______________________________________________________________________
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ UNIFIED PLAN: mcp-common + session-mgmt-mcp                 │
+│ UNIFIED PLAN: mcp-common + session-buddy                 │
 ├──────────────────────────────────────────────────────────────┤
 │ PHASE 1: Foundation Validation (Weeks 1-6)                  │
 │   Week 1-2:  HTTPClientAdapter (session → mcp-common)        │

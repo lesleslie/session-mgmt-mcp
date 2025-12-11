@@ -27,7 +27,7 @@ class TestCrackerjackIntegration:
     async def test_crackerjack_execution_basic(self):
         """Test basic crackerjack command execution."""
         try:
-            from session_mgmt_mcp.tools.crackerjack_tools import (
+            from session_buddy.tools.crackerjack_tools import (
                 crackerjack_run,
             )
 
@@ -46,7 +46,7 @@ class TestCrackerjackIntegration:
     async def test_quality_metrics_collection(self):
         """Test quality metrics collection from crackerjack."""
         try:
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -72,7 +72,7 @@ class TestCrackerjackIntegration:
     async def test_quality_score_recommendations(self):
         """Test recommendation generation from quality score."""
         try:
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -106,7 +106,7 @@ class TestLLMProviderManagement:
     async def test_llm_provider_list(self):
         """Test listing available LLM providers."""
         try:
-            from session_mgmt_mcp.tools.llm_tools import list_llm_providers
+            from session_buddy.tools.llm_tools import list_llm_providers
 
             # Test that function exists and is callable
             assert callable(list_llm_providers)
@@ -117,7 +117,7 @@ class TestLLMProviderManagement:
     async def test_llm_provider_configuration(self):
         """Test LLM provider configuration."""
         try:
-            from session_mgmt_mcp.tools.llm_tools import (
+            from session_buddy.tools.llm_tools import (
                 configure_llm_provider,
             )
 
@@ -130,7 +130,7 @@ class TestLLMProviderManagement:
     async def test_llm_generation_interface(self):
         """Test LLM generation interface."""
         try:
-            from session_mgmt_mcp.tools.llm_tools import generate_with_llm
+            from session_buddy.tools.llm_tools import generate_with_llm
 
             # Test that function exists and is callable
             assert callable(generate_with_llm)
@@ -146,7 +146,7 @@ class TestMemoryAndReflection:
     async def test_reflection_storage(self):
         """Test storing reflections in memory system."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             try:
                 async with ReflectionDatabase() as db:
@@ -164,7 +164,7 @@ class TestMemoryAndReflection:
     async def test_reflection_search(self):
         """Test searching reflections."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Test that database has search capability
@@ -176,7 +176,7 @@ class TestMemoryAndReflection:
     async def test_reflection_tagging(self):
         """Test reflection tagging system."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Test that database supports tagging
@@ -188,7 +188,7 @@ class TestMemoryAndReflection:
     async def test_memory_statistics(self):
         """Test memory system statistics."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Test that statistics interface exists
@@ -205,7 +205,7 @@ class TestAdvancedSearch:
     async def test_semantic_search_interface(self):
         """Test semantic search interface."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Test that semantic search is available
@@ -218,7 +218,7 @@ class TestAdvancedSearch:
         """Test faceted search capabilities."""
         try:
             # Faceted search is part of advanced search module
-            from session_mgmt_mcp.search_enhanced import (
+            from session_buddy.search_enhanced import (
                 AdvancedSearchEngine,
             )
 
@@ -231,7 +231,7 @@ class TestAdvancedSearch:
     async def test_temporal_search(self):
         """Test temporal search capabilities."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Temporal search should be supported
@@ -248,8 +248,8 @@ class TestToolIntegrationWorkflows:
     async def test_quality_assessment_tool_workflow(self):
         """Test complete quality assessment workflow."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.core.session_manager import SessionLifecycleManager
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -284,7 +284,7 @@ class TestToolIntegrationWorkflows:
     async def test_memory_reflection_workflow(self):
         """Test complete memory and reflection workflow."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Simulate storing a reflection
@@ -299,7 +299,7 @@ class TestToolIntegrationWorkflows:
     async def test_session_with_quality_tracking(self):
         """Test session workflow with quality tracking."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -330,7 +330,7 @@ class TestToolErrorHandling:
     async def test_quality_assessment_empty_project(self):
         """Test quality assessment on empty project."""
         try:
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -350,7 +350,7 @@ class TestToolErrorHandling:
     async def test_search_with_no_results(self):
         """Test search returns empty results gracefully."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Search for non-existent content
@@ -363,7 +363,7 @@ class TestToolErrorHandling:
     async def test_quality_recommendations_with_low_score(self):
         """Test recommendations for low quality projects."""
         try:
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -388,7 +388,7 @@ class TestToolDataConsistency:
     async def test_quality_score_consistency(self):
         """Test quality score consistency across different assessment runs."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -410,7 +410,7 @@ class TestToolDataConsistency:
     async def test_reflection_storage_retrieval(self):
         """Test reflection storage and retrieval consistency."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Verify database interface exists
@@ -428,8 +428,8 @@ class TestToolConcurrency:
     async def test_concurrent_quality_assessments(self):
         """Test concurrent quality assessments."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-            from session_mgmt_mcp.utils.quality_utils_v2 import (
+            from session_buddy.core.session_manager import SessionLifecycleManager
+            from session_buddy.utils.quality_utils_v2 import (
                 calculate_quality_score_v2,
             )
 
@@ -458,7 +458,7 @@ class TestToolConcurrency:
     async def test_concurrent_reflection_operations(self):
         """Test concurrent reflection storage operations."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             db = ReflectionDatabase()
             # Verify database can handle concurrent operations

@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from acb.depends import depends
-from session_mgmt_mcp.di import configure
-from session_mgmt_mcp.di import reset as reset_di
-from session_mgmt_mcp.utils import instance_managers
+from session_buddy.di import configure
+from session_buddy.di import reset as reset_di
+from session_buddy.utils import instance_managers
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -31,8 +31,8 @@ async def test_get_app_monitor_registers_singleton(
     tmp_path: Path,
 ) -> None:
     """App monitor is created once and cached through the DI container."""
-    module = types.ModuleType("session_mgmt_mcp.app_monitor")
-    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.app_monitor")  # type: ignore[attr-defined]
+    module = types.ModuleType("session_buddy.app_monitor")
+    module.__spec__ = types.SimpleNamespace(name="session_buddy.app_monitor")  # type: ignore[attr-defined]
 
     class DummyMonitor:
         def __init__(self, data_dir: str, project_paths: list[str]) -> None:
@@ -46,12 +46,12 @@ async def test_get_app_monitor_registers_singleton(
             self.started = True
 
     module.ApplicationMonitor = DummyMonitor  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "session_mgmt_mcp.app_monitor", module)
+    monkeypatch.setitem(sys.modules, "session_buddy.app_monitor", module)
 
     # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
     os.chdir(tmp_path)
-    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    from session_buddy.server_core import SessionPermissionsManager
 
     SessionPermissionsManager.reset_singleton()
     configure(force=True)
@@ -71,19 +71,19 @@ async def test_get_llm_manager_uses_di_cache(
     tmp_path: Path,
 ) -> None:
     """LLM manager is provided from DI and preserved between calls."""
-    module = types.ModuleType("session_mgmt_mcp.llm_providers")
-    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.llm_providers")  # type: ignore[attr-defined]
+    module = types.ModuleType("session_buddy.llm_providers")
+    module.__spec__ = types.SimpleNamespace(name="session_buddy.llm_providers")  # type: ignore[attr-defined]
 
     class DummyLLMManager:
         def __init__(self, config: str | None = None) -> None:
             self.config = config
 
     module.LLMManager = DummyLLMManager  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "session_mgmt_mcp.llm_providers", module)
+    monkeypatch.setitem(sys.modules, "session_buddy.llm_providers", module)
 
     # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
-    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    from session_buddy.server_core import SessionPermissionsManager
 
     SessionPermissionsManager.reset_singleton()
     configure(force=True)
@@ -101,8 +101,8 @@ async def test_serverless_manager_uses_config(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Serverless manager resolves through DI and respects config loading."""
-    module = types.ModuleType("session_mgmt_mcp.serverless_mode")
-    module.__spec__ = types.SimpleNamespace(name="session_mgmt_mcp.serverless_mode")  # type: ignore[attr-defined]
+    module = types.ModuleType("session_buddy.serverless_mode")
+    module.__spec__ = types.SimpleNamespace(name="session_buddy.serverless_mode")  # type: ignore[attr-defined]
 
     class DummyStorage:
         def __init__(self, config: dict[str, Any]) -> None:
@@ -135,11 +135,11 @@ async def test_serverless_manager_uses_config(
 
     module.ServerlessConfigManager = DummyConfigManager  # type: ignore[attr-defined]
     module.ServerlessSessionManager = DummyServerlessManager  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "session_mgmt_mcp.serverless_mode", module)
+    monkeypatch.setitem(sys.modules, "session_buddy.serverless_mode", module)
 
     # Monkeypatch HOME first, then reset and configure
     monkeypatch.setenv("HOME", str(tmp_path))
-    from session_mgmt_mcp.server_core import SessionPermissionsManager
+    from session_buddy.server_core import SessionPermissionsManager
 
     SessionPermissionsManager.reset_singleton()
     configure(force=True)

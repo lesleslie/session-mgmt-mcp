@@ -27,7 +27,7 @@ $ python -c "from acb.adapters.graph.duckdb_pgq import Graph; print(dir(Graph))"
 # - and more...
 ```
 
-**DI Registration** (`session_mgmt_mcp/di/__init__.py` lines 230-272):
+**DI Registration** (`session_buddy/di/__init__.py` lines 230-272):
 
 ```python
 from acb.adapters.graph.duckdb_pgq import DuckDBPGQSettings, Graph

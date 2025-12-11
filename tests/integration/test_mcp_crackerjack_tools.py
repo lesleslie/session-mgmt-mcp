@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastmcp import FastMCP
-from session_mgmt_mcp.tools.crackerjack_tools import register_crackerjack_tools
+from session_buddy.tools.crackerjack_tools import register_crackerjack_tools
 
 
 class TestMCPCrackerjackToolRegistration:
@@ -139,7 +139,7 @@ class TestMCPToolExecution:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_execute_crackerjack_command_tool_execution(
         self, mock_execute, mcp_server
@@ -148,7 +148,7 @@ class TestMCPToolExecution:
         # Setup mock result
         from datetime import datetime
 
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         mock_result = CrackerjackResult(
             command="lint",
@@ -191,7 +191,7 @@ class TestMCPToolExecution:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_tool_handles_execution_error(self, mock_execute, mcp_server):
         """Test MCP tool handles CrackerjackIntegration errors gracefully."""
@@ -212,13 +212,13 @@ class TestMCPToolExecution:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_tool_with_args_and_options(self, mock_execute, mcp_server):
         """Test MCP tool with various arguments and options."""
         from datetime import datetime
 
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         mock_result = CrackerjackResult(
             command="test",
@@ -265,13 +265,13 @@ class TestMCPToolExecution:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_crackerjack_run_tool(self, mock_execute, mcp_server):
         """Test the crackerjack_run MCP tool."""
         from datetime import datetime
 
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         mock_result = CrackerjackResult(
             command="check",
@@ -314,7 +314,7 @@ class TestErrorHandlingAndRecovery:
         """Test handling of missing execute_command method error."""
         # Simulate the exact error we encountered
         with patch(
-            "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration"
+            "session_buddy.crackerjack_integration.CrackerjackIntegration"
         ) as mock_class:
             # Create instance that's missing execute_command
             mock_instance = Mock()
@@ -347,7 +347,7 @@ class TestErrorHandlingAndRecovery:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_timeout_error_handling(self, mock_execute, mcp_server):
         """Test handling of timeout errors."""
@@ -364,13 +364,13 @@ class TestErrorHandlingAndRecovery:
 
     @pytest.mark.asyncio
     @patch(
-        "session_mgmt_mcp.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
+        "session_buddy.crackerjack_integration.CrackerjackIntegration.execute_crackerjack_command"
     )
     async def test_command_structure_error_handling(self, mock_execute, mcp_server):
         """Test handling of command structure errors (the original crackerjack error)."""
         from datetime import datetime
 
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         # Simulate the original error: "Got unexpected extra argument (lint)"
         mock_result = CrackerjackResult(
@@ -488,7 +488,7 @@ class TestRealIntegration:
     async def test_execute_command_method_called_correctly(self, mock_run, mcp_server):
         """Test that execute_command method works when called by external code."""
         # This simulates how crackerjack might call the execute_command method
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+        from session_buddy.crackerjack_integration import CrackerjackIntegration
 
         mock_result = Mock()
         mock_result.returncode = 0
@@ -511,7 +511,7 @@ class TestProtocolCompliance:
 
     def test_command_runner_protocol_compliance(self):
         """Test that CrackerjackIntegration implements CommandRunner protocol."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+        from session_buddy.crackerjack_integration import CrackerjackIntegration
 
         integration = CrackerjackIntegration()
 
@@ -528,7 +528,7 @@ class TestProtocolCompliance:
 
     def test_can_be_used_as_command_runner(self):
         """Test that instance can be used where CommandRunner is expected."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+        from session_buddy.crackerjack_integration import CrackerjackIntegration
 
         def use_command_runner(runner):
             """Function that expects a CommandRunner-like object."""

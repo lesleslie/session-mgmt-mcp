@@ -221,14 +221,14 @@
 
 **Adapter Implementations**:
 
-- `session_mgmt_mcp/adapters/session_storage_adapter.py` (339 lines, 93.58% coverage)
-- `session_mgmt_mcp/adapters/serverless_storage_adapter.py` (313 lines, 81.69% coverage)
-- `session_mgmt_mcp/adapters/storage_registry.py` (173 lines)
+- `session_buddy/adapters/session_storage_adapter.py` (339 lines, 93.58% coverage)
+- `session_buddy/adapters/serverless_storage_adapter.py` (313 lines, 81.69% coverage)
+- `session_buddy/adapters/storage_registry.py` (173 lines)
 
 **Configuration**:
 
 - `settings/session-mgmt.yaml` (storage configuration with env vars)
-- `session_mgmt_mcp/di/__init__.py` (DI registration)
+- `session_buddy/di/__init__.py` (DI registration)
 
 ## Test Execution
 
@@ -243,8 +243,8 @@ pytest tests/unit/test_session_storage_adapter.py tests/integration/test_serverl
 **Coverage Report**:
 
 ```bash
-pytest tests/unit/test_session_storage_adapter.py --cov=session_mgmt_mcp.adapters.session_storage_adapter
-pytest tests/integration/test_serverless_storage.py --cov=session_mgmt_mcp.adapters.serverless_storage_adapter
+pytest tests/unit/test_session_storage_adapter.py --cov=session_buddy.adapters.session_storage_adapter
+pytest tests/integration/test_serverless_storage.py --cov=session_buddy.adapters.serverless_storage_adapter
 ```
 
 ## Next Steps

@@ -19,7 +19,7 @@ class TestSessionState:
 
     def test_session_state_initialization(self) -> None:
         """Should create SessionState with required fields."""
-        from session_mgmt_mcp.serverless_mode import SessionState
+        from session_buddy.serverless_mode import SessionState
 
         session = SessionState(
             session_id="test-123",
@@ -37,7 +37,7 @@ class TestSessionState:
 
     def test_session_state_to_dict(self) -> None:
         """Should convert SessionState to dictionary."""
-        from session_mgmt_mcp.serverless_mode import SessionState
+        from session_buddy.serverless_mode import SessionState
 
         session = SessionState(
             session_id="test-123",
@@ -55,7 +55,7 @@ class TestSessionState:
 
     def test_session_state_from_dict(self) -> None:
         """Should create SessionState from dictionary."""
-        from session_mgmt_mcp.serverless_mode import SessionState
+        from session_buddy.serverless_mode import SessionState
 
         data = {
             "session_id": "test-123",
@@ -83,7 +83,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_store_session_success(self) -> None:
         """Should store session using aiocache."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage, SessionState
+        from session_buddy.serverless_mode import ACBCacheStorage, SessionState
 
         mock_cache = AsyncMock()
         mock_cache.set = AsyncMock()
@@ -108,7 +108,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_retrieve_session_success(self) -> None:
         """Should retrieve session from aiocache."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.get = AsyncMock(
@@ -138,7 +138,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_retrieve_session_not_found(self) -> None:
         """Should return None when session not found."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.get = AsyncMock(return_value=None)
@@ -152,7 +152,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_delete_session_success(self) -> None:
         """Should delete session from aiocache."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.delete = AsyncMock(return_value=True)
@@ -168,7 +168,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_list_sessions_empty(self) -> None:
         """Should return empty list when no sessions."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.get = AsyncMock(return_value=None)  # No index
@@ -182,7 +182,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_list_sessions_with_filter(self) -> None:
         """Should filter sessions by user_id and project_id."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.get = AsyncMock(
@@ -204,7 +204,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_cleanup_expired_sessions(self) -> None:
         """Should cleanup stale index entries."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         # Index has 2 sessions
@@ -223,7 +223,7 @@ class TestACBCacheStorage:
     @pytest.mark.asyncio
     async def test_is_available_success(self) -> None:
         """Should return True when cache is available."""
-        from session_mgmt_mcp.serverless_mode import ACBCacheStorage
+        from session_buddy.serverless_mode import ACBCacheStorage
 
         mock_cache = AsyncMock()
         mock_cache.set = AsyncMock()
@@ -243,7 +243,7 @@ class TestServerlessSessionManager:
     @pytest.mark.asyncio
     async def test_create_session(self) -> None:
         """Should create new session with ServerlessSessionManager."""
-        from session_mgmt_mcp.serverless_mode import (
+        from session_buddy.serverless_mode import (
             ACBCacheStorage,
             ServerlessSessionManager,
         )
@@ -265,7 +265,7 @@ class TestServerlessSessionManager:
     @pytest.mark.asyncio
     async def test_get_session(self) -> None:
         """Should retrieve session state."""
-        from session_mgmt_mcp.serverless_mode import (
+        from session_buddy.serverless_mode import (
             ACBCacheStorage,
             ServerlessSessionManager,
         )
@@ -298,7 +298,7 @@ class TestServerlessSessionManager:
     @pytest.mark.asyncio
     async def test_update_session(self) -> None:
         """Should update session state."""
-        from session_mgmt_mcp.serverless_mode import (
+        from session_buddy.serverless_mode import (
             ACBCacheStorage,
             ServerlessSessionManager,
         )
@@ -334,7 +334,7 @@ class TestServerlessSessionManager:
     @pytest.mark.asyncio
     async def test_delete_session(self) -> None:
         """Should delete session."""
-        from session_mgmt_mcp.serverless_mode import (
+        from session_buddy.serverless_mode import (
             ACBCacheStorage,
             ServerlessSessionManager,
         )
@@ -356,7 +356,7 @@ class TestServerlessConfigManager:
 
     def test_create_storage_backend_acb_default(self) -> None:
         """Should create ACBCacheStorage by default."""
-        from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+        from session_buddy.serverless_mode import ServerlessConfigManager
 
         config = {"storage_backend": "acb", "backends": {"acb": {}}}
 
@@ -366,7 +366,7 @@ class TestServerlessConfigManager:
 
     def test_create_storage_backend_legacy_redis_warns(self) -> None:
         """Should create RedisStorage with deprecation warning."""
-        from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+        from session_buddy.serverless_mode import ServerlessConfigManager
 
         config = {
             "storage_backend": "redis",
@@ -383,7 +383,7 @@ class TestServerlessConfigManager:
     @pytest.mark.asyncio
     async def test_test_storage_backends(self) -> None:
         """Should test all configured backends."""
-        from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+        from session_buddy.serverless_mode import ServerlessConfigManager
 
         config = {
             "backends": {

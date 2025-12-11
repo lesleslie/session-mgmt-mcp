@@ -5,8 +5,8 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from session_mgmt_mcp.tools.agent_analyzer import AgentRecommendation, AgentType
-from session_mgmt_mcp.tools.recommendation_engine import (
+from session_buddy.tools.agent_analyzer import AgentRecommendation, AgentType
+from session_buddy.tools.recommendation_engine import (
     AgentEffectiveness,
     FailurePattern,
     RecommendationEngine,
@@ -270,7 +270,7 @@ class TestRecommendationEngine:
     @pytest.mark.asyncio
     async def test_caching_behavior(self):
         """Test that caching works correctly."""
-        from session_mgmt_mcp.tools.history_cache import get_cache, reset_cache
+        from session_buddy.tools.history_cache import get_cache, reset_cache
 
         # Reset cache for clean test (reset_cache is sync, not async)
         reset_cache()

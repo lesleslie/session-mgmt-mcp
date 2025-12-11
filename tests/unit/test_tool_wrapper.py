@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 import pytest
-import session_mgmt_mcp.utils.tool_wrapper as tw
+import session_buddy.utils.tool_wrapper as tw
 
 
 class FakeDB:
@@ -31,7 +31,7 @@ async def test_execute_database_tool_success(monkeypatch: t.Any) -> None:
 
 @pytest.mark.asyncio
 async def test_execute_simple_database_tool_unavailable(monkeypatch: t.Any) -> None:
-    from session_mgmt_mcp.utils.error_handlers import DatabaseUnavailableError
+    from session_buddy.utils.error_handlers import DatabaseUnavailableError
 
     async def fake_require_db() -> FakeDB:
         msg = "db missing"

@@ -27,7 +27,7 @@ class TestInvalidInputHandling:
     async def test_initialize_session_empty_working_directory(self):
         """Test session initialization with empty working directory."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -41,7 +41,7 @@ class TestInvalidInputHandling:
     async def test_initialize_session_nonexistent_directory(self):
         """Test session initialization with non-existent directory."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
             nonexistent = "/tmp/nonexistent_project_12345_xyz"
@@ -61,7 +61,7 @@ class TestInvalidInputHandling:
     async def test_quality_score_calculation_with_corrupted_project(self):
         """Test quality scoring with corrupted project files."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmppath = Path(tmpdir)
@@ -88,7 +88,7 @@ class TestInvalidInputHandling:
     async def test_checkpoint_with_permission_denied(self):
         """Test checkpoint handling when directory is read-only."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -110,7 +110,7 @@ class TestResourceConstraints:
     async def test_quality_history_limit_enforcement(self):
         """Test that quality history respects maximum limits."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -128,7 +128,7 @@ class TestResourceConstraints:
     async def test_large_project_quality_assessment(self):
         """Test quality assessment on large project structure."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmppath = Path(tmpdir)
@@ -160,7 +160,7 @@ class TestErrorRecoveryAndResilience:
     async def test_session_recovery_after_error(self):
         """Test that session can recover after encountering errors."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -183,7 +183,7 @@ class TestErrorRecoveryAndResilience:
     async def test_multiple_sequential_checkpoints(self):
         """Test multiple checkpoints in rapid succession."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -205,7 +205,7 @@ class TestInputValidation:
     async def test_quality_score_with_extreme_values(self):
         """Test quality score handling with extreme values."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -225,7 +225,7 @@ class TestInputValidation:
     async def test_project_name_sanitization(self):
         """Test handling of special characters in project names."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -248,7 +248,7 @@ class TestInputValidation:
     async def test_quality_data_format_validation(self):
         """Test validation of quality data format."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -279,7 +279,7 @@ class TestSecurityConsiderations:
     async def test_session_data_isolation(self):
         """Test that session data is properly isolated."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir1:
                 with tempfile.TemporaryDirectory() as tmpdir2:
@@ -304,7 +304,7 @@ class TestSecurityConsiderations:
     async def test_no_sensitive_data_in_output(self):
         """Test that output doesn't contain sensitive data."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 manager = SessionLifecycleManager()
@@ -326,7 +326,7 @@ class TestSecurityConsiderations:
     async def test_path_traversal_prevention(self):
         """Test prevention of path traversal attacks."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -359,7 +359,7 @@ class TestDatabaseIntegrity:
     async def test_quality_history_consistency(self):
         """Test consistency of quality history data."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -382,7 +382,7 @@ class TestDatabaseIntegrity:
     async def test_concurrent_quality_updates(self):
         """Test concurrent updates to quality data."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -409,7 +409,7 @@ class TestBoundaryConditions:
     async def test_empty_recommendations(self):
         """Test formatting with empty recommendations."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -432,7 +432,7 @@ class TestBoundaryConditions:
     async def test_missing_quality_data_fields(self):
         """Test formatting with missing quality data fields."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 
@@ -452,7 +452,7 @@ class TestBoundaryConditions:
     async def test_zero_quality_score(self):
         """Test handling of zero quality score."""
         try:
-            from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+            from session_buddy.core.session_manager import SessionLifecycleManager
 
             manager = SessionLifecycleManager()
 

@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 class TestReflectionDatabase:
@@ -329,8 +329,8 @@ class TestReflectionDatabaseWithEmbeddings:
 
             # Mock embedding model availability
             with (
-                patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", True),
-                patch("session_mgmt_mcp.reflection_tools.DUCKDB_AVAILABLE", True),
+                patch("session_buddy.reflection_tools.ONNX_AVAILABLE", True),
+                patch("session_buddy.reflection_tools.DUCKDB_AVAILABLE", True),
                 patch.object(ReflectionDatabase, "get_embedding") as mock_get_embedding,
             ):
                 mock_get_embedding.return_value = [0.1, -0.2, 0.3] * 128  # 384-dim

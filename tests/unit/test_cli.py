@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.cli module.
+"""Test suite for session_buddy.cli module.
 
 Tests CLI commands, server process management, and status reporting.
 """
@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import psutil
 import pytest
 from typer.testing import CliRunner
-from session_mgmt_mcp.cli import app, find_server_processes, get_server_status
+from session_buddy.cli import app, find_server_processes, get_server_status
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def mock_process() -> MagicMock:
     proc.info = {
         "pid": 1234,
         "name": "python",
-        "cmdline": ["python", "-m", "session_mgmt_mcp.server"],
+        "cmdline": ["python", "-m", "session_buddy.server"],
     }
     proc.pid = 1234
     proc.is_running.return_value = True
@@ -55,7 +55,7 @@ class TestGetServerStatus:
 
     def test_get_server_status_no_server(self) -> None:
         """Test status when server is not running."""
-        with patch("session_mgmt_mcp.cli.find_server_processes", return_value=[]):
+        with patch("session_buddy.cli.find_server_processes", return_value=[]):
             status = get_server_status()
             assert status["running"] is False
             assert status["process_count"] == 0
@@ -63,7 +63,7 @@ class TestGetServerStatus:
     def test_get_server_status_with_server(self, mock_process: MagicMock) -> None:
         """Test status when server is running."""
         with patch(
-            "session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]
+            "session_buddy.cli.find_server_processes", return_value=[mock_process]
         ):
             status = get_server_status()
             assert status["running"] is True
@@ -80,7 +80,7 @@ class TestCliCommands:
 
     def test_status_command(self, cli_runner: CliRunner) -> None:
         """Test status command display."""
-        with patch("session_mgmt_mcp.cli.show_status"):
+        with patch("session_buddy.cli.show_status"):
             result = cli_runner.invoke(app, ["--status"])
             # Note: may exit with 0 or 1 depending on server state
             assert result.exit_code in [0, 1]
@@ -88,7 +88,7 @@ class TestCliCommands:
     def test_start_command_basic(self, cli_runner: CliRunner) -> None:
         """Test start command with minimal arguments."""
         with (
-            patch("session_mgmt_mcp.cli.find_server_processes", return_value=[]),
+            patch("session_buddy.cli.find_server_processes", return_value=[]),
             patch("subprocess.Popen") as mock_popen,
         ):
             mock_popen.return_value.pid = 1234
@@ -97,14 +97,14 @@ class TestCliCommands:
 
     def test_stop_command(self, cli_runner: CliRunner) -> None:
         """Test stop command."""
-        with patch("session_mgmt_mcp.cli.find_server_processes", return_value=[]):
+        with patch("session_buddy.cli.find_server_processes", return_value=[]):
             result = cli_runner.invoke(app, ["--stop-mcp-server"])
             assert result.exit_code in [0, 1]
 
     def test_restart_command(self, cli_runner: CliRunner) -> None:
         """Test restart command."""
         with (
-            patch("session_mgmt_mcp.cli.find_server_processes", return_value=[]),
+            patch("session_buddy.cli.find_server_processes", return_value=[]),
             patch("subprocess.Popen") as mock_popen,
         ):
             mock_popen.return_value.pid = 1234
@@ -113,13 +113,13 @@ class TestCliCommands:
 
     def test_logs_command(self, cli_runner: CliRunner) -> None:
         """Test logs display command."""
-        with patch("session_mgmt_mcp.cli.show_logs"):
+        with patch("session_buddy.cli.show_logs"):
             result = cli_runner.invoke(app, ["--logs"])
             assert result.exit_code in [0, 1]
 
     def test_config_command(self, cli_runner: CliRunner) -> None:
         """Test config display command."""
-        with patch("session_mgmt_mcp.cli.show_config"):
+        with patch("session_buddy.cli.show_config"):
             result = cli_runner.invoke(app, ["--config"])
             assert result.exit_code == 0
 
@@ -132,7 +132,7 @@ class TestServerManagement:
     ) -> None:
         """Test starting server when already running."""
         with patch(
-            "session_mgmt_mcp.cli.find_server_processes", return_value=[mock_process]
+            "session_buddy.cli.find_server_processes", return_value=[mock_process]
         ):
             result = cli_runner.invoke(app, ["--start-mcp-server"])
             assert result.exit_code in [
@@ -142,6 +142,6 @@ class TestServerManagement:
 
     def test_server_not_running_on_stop(self, cli_runner: CliRunner) -> None:
         """Test stopping server when not running."""
-        with patch("session_mgmt_mcp.cli.find_server_processes", return_value=[]):
+        with patch("session_buddy.cli.find_server_processes", return_value=[]):
             result = cli_runner.invoke(app, ["--stop-mcp-server"])
             assert result.exit_code in [0, 1]  # May succeed (already stopped) or fail

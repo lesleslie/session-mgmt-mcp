@@ -245,7 +245,7 @@ class MultiProjectCoordinator(AdapterBase):
 
 import pytest
 from acb.depends import depends
-from session_mgmt_mcp.multi_project_coordinator import (
+from session_buddy.multi_project_coordinator import (
     MultiProjectCoordinator,
     CoordinatorSettings,
 )
@@ -453,7 +453,7 @@ async def activity_monitor(monitor_settings):
 
 def test_relevance_calculation():
     """Test ACB action for relevance scoring."""
-    from session_mgmt_mcp.app_monitor import activity, ActivityEvent
+    from session_buddy.app_monitor import activity, ActivityEvent
 
     settings = ActivityMonitorSettings(default_relevance=0.5)
 
@@ -582,7 +582,7 @@ class MemoryOptimizer(AdapterBase):
 @pytest.mark.asyncio
 async def test_compression_uses_acb():
     """Verify ACB compression is used."""
-    from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+    from session_buddy.memory_optimizer import MemoryOptimizer
     from acb.actions.compress import compress
 
     settings = OptimizerSettings(compression_level=4)
@@ -802,7 +802,7 @@ def project_paths(tmp_path):
 @pytest.fixture
 async def coordinator(mock_reflection_db):
     """MultiProjectCoordinator with DI."""
-    from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+    from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
     coord = MultiProjectCoordinator()
     await coord.init()
@@ -812,7 +812,7 @@ async def coordinator(mock_reflection_db):
 @pytest.fixture
 async def activity_monitor(project_paths):
     """ProjectActivityMonitor with DI."""
-    from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+    from session_buddy.app_monitor import ProjectActivityMonitor
 
     monitor = ProjectActivityMonitor()
     await monitor.init()
@@ -822,7 +822,7 @@ async def activity_monitor(project_paths):
 @pytest.fixture
 async def memory_optimizer(mock_reflection_db):
     """MemoryOptimizer with DI."""
-    from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+    from session_buddy.memory_optimizer import MemoryOptimizer
 
     optimizer = MemoryOptimizer()
     await optimizer.init()
@@ -832,7 +832,7 @@ async def memory_optimizer(mock_reflection_db):
 @pytest.fixture
 def serverless_storage(mock_cache):
     """ACBCacheStorage with DI."""
-    from session_mgmt_mcp.serverless_mode import ACBCacheStorage, ServerlessSettings
+    from session_buddy.serverless_mode import ACBCacheStorage, ServerlessSettings
 
     settings = ServerlessSettings(cache_backend="memory", namespace="test")
     storage = ACBCacheStorage.from_settings(settings)
@@ -887,7 +887,7 @@ pytest tests/unit/test_multi_project_coordinator.py \
 
 ```bash
 # Check that depends.get_sync() is used
-grep -r "depends.get_sync" session_mgmt_mcp/*.py
+grep -r "depends.get_sync" session_buddy/*.py
 
 # Expected: Should find usage in all 4 modules
 ```
@@ -897,7 +897,7 @@ grep -r "depends.get_sync" session_mgmt_mcp/*.py
 ```bash
 # Coverage should remain similar or improve
 pytest tests/unit/test_multi_project_coordinator.py \
-       --cov=session_mgmt_mcp/multi_project_coordinator \
+       --cov=session_buddy/multi_project_coordinator \
        --cov-report=term-missing
 
 # Expected: 86%+ coverage maintained
@@ -1040,8 +1040,8 @@ ______________________________________________________________________
 ## Additional Resources
 
 - **ACB Documentation:** See agent instructions in `.claude/agents/acb-specialist.md`
-- **Pattern Examples:** Look at `session_mgmt_mcp/server.py` and `tools/session_tools.py`
-- **DI Configuration:** Review `session_mgmt_mcp/di/__init__.py`
+- **Pattern Examples:** Look at `session_buddy/server.py` and `tools/session_tools.py`
+- **DI Configuration:** Review `session_buddy/di/__init__.py`
 - **Settings Patterns:** Check ACB Settings documentation in agent instructions
 
 ______________________________________________________________________

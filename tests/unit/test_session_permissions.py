@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from session_mgmt_mcp.core.permissions import SessionPermissionsManager
+from session_buddy.core.permissions import SessionPermissionsManager
 
 if TYPE_CHECKING:
     from pathlib import Path

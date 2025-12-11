@@ -261,7 +261,7 @@ quality_data = await calculate_quality_score_v2()
 
 ## Next Steps
 
-1. Implement `calculate_quality_score_v2()` in `session_mgmt_mcp/utils/quality_utils_v2.py`
+1. Implement `calculate_quality_score_v2()` in `session_buddy/utils/quality_utils_v2.py`
 1. Add Crackerjack integration with caching
 1. Implement git analysis utilities
 1. Create comprehensive test suite

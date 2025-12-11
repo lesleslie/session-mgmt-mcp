@@ -272,10 +272,10 @@ enable_auto_store_reflections: bool = False
 
 ### Core Implementation
 
-- `session_mgmt_mcp/utils/reflection_utils.py` - Decision logic
-- `session_mgmt_mcp/config.py` - Configuration
-- `session_mgmt_mcp/core/session_manager.py` - Quality tracking
-- `session_mgmt_mcp/tools/session_tools.py` - Integration
+- `session_buddy/utils/reflection_utils.py` - Decision logic
+- `session_buddy/config.py` - Configuration
+- `session_buddy/core/session_manager.py` - Quality tracking
+- `session_buddy/tools/session_tools.py` - Integration
 
 ### Tests
 

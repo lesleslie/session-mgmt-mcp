@@ -94,10 +94,10 @@ config.database_connection_timeout
 
 **Files:**
 
-- Created: `session_mgmt_mcp/settings.py` (411 lines)
+- Created: `session_buddy/settings.py` (411 lines)
 - Created: `settings/session-mgmt.yaml` (97 lines)
 - Created: `settings/local.yaml.template` (27 lines)
-- Deleted: `session_mgmt_mcp/config.py` (657 lines)
+- Deleted: `session_buddy/config.py` (657 lines)
 - Updated: 2 imports (server.py, reflection_utils.py)
 
 ### 2. ACB Cache Migration ✅
@@ -130,7 +130,7 @@ def cleanup_cache(self, max_age_hours: int = 1) -> int:
 
 ```python
 # token_optimizer.py
-from session_mgmt_mcp.acb_cache_adapter import get_chunk_cache
+from session_buddy.acb_cache_adapter import get_chunk_cache
 
 self.chunk_cache = get_chunk_cache()  # ACB-backed
 
@@ -154,9 +154,9 @@ def cleanup_cache(self, max_age_hours: int = 1) -> int:
 
 **Files:**
 
-- Created: `session_mgmt_mcp/acb_cache_adapter.py` (411 lines)
-- Updated: `session_mgmt_mcp/token_optimizer.py` (+3 lines for import)
-- Replaced: `session_mgmt_mcp/tools/history_cache.py` (172 → 36 lines)
+- Created: `session_buddy/acb_cache_adapter.py` (411 lines)
+- Updated: `session_buddy/token_optimizer.py` (+3 lines for import)
+- Replaced: `session_buddy/tools/history_cache.py` (172 → 36 lines)
 - Added dependency: `aiocache>=0.12.3`
 
 ### 3. Server Decomposition Planning ✅
@@ -465,7 +465,7 @@ c318afa4 test(logging): implement comprehensive logging_utils tests
 
 ## Conclusion
 
-Phase 1 successfully established the ACB foundation for session-mgmt-mcp. The aggressive migration approach delivered immediate benefits (-258 LOC net, +1 quality score) while comprehensive planning de-risks future phases.
+Phase 1 successfully established the ACB foundation for session-buddy. The aggressive migration approach delivered immediate benefits (-258 LOC net, +1 quality score) while comprehensive planning de-risks future phases.
 
 **Key Achievements:**
 

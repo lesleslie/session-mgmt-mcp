@@ -10,9 +10,9 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from session_mgmt_mcp.tools.memory_tools import register_memory_tools
-from session_mgmt_mcp.tools.search_tools import register_search_tools
-from session_mgmt_mcp.tools.session_tools import register_session_tools
+from session_buddy.tools.memory_tools import register_memory_tools
+from session_buddy.tools.search_tools import register_search_tools
+from session_buddy.tools.session_tools import register_session_tools
 
 
 # Mock MCP server for testing
@@ -216,7 +216,7 @@ class TestSessionLifecycleIntegration:
             Path(temp_dir) / "session2.db"
 
             with patch(
-                "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
+                "session_buddy.reflection_tools.ReflectionDatabase",
             ) as mock_db_class:
                 mock_db = AsyncMock()
                 mock_db.search_conversations.return_value = {"results": [], "count": 0}

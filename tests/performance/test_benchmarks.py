@@ -197,7 +197,7 @@ class TestPerformanceRegression:
             db_path = tmp.name
 
             async with perf_helper.measure_time() as measurements:
-                from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+                from session_buddy.reflection_tools import ReflectionDatabase
 
                 db = ReflectionDatabase(db_path=db_path)
                 await db.initialize()
@@ -213,13 +213,13 @@ class TestPerformanceRegression:
     @pytest.mark.performance
     async def test_embedding_generation_performance(self, perf_helper):
         """Test embedding generation performance (when available)."""
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Test with embeddings disabled first
         with tempfile.NamedTemporaryFile(suffix=".duckdb", delete=False) as tmp:
             db_path = tmp.name
 
-            with patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", False):
+            with patch("session_buddy.reflection_tools.ONNX_AVAILABLE", False):
                 db = ReflectionDatabase(db_path=db_path)
                 await db.initialize()
 
@@ -241,7 +241,7 @@ class TestPerformanceRegression:
         from pathlib import Path
         from unittest.mock import patch
 
-        from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+        from session_buddy.core.session_manager import SessionLifecycleManager
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -255,7 +255,7 @@ class TestPerformanceRegression:
             manager = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):

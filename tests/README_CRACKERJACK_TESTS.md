@@ -155,8 +155,8 @@ Add to your CI pipeline:
     pytest tests/unit/test_crackerjack_integration.py \
            tests/integration/test_mcp_crackerjack_tools.py \
            tests/unit/test_protocol_compliance.py \
-           --cov=session_mgmt_mcp.crackerjack_integration \
-           --cov=session_mgmt_mcp.tools.crackerjack_tools \
+           --cov=session_buddy.crackerjack_integration \
+           --cov=session_buddy.tools.crackerjack_tools \
            --cov-fail-under=85
 ```
 
@@ -188,4 +188,4 @@ When modifying CrackerjackIntegration:
    pytest tests/unit/test_protocol_compliance.py::TestRegressionPreventionTests
    ```
 
-These tests provide comprehensive coverage to prevent the issues that were encountered and ensure robust integration between the session-mgmt-mcp server and crackerjack.
+These tests provide comprehensive coverage to prevent the issues that were encountered and ensure robust integration between the session-buddy server and crackerjack.

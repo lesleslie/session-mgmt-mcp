@@ -15,7 +15,7 @@ Week 5 testing successfully achieved 41-86% coverage across 4 complex infrastruc
 
 ### Critical Finding
 
-**The tested modules do NOT use ACB dependency injection patterns**, despite the project having a DI system in place (`session_mgmt_mcp/di/`). This creates a fundamental architectural disconnect between:
+**The tested modules do NOT use ACB dependency injection patterns**, despite the project having a DI system in place (`session_buddy/di/`). This creates a fundamental architectural disconnect between:
 
 - Infrastructure modules (tested this week) → Traditional instantiation patterns
 - Core modules (server.py, tools/) → ACB DI via `depends.get_sync()`
@@ -43,7 +43,7 @@ ______________________________________________________________________
    - Implements SessionStorage protocol correctly
    - Documentation mentions ACB benefits (compression, pooling, SSL/TLS)
 
-1. **DI infrastructure present** (session_mgmt_mcp/di/)
+1. **DI infrastructure present** (session_buddy/di/)
 
    - `depends.get_sync()` and `depends.set()` available
    - Centralized `configure()` function
@@ -108,21 +108,21 @@ ______________________________________________________________________
 **Files using ACB DI** (6 files):
 
 ```
-session_mgmt_mcp/di/__init__.py          ✅ DI configuration
-session_mgmt_mcp/utils/logging.py        ✅ depends.get_sync()
-session_mgmt_mcp/utils/instance_managers.py ✅ depends.get_sync()
-session_mgmt_mcp/tools/session_tools.py  ✅ depends.get_sync()
-session_mgmt_mcp/server.py               ✅ depends.get_sync()
-session_mgmt_mcp/resource_cleanup.py     ✅ depends.get_sync()
+session_buddy/di/__init__.py          ✅ DI configuration
+session_buddy/utils/logging.py        ✅ depends.get_sync()
+session_buddy/utils/instance_managers.py ✅ depends.get_sync()
+session_buddy/tools/session_tools.py  ✅ depends.get_sync()
+session_buddy/server.py               ✅ depends.get_sync()
+session_buddy/resource_cleanup.py     ✅ depends.get_sync()
 ```
 
 **Files NOT using ACB DI** (4 tested modules):
 
 ```
-session_mgmt_mcp/multi_project_coordinator.py  ❌ Manual instantiation
-session_mgmt_mcp/app_monitor.py               ❌ Manual instantiation
-session_mgmt_mcp/memory_optimizer.py           ❌ Manual instantiation
-session_mgmt_mcp/serverless_mode.py            ⚠️  Has ACBCacheStorage but no DI
+session_buddy/multi_project_coordinator.py  ❌ Manual instantiation
+session_buddy/app_monitor.py               ❌ Manual instantiation
+session_buddy/memory_optimizer.py           ❌ Manual instantiation
+session_buddy/serverless_mode.py            ⚠️  Has ACBCacheStorage but no DI
 ```
 
 **Score Breakdown:**

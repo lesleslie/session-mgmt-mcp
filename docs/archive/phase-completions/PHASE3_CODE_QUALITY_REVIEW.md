@@ -72,7 +72,7 @@ ______________________________________________________________________
 #### Pattern 1: Direct `add_middleware()` (CORRECT - 4 servers)
 
 ```python
-# ✅ mailgun-mcp, unifi-mcp, session-mgmt-mcp (main), fastblocks (via ACB)
+# ✅ mailgun-mcp, unifi-mcp, session-buddy (main), fastblocks (via ACB)
 mcp.add_middleware(rate_limiter)
 ```
 
@@ -94,7 +94,7 @@ mcp._mcp_server.fastmcp.add_middleware(rate_limiter)
 
 - **mailgun-mcp**: Uses `mcp.add_middleware()` directly (CORRECT)
 - **unifi-mcp**: Uses `server.add_middleware()` directly (CORRECT)
-- **session-mgmt-mcp**: Uses `mcp._mcp_server.add_middleware()` (accessing private attribute)
+- **session-buddy**: Uses `mcp._mcp_server.add_middleware()` (accessing private attribute)
 - **raindropio-mcp**: Uses `app._mcp_server.add_middleware()` (accessing private attribute)
 - **opera-cloud-mcp**: Uses `app._mcp_server.add_middleware()` (accessing private attribute)
 - **crackerjack**: Uses `mcp_app._mcp_server.add_middleware()` (accessing private attribute)
@@ -126,7 +126,7 @@ ______________________________________________________________________
 |--------|---------|-------|---------------|
 | mailgun-mcp | 5.0 | 15 | "Conservative for API protection" ✅ |
 | unifi-mcp | 10.0 | 20 | "UniFi controllers handle 10-20 req/sec well" ✅ |
-| session-mgmt-mcp | 10.0 | 30 | "Session management operations" ⚠️ vague |
+| session-buddy | 10.0 | 30 | "Session management operations" ⚠️ vague |
 | raindropio-mcp | 8.0 | 16 | "Sustainable rate for bookmark API" ✅ |
 | opera-cloud-mcp | 10.0 | 20 | "Sustainable rate for hospitality API" ⚠️ vague |
 | ACB | 15.0 | 40 | "Allow bursts for component execution" ✅ |
@@ -147,7 +147,7 @@ ______________________________________________________________________
 
 **Poor Examples**:
 
-- **session-mgmt-mcp** (line 202): Generic "session management operations"
+- **session-buddy** (line 202): Generic "session management operations"
 - **opera-cloud-mcp** (line 46): Just says "sustainable rate" without basis
 
 **Recommendation**:
@@ -305,7 +305,7 @@ API_KEY_PATTERNS: dict[str, APIKeyPattern] = {
 
 1. **❌ CRITICAL: Gemini API Key Missing** (as noted in Architecture-Council review)
 
-   - session-mgmt-mcp uses Gemini but has no specific pattern
+   - session-buddy uses Gemini but has no specific pattern
    - Currently falls back to generic 16-char minimum
    - **Impact**: Could accept invalid Gemini keys (weak validation)
 
@@ -942,7 +942,7 @@ ______________________________________________________________________
 
 1. **❌ Missing Gemini API Key Pattern** (reported by Architecture-Council)
 
-   - **Issue**: session-mgmt-mcp uses Gemini but no validation pattern
+   - **Issue**: session-buddy uses Gemini but no validation pattern
    - **Impact**: Weak validation, accepts invalid keys
    - **Files**: `mcp-common/mcp_common/security/api_keys.py`
    - **Fix**: Add Gemini pattern to `API_KEY_PATTERNS`
@@ -1025,7 +1025,7 @@ ______________________________________________________________________
 
    - Research Gemini API key format (Google AI Studio docs)
    - Add pattern to `API_KEY_PATTERNS`
-   - Update session-mgmt-mcp to use Gemini-specific validation
+   - Update session-buddy to use Gemini-specific validation
 
 1. **Fix Missing Validation Calls** (1 hour)
 

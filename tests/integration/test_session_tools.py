@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastmcp import FastMCP
-from session_mgmt_mcp.tools.session_tools import register_session_tools
+from session_buddy.tools.session_tools import register_session_tools
 
 
 class TestSessionToolsRegistration:
@@ -197,7 +197,7 @@ class TestSessionToolExecution:
         return mcp
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_start_tool_execution(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test start tool execution."""
@@ -235,7 +235,7 @@ class TestSessionToolExecution:
         assert "85/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_start_tool_failure(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test start tool execution with failure."""
@@ -255,7 +255,7 @@ class TestSessionToolExecution:
         assert "Initialization failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_checkpoint_tool_execution(
         self, mock_get_session_manager, mcp_server
     ):
@@ -283,7 +283,7 @@ class TestSessionToolExecution:
         assert "88/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_checkpoint_tool_failure(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test checkpoint tool execution with failure."""
@@ -303,7 +303,7 @@ class TestSessionToolExecution:
         assert "Checkpoint failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_end_tool_execution(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test end tool execution."""
@@ -334,7 +334,7 @@ class TestSessionToolExecution:
         assert "90/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_end_tool_failure(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test end tool execution with failure."""
@@ -354,7 +354,7 @@ class TestSessionToolExecution:
         assert "End session failed" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_status_tool_execution(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test status tool execution."""
@@ -396,7 +396,7 @@ class TestSessionToolExecution:
         assert "82/100" in result
 
     @pytest.mark.asyncio
-    @patch("session_mgmt_mcp.tools.session_tools._get_session_manager")
+    @patch("session_buddy.tools.session_tools._get_session_manager")
     async def test_status_tool_failure(self, mock_get_session_manager, mcp_server):
         mock_session_manager = mock_get_session_manager.return_value
         """Test status tool execution with failure."""
@@ -501,7 +501,7 @@ class TestSessionShortcuts:
 
     def test_create_session_shortcuts(self):
         """Test _create_session_shortcuts function."""
-        from session_mgmt_mcp.tools.session_tools import _create_session_shortcuts
+        from session_buddy.tools.session_tools import _create_session_shortcuts
 
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.dict("os.environ", {"HOME": temp_dir}):
@@ -530,7 +530,7 @@ class TestUVSetup:
 
     def test_setup_uv_dependencies_uv_not_available(self):
         """Test _setup_uv_dependencies when UV is not available."""
-        from session_mgmt_mcp.tools.session_tools import _setup_uv_dependencies
+        from session_buddy.tools.session_tools import _setup_uv_dependencies
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -544,7 +544,7 @@ class TestUVSetup:
 
     def test_setup_uv_dependencies_no_pyproject(self):
         """Test _setup_uv_dependencies when pyproject.toml doesn't exist."""
-        from session_mgmt_mcp.tools.session_tools import _setup_uv_dependencies
+        from session_buddy.tools.session_tools import _setup_uv_dependencies
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
@@ -558,7 +558,7 @@ class TestUVSetup:
     @patch("subprocess.run")
     def test_setup_uv_dependencies_success(self, mock_subprocess_run):
         """Test _setup_uv_dependencies with successful UV sync."""
-        from session_mgmt_mcp.tools.session_tools import _setup_uv_dependencies
+        from session_buddy.tools.session_tools import _setup_uv_dependencies
 
         mock_result = Mock()
         mock_result.returncode = 0

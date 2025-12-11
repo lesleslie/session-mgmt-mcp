@@ -42,7 +42,7 @@
 **File**: `pyproject.toml`
 
 - Converted `[tool.pytest.ini_options]` → `[tool.pytest]` for pytest 9.0+
-- Changed `addopts` from string to list: `["--cov=session_mgmt_mcp", "--cov-report=term"]`
+- Changed `addopts` from string to list: `["--cov=session_buddy", "--cov-report=term"]`
 - Changed `timeout` from int to string: `"300"`
 
 ### 2. Fixed ACB Dependency
@@ -59,7 +59,7 @@ branch = "main"
 
 **File**: `tests/functional/test_session_workflows.py`
 
-- Removed all `@patch("session_mgmt_mcp.core.session_manager.get_session_logger")` decorators
+- Removed all `@patch("session_buddy.core.session_manager.get_session_logger")` decorators
 - Updated `SessionLifecycleManager()` → `SessionLifecycleManager(logger=Mock())`
 - Applied to 11 test methods across 3 test classes
 

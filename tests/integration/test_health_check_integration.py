@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.health_checks import (
+from session_buddy.health_checks import (
     HealthStatus,
     check_database_health,
     check_dependencies_health,
@@ -34,12 +34,12 @@ class TestHealthCheckComponentIntegration:
     @pytest.mark.asyncio
     async def test_database_health_check_integration(self) -> None:
         """Should check database health with proper error handling."""
-        with patch("session_mgmt_mcp.health_checks.REFLECTION_AVAILABLE", True):
+        with patch("session_buddy.health_checks.REFLECTION_AVAILABLE", True):
             mock_db = AsyncMock()
             mock_db.get_stats.return_value = {"conversations_count": 42}
 
             with patch(
-                "session_mgmt_mcp.health_checks.get_reflection_database",
+                "session_buddy.health_checks.get_reflection_database",
                 return_value=mock_db,
             ):
                 result = await check_database_health()
@@ -58,7 +58,7 @@ class TestHealthCheckComponentIntegration:
         (claude_dir / "logs").mkdir()
         (claude_dir / "data").mkdir()
 
-        with patch("session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path):
+        with patch("session_buddy.health_checks.Path.home", return_value=tmp_path):
             result = await check_file_system_health()
 
             assert result.name == "file_system"
@@ -126,7 +126,7 @@ class TestHealthCheckAggregation:
         """Should handle individual check failures gracefully."""
         # Mock one check to fail
         with patch(
-            "session_mgmt_mcp.health_checks.check_database_health",
+            "session_buddy.health_checks.check_database_health",
             side_effect=RuntimeError("Database connection failed"),
         ):
             components = await get_all_health_checks()

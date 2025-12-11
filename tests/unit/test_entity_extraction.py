@@ -5,7 +5,7 @@ import typing as t
 from types import SimpleNamespace
 
 import pytest
-from session_mgmt_mcp.memory.entity_extractor import EntityExtractionEngine
+from session_buddy.memory.entity_extractor import EntityExtractionEngine
 
 
 class DummyResponse:

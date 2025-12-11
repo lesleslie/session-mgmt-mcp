@@ -57,7 +57,7 @@ ______________________________________________________________________
 ### Proposed Structure
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── __init__.py
 ├── __main__.py
 ├── cli.py
@@ -190,7 +190,7 @@ ______________________________________________________________________
 **Correct ACB Pattern:**
 
 ```python
-# session_mgmt_mcp/adapters/database/reflection_db.py
+# session_buddy/adapters/database/reflection_db.py
 import uuid
 from contextlib import suppress
 from acb.depends import depends
@@ -254,9 +254,9 @@ with suppress(Exception):
 **Correct Service Pattern:**
 
 ```python
-# session_mgmt_mcp/services/memory/reflection.py
+# session_buddy/services/memory/reflection.py
 from acb.depends import depends, Inject
-from session_mgmt_mcp.adapters.database import ReflectionDatabase
+from session_buddy.adapters.database import ReflectionDatabase
 
 
 class ReflectionService:
@@ -319,8 +319,8 @@ class ReflectionService:
 - Transform between external and internal representations
 
 ```text
-# session_mgmt_mcp/tools/memory_tools.py
-from session_mgmt_mcp.services.memory import ReflectionService
+# session_buddy/tools/memory_tools.py
+from session_buddy.services.memory import ReflectionService
 from acb.depends import depends
 
 # Get service instance
@@ -512,7 +512,7 @@ ______________________________________________________________________
 ### Before (Current - INCORRECT)
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── reflection_tools.py         # 500 LOC - DuckDB + service + tools mixed
 ├── memory_optimizer.py         # Separate file
 ├── team_knowledge.py           # Another separate file
@@ -530,7 +530,7 @@ session_mgmt_mcp/
 ### After (ACB-Compliant - CORRECT)
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── adapters/database/
 │   ├── _base.py               # Database protocol
 │   ├── reflection_db.py       # DuckDB adapter (external integration)

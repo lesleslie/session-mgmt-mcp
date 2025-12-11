@@ -1,7 +1,7 @@
 """Unit tests for AgentAnalyzer."""
 
 import pytest
-from session_mgmt_mcp.tools.agent_analyzer import (
+from session_buddy.tools.agent_analyzer import (
     AgentAnalyzer,
     AgentRecommendation,
     AgentType,

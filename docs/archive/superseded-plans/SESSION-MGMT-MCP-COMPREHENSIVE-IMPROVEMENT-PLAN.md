@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ## Executive Summary
 
-Four specialized agents conducted a comprehensive critical review of the session-mgmt-mcp codebase. This synthesis consolidates their findings into a prioritized action plan focused on ACB framework integration.
+Four specialized agents conducted a comprehensive critical review of the session-buddy codebase. This synthesis consolidates their findings into a prioritized action plan focused on ACB framework integration.
 
 **⚡ PROGRESS UPDATE:** Phase 2 (Server Decomposition) is now **COMPLETE**, exceeding original targets!
 
@@ -208,7 +208,7 @@ ______________________________________________________________________
 **NEW MODULAR ARCHITECTURE:**
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── server.py (392 lines) - Pure MCP coordinator ✅
 ├── server_core.py (796 lines) - Infrastructure, lifecycle, feature detection ✅
 ├── quality_engine.py (1,219 lines) - Quality scoring, analysis, intelligence ✅
@@ -229,30 +229,30 @@ session_mgmt_mcp/
 
 **Status Update (2025-10-10)**
 
-- DI bootstrap package created (`session_mgmt_mcp/di/`) with providers for logger, permissions, lifecycle, and critical filesystem paths.
+- DI bootstrap package created (`session_buddy/di/`) with providers for logger, permissions, lifecycle, and critical filesystem paths.
 - Server entrypoint and core tooling now resolve dependencies through DI; tool modules (search, monitoring, serverless, LLM, team, crackerjack, memory, validated-memory) are injection-ready. Recommendation-engine DI bridge and token-optimizer lifecycle remain planned follow-ups.
 - Legacy `reflect_on_past` workflow restored on top of DI stack with token optimizer re-exports.
 - Instance managers migrated to DI-backed factories; unit coverage verifies registration and override behaviour.
 - Targeted validation executed: `uv run pytest --no-cov tests/unit/test_di_container.py tests/unit/test_instance_managers.py tests/unit/test_logging_utils.py`.
-- Full-suite coverage run attempted (`uv run pytest --cov=session_mgmt_mcp --cov-report=term-missing`); run currently fails (34.16% coverage vs. 35% fail-under) with extensive regressions across reflection-dependent tools, session workflows, crackerjack analytics, and performance/security suites. Failures logged for Day 4 remediation.
+- Full-suite coverage run attempted (`uv run pytest --cov=session_buddy --cov-report=term-missing`); run currently fails (34.16% coverage vs. 35% fail-under) with extensive regressions across reflection-dependent tools, session workflows, crackerjack analytics, and performance/security suites. Failures logged for Day 4 remediation.
 
 **Scope**
 
-- `session_mgmt_mcp/server_core.py`, `quality_engine.py`, `advanced_features.py`, `utils/instance_managers.py`.
-- All modules in `session_mgmt_mcp/tools/` that currently instantiate dependencies directly (search, monitoring, serverless, LLM, team, crackerjack complete; others queued).
-- Integration adapters (`crackerjack_integration.py`, `session_mgmt_mcp/utils`) where singletons remain.
+- `session_buddy/server_core.py`, `quality_engine.py`, `advanced_features.py`, `utils/instance_managers.py`.
+- All modules in `session_buddy/tools/` that currently instantiate dependencies directly (search, monitoring, serverless, LLM, team, crackerjack complete; others queued).
+- Integration adapters (`crackerjack_integration.py`, `session_buddy/utils`) where singletons remain.
 
 **Execution Plan (5-day sprint)**
 
-1. ✅ **Day 1 – Container scaffolding:** create `session_mgmt_mcp/di/` package with provider registry, enumerate required dependencies, document override strategy, and wire config/logging providers.
+1. ✅ **Day 1 – Container scaffolding:** create `session_buddy/di/` package with provider registry, enumerate required dependencies, document override strategy, and wire config/logging providers.
 1. ✅ **Day 2 – Core refactor:** apply container lookups for `SessionLogger`, `SessionPermissionsManager`, lifecycle handlers, and FastMCP setup paths; replace manual constructors and ensure startup uses container bindings.
 1. ✅ **Day 3 – Tool layer migration:** refactor remaining tool modules (memory, validated memory, monitoring, serverless, LLM, crackerjack) to request dependencies via injection and extract external service adapters as needed. Recommendation-engine/token optimizer lifecycle still pending clean-up task (tracked separately).
 1. 🔄 **Day 4 – Testing + overrides:** expand unit/integration coverage (≥70% for new DI code) using `depends.override`; resolve failing suites from coverage run before re-attempting full quality gates.
-1. 🔄 **Day 5 – Cleanup + docs:** retire redundant factories, update architecture notes, and run full quality gates (`uv run pre-commit`, `uv run pytest --cov`, `uv run session-mgmt-mcp --start-mcp-server --status`).
+1. 🔄 **Day 5 – Cleanup + docs:** retire redundant factories, update architecture notes, and run full quality gates (`uv run pre-commit`, `uv run pytest --cov`, `uv run session-buddy --start-mcp-server --status`).
 
 **Deliverables**
 
-- `session_mgmt_mcp/di/` package with provider map and override guidance. ✅ Delivered.
+- `session_buddy/di/` package with provider map and override guidance. ✅ Delivered.
 - Core/server/tool modules progressively freed from manual singletons and using ACB injection patterns (server, search, monitoring, LLM, serverless, team, crackerjack ✅; remaining modules scheduled 🔄).
 - Expanded test suite demonstrating DI overrides and validating wiring (unit coverage for DI container, instance managers, logging ✅; integration suite enhancements pending 🔄).
 - Architecture addendum highlighting the new dependency graph and adapter boundaries.
@@ -261,7 +261,7 @@ session_mgmt_mcp/
 
 - Pyright, Ruff, Bandit, and Complexipy clean; no new suppressions. 🔄
 - Coverage ≥35% overall with ≥70% on new DI code paths (unit focus achieved; full-suite target outstanding after failing coverage run 🔄).
-- Smoke test: `uv run session-mgmt-mcp --start-mcp-server --status` passes with injected dependencies (scheduled once failing suites are addressed 🔄).
+- Smoke test: `uv run session-buddy --start-mcp-server --status` passes with injected dependencies (scheduled once failing suites are addressed 🔄).
 
 **Risks & Mitigations**
 
@@ -403,7 +403,7 @@ Focus: Replace 128 string-formatting helpers with Jinja2 templates orchestrated 
 
 Implementation Steps:
 
-1. Build `session_mgmt_mcp/templates/` hierarchy and register loader via DI; document data models for each template family.
+1. Build `session_buddy/templates/` hierarchy and register loader via DI; document data models for each template family.
 1. Migrate formatting functions from `utils/server_helpers.py` and `quality_engine.py` into template renderers using injected context objects.
 1. Introduce renderer service (e.g., `TemplateRenderer`) with caching, localization hooks, and CLI fallbacks.
 1. Update MCP tool outputs to use templates, delete deprecated helpers, and run snapshot diff against baseline transcripts.
@@ -431,7 +431,7 @@ Focus: Adopt ACB query interfaces for DuckDB and related data sources.
 
 Implementation Steps:
 
-1. Create `session_mgmt_mcp/adapters/database.py` with ACB query client and connection pooling configured via DI.
+1. Create `session_buddy/adapters/database.py` with ACB query client and connection pooling configured via DI.
 1. Convert `reflection_tools.py`, analytics modules, and scoring helpers to use the query adapter instead of handcrafted SQL.
 1. Implement query composition helpers and parameterized builders for reusable statements.
 1. Add error handling, logging, and retry strategies through injected middleware.
@@ -460,7 +460,7 @@ Focus: Replace bespoke callbacks with ACB EventBus and structured subscribers.
 Implementation Steps:
 
 1. Map existing lifecycle hooks (session start/checkpoint/end, tool results, alerts) and define canonical event schema.
-1. Implement `session_mgmt_mcp/events.py` with EventBus configuration, topic definitions, and tracing hooks.
+1. Implement `session_buddy/events.py` with EventBus configuration, topic definitions, and tracing hooks.
 1. Refactor listeners in server core, monitoring, and notification modules to subscribe via ACB decorators.
 1. Add telemetry, replay protection, and graceful degradation for environments without EventBus.
 
@@ -760,7 +760,7 @@ ______________________________________________________________________
 ### Target Architecture
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── server/
 │   ├── __init__.py          # Public API exports
 │   ├── server_core.py       # FastMCP app setup (~500 lines)
@@ -1203,7 +1203,7 @@ fail_under = 35  # Week 1 baseline, never decrease
 
 [tool.pytest.ini_options]
 addopts = """
-  --cov=session_mgmt_mcp
+  --cov=session_buddy
   --cov-report=term-missing
   --cov-report=html
   --cov-fail-under=35
@@ -1446,7 +1446,7 @@ ______________________________________________________________________
 
 ## Conclusion
 
-The session-mgmt-mcp codebase is **production-ready** with solid architecture (73/100) and acceptable quality (68/100). However, **massive transformation potential** exists through ACB framework integration:
+The session-buddy codebase is **production-ready** with solid architecture (73/100) and acceptable quality (68/100). However, **massive transformation potential** exists through ACB framework integration:
 
 ### The Opportunity
 

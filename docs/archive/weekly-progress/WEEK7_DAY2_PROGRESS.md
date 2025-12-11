@@ -14,7 +14,7 @@ Day 2 focused on integrating the `SessionPaths` dataclass into the dependency in
 
 ### ✅ Updated DI Configuration
 
-**File Modified:** `session_mgmt_mcp/di/__init__.py` (simplified from 121 to 136 lines)
+**File Modified:** `session_buddy/di/__init__.py` (simplified from 121 to 136 lines)
 
 **Key Changes:**
 
@@ -96,7 +96,7 @@ Removed `_register_path()` and `_resolve_path()` as they're no longer needed wit
 
 ```text
 # Before:
-from session_mgmt_mcp.di import CLAUDE_DIR_KEY, LOGS_DIR_KEY, configure, reset
+from session_buddy.di import CLAUDE_DIR_KEY, LOGS_DIR_KEY, configure, reset
 
 def test_configure_registers_singletons(...):
     configure(force=True)
@@ -106,7 +106,7 @@ def test_configure_registers_singletons(...):
     assert logs_dir == tmp_path / ".claude" / "logs"
 
 # After:
-from session_mgmt_mcp.di import SessionPaths, configure, reset
+from session_buddy.di import SessionPaths, configure, reset
 
 def test_configure_registers_singletons(...):
     configure(force=True)
@@ -127,7 +127,7 @@ def test_configure_registers_singletons(...):
 
 ### ✅ Updated Instance Managers
 
-**File Modified:** `session_mgmt_mcp/utils/instance_managers.py`
+**File Modified:** `session_buddy/utils/instance_managers.py`
 
 **Key Changes:**
 
@@ -135,10 +135,10 @@ def test_configure_registers_singletons(...):
 
 ```text
 # Before:
-from session_mgmt_mcp.di.constants import CLAUDE_DIR_KEY
+from session_buddy.di.constants import CLAUDE_DIR_KEY
 
 # After:
-from session_mgmt_mcp.di import SessionPaths
+from session_buddy.di import SessionPaths
 ```
 
 2. **Updated `_resolve_claude_dir()` to Use Type-Safe DI**
@@ -326,14 +326,14 @@ ______________________________________________________________________
 
 ### Production Code
 
-1. **`session_mgmt_mcp/di/__init__.py`** (restructured)
+1. **`session_buddy/di/__init__.py`** (restructured)
 
    - Replaced string key registration with `SessionPaths`
    - Updated `_register_logger()` and `_register_permissions_manager()` signatures
    - Removed `_register_path()` and `_resolve_path()` helpers
    - Added comprehensive docstrings
 
-1. **`session_mgmt_mcp/utils/instance_managers.py`** (updated)
+1. **`session_buddy/utils/instance_managers.py`** (updated)
 
    - Replaced `CLAUDE_DIR_KEY` import with `SessionPaths`
    - Updated `_resolve_claude_dir()` to use type-safe DI
@@ -361,7 +361,7 @@ ______________________________________________________________________
 
 | Goal | Status | Notes |
 |------|--------|-------|
-| Update `session_mgmt_mcp/di/__init__.py` to use SessionPaths | ✅ | Completed with enhanced documentation |
+| Update `session_buddy/di/__init__.py` to use SessionPaths | ✅ | Completed with enhanced documentation |
 | Replace all `CLAUDE_DIR_KEY` references with SessionPaths | ✅ | Eliminated from di/__init__.py and instance_managers.py |
 | Update `_register_*` functions to accept Path parameters | ✅ | Clear, explicit signatures |
 | Update tests to use new pattern | ✅ | DI container tests updated and passing |
@@ -522,5 +522,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Day 2 - DI Configuration Update ✅ Core Objectives Complete

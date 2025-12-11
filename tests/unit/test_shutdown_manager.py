@@ -14,7 +14,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
-from session_mgmt_mcp.shutdown_manager import (
+from session_buddy.shutdown_manager import (
     CleanupTask,
     ShutdownManager,
     ShutdownStats,

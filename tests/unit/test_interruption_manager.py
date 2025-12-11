@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.interruption_manager module.
+"""Test suite for session_buddy.interruption_manager module.
 
 Tests context preservation during interruptions and session recovery.
 """
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 try:
-    from session_mgmt_mcp.interruption_manager import (
+    from session_buddy.interruption_manager import (
         ContextState,
         InterruptionEvent,
         InterruptionType,

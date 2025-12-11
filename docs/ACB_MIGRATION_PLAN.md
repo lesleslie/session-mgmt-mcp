@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document tracks the refactoring effort to align session-mgmt-mcp with ACB (Asynchronous Component Base) and crackerjack best practices. The primary goal is to replace custom backend implementations with native ACB adapters, following dependency injection patterns already established in the codebase.
+This document tracks the refactoring effort to align session-buddy with ACB (Asynchronous Component Base) and crackerjack best practices. The primary goal is to replace custom backend implementations with native ACB adapters, following dependency injection patterns already established in the codebase.
 
 ### Key Objectives
 
@@ -50,7 +50,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 
 - [x] **Task 1.1**: Create storage adapter registry module ✅
 
-  - File: `session_mgmt_mcp/adapters/storage_registry.py` (173 lines)
+  - File: `session_buddy/adapters/storage_registry.py` (173 lines)
   - Register ACB storage adapters (S3, Azure, GCS, File, Memory)
   - Follow Vector/Graph adapter registration pattern
   - Commit: 8762deb
@@ -96,7 +96,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 
 - [x] **Task 1.2**: Update DI configuration ✅
 
-  - File: `session_mgmt_mcp/di/__init__.py`
+  - File: `session_buddy/di/__init__.py`
   - Added `_register_storage_adapters()` function (46 lines)
   - Registers file storage adapter by default with session buckets
   - Follow existing pattern used for Vector/Graph adapters
@@ -149,7 +149,7 @@ This document tracks the refactoring effort to align session-mgmt-mcp with ACB (
 
 - [x] **Task 3.1**: Create SessionStorageAdapter facade ✅
 
-  - File: `session_mgmt_mcp/adapters/session_storage_adapter.py` (339 lines)
+  - File: `session_buddy/adapters/session_storage_adapter.py` (339 lines)
   - Unified interface wrapping ACB storage adapters
   - Runtime backend selection based on config
   - Commit: 8762deb
@@ -219,7 +219,7 @@ ______________________________________________________________________
 
 - [x] **Task 4.1**: Create ServerlessStorageAdapter bridge ✅
 
-  - File: `session_mgmt_mcp/adapters/serverless_storage_adapter.py` (313 lines)
+  - File: `session_buddy/adapters/serverless_storage_adapter.py` (313 lines)
   - Bridge between SessionStorage protocol and SessionStorageAdapter
   - Implements all SessionStorage methods with TTL support
   - 81.69% test coverage
@@ -227,7 +227,7 @@ ______________________________________________________________________
 
 - [x] **Task 4.2**: Update serverless_mode.py ✅
 
-  - File: `session_mgmt_mcp/serverless_mode.py`
+  - File: `session_buddy/serverless_mode.py`
   - Added ServerlessStorageAdapter import
   - Updated create_storage_backend() to use new adapters first
   - Added support for file, s3, azure, gcs, memory backends
@@ -236,7 +236,7 @@ ______________________________________________________________________
 
   ```python
   # OLD (backends/redis_backend.py - 200 lines):
-  from session_mgmt_mcp.backends.redis_backend import RedisStorage
+  from session_buddy.backends.redis_backend import RedisStorage
 
   storage = RedisStorage(
       host=config.redis_host,
@@ -245,7 +245,7 @@ ______________________________________________________________________
   )
 
   # NEW (ACB storage adapter - ~10 lines):
-  from session_mgmt_mcp.adapters import SessionStorageAdapter
+  from session_buddy.adapters import SessionStorageAdapter
   from acb.depends import depends
 
   storage = depends.get_sync(SessionStorageAdapter)
@@ -292,7 +292,7 @@ ______________________________________________________________________
 
 - [x] **Task 8.1**: Audit current KnowledgeGraphDatabaseAdapter ✅
 
-  - File: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (698 lines)
+  - File: `session_buddy/adapters/knowledge_graph_adapter.py` (698 lines)
   - Documented all DuckDB SQL operations
   - Mapped to ACB Graph adapter methods
   - Identified custom operations needing preservation
@@ -544,7 +544,7 @@ ______________________________________________________________________
 
 - [ ] **Task 15.1**: Full test suite run
 
-  - Run `pytest --cov=session_mgmt_mcp --cov-fail-under=85`
+  - Run `pytest --cov=session_buddy --cov-fail-under=85`
   - Verify all tests passing
   - Check coverage metrics
 
@@ -704,16 +704,16 @@ ______________________________________________________________________
 
 ### Key Files
 
-- **Storage Adapters**: `session_mgmt_mcp/adapters/storage_registry.py` ✅ CREATED (173 lines)
-- **Session Storage**: `session_mgmt_mcp/adapters/session_storage_adapter.py` ✅ CREATED (339 lines)
-- **Serverless Storage**: `session_mgmt_mcp/adapters/serverless_storage_adapter.py` ✅ CREATED (313 lines)
+- **Storage Adapters**: `session_buddy/adapters/storage_registry.py` ✅ CREATED (173 lines)
+- **Session Storage**: `session_buddy/adapters/session_storage_adapter.py` ✅ CREATED (339 lines)
+- **Serverless Storage**: `session_buddy/adapters/serverless_storage_adapter.py` ✅ CREATED (313 lines)
 - **Storage Tests**: `tests/unit/test_session_storage_adapter.py` ✅ CREATED (420 lines, 25 tests)
 - **Serverless Tests**: `tests/integration/test_serverless_storage.py` ✅ CREATED (285 lines, 16 tests)
-- **Graph Adapter**: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (existing, to be refactored in Phase 2.5)
-- **Reflection Adapter**: `session_mgmt_mcp/adapters/reflection_adapter.py` (already ACB-compliant)
-- **DI Config**: `session_mgmt_mcp/di/__init__.py` ✅ UPDATED (added storage registration)
-- **Serverless Mode**: `session_mgmt_mcp/serverless_mode.py` ✅ UPDATED (uses ServerlessStorageAdapter)
-- **Old Backends**: `session_mgmt_mcp/backends/*.py` ✅ DEPRECATED (warnings added)
+- **Graph Adapter**: `session_buddy/adapters/knowledge_graph_adapter.py` (existing, to be refactored in Phase 2.5)
+- **Reflection Adapter**: `session_buddy/adapters/reflection_adapter.py` (already ACB-compliant)
+- **DI Config**: `session_buddy/di/__init__.py` ✅ UPDATED (added storage registration)
+- **Serverless Mode**: `session_buddy/serverless_mode.py` ✅ UPDATED (uses ServerlessStorageAdapter)
+- **Old Backends**: `session_buddy/backends/*.py` ✅ DEPRECATED (warnings added)
 
 ### ACB Documentation
 

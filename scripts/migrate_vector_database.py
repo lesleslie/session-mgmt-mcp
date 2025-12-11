@@ -58,7 +58,7 @@ async def migrate_vector_database(
         - errors: Number of errors encountered
 
     """
-    from session_mgmt_mcp.di import SessionPaths, configure
+    from session_buddy.di import SessionPaths, configure
 
     configure()  # Configure DI to get paths
     from acb.depends import depends
@@ -193,7 +193,7 @@ def _create_empty_migration_result():
 
 async def _perform_migration(conversations, reflections, verbose: bool):
     """Perform the actual migration of data."""
-    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+    from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
     total_items = len(conversations) + len(reflections)
 
@@ -327,7 +327,7 @@ async def _migrate_reflections(reflections, db, adapter, verbose: bool):
 
 async def _validate_migration() -> None:
     """Validate the migration by checking database stats."""
-    from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+    from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
     async with ReflectionDatabaseAdapter() as db:
         await db.get_stats()

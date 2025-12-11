@@ -11,7 +11,7 @@ ______________________________________________________________________
 Two implementation plans were analyzed for overlap, conflicts, and synchronization opportunities:
 
 1. **mcp-common Plan** (10 weeks): ACB-native library development for 9 MCP servers
-1. **session-mgmt-mcp Plan** (16 weeks): Standalone server improvements with ACB integration
+1. **session-buddy Plan** (16 weeks): Standalone server improvements with ACB integration
 
 **Key Findings:**
 
@@ -184,7 +184,7 @@ Benefits:
 ```text
 # Phase 5 (Week 10-11): One-step migration
 # Before:
-from session_mgmt_mcp.config import (
+from session_buddy.config import (
     SessionConfig,
     ReflectionConfig,
     CrackerjackConfig,
@@ -330,7 +330,7 @@ def configure_di():
 **session-mgmt Plan (Phase 2.7 - IN PROGRESS):**
 
 ```text
-# session_mgmt_mcp/di/ - Direct ACB wiring
+# session_buddy/di/ - Direct ACB wiring
 from acb.depends import depends
 
 # Providers being wired directly:
@@ -441,7 +441,7 @@ Phase 4 (Week 3-5): Test Coverage Improvement
 
 ```
 Phase 4 (Week 13-16): Test Coverage Sprint
-├─ Target: session-mgmt-mcp to 85%+ coverage
+├─ Target: session-buddy to 85%+ coverage
 ├─ Week 13-14: Systematic test creation
 ├─ Week 15-16: Integration and E2E tests
 └─ Timeline: 4 weeks (Week 13-16 of session-mgmt plan)
@@ -621,7 +621,7 @@ mcp-common/
 │       ├── health_check.jinja2
 │       └── metrics_display.jinja2
 
-session-mgmt-mcp/
+session-buddy/
 ├── templates/                   # Server-specific templates
 │   ├── advanced_quality.jinja2
 │   ├── reflection_results.jinja2
@@ -738,7 +738,7 @@ ______________________________________________________________________
 
 ## Quality Impact Analysis
 
-### session-mgmt-mcp Quality Trajectory
+### session-buddy Quality Trajectory
 
 **Without Coordination (Original Plan):**
 

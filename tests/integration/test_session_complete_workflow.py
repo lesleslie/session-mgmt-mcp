@@ -6,8 +6,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.core.session_manager import SessionLifecycleManager
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 class TestSessionWorkflowIntegration:
@@ -28,7 +28,7 @@ class TestSessionWorkflowIntegration:
 
             # Mock git repository check and other dependencies
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -76,7 +76,7 @@ class TestSessionWorkflowIntegration:
             manager = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -118,13 +118,13 @@ class TestSessionWorkflowIntegration:
             mock_perms_manager.trusted_operations = {"op1", "op2", "op3"}
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
                     with patch("os.getcwd", return_value=str(project_dir)):
                         with patch(
-                            "session_mgmt_mcp.server.permissions_manager",
+                            "session_buddy.server.permissions_manager",
                             mock_perms_manager,
                         ):
                             # Initialize session
@@ -156,7 +156,7 @@ class TestSessionWorkflowIntegration:
             manager = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -188,7 +188,7 @@ class TestSessionWorkflowIntegration:
             manager2 = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -237,7 +237,7 @@ class TestSessionWorkflowIntegration:
             manager = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -317,7 +317,7 @@ class TestSessionWorkflowIntegration:
             manager = SessionLifecycleManager()
 
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):
@@ -338,7 +338,7 @@ class TestSessionWorkflowIntegration:
 
                         # This checkpoint should fail
                         with patch(
-                            "session_mgmt_mcp.core.session_manager.is_git_repository",
+                            "session_buddy.core.session_manager.is_git_repository",
                             return_value=True,
                         ):
                             checkpoint_result = await manager.checkpoint_session()

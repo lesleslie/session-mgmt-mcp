@@ -18,7 +18,7 @@ class TestAdvancedFeaturesHub:
 
     def test_hub_initialization(self) -> None:
         """Should initialize with logger and feature flags."""
-        from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
+        from session_buddy.advanced_features import AdvancedFeaturesHub
 
         mock_logger = MagicMock()
         hub = AdvancedFeaturesHub(mock_logger)
@@ -31,7 +31,7 @@ class TestAdvancedFeaturesHub:
     @pytest.mark.asyncio
     async def test_initialize_multi_project_not_implemented(self) -> None:
         """Should raise NotImplementedError for multi-project init."""
-        from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
+        from session_buddy.advanced_features import AdvancedFeaturesHub
 
         hub = AdvancedFeaturesHub(MagicMock())
 
@@ -41,7 +41,7 @@ class TestAdvancedFeaturesHub:
     @pytest.mark.asyncio
     async def test_initialize_advanced_search_not_implemented(self) -> None:
         """Should raise NotImplementedError for advanced search init."""
-        from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
+        from session_buddy.advanced_features import AdvancedFeaturesHub
 
         hub = AdvancedFeaturesHub(MagicMock())
 
@@ -51,7 +51,7 @@ class TestAdvancedFeaturesHub:
     @pytest.mark.asyncio
     async def test_initialize_app_monitor_not_implemented(self) -> None:
         """Should raise NotImplementedError for app monitor init."""
-        from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
+        from session_buddy.advanced_features import AdvancedFeaturesHub
 
         hub = AdvancedFeaturesHub(MagicMock())
 
@@ -65,10 +65,10 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_create_natural_reminder_success(self) -> None:
         """Should create reminder and return formatted output."""
-        from session_mgmt_mcp.advanced_features import create_natural_reminder
+        from session_buddy.advanced_features import create_natural_reminder
 
         with patch(
-            "session_mgmt_mcp.natural_scheduler.create_natural_reminder"
+            "session_buddy.natural_scheduler.create_natural_reminder"
         ) as mock_create:
             mock_create.return_value = "reminder-123"
 
@@ -85,7 +85,7 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_create_natural_reminder_handles_import_error(self) -> None:
         """Should handle missing dependencies gracefully."""
-        from session_mgmt_mcp.advanced_features import create_natural_reminder
+        from session_buddy.advanced_features import create_natural_reminder
 
         # Mock the import to raise ImportError
         with patch("builtins.__import__", side_effect=ImportError):
@@ -98,15 +98,15 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_list_user_reminders_with_reminders(self) -> None:
         """Should list user reminders."""
-        from session_mgmt_mcp.advanced_features import list_user_reminders
+        from session_buddy.advanced_features import list_user_reminders
 
         with patch(
-            "session_mgmt_mcp.natural_scheduler.list_user_reminders"
+            "session_buddy.natural_scheduler.list_user_reminders"
         ) as mock_list:
             mock_list.return_value = [{"id": "1", "title": "Reminder 1"}]
 
             with patch(
-                "session_mgmt_mcp.utils.server_helpers._format_reminders_list"
+                "session_buddy.utils.server_helpers._format_reminders_list"
             ) as mock_format:
                 mock_format.return_value = ["Formatted output"]
 
@@ -117,10 +117,10 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_cancel_user_reminder_success(self) -> None:
         """Should cancel reminder and return confirmation."""
-        from session_mgmt_mcp.advanced_features import cancel_user_reminder
+        from session_buddy.advanced_features import cancel_user_reminder
 
         with patch(
-            "session_mgmt_mcp.natural_scheduler.cancel_user_reminder"
+            "session_buddy.natural_scheduler.cancel_user_reminder"
         ) as mock_cancel:
             mock_cancel.return_value = True
 
@@ -132,10 +132,10 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_start_reminder_service_success(self) -> None:
         """Should start reminder service."""
-        from session_mgmt_mcp.advanced_features import start_reminder_service
+        from session_buddy.advanced_features import start_reminder_service
 
-        with patch("session_mgmt_mcp.natural_scheduler.register_session_notifications"):
-            with patch("session_mgmt_mcp.natural_scheduler.start_reminder_service"):
+        with patch("session_buddy.natural_scheduler.register_session_notifications"):
+            with patch("session_buddy.natural_scheduler.start_reminder_service"):
                 result = await start_reminder_service()
 
                 assert isinstance(result, str)
@@ -144,9 +144,9 @@ class TestNaturalReminderTools:
     @pytest.mark.asyncio
     async def test_stop_reminder_service_success(self) -> None:
         """Should stop reminder service."""
-        from session_mgmt_mcp.advanced_features import stop_reminder_service
+        from session_buddy.advanced_features import stop_reminder_service
 
-        with patch("session_mgmt_mcp.natural_scheduler.stop_reminder_service"):
+        with patch("session_buddy.natural_scheduler.stop_reminder_service"):
             result = await stop_reminder_service()
 
             assert isinstance(result, str)
@@ -159,7 +159,7 @@ class TestInterruptionManagement:
     @pytest.mark.asyncio
     async def test_get_interruption_statistics_with_data(self) -> None:
         """Should return formatted interruption statistics."""
-        from session_mgmt_mcp.advanced_features import get_interruption_statistics
+        from session_buddy.advanced_features import get_interruption_statistics
 
         # Test the import error path since interruption_manager is optional
         with patch("builtins.__import__", side_effect=ImportError):
@@ -175,7 +175,7 @@ class TestMultiProjectCoordination:
     @pytest.mark.asyncio
     async def test_create_project_group_success(self) -> None:
         """Should create project group and return formatted output."""
-        from session_mgmt_mcp.advanced_features import create_project_group
+        from session_buddy.advanced_features import create_project_group
 
         mock_group = MagicMock()
         mock_group.name = "Test Group"
@@ -184,7 +184,7 @@ class TestMultiProjectCoordination:
         mock_group.id = "group-123"
 
         with patch(
-            "session_mgmt_mcp.advanced_features._get_multi_project_coordinator"
+            "session_buddy.advanced_features._get_multi_project_coordinator"
         ) as mock_get:
             mock_coordinator = AsyncMock()
             mock_coordinator.create_project_group = AsyncMock(return_value=mock_group)
@@ -201,7 +201,7 @@ class TestMultiProjectCoordination:
     @pytest.mark.asyncio
     async def test_add_project_dependency_success(self) -> None:
         """Should add project dependency."""
-        from session_mgmt_mcp.advanced_features import add_project_dependency
+        from session_buddy.advanced_features import add_project_dependency
 
         mock_dependency = MagicMock()
         mock_dependency.source_project = "project1"
@@ -210,7 +210,7 @@ class TestMultiProjectCoordination:
         mock_dependency.description = "Uses API"
 
         with patch(
-            "session_mgmt_mcp.advanced_features._get_multi_project_coordinator"
+            "session_buddy.advanced_features._get_multi_project_coordinator"
         ) as mock_get:
             mock_coordinator = AsyncMock()
             mock_coordinator.add_project_dependency = AsyncMock(
@@ -230,7 +230,7 @@ class TestMultiProjectCoordination:
     @pytest.mark.asyncio
     async def test_search_across_projects_with_results(self) -> None:
         """Should search across related projects."""
-        from session_mgmt_mcp.advanced_features import search_across_projects
+        from session_buddy.advanced_features import search_across_projects
 
         mock_results = [
             {
@@ -243,7 +243,7 @@ class TestMultiProjectCoordination:
         ]
 
         with patch(
-            "session_mgmt_mcp.advanced_features._get_multi_project_coordinator"
+            "session_buddy.advanced_features._get_multi_project_coordinator"
         ) as mock_get:
             mock_coordinator = AsyncMock()
             mock_coordinator.find_related_conversations = AsyncMock(
@@ -261,11 +261,11 @@ class TestMultiProjectCoordination:
     @pytest.mark.asyncio
     async def test_get_project_insights_success(self) -> None:
         """Should get project insights."""
-        from session_mgmt_mcp.advanced_features import get_project_insights
+        from session_buddy.advanced_features import get_project_insights
 
         # Test unavailable coordinator path
         with patch(
-            "session_mgmt_mcp.advanced_features._get_multi_project_coordinator"
+            "session_buddy.advanced_features._get_multi_project_coordinator"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -281,11 +281,11 @@ class TestAdvancedSearch:
     @pytest.mark.asyncio
     async def test_advanced_search_with_results(self) -> None:
         """Should perform advanced search with filters."""
-        from session_mgmt_mcp.advanced_features import advanced_search
+        from session_buddy.advanced_features import advanced_search
 
         # Test unavailable search engine path
         with patch(
-            "session_mgmt_mcp.advanced_features._get_advanced_search_engine"
+            "session_buddy.advanced_features._get_advanced_search_engine"
         ) as mock_get:
             mock_get.return_value = None
 
@@ -297,12 +297,12 @@ class TestAdvancedSearch:
     @pytest.mark.asyncio
     async def test_search_suggestions_success(self) -> None:
         """Should return search suggestions."""
-        from session_mgmt_mcp.advanced_features import search_suggestions
+        from session_buddy.advanced_features import search_suggestions
 
         mock_suggestions = ["suggestion1", "suggestion2"]
 
         with patch(
-            "session_mgmt_mcp.advanced_features._get_advanced_search_engine"
+            "session_buddy.advanced_features._get_advanced_search_engine"
         ) as mock_get:
             mock_engine = AsyncMock()
             mock_engine.get_suggestions = AsyncMock(return_value=mock_suggestions)
@@ -315,12 +315,12 @@ class TestAdvancedSearch:
     @pytest.mark.asyncio
     async def test_get_search_metrics_success(self) -> None:
         """Should return search metrics."""
-        from session_mgmt_mcp.advanced_features import get_search_metrics
+        from session_buddy.advanced_features import get_search_metrics
 
         mock_metrics = {"total_searches": 100, "avg_results": 5}
 
         with patch(
-            "session_mgmt_mcp.advanced_features._get_advanced_search_engine"
+            "session_buddy.advanced_features._get_advanced_search_engine"
         ) as mock_get:
             mock_engine = AsyncMock()
             mock_engine.get_metrics = AsyncMock(return_value=mock_metrics)
@@ -337,11 +337,11 @@ class TestGitWorktreeManagement:
     @pytest.mark.asyncio
     async def test_git_worktree_add_success(self) -> None:
         """Should add git worktree."""
-        from session_mgmt_mcp.advanced_features import git_worktree_add
+        from session_buddy.advanced_features import git_worktree_add
 
         # Mock WorktreeManager where it's imported from
         with patch(
-            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+            "session_buddy.worktree_manager.WorktreeManager"
         ) as mock_manager_cls:
             mock_manager = AsyncMock()
             mock_manager.create_worktree = AsyncMock(
@@ -362,11 +362,11 @@ class TestGitWorktreeManagement:
     @pytest.mark.asyncio
     async def test_git_worktree_remove_success(self) -> None:
         """Should remove git worktree."""
-        from session_mgmt_mcp.advanced_features import git_worktree_remove
+        from session_buddy.advanced_features import git_worktree_remove
 
         # Mock WorktreeManager where it's imported from
         with patch(
-            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+            "session_buddy.worktree_manager.WorktreeManager"
         ) as mock_manager_cls:
             mock_manager = AsyncMock()
             mock_manager.remove_worktree = AsyncMock(
@@ -386,11 +386,11 @@ class TestGitWorktreeManagement:
     @pytest.mark.asyncio
     async def test_git_worktree_switch_success(self) -> None:
         """Should switch between worktrees."""
-        from session_mgmt_mcp.advanced_features import git_worktree_switch
+        from session_buddy.advanced_features import git_worktree_switch
 
         # Mock WorktreeManager where it's imported from
         with patch(
-            "session_mgmt_mcp.worktree_manager.WorktreeManager"
+            "session_buddy.worktree_manager.WorktreeManager"
         ) as mock_manager_cls:
             mock_manager = AsyncMock()
             mock_manager.switch_worktree_context = AsyncMock(
@@ -415,7 +415,7 @@ class TestSessionWelcome:
     @pytest.mark.asyncio
     async def test_session_welcome_returns_formatted_message(self) -> None:
         """Should return session welcome message."""
-        from session_mgmt_mcp.advanced_features import session_welcome
+        from session_buddy.advanced_features import session_welcome
 
         # Test basic functionality without setting connection info
         result = await session_welcome()
@@ -430,7 +430,7 @@ class TestHelperFunctions:
 
     def test_calculate_overdue_time_for_overdue_reminder(self) -> None:
         """Should calculate overdue time."""
-        from session_mgmt_mcp.advanced_features import _calculate_overdue_time
+        from session_buddy.advanced_features import _calculate_overdue_time
 
         # Use a past timestamp
         past_time = "2020-01-01T12:00:00"
@@ -442,7 +442,7 @@ class TestHelperFunctions:
 
     def test_format_session_statistics_with_data(self) -> None:
         """Should format session statistics."""
-        from session_mgmt_mcp.advanced_features import _format_session_statistics
+        from session_buddy.advanced_features import _format_session_statistics
 
         sessions = {
             "total_sessions": 10,
@@ -457,7 +457,7 @@ class TestHelperFunctions:
 
     def test_has_statistics_data_with_data(self) -> None:
         """Should detect presence of statistics data."""
-        from session_mgmt_mcp.advanced_features import _has_statistics_data
+        from session_buddy.advanced_features import _has_statistics_data
 
         assert _has_statistics_data({"total": 1}, {}, {}) is True
         assert _has_statistics_data({}, {"count": 1}, {}) is True
@@ -465,7 +465,7 @@ class TestHelperFunctions:
 
     def test_has_statistics_data_without_data(self) -> None:
         """Should detect absence of statistics data."""
-        from session_mgmt_mcp.advanced_features import _has_statistics_data
+        from session_buddy.advanced_features import _has_statistics_data
 
         assert _has_statistics_data({}, {}, {}) is False
         assert _has_statistics_data(None, None, None) is False
@@ -474,7 +474,7 @@ class TestHelperFunctions:
         """Should build search filters dictionary."""
         # _build_advanced_search_filters is defined inside advanced_search function
         # Test that it exists and can be called
-        from session_mgmt_mcp import advanced_features
+        from session_buddy import advanced_features
 
         # Verify the module has the expected structure
         assert hasattr(advanced_features, "advanced_search")

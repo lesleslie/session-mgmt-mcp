@@ -2,7 +2,7 @@
 
 ## Problem
 
-The `register_storage_adapter()` function in `/session_mgmt_mcp/adapters/storage_registry.py` was attempting to use `import_adapter("storage")` to dynamically load ACB storage adapters, which resulted in the error:
+The `register_storage_adapter()` function in `/session_buddy/adapters/storage_registry.py` was attempting to use `import_adapter("storage")` to dynamically load ACB storage adapters, which resulted in the error:
 
 ```
 AdapterNotFound: storage adapter not found – check adapters.yaml and ensure package registration
@@ -104,14 +104,14 @@ All 25 existing tests pass, plus new validation:
 ```bash
 # Test all backends
 python -c "
-from session_mgmt_mcp.adapters.storage_registry import register_storage_adapter
+from session_buddy.adapters.storage_registry import register_storage_adapter
 storage = register_storage_adapter('file', {'local_path': '/tmp/sessions'})
 print('✅ File storage registered')
 "
 
 # Test retrieval
 python -c "
-from session_mgmt_mcp.adapters.storage_registry import get_storage_adapter
+from session_buddy.adapters.storage_registry import get_storage_adapter
 storage = get_storage_adapter('file')
 print('✅ File storage retrieved')
 "
@@ -144,7 +144,7 @@ Created comprehensive documentation:
 
 ## References
 
-- **Fixed file**: `/session_mgmt_mcp/adapters/storage_registry.py`
+- **Fixed file**: `/session_buddy/adapters/storage_registry.py`
 - **Documentation**: `/docs/ACB_STORAGE_ADAPTER_GUIDE.md`
 - **Tests**: `/tests/unit/test_session_storage_adapter.py` (25 tests passing)
 - **ACB source**: `acb.adapters.storage.{file,s3,azure,gcs,memory}`

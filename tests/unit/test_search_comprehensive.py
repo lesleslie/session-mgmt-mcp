@@ -10,7 +10,7 @@ import tempfile
 from typing import Any
 
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 @pytest.mark.asyncio

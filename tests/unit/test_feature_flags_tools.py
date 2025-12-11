@@ -4,7 +4,7 @@ import typing as t
 from types import SimpleNamespace
 
 import pytest
-from session_mgmt_mcp.tools.feature_flags_tools import register_feature_flags_tools
+from session_buddy.tools.feature_flags_tools import register_feature_flags_tools
 
 
 class DummyMCP:

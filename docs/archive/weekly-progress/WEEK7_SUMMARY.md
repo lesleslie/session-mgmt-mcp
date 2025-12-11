@@ -44,7 +44,7 @@ ______________________________________________________________________
 
 **Files Created:**
 
-1. `session_mgmt_mcp/di/config.py` (99 lines)
+1. `session_buddy/di/config.py` (99 lines)
 
    - `SessionPaths` frozen dataclass
    - `from_home()` factory method with HOME env var support
@@ -67,14 +67,14 @@ ______________________________________________________________________
 
 **Files Modified:**
 
-1. `session_mgmt_mcp/di/__init__.py`
+1. `session_buddy/di/__init__.py`
 
    - Replaced 3 string key registrations with single SessionPaths registration
    - Updated `_register_logger()` and `_register_permissions_manager()` to accept Path parameters
    - Removed `_register_path()` and `_resolve_path()` helper functions
    - **Result:** -30 lines of complexity, clearer intent
 
-1. `session_mgmt_mcp/utils/instance_managers.py`
+1. `session_buddy/utils/instance_managers.py`
 
    - Replaced `CLAUDE_DIR_KEY` import with `SessionPaths`
    - Updated `_resolve_claude_dir()` to use type-safe DI resolution
@@ -95,7 +95,7 @@ ______________________________________________________________________
 
 **Files Modified:**
 
-1. `session_mgmt_mcp/utils/instance_managers.py` (5 functions)
+1. `session_buddy/utils/instance_managers.py` (5 functions)
 
    - `get_app_monitor()` - Direct container access
    - `get_llm_manager()` - Direct container access
@@ -104,7 +104,7 @@ ______________________________________________________________________
    - `get_interruption_manager()` - Direct container access
    - **Pattern:** Check `get_container().instances[SomeClass]` instead of `depends.get_sync()`
 
-1. `session_mgmt_mcp/tools/session_tools.py`
+1. `session_buddy/tools/session_tools.py`
 
    - Updated `_get_session_manager()` with direct container access
    - Fixed module-level DI resolution issues
@@ -131,7 +131,7 @@ ______________________________________________________________________
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `session_mgmt_mcp/di/config.py` | 99 | SessionPaths dataclass |
+| `session_buddy/di/config.py` | 99 | SessionPaths dataclass |
 | `tests/unit/test_di_config.py` | 282 | SessionPaths test suite |
 | `tests/unit/test_session_permissions.py` | TBD | Session permissions tests |
 
@@ -139,9 +139,9 @@ ______________________________________________________________________
 
 | File | Changes | Impact |
 |------|---------|--------|
-| `session_mgmt_mcp/di/__init__.py` | Restructured configuration | Type-safe DI |
-| `session_mgmt_mcp/utils/instance_managers.py` | Updated 5 async functions | Fixed async issues |
-| `session_mgmt_mcp/tools/session_tools.py` | Updated 1 function | Fixed import issues |
+| `session_buddy/di/__init__.py` | Restructured configuration | Type-safe DI |
+| `session_buddy/utils/instance_managers.py` | Updated 5 async functions | Fixed async issues |
+| `session_buddy/tools/session_tools.py` | Updated 1 function | Fixed import issues |
 | `tests/unit/test_di_container.py` | Updated assertions | Verify SessionPaths |
 | `tests/unit/test_instance_managers.py` | Updated assertions | Verify singletons |
 
@@ -508,5 +508,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Summary - ACB DI Refactoring ✅ Core Objectives Complete

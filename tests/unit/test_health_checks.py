@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.health_checks import (
+from session_buddy.health_checks import (
     ComponentHealth,
     HealthStatus,
     check_database_health,
@@ -32,12 +32,12 @@ class TestDatabaseHealthCheck:
     @pytest.mark.asyncio
     async def test_database_healthy(self) -> None:
         """Should return HEALTHY when database is operational."""
-        with patch("session_mgmt_mcp.health_checks.REFLECTION_AVAILABLE", True):
+        with patch("session_buddy.health_checks.REFLECTION_AVAILABLE", True):
             mock_db = AsyncMock()
             mock_db.get_stats.return_value = {"conversations_count": 100}
 
             with patch(
-                "session_mgmt_mcp.health_checks.get_reflection_database",
+                "session_buddy.health_checks.get_reflection_database",
                 return_value=mock_db,
             ):
                 result = await check_database_health()
@@ -52,7 +52,7 @@ class TestDatabaseHealthCheck:
     @pytest.mark.asyncio
     async def test_database_unavailable(self) -> None:
         """Should return DEGRADED when database not available."""
-        with patch("session_mgmt_mcp.health_checks.REFLECTION_AVAILABLE", False):
+        with patch("session_buddy.health_checks.REFLECTION_AVAILABLE", False):
             result = await check_database_health()
 
             assert result.name == "database"
@@ -62,7 +62,7 @@ class TestDatabaseHealthCheck:
     @pytest.mark.asyncio
     async def test_database_high_latency(self) -> None:
         """Should return DEGRADED when database latency is high."""
-        with patch("session_mgmt_mcp.health_checks.REFLECTION_AVAILABLE", True):
+        with patch("session_buddy.health_checks.REFLECTION_AVAILABLE", True):
             # Mock slow database
             async def slow_get_stats() -> dict:
                 import asyncio
@@ -74,7 +74,7 @@ class TestDatabaseHealthCheck:
             mock_db.get_stats = slow_get_stats
 
             with patch(
-                "session_mgmt_mcp.health_checks.get_reflection_database",
+                "session_buddy.health_checks.get_reflection_database",
                 return_value=mock_db,
             ):
                 result = await check_database_health()
@@ -89,9 +89,9 @@ class TestDatabaseHealthCheck:
     @pytest.mark.asyncio
     async def test_database_error(self) -> None:
         """Should return UNHEALTHY when database check fails."""
-        with patch("session_mgmt_mcp.health_checks.REFLECTION_AVAILABLE", True):
+        with patch("session_buddy.health_checks.REFLECTION_AVAILABLE", True):
             with patch(
-                "session_mgmt_mcp.health_checks.get_reflection_database",
+                "session_buddy.health_checks.get_reflection_database",
                 side_effect=RuntimeError("Connection failed"),
             ):
                 result = await check_database_health()
@@ -114,7 +114,7 @@ class TestFileSystemHealthCheck:
         (claude_dir / "logs").mkdir()
         (claude_dir / "data").mkdir()
 
-        with patch("session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path):
+        with patch("session_buddy.health_checks.Path.home", return_value=tmp_path):
             result = await check_file_system_health()
 
             assert result.name == "file_system"
@@ -125,7 +125,7 @@ class TestFileSystemHealthCheck:
     @pytest.mark.asyncio
     async def test_file_system_missing_directory(self, tmp_path: Path) -> None:
         """Should return UNHEALTHY when .claude directory missing."""
-        with patch("session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path):
+        with patch("session_buddy.health_checks.Path.home", return_value=tmp_path):
             result = await check_file_system_health()
 
             assert result.name == "file_system"
@@ -143,7 +143,7 @@ class TestFileSystemHealthCheck:
 
         try:
             with patch(
-                "session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path
+                "session_buddy.health_checks.Path.home", return_value=tmp_path
             ):
                 result = await check_file_system_health()
 
@@ -161,7 +161,7 @@ class TestFileSystemHealthCheck:
         claude_dir.mkdir()
         # Don't create logs/data directories
 
-        with patch("session_mgmt_mcp.health_checks.Path.home", return_value=tmp_path):
+        with patch("session_buddy.health_checks.Path.home", return_value=tmp_path):
             result = await check_file_system_health()
 
             assert result.name == "file_system"
@@ -182,11 +182,11 @@ class TestDependenciesHealthCheck:
 
         with (
             patch(
-                "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
+                "session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
             ),
             patch.dict(
                 "sys.modules",
-                {"onnxruntime": MagicMock(), "session_mgmt_mcp.server": mock_server},
+                {"onnxruntime": MagicMock(), "session_buddy.server": mock_server},
             ),
         ):
             result = await check_dependencies_health()
@@ -222,10 +222,10 @@ class TestDependenciesHealthCheck:
         try:
             with (
                 patch(
-                    "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE",
+                    "session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE",
                     False,
                 ),
-                patch.dict("sys.modules", {"session_mgmt_mcp.server": mock_server}),
+                patch.dict("sys.modules", {"session_buddy.server": mock_server}),
                 patch("builtins.__import__", side_effect=mock_import),
                 patch(
                     "importlib.util.find_spec", return_value=None
@@ -246,7 +246,7 @@ class TestDependenciesHealthCheck:
         """Should return DEGRADED when some dependencies available."""
         with (
             patch(
-                "session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
+                "session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
             ),
             patch.dict("sys.modules", clear=True),  # Clear all modules
         ):
@@ -319,7 +319,7 @@ class TestGetAllHealthChecks:
         """Should handle exceptions in individual checks gracefully."""
         # Mock one check to raise exception
         with patch(
-            "session_mgmt_mcp.health_checks.check_python_environment_health",
+            "session_buddy.health_checks.check_python_environment_health",
             side_effect=RuntimeError("Test error"),
         ):
             components = await get_all_health_checks()

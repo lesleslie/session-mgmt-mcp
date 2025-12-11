@@ -1,4 +1,4 @@
-# Unified Implementation Roadmap: mcp-common + session-mgmt-mcp
+# Unified Implementation Roadmap: mcp-common + session-buddy
 
 **Version:** 1.0
 **Date:** 2025-10-28
@@ -12,9 +12,9 @@ ______________________________________________________________________
 This unified roadmap consolidates two overlapping implementation plans:
 
 1. **10-week mcp-common plan**: ACB-native library development + integration across 9 MCP servers
-1. **16-week session-mgmt-mcp plan**: Standalone improvements with ACB integration focus
+1. **16-week session-buddy plan**: Standalone improvements with ACB integration focus
 
-**Critical Achievement:** Phase 2 server decomposition (session-mgmt-mcp) completed **3 weeks ahead of schedule** with:
+**Critical Achievement:** Phase 2 server decomposition (session-buddy) completed **3 weeks ahead of schedule** with:
 
 - server.py reduced from 4,008 → 392 lines (-90.2%)
 - Architecture score improved 73 → 90 (+17 points)
@@ -23,7 +23,7 @@ This unified roadmap consolidates two overlapping implementation plans:
 **Current Status:**
 
 - **Phase 3.3 Complete:** Security hardening finished (mcp-common plan)
-- **Phase 2 Complete:** Server decomposition finished (session-mgmt-mcp plan)
+- **Phase 2 Complete:** Server decomposition finished (session-buddy plan)
 - **Bonus Work Complete:** Health checks, graceful shutdown, comprehensive docs
 
 ______________________________________________________________________
@@ -35,7 +35,7 @@ ______________________________________________________________________
 | Workstream | Original Duration | Completed Work | Remaining Work | Actual Progress |
 |-----------|------------------|----------------|----------------|-----------------|
 | **mcp-common Development** | 10 weeks | 3.5 weeks | 6.5 weeks | 35% |
-| **session-mgmt-mcp Improvements** | 16 weeks | 6 weeks | 10 weeks | 37.5% |
+| **session-buddy Improvements** | 16 weeks | 6 weeks | 10 weeks | 37.5% |
 | **Combined Baseline** | 13 weeks parallel | 3.8 weeks | 9.2 weeks | **29.4%** |
 | **Adjusted Estimate** | 13 weeks | 3.8 weeks | 8.4 weeks | **31.2% (adjusted)** |
 
@@ -113,7 +113,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### Stream 2: session-mgmt-mcp Improvements
+### Stream 2: session-buddy Improvements
 
 **Original Plan:** 4 phases spanning 16 weeks
 **Actual Progress:** Phase 1-2 complete + Phase 3.3 in progress
@@ -148,7 +148,7 @@ ______________________________________________________________________
 
 **Phase 2.7: ACB Dependency Injection (Week 6)** 🔄 IN PROGRESS
 
-- ✅ DI bootstrap package created (`session_mgmt_mcp/di/`)
+- ✅ DI bootstrap package created (`session_buddy/di/`)
 - ✅ Core providers wired (logger, permissions, lifecycle, paths)
 - ✅ Server entrypoint and core tooling DI-ready
 - ✅ Tool modules injection-ready (search, monitoring, serverless, LLM, team, crackerjack, memory)
@@ -203,7 +203,7 @@ ______________________________________________________________________
 Unified Phase 4: mcp-common ACB Library Implementation
 ├─ Week 7: Build mcp-common core with ACB patterns
 ├─ Week 8: Test mcp-common in isolation
-└─ Week 9+: session-mgmt-mcp adopts mcp-common (not raw ACB)
+└─ Week 9+: session-buddy adopts mcp-common (not raw ACB)
 
 Result: Single ACB integration point through mcp-common library
 ```
@@ -220,7 +220,7 @@ Result: Single ACB integration point through mcp-common library
 ```
 Unified Approach:
 1. Build MCPBaseSettings in mcp-common first (unified Phase 4)
-2. session-mgmt-mcp adopts mcp-common config in Phase 3.2
+2. session-buddy adopts mcp-common config in Phase 3.2
 3. No double migration - single step to final pattern
 
 Savings: ~2 weeks of redundant config work
@@ -360,7 +360,7 @@ ______________________________________________________________________
 
 - mcp-common v2.0.0 published (internal use)
 - Core adapters battle-tested (90%+ coverage)
-- Migration guide with session-mgmt-mcp as reference
+- Migration guide with session-buddy as reference
 - Example server running with all features
 
 **Success Criteria:**
@@ -368,7 +368,7 @@ ______________________________________________________________________
 - All planned adapters implemented and tested
 - Example server demonstrates ACB-native patterns
 - Documentation complete and peer-reviewed
-- Ready for first adopter (session-mgmt-mcp)
+- Ready for first adopter (session-buddy)
 
 **Dependencies Met:**
 
@@ -378,7 +378,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### Phase 5: session-mgmt-mcp mcp-common Adoption (Week 10-11)
+### Phase 5: session-buddy mcp-common Adoption (Week 10-11)
 
 **Duration:** 2 weeks
 **Focus:** First major adopter of mcp-common library
@@ -402,7 +402,7 @@ ______________________________________________________________________
 
 **Deliverables:**
 
-- session-mgmt-mcp fully using mcp-common
+- session-buddy fully using mcp-common
 - Config/cache/HTTP/rate-limiting via mcp-common (-800 lines)
 - Test coverage: 35% → 45% (using mcp-common test utils)
 - Rich UI operational via mcp-common panels
@@ -435,7 +435,7 @@ ______________________________________________________________________
 
 - [ ] unifi-mcp adopts mcp-common (already fixed, 3 days)
 - [ ] opera-cloud-mcp adopts mcp-common (3 days)
-- [ ] session-mgmt-mcp template migration complete (-2,500 lines)
+- [ ] session-buddy template migration complete (-2,500 lines)
 - [ ] All servers testing improvements (target: 70% average)
 
 **Deliverables:**
@@ -457,7 +457,7 @@ ______________________________________________________________________
 ### Phase 7: Query Interface & Event System (Week 14-16)
 
 **Duration:** 3 weeks
-**Focus:** Deep ACB integration for session-mgmt-mcp
+**Focus:** Deep ACB integration for session-buddy
 
 **Week 14: Universal Query Interface (Phase 3.2)**
 
@@ -524,7 +524,7 @@ ______________________________________________________________________
 
 **Deliverables:**
 
-- session-mgmt-mcp: Quality 85 → 95, Coverage 85%+
+- session-buddy: Quality 85 → 95, Coverage 85%+
 - mcp-common v2.2.0 (production-grade)
 - All 9 servers: Health 86/100 → 92/100
 - Complete documentation ecosystem
@@ -589,7 +589,7 @@ ______________________________________________________________________
 - Phase 8 partial: ACB/CJ/FB integration (1 week)
 - Testing & docs: Concurrent throughout (0.5 weeks equivalent)
 
-**session-mgmt-mcp Improvements (7.5 weeks):**
+**session-buddy Improvements (7.5 weeks):**
 
 - Phase 3 partial: Phase 2.7 completion (0.5 weeks)
 - Phase 5: mcp-common adoption (2 weeks)
@@ -656,7 +656,7 @@ ______________________________________________________________________
 
 ### Milestone 2: First Major Adopter (End of Week 11)
 
-**session-mgmt-mcp Metrics:**
+**session-buddy Metrics:**
 
 - ✅ mcp-common adoption complete
 - Quality: 71 → 75 (+4)
@@ -690,7 +690,7 @@ ______________________________________________________________________
 - Ecosystem health: 82/100 → 86/100
 - mcp-common v2.0.1 stable
 
-**session-mgmt-mcp Progress:**
+**session-buddy Progress:**
 
 - Templates complete (-2,500 lines)
 - Quality: 75 → 80 (+5)
@@ -708,7 +708,7 @@ ______________________________________________________________________
 
 ### Milestone 4: Deep Integration Complete (End of Week 16)
 
-**session-mgmt-mcp Metrics:**
+**session-buddy Metrics:**
 
 - ACB integration: 6/10 → 9/10 (+3)
 - Quality: 80 → 85 (+5)
@@ -733,7 +733,7 @@ ______________________________________________________________________
 
 ### Milestone 5: Production Excellence (End of Week 19)
 
-**session-mgmt-mcp Final Metrics:**
+**session-buddy Final Metrics:**
 
 - Quality: 85 → 95 (+10) ✅ **WORLD-CLASS**
 - Test coverage: 60% → 85%+ (+25pp)
@@ -752,7 +752,7 @@ ______________________________________________________________________
 
 **Business Impact:**
 
-- 43% LOC reduction in session-mgmt-mcp
+- 43% LOC reduction in session-buddy
 - 50% maintenance burden reduction
 - World-class quality achieved
 - Foundation for future MCP servers
@@ -777,7 +777,7 @@ ______________________________________________________________________
 
 **Risk:** Breaking production functionality during migration
 **Mitigation:** Parallel validation, feature flags, comprehensive testing
-**Owner:** session-mgmt-mcp maintainer
+**Owner:** session-buddy maintainer
 
 ### 4. Test Coverage Ratchet
 
@@ -1037,7 +1037,7 @@ This unified roadmap consolidates two overlapping plans into a coherent 13-week 
 
 **Achieves Excellence:**
 
-- session-mgmt-mcp: 68 → 95 quality score
+- session-buddy: 68 → 95 quality score
 - Ecosystem: 82 → 92 health score
 - 43% LOC reduction in session-mgmt
 - 87% infrastructure reduction via mcp-common
@@ -1056,6 +1056,6 @@ This unified roadmap consolidates two overlapping plans into a coherent 13-week 
 ______________________________________________________________________
 
 *Generated: 2025-10-28*
-*Consolidates: mcp-common 10-week plan + session-mgmt-mcp 16-week plan*
+*Consolidates: mcp-common 10-week plan + session-buddy 16-week plan*
 *Reviewed by: Documentation Specialist*
 *Status: READY FOR EXECUTION*

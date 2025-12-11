@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test suite for session_mgmt_mcp.natural_scheduler module.
+"""Test suite for session_buddy.natural_scheduler module.
 
 Tests natural language time parsing and reminder scheduling.
 """

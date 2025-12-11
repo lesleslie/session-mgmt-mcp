@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ### Module Overview
 
-- **File:** `session_mgmt_mcp/quality_engine.py`
+- **File:** `session_buddy/quality_engine.py`
 - **Size:** 1,256 lines, 48 total functions
 - **Public APIs:** 12 functions (quality scoring, compaction, workflow analysis, intelligence)
 - **Complexity:** High - integration with V2 quality algorithm, project analysis, memory patterns
@@ -84,7 +84,7 @@ ______________________________________________________________________
 
 ### Module Overview
 
-- **File:** `session_mgmt_mcp/tools/crackerjack_tools.py`
+- **File:** `session_buddy/tools/crackerjack_tools.py`
 - **Size:** 1,290 lines, 58 total functions
 - **Public APIs:** 13 async MCP tools (execute, run, history, metrics, patterns, help, health, etc.)
 - **Complexity:** High - heavy integration with crackerjack_integration module, complex validation
@@ -380,6 +380,6 @@ ______________________________________________________________________
 
 **Report Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Day 1 - Quality Engine & Crackerjack Tools Coverage
 **Status:** ✅ Complete - All Targets Exceeded

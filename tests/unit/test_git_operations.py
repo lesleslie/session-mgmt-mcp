@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
-from session_mgmt_mcp.utils.git_operations import (
+from session_buddy.utils.git_operations import (
     WorktreeInfo,
     create_checkpoint_commit,
     create_commit,

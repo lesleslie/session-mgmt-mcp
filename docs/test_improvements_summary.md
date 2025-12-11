@@ -1,7 +1,7 @@
 # Test Improvements Summary
 
 ## Overview
-The test suite for the session-mgmt-mcp project has been significantly improved with the following additions:
+The test suite for the session-buddy project has been significantly improved with the following additions:
 
 ## 1. Property-Based Tests
 - Added comprehensive property-based tests using Hypothesis in `tests/unit/test_utilities_property_based.py`
@@ -61,4 +61,4 @@ The test suite for the session-mgmt-mcp project has been significantly improved 
 - Security tests verify protection against common vulnerabilities
 - Integration tests validate complete workflows
 
-The test suite now provides comprehensive coverage across unit, integration, performance, security, and edge cases, significantly improving the reliability and maintainability of the session-mgmt-mcp project.
+The test suite now provides comprehensive coverage across unit, integration, performance, security, and edge cases, significantly improving the reliability and maintainability of the session-buddy project.

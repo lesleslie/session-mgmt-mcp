@@ -723,7 +723,7 @@ async def health_check() -> dict[str, Any]:
 
 ### Overview
 
-The session-mgmt-mcp server is built on top of the [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) framework, providing a robust foundation for async-first, dependency-injected architecture.
+The session-buddy server is built on top of the [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) framework, providing a robust foundation for async-first, dependency-injected architecture.
 
 ### Core ACB Concepts
 
@@ -760,7 +760,7 @@ To avoid DI initialization during module imports, use lazy logger initialization
 def _get_logger():
     """Get logger with lazy initialization to avoid DI issues during import."""
     try:
-        from session_mgmt_mcp.utils.logging import get_session_logger
+        from session_buddy.utils.logging import get_session_logger
 
         return get_session_logger()
     except Exception:
@@ -937,7 +937,7 @@ class SessionPaths:
 
 ```python
 from acb.depends import depends
-from session_mgmt_mcp.di import SessionPaths
+from session_buddy.di import SessionPaths
 
 
 def configure(*, force: bool = False) -> None:
@@ -975,7 +975,7 @@ def get_session_manager() -> SessionLifecycleManager:
         Uses direct container access to avoid bevy's async event loop
         limitation when called from async contexts or module imports.
     """
-    from session_mgmt_mcp.core import SessionLifecycleManager
+    from session_buddy.core import SessionLifecycleManager
 
     # Check container directly (no async issues)
     container = get_container()
@@ -1135,7 +1135,7 @@ async def check_database_health() -> ComponentHealth:
     start_time = time.perf_counter()
 
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         async with ReflectionDatabase() as db:
             stats = await db.get_stats()
@@ -1355,7 +1355,7 @@ Production-grade shutdown coordination with signal handling, cleanup task execut
 Central coordinator for graceful shutdown:
 
 ```python
-from session_mgmt_mcp.shutdown_manager import ShutdownManager, CleanupTask
+from session_buddy.shutdown_manager import ShutdownManager, CleanupTask
 
 manager = ShutdownManager()
 
@@ -1491,7 +1491,7 @@ async def cleanup_database_connections() -> None:
     logger.info("Cleaning up database connections")
 
     try:
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Close any active database instances
         # ReflectionDatabase uses context manager, so we just ensure cleanup
@@ -1644,8 +1644,8 @@ async def shutdown(self) -> ShutdownStats:
 #### 1. Register All Cleanup Handlers at Startup
 
 ```python
-from session_mgmt_mcp.shutdown_manager import get_shutdown_manager
-from session_mgmt_mcp.resource_cleanup import register_all_cleanup_handlers
+from session_buddy.shutdown_manager import get_shutdown_manager
+from session_buddy.resource_cleanup import register_all_cleanup_handlers
 
 shutdown_mgr = get_shutdown_manager()
 register_all_cleanup_handlers(shutdown_mgr)

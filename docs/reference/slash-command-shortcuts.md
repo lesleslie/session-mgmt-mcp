@@ -50,7 +50,7 @@ When you run `session-mgmt:start` for the first time, the following shortcuts ar
 
 ### Function: `_create_session_shortcuts()`
 
-**Location**: `session_mgmt_mcp/tools/session_tools.py`
+**Location**: `session_buddy/tools/session_tools.py`
 
 **Returns**:
 

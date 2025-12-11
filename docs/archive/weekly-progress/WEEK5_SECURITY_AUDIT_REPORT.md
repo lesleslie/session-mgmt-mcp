@@ -641,7 +641,7 @@ async def test_session_token_expiration():
 @pytest.mark.security
 def test_activity_log_sanitizes_pii():
     """Test that PII is redacted from activity logs."""
-    from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+    from session_buddy.app_monitor import ProjectActivityMonitor
 
     monitor = ProjectActivityMonitor()
 

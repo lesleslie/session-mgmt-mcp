@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 **Recommendation: YES - Build a templates adapter in ACB**
 
-This is a **high-value, cross-cutting infrastructure component** that would benefit multiple projects (session-mgmt-mcp, fastblocks, and future ACB users). The investment is justified by:
+This is a **high-value, cross-cutting infrastructure component** that would benefit multiple projects (session-buddy, fastblocks, and future ACB users). The investment is justified by:
 
 1. **Pattern Reuse**: Template rendering with DI + async is needed across multiple projects
 1. **Standardization**: ACB should provide battle-tested infrastructure components
@@ -26,7 +26,7 @@ ______________________________________________________________________
 **Projects independently implement template rendering:**
 
 - **fastblocks**: Complex 37KB `jinja2.py` adapter with Redis caching, cloud storage, HTMY integration
-- **session-mgmt-mcp**: About to implement template rendering for Phase 3.1 (128 formatting functions → templates)
+- **session-buddy**: About to implement template rendering for Phase 3.1 (128 formatting functions → templates)
 - **Future ACB projects**: Will all need similar template rendering capabilities
 
 ### Pain Points
@@ -115,13 +115,13 @@ class TemplatesAdapter:
 ### Usage in Projects
 
 ```text
-# session-mgmt-mcp or any ACB project
+# session-buddy or any ACB project
 from acb.adapters import import_adapter
 from acb.depends import depends
 
 # Configure via DI
 templates_adapter = TemplatesAdapter(
-    template_dir=Path.cwd() / "session_mgmt_mcp" / "templates",
+    template_dir=Path.cwd() / "session_buddy" / "templates",
     enable_async=True,
 )
 depends.set("templates", templates_adapter)
@@ -213,7 +213,7 @@ class RedisTemplatesAdapter(TemplatesAdapter):
 
 
 # fastblocks continues using its custom implementation
-# session-mgmt-mcp uses the simple base adapter
+# session-buddy uses the simple base adapter
 ```
 
 ______________________________________________________________________
@@ -275,7 +275,7 @@ acb/examples/templates/
 
 - Document how to migrate from custom Jinja2 setups
 - Show fastblocks vs simple adapter comparison
-- Provide session-mgmt-mcp integration example
+- Provide session-buddy integration example
 
 ### Total Effort: ~3-4 days
 
@@ -402,7 +402,7 @@ ______________________________________________________________________
 | **Maintenance burden** | Low | Medium | Keep it simple, ~400 LOC is manageable |
 | **Feature creep** | Medium | Medium | Strict "say no" policy for v1 |
 | **Breaking changes** | Low | Low | Follow ACB adapter versioning |
-| **Adoption slow** | Low | Low | Use it immediately in session-mgmt-mcp |
+| **Adoption slow** | Low | Low | Use it immediately in session-buddy |
 
 ### Risks of NOT Building in ACB
 
@@ -424,7 +424,7 @@ ______________________________________________________________________
 **Why:**
 
 1. **High ROI**: 3-4 days investment, benefits all ACB projects forever
-1. **Clear Need**: Already needed by 2+ projects (fastblocks, session-mgmt-mcp)
+1. **Clear Need**: Already needed by 2+ projects (fastblocks, session-buddy)
 1. **Low Complexity**: ~400 lines of well-understood code
 1. **Framework Fit**: Perfect match for ACB's adapter philosophy
 
@@ -434,20 +434,20 @@ ______________________________________________________________________
 
 1. Create `acb.adapters.templates` (3-4 days)
 1. Release ACB version with templates adapter
-1. Use in session-mgmt-mcp Phase 3.1 immediately
+1. Use in session-buddy Phase 3.1 immediately
 1. Fastblocks can optionally migrate later (or keep custom version)
 
 **Timeline:**
 
 - Week 1: Build ACB templates adapter
-- Week 2: Use in session-mgmt-mcp Phase 3.1
+- Week 2: Use in session-buddy Phase 3.1
 - Total: ~1 week delay to Phase 3.1, but huge long-term benefit
 
 **Option B: Build in Session-Mgmt-MCP, Extract to ACB Later**
 
-1. Implement templates in session-mgmt-mcp (Phase 3.1)
+1. Implement templates in session-buddy (Phase 3.1)
 1. Extract to ACB when pattern proven
-1. Migrate session-mgmt-mcp to use ACB adapter
+1. Migrate session-buddy to use ACB adapter
 
 **Timeline:**
 
@@ -462,7 +462,7 @@ ______________________________________________________________________
 
 - We already have proven pattern (fastblocks)
 - 3-4 day investment is small
-- Immediate reuse in session-mgmt-mcp
+- Immediate reuse in session-buddy
 - Sets good precedent for ACB ecosystem
 
 ______________________________________________________________________
@@ -737,9 +737,9 @@ Building a templates adapter in ACB is a **high-value, low-risk investment** tha
 
 **Recommendation:** Proceed with **Option A** (build in ACB first, then use).
 
-**Timeline:** 3-4 days to implement, immediate use in session-mgmt-mcp.
+**Timeline:** 3-4 days to implement, immediate use in session-buddy.
 
 ______________________________________________________________________
 
 *Proposal created for ACB framework enhancement discussion*
-*Author: Claude Code with input from session-mgmt-mcp Phase 3 planning*
+*Author: Claude Code with input from session-buddy Phase 3 planning*

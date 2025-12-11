@@ -1,7 +1,7 @@
 # ACB Adapter Migration Guide
 
 **Migration Status**: Vector Adapter ✅ Complete | Graph Adapter ✅ Complete
-**Target Users**: Developers using session-mgmt-mcp's database layers
+**Target Users**: Developers using session-buddy's database layers
 **Estimated Time**: 10-15 minutes (both adapters)
 **Breaking Changes**: None (100% API compatible)
 
@@ -36,7 +36,7 @@ Both migrations maintain 100% API compatibility while providing improved resourc
 **Before** (deprecated):
 
 ```text
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 async def example():
@@ -47,7 +47,7 @@ async def example():
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.reflection_adapter import (
+from session_buddy.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
 
@@ -60,7 +60,7 @@ async def example():
 **Alternative** (alias for compatibility):
 
 ```text
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 async def example():
@@ -73,8 +73,8 @@ async def example():
 If you have existing conversation/reflection data in the old database format, use the migration script:
 
 ```bash
-# Navigate to session-mgmt-mcp directory
-cd /path/to/session-mgmt-mcp
+# Navigate to session-buddy directory
+cd /path/to/session-buddy
 
 # Dry run to see what would be migrated (safe, no changes)
 python scripts/migrate_vector_database.py --dry-run --verbose
@@ -115,7 +115,7 @@ After migration, verify your data is accessible:
 
 ```text
 import asyncio
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 async def verify_migration():
@@ -146,12 +146,12 @@ async with ReflectionDatabaseAdapter() as db:
     # Store conversation (same API)
     conv_id = await db.store_conversation(
         content="User asked about ACB adapters",
-        metadata={"project": "session-mgmt-mcp", "session_id": "abc123"},
+        metadata={"project": "session-buddy", "session_id": "abc123"},
     )
 
     # Search conversations (same API)
     results = await db.search_conversations(
-        query="ACB adapters", limit=10, min_score=0.7, project="session-mgmt-mcp"
+        query="ACB adapters", limit=10, min_score=0.7, project="session-buddy"
     )
 ```
 
@@ -192,7 +192,7 @@ async with ReflectionDatabaseAdapter() as db:
 **Before** (deprecated):
 
 ```text
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 async def store_user_query(query: str, project: str):
@@ -203,7 +203,7 @@ async def store_user_query(query: str, project: str):
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 async def store_user_query(query: str, project: str):
@@ -218,7 +218,7 @@ async def store_user_query(query: str, project: str):
 **Before** (deprecated):
 
 ```text
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 async def find_related_conversations(topic: str, project_name: str):
@@ -232,7 +232,7 @@ async def find_related_conversations(topic: str, project_name: str):
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 async def find_related_conversations(topic: str, project_name: str):
@@ -251,7 +251,7 @@ async def find_related_conversations(topic: str, project_name: str):
 
 ```text
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 @pytest.fixture
@@ -264,7 +264,7 @@ async def reflection_db():
 
 ```text
 import pytest
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 @pytest.fixture
@@ -283,17 +283,17 @@ async def reflection_db():
 
 ```
 DeprecationWarning: ReflectionDatabase is deprecated and will be removed in a future release.
-Use ReflectionDatabaseAdapter from session_mgmt_mcp.adapters.reflection_adapter instead.
+Use ReflectionDatabaseAdapter from session_buddy.adapters.reflection_adapter instead.
 ```
 
 **Solution**: Update your import to use `ReflectionDatabaseAdapter`:
 
 ```python
 # Change this:
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 # To this:
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 ```
 
 **Temporary Workaround** (if you need time to migrate):
@@ -309,20 +309,20 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 **Symptom**:
 
 ```
-ImportError: cannot import name 'ReflectionDatabaseAdapter' from 'session_mgmt_mcp.adapters.reflection_adapter'
+ImportError: cannot import name 'ReflectionDatabaseAdapter' from 'session_buddy.adapters.reflection_adapter'
 ```
 
-**Solution**: Ensure you have the latest version of session-mgmt-mcp:
+**Solution**: Ensure you have the latest version of session-buddy:
 
 ```bash
-cd /path/to/session-mgmt-mcp
+cd /path/to/session-buddy
 uv sync --group dev
 ```
 
 **Check Installation**:
 
 ```text
-python -c "from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter; print('✅ Migration available')"
+python -c "from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter; print('✅ Migration available')"
 ```
 
 ### Issue 3: Database Connection Issues
@@ -363,7 +363,7 @@ python scripts/migrate_vector_database.py --backup --verbose
 # Verify embeddings exist
 python -c "
 import asyncio
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 async def check():
     async with ReflectionDatabaseAdapter() as db:
@@ -386,7 +386,7 @@ asyncio.run(check())
 ```text
 import time
 import asyncio
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 async def benchmark_search():
@@ -402,7 +402,7 @@ asyncio.run(benchmark_search())
 
 **Solution**: ACB adapter includes connection pooling which should improve performance. If you see degradation:
 
-1. Check DuckDB configuration in `session_mgmt_mcp/di/__init__.py`
+1. Check DuckDB configuration in `session_buddy/di/__init__.py`
 1. Verify `threads=4` and `memory_limit="2GB"` settings
 1. Ensure proper async/await usage (no blocking calls)
 
@@ -413,7 +413,7 @@ asyncio.run(benchmark_search())
 Both old and new implementations support custom database paths:
 
 ```text
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 # Custom path
 custom_path = "/path/to/my/reflection.duckdb"
@@ -426,7 +426,7 @@ async with ReflectionDatabaseAdapter(db_path=custom_path) as db:
 The new adapter integrates with ACB's dependency injection system:
 
 ```python
-from session_mgmt_mcp.di import configure
+from session_buddy.di import configure
 from bevy import depends
 from acb.adapters.vector.duckdb import Vector
 
@@ -445,7 +445,7 @@ The new architecture makes testing easier with dependency injection:
 ```python
 import pytest
 from unittest.mock import AsyncMock
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 
 @pytest.fixture
@@ -484,7 +484,7 @@ DuckDB operations are fast enough (\<1ms typically) that sync operations within 
 **Before** (original):
 
 ```text
-from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+from session_buddy.knowledge_graph import KnowledgeGraphDatabase
 
 
 async def example():
@@ -495,7 +495,7 @@ async def example():
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter as KnowledgeGraphDatabase,
 )
 
@@ -508,7 +508,7 @@ async def example():
 **Alternative** (explicit adapter):
 
 ```text
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
 
@@ -523,8 +523,8 @@ async def example():
 If you have existing knowledge graph data, use the migration script:
 
 ```bash
-# Navigate to session-mgmt-mcp directory
-cd /path/to/session-mgmt-mcp
+# Navigate to session-buddy directory
+cd /path/to/session-buddy
 
 # Dry run to see what would be migrated (safe, no changes)
 python scripts/migrate_graph_database.py --dry-run --verbose
@@ -565,7 +565,7 @@ After migration, verify your data is accessible:
 
 ```text
 import asyncio
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
 
@@ -598,7 +598,7 @@ The new `KnowledgeGraphDatabaseAdapter` maintains **100% API compatibility** wit
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create entity (same API)
     entity_id = await db.create_entity(
-        name="session-mgmt-mcp",
+        name="session-buddy",
         entity_type="project",
         observations=["MCP server for session management"],
         properties={"language": "Python", "version": "0.7.4"},
@@ -619,7 +619,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Create relationship (same API)
     rel_id = await db.create_relation(
-        from_entity="session-mgmt-mcp",
+        from_entity="session-buddy",
         to_entity="ACB",
         relation_type="uses",
         properties={"version": ">=0.25.2"},
@@ -627,7 +627,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 
     # Get relationships (same API)
     relationships = await db.get_relationships(
-        entity_name="session-mgmt-mcp", direction="outgoing"
+        entity_name="session-buddy", direction="outgoing"
     )
 ```
 
@@ -637,7 +637,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 async with KnowledgeGraphDatabaseAdapter() as db:
     # Find path between entities (same API)
     paths = await db.find_path(
-        from_entity="session-mgmt-mcp", to_entity="DuckDB", max_depth=3
+        from_entity="session-buddy", to_entity="DuckDB", max_depth=3
     )
 
     # Get statistics (same API)
@@ -653,7 +653,7 @@ async with KnowledgeGraphDatabaseAdapter() as db:
 **Before** (original):
 
 ```text
-from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+from session_buddy.knowledge_graph import KnowledgeGraphDatabase
 
 
 async def create_project_entity(name: str, language: str):
@@ -669,7 +669,7 @@ async def create_project_entity(name: str, language: str):
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
 
@@ -691,7 +691,7 @@ async def create_project_entity(name: str, language: str):
 **Before** (original):
 
 ```text
-from session_mgmt_mcp.knowledge_graph import KnowledgeGraphDatabase
+from session_buddy.knowledge_graph import KnowledgeGraphDatabase
 
 
 async def find_dependencies(project: str):
@@ -706,7 +706,7 @@ async def find_dependencies(project: str):
 **After** (recommended):
 
 ```text
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
 
@@ -793,7 +793,7 @@ cp ~/.claude/data/reflection_backup_YYYYMMDD_HHMMSS.duckdb ~/.claude/data/reflec
 
 ```text
 # Temporarily use deprecated class (generates warnings)
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 async with ReflectionDatabase() as db:
     # Your existing code continues to work
@@ -857,7 +857,7 @@ After migration:
 For migration assistance:
 
 - Check `docs/ACB_MIGRATION_COMPLETE.md` for technical details
-- Review `session_mgmt_mcp/adapters/reflection_adapter.py` source code
+- Review `session_buddy/adapters/reflection_adapter.py` source code
 - Open GitHub issue for migration-specific problems
 - Consult CLAUDE.md for architecture overview
 

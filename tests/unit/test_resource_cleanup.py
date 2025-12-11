@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.resource_cleanup import (
+from session_buddy.resource_cleanup import (
     cleanup_background_tasks,
     cleanup_database_connections,
     cleanup_file_handles,
@@ -23,7 +23,7 @@ from session_mgmt_mcp.resource_cleanup import (
     cleanup_temp_files,
     register_all_cleanup_handlers,
 )
-from session_mgmt_mcp.shutdown_manager import ShutdownManager
+from session_buddy.shutdown_manager import ShutdownManager
 
 if TYPE_CHECKING:
     from pathlib import Path

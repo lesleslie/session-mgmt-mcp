@@ -85,8 +85,8 @@ For detailed information on Crackerjack integration, see [Crackerjack Integratio
 
 ```bash
 # Clone the repository
-git clone https://github.com/lesleslie/session-mgmt-mcp.git
-cd session-mgmt-mcp
+git clone https://github.com/lesleslie/session-buddy.git
+cd session-buddy
 
 # Install with all dependencies (development + testing)
 uv sync --group dev
@@ -95,7 +95,7 @@ uv sync --group dev
 uv sync
 
 # Or use pip (for production only)
-pip install session-mgmt-mcp
+pip install session-buddy
 ```
 
 ### MCP Configuration
@@ -107,10 +107,10 @@ Add to your project's `.mcp.json` file:
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/path/to/session-mgmt-mcp"
+        "PYTHONPATH": "/path/to/session-buddy"
       }
     }
   }
@@ -125,7 +125,7 @@ If installed with pip/uv, you can use the script entry point:
 {
   "mcpServers": {
     "session-mgmt": {
-      "command": "session-mgmt-mcp",
+      "command": "session-buddy",
       "args": [],
       "env": {}
     }
@@ -166,9 +166,9 @@ After running `/session-mgmt:start` once, these shortcuts are automatically crea
 For running the server directly in development mode:
 
 ```bash
-python -m session_mgmt_mcp.server
+python -m session_buddy.server
 # or
-session-mgmt-mcp
+session-buddy
 ```
 
 ## Memory System
@@ -245,7 +245,7 @@ Complete documentation is available in the [docs/](docs/) directory:
 
 ```bash
 # Run with verbose logging
-PYTHONPATH=/path/to/session-mgmt-mcp python -m session_mgmt_mcp.server --debug
+PYTHONPATH=/path/to/session-buddy python -m session_buddy.server --debug
 ```
 
 For more detailed troubleshooting guidance, see [Troubleshooting Guide](docs/user/TROUBLESHOOTING.md).

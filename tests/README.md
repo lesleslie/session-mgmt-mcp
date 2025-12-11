@@ -1,6 +1,6 @@
 # Session-mgmt-mcp Test Infrastructure
 
-This directory contains a comprehensive, modern async pytest testing infrastructure for the session-mgmt-mcp project.
+This directory contains a comprehensive, modern async pytest testing infrastructure for the session-buddy project.
 
 ## Architecture
 
@@ -454,7 +454,7 @@ async def test_input_sanitization(malicious_input, reflection_db):
 @pytest.mark.asyncio
 async def test_complete_session_lifecycle(tmp_path):
     """Test end-to-end session workflow"""
-    from session_mgmt_mcp.server import init, checkpoint, end, status
+    from session_buddy.server import init, checkpoint, end, status
 
     working_dir = str(tmp_path)
 

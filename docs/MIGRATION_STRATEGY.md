@@ -1,6 +1,6 @@
 # Migration Strategy: Schema v1 → v2
 
-This guide explains how session-mgmt-mcp migrates legacy `conversations` and `reflections` tables to the enhanced Memori-inspired schema v2.
+This guide explains how session-buddy migrates legacy `conversations` and `reflections` tables to the enhanced Memori-inspired schema v2.
 
 ## Overview
 

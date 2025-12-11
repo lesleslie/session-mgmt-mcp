@@ -13,7 +13,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from session_mgmt_mcp.adapters.reflection_adapter import (
+from session_buddy.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
 

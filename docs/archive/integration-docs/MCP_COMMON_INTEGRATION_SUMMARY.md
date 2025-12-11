@@ -8,7 +8,7 @@ ______________________________________________________________________
 
 ## Overview
 
-This document summarizes the integration of mcp-common adapters into session-mgmt-mcp as part of the unified 8-week implementation plan (Week 2 Days 2-3).
+This document summarizes the integration of mcp-common adapters into session-buddy as part of the unified 8-week implementation plan (Week 2 Days 2-3).
 
 ## Completed Integrations (3/4)
 
@@ -18,7 +18,7 @@ This document summarizes the integration of mcp-common adapters into session-mgm
 
 **Files Modified**:
 
-- `session_mgmt_mcp/llm_providers.py` (3 methods updated)
+- `session_buddy/llm_providers.py` (3 methods updated)
 - `pyproject.toml` (mcp-common dependency added)
 
 **Key Changes**:
@@ -40,8 +40,8 @@ ______________________________________________________________________
 
 **Files Modified**:
 
-- `session_mgmt_mcp/server.py` (startup messages)
-- `session_mgmt_mcp/server_core.py` (warnings and info)
+- `session_buddy/server.py` (startup messages)
+- `session_buddy/server_core.py` (warnings and info)
 
 **Key Changes**:
 
@@ -69,7 +69,7 @@ ______________________________________________________________________
 
 **Files Created**:
 
-- `session_mgmt_mcp/tools/knowledge_graph_tools.py` (672 lines, 9 MCP tools)
+- `session_buddy/tools/knowledge_graph_tools.py` (672 lines, 9 MCP tools)
 - `tests/unit/test_knowledge_graph_tools.py` (243 lines, 26 tests)
 - `docs/KNOWLEDGE_GRAPH_INTEGRATION.md` (500+ lines)
 
@@ -106,7 +106,7 @@ ______________________________________________________________________
 
 **Current Status**:
 
-- session-mgmt-mcp has SessionMgmtSettings (413 lines) extending ACB Settings
+- session-buddy has SessionMgmtSettings (413 lines) extending ACB Settings
 - Comprehensive configuration already in place (database, search, token optimization, session management, logging, security, etc.)
 
 **Planned Changes** (Future Task):
@@ -242,13 +242,13 @@ ______________________________________________________________________
 
 ```bash
 # HTTPClientAdapter
-uv run python -c "from session_mgmt_mcp.llm_providers import OllamaProvider; print('✅ HTTPClientAdapter integrated')"
+uv run python -c "from session_buddy.llm_providers import OllamaProvider; print('✅ HTTPClientAdapter integrated')"
 
 # ServerPanels
-uv run python -c "from session_mgmt_mcp.server import SERVERPANELS_AVAILABLE; print(f'✅ ServerPanels: {SERVERPANELS_AVAILABLE}')"
+uv run python -c "from session_buddy.server import SERVERPANELS_AVAILABLE; print(f'✅ ServerPanels: {SERVERPANELS_AVAILABLE}')"
 
 # DuckPGQ
-uv run python -c "from session_mgmt_mcp.tools.knowledge_graph_tools import register_knowledge_graph_tools; print('✅ Knowledge graph tools available')"
+uv run python -c "from session_buddy.tools.knowledge_graph_tools import register_knowledge_graph_tools; print('✅ Knowledge graph tools available')"
 ```
 
 ### Unit Tests
@@ -268,10 +268,10 @@ pytest -m "not slow" --tb=short -q
 ```bash
 # Validate all modified files
 uv run python -m py_compile \
-  session_mgmt_mcp/server.py \
-  session_mgmt_mcp/server_core.py \
-  session_mgmt_mcp/llm_providers.py \
-  session_mgmt_mcp/tools/knowledge_graph_tools.py
+  session_buddy/server.py \
+  session_buddy/server_core.py \
+  session_buddy/llm_providers.py \
+  session_buddy/tools/knowledge_graph_tools.py
 # ✅ Syntax validation passed
 ```
 
@@ -328,14 +328,14 @@ ______________________________________________________________________
 - **ServerPanels**: `/Users/les/Projects/mcp-common/mcp_common/ui/panels.py`
 - **MCPBaseSettings**: `/Users/les/Projects/mcp-common/mcp_common/config/base.py`
 
-### session-mgmt-mcp
+### session-buddy
 
-- **LLM Providers**: `session_mgmt_mcp/llm_providers.py` (HTTPClientAdapter integrated)
-- **Server**: `session_mgmt_mcp/server.py` (ServerPanels integrated)
-- **Server Core**: `session_mgmt_mcp/server_core.py` (ServerPanels integrated)
-- **Knowledge Graph**: `session_mgmt_mcp/knowledge_graph_db.py` (668 lines)
-- **KG Tools**: `session_mgmt_mcp/tools/knowledge_graph_tools.py` (672 lines)
-- **Settings**: `session_mgmt_mcp/settings.py` (413 lines, MCPBaseSettings integration planned)
+- **LLM Providers**: `session_buddy/llm_providers.py` (HTTPClientAdapter integrated)
+- **Server**: `session_buddy/server.py` (ServerPanels integrated)
+- **Server Core**: `session_buddy/server_core.py` (ServerPanels integrated)
+- **Knowledge Graph**: `session_buddy/knowledge_graph_db.py` (668 lines)
+- **KG Tools**: `session_buddy/tools/knowledge_graph_tools.py` (672 lines)
+- **Settings**: `session_buddy/settings.py` (413 lines, MCPBaseSettings integration planned)
 
 ### Documentation
 

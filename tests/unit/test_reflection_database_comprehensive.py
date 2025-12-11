@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 @pytest.mark.asyncio

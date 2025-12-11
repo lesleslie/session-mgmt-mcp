@@ -219,7 +219,7 @@ repos:
     rev: 1.7.5
     hooks:
       - id: bandit
-        args: ['-ll', '-r', 'session_mgmt_mcp/']
+        args: ['-ll', '-r', 'session_buddy/']
 ```
 
 **Install hooks:**

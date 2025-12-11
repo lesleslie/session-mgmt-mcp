@@ -23,7 +23,7 @@ class TestSessionTools:
     def test_session_tools_imports(self):
         """Test that session_tools module imports successfully."""
         try:
-            from session_mgmt_mcp.tools import session_tools
+            from session_buddy.tools import session_tools
 
             assert session_tools is not None
         except ImportError as e:
@@ -32,7 +32,7 @@ class TestSessionTools:
     async def test_session_tools_start_function_exists(self):
         """Test that start session function is defined."""
         try:
-            from session_mgmt_mcp.tools.session_tools import (
+            from session_buddy.tools.session_tools import (
                 start_session_tool,
             )
 
@@ -45,7 +45,7 @@ class TestSessionTools:
     async def test_session_tools_checkpoint_exists(self):
         """Test that checkpoint function exists."""
         try:
-            from session_mgmt_mcp.tools import session_tools
+            from session_buddy.tools import session_tools
 
             # Should have checkpoint-related functions
             assert hasattr(session_tools, "__file__")
@@ -55,7 +55,7 @@ class TestSessionTools:
     async def test_session_tools_end_exists(self):
         """Test that end session function exists."""
         try:
-            from session_mgmt_mcp.tools import session_tools
+            from session_buddy.tools import session_tools
 
             # Session tools module should be importable
             assert session_tools is not None
@@ -70,7 +70,7 @@ class TestMemoryTools:
     def test_memory_tools_imports(self):
         """Test that memory_tools module imports successfully."""
         try:
-            from session_mgmt_mcp.tools import memory_tools
+            from session_buddy.tools import memory_tools
 
             assert memory_tools is not None
         except ImportError as e:
@@ -79,7 +79,7 @@ class TestMemoryTools:
     async def test_store_reflection_available(self):
         """Test that store reflection function is available."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import store_reflection
+            from session_buddy.tools.memory_tools import store_reflection
 
             assert callable(store_reflection)
         except (ImportError, AttributeError):
@@ -88,7 +88,7 @@ class TestMemoryTools:
     async def test_search_reflections_available(self):
         """Test that search reflections function is available."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import (
+            from session_buddy.tools.memory_tools import (
                 search_reflections,
             )
 
@@ -99,7 +99,7 @@ class TestMemoryTools:
     async def test_reflection_stats_available(self):
         """Test that reflection statistics function is available."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import (
+            from session_buddy.tools.memory_tools import (
                 reflection_stats,
             )
 
@@ -110,8 +110,8 @@ class TestMemoryTools:
     async def test_store_reflection_basic(self):
         """Test basic reflection storage."""
         try:
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
-            from session_mgmt_mcp.tools.memory_tools import store_reflection
+            from session_buddy.reflection_tools import ReflectionDatabase
+            from session_buddy.tools.memory_tools import store_reflection
 
             # Create in-memory database for testing
             with patch.object(ReflectionDatabase, "initialize", new_callable=AsyncMock):
@@ -137,7 +137,7 @@ class TestSearchTools:
     def test_search_tools_imports(self):
         """Test that search_tools module imports successfully."""
         try:
-            from session_mgmt_mcp.tools import search_tools
+            from session_buddy.tools import search_tools
 
             assert search_tools is not None
         except ImportError as e:
@@ -146,7 +146,7 @@ class TestSearchTools:
     async def test_search_functions_available(self):
         """Test that search functions are available."""
         try:
-            from session_mgmt_mcp.tools.search_tools import (
+            from session_buddy.tools.search_tools import (
                 quick_search,
             )
 
@@ -157,7 +157,7 @@ class TestSearchTools:
     async def test_search_by_concept_available(self):
         """Test that concept search function is available."""
         try:
-            from session_mgmt_mcp.tools.search_tools import (
+            from session_buddy.tools.search_tools import (
                 search_by_concept,
             )
 
@@ -168,7 +168,7 @@ class TestSearchTools:
     async def test_search_code_available(self):
         """Test that code search function is available."""
         try:
-            from session_mgmt_mcp.tools.search_tools import search_code
+            from session_buddy.tools.search_tools import search_code
 
             assert callable(search_code)
         except (ImportError, AttributeError):
@@ -177,10 +177,10 @@ class TestSearchTools:
     async def test_quick_search_basic(self):
         """Test basic quick search operation."""
         try:
-            from session_mgmt_mcp.tools.search_tools import quick_search
+            from session_buddy.tools.search_tools import quick_search
 
             # Mock the database
-            with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase"):
+            with patch("session_buddy.tools.search_tools.ReflectionDatabase"):
                 result = await quick_search(query="test", limit=5)
                 # Should return some result structure
                 assert result is not None
@@ -195,12 +195,12 @@ class TestToolsErrorHandling:
     async def test_memory_tools_handle_empty_query(self):
         """Test memory tools handle empty queries gracefully."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import (
+            from session_buddy.tools.memory_tools import (
                 search_reflections,
             )
 
             # Empty query should be handled gracefully
-            with patch("session_mgmt_mcp.tools.memory_tools.ReflectionDatabase"):
+            with patch("session_buddy.tools.memory_tools.ReflectionDatabase"):
                 result = await search_reflections(query="")
                 assert result is not None or result is None  # Either is acceptable
         except (ImportError, AttributeError, TypeError):
@@ -209,10 +209,10 @@ class TestToolsErrorHandling:
     async def test_search_tools_handle_invalid_query(self):
         """Test search tools handle unusual queries."""
         try:
-            from session_mgmt_mcp.tools.search_tools import quick_search
+            from session_buddy.tools.search_tools import quick_search
 
             # Special characters and unicode should be handled
-            with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase"):
+            with patch("session_buddy.tools.search_tools.ReflectionDatabase"):
                 result = await quick_search(query="test@#$%^&*()")
                 assert result is not None or result is None
         except (ImportError, AttributeError, TypeError):
@@ -226,10 +226,10 @@ class TestToolsConcurrency:
     async def test_concurrent_searches(self):
         """Test multiple concurrent search operations."""
         try:
-            from session_mgmt_mcp.tools.search_tools import quick_search
+            from session_buddy.tools.search_tools import quick_search
 
             async def search_query(q: str):
-                with patch("session_mgmt_mcp.tools.search_tools.ReflectionDatabase"):
+                with patch("session_buddy.tools.search_tools.ReflectionDatabase"):
                     return await quick_search(query=q)
 
             # Run multiple searches concurrently
@@ -244,12 +244,12 @@ class TestToolsConcurrency:
     async def test_concurrent_reflections(self):
         """Test multiple concurrent reflection operations."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import (
+            from session_buddy.tools.memory_tools import (
                 store_reflection,
             )
 
             async def store_reflection_concurrent(i: int):
-                with patch("session_mgmt_mcp.tools.memory_tools.ReflectionDatabase"):
+                with patch("session_buddy.tools.memory_tools.ReflectionDatabase"):
                     try:
                         return await store_reflection(
                             content=f"reflection {i}", tags=["test"]
@@ -272,7 +272,7 @@ class TestToolsIntegration:
     async def test_session_workflow(self):
         """Test basic session workflow with tools."""
         try:
-            from session_mgmt_mcp.tools import session_tools
+            from session_buddy.tools import session_tools
 
             # Module should be importable and have content
             assert session_tools is not None
@@ -283,7 +283,7 @@ class TestToolsIntegration:
     async def test_memory_workflow(self):
         """Test memory tools workflow."""
         try:
-            from session_mgmt_mcp.tools import memory_tools
+            from session_buddy.tools import memory_tools
 
             # Module should be importable and have content
             assert memory_tools is not None
@@ -294,7 +294,7 @@ class TestToolsIntegration:
     async def test_search_workflow(self):
         """Test search tools workflow."""
         try:
-            from session_mgmt_mcp.tools import search_tools
+            from session_buddy.tools import search_tools
 
             # Module should be importable and have content
             assert search_tools is not None
@@ -310,10 +310,10 @@ class TestToolsWithMocks:
     async def test_search_with_mock_database(self):
         """Test search with mocked database."""
         try:
-            from session_mgmt_mcp.tools.search_tools import quick_search
+            from session_buddy.tools.search_tools import quick_search
 
             with patch(
-                "session_mgmt_mcp.tools.search_tools.ReflectionDatabase"
+                "session_buddy.tools.search_tools.ReflectionDatabase"
             ) as mock_db_class:
                 mock_instance = AsyncMock()
                 mock_instance.search_conversations.return_value = [
@@ -330,12 +330,12 @@ class TestToolsWithMocks:
     async def test_memory_with_mock_database(self):
         """Test memory tools with mocked database."""
         try:
-            from session_mgmt_mcp.tools.memory_tools import (
+            from session_buddy.tools.memory_tools import (
                 store_reflection,
             )
 
             with patch(
-                "session_mgmt_mcp.tools.memory_tools.ReflectionDatabase"
+                "session_buddy.tools.memory_tools.ReflectionDatabase"
             ) as mock_db_class:
                 mock_instance = AsyncMock()
                 mock_instance.store_reflection.return_value = "test_id_123"

@@ -55,7 +55,7 @@ Phase 3 (Knowledge Graph ACB migration) has been deferred to a future release. T
 
 ```text
 # Current - Direct DuckDB (WORKS)
-from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
 async with KnowledgeGraphDatabase() as kg:
     entity = await kg.create_entity("name", "type", ["observation"])
@@ -66,7 +66,7 @@ async with KnowledgeGraphDatabase() as kg:
 
 ```text
 # Future - ACB Graph Adapter (DEFERRED)
-from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+from session_buddy.adapters.knowledge_graph_adapter import (
     KnowledgeGraphDatabaseAdapter,
 )
 
@@ -129,10 +129,10 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 
 ## Related Files
 
-- **Adapter Stub**: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (created, needs completion)
-- **Original Class**: `session_mgmt_mcp/knowledge_graph_db.py` (active, fully functional)
-- **Tools Integration**: `session_mgmt_mcp/tools/knowledge_graph_tools.py` (ready for either approach)
-- **DI Registration**: `session_mgmt_mcp/di/__init__.py` (graph adapter registration exists)
+- **Adapter Stub**: `session_buddy/adapters/knowledge_graph_adapter.py` (created, needs completion)
+- **Original Class**: `session_buddy/knowledge_graph_db.py` (active, fully functional)
+- **Tools Integration**: `session_buddy/tools/knowledge_graph_tools.py` (ready for either approach)
+- **DI Registration**: `session_buddy/di/__init__.py` (graph adapter registration exists)
 
 ## Impact Assessment
 

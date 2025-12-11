@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 
 
 class TestSessionLifecycleManagerInitialization:
@@ -15,7 +15,7 @@ class TestSessionLifecycleManagerInitialization:
     def test_init(self):
         """Test SessionLifecycleManager initialization."""
         with patch(
-            "session_mgmt_mcp.core.session_manager.get_session_logger"
+            "session_buddy.core.session_manager.get_session_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             manager = SessionLifecycleManager()
@@ -27,7 +27,7 @@ class TestSessionLifecycleManagerInitialization:
 class TestSessionLifecycleManagerProjectContext:
     """Test SessionLifecycleManager project context analysis."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_analyze_project_context_basic_files(self, mock_is_git_repo):
         """Test analyze_project_context with basic project files."""
         mock_is_git_repo.return_value = True
@@ -50,7 +50,7 @@ class TestSessionLifecycleManagerProjectContext:
             assert result["has_tests"] is True
             assert result["has_venv"] is True
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_analyze_project_context_no_files(self, mock_is_git_repo):
         """Test analyze_project_context with no project files."""
         mock_is_git_repo.return_value = False
@@ -67,7 +67,7 @@ class TestSessionLifecycleManagerProjectContext:
             assert result["has_setup_py"] is False
             assert result["has_requirements_txt"] is False
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_analyze_project_context_python_files(self, mock_is_git_repo):
         """Test analyze_project_context detection of Python frameworks."""
         mock_is_git_repo.return_value = False
@@ -95,7 +95,7 @@ import flask
             assert result["uses_django"] is True
             assert result["uses_flask"] is True
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_analyze_project_context_file_analysis_error(self, mock_is_git_repo):
         """Test analyze_project_context handles file analysis errors."""
         mock_is_git_repo.return_value = False
@@ -124,7 +124,7 @@ import flask
 class TestSessionLifecycleManagerQualityScore:
     """Test SessionLifecycleManager quality score calculation."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     @patch("shutil.which")
     async def test_calculate_quality_score_all_factors(
         self, mock_which, mock_is_git_repo, tmp_path
@@ -151,7 +151,7 @@ class TestSessionLifecycleManagerQualityScore:
                 }
 
                 # Mock permissions manager
-                with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
+                with patch("session_buddy.server.permissions_manager") as mock_perms:
                     mock_perms.trusted_operations = {"op1", "op2", "op3", "op4", "op5"}
 
                     result = await manager.calculate_quality_score()
@@ -162,7 +162,7 @@ class TestSessionLifecycleManagerQualityScore:
                     assert isinstance(result["total_score"], int)
                     assert 0 <= result["total_score"] <= 100
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     @patch("shutil.which")
     async def test_calculate_quality_score_low_quality(
         self, mock_which, mock_is_git_repo, tmp_path
@@ -194,7 +194,7 @@ class TestSessionLifecycleManagerQualityScore:
             # Recommendations are based on actual metrics
             assert isinstance(result["recommendations"], list)
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_generate_quality_recommendations(self, mock_is_git_repo, tmp_path):
         """Test V2 quality recommendations generation."""
         mock_is_git_repo.return_value = False
@@ -232,7 +232,7 @@ class TestSessionLifecycleManagerQualityScore:
 class TestSessionLifecycleManagerQualityAssessment:
     """Test SessionLifecycleManager quality assessment methods."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_perform_quality_assessment(self, mock_is_git_repo):
         """Test perform_quality_assessment method."""
         mock_is_git_repo.return_value = True
@@ -397,7 +397,7 @@ class TestSessionLifecycleManagerQualityAssessment:
 class TestSessionLifecycleManagerGitCheckpoint:
     """Test SessionLifecycleManager git checkpoint methods."""
 
-    @patch("session_mgmt_mcp.core.session_manager.create_checkpoint_commit")
+    @patch("session_buddy.core.session_manager.create_checkpoint_commit")
     async def test_perform_git_checkpoint_success(self, mock_create_checkpoint):
         """Test perform_git_checkpoint with successful operation."""
         mock_create_checkpoint.return_value = (
@@ -419,7 +419,7 @@ class TestSessionLifecycleManagerGitCheckpoint:
                 project_dir, "test-project", 85
             )
 
-    @patch("session_mgmt_mcp.core.session_manager.create_checkpoint_commit")
+    @patch("session_buddy.core.session_manager.create_checkpoint_commit")
     async def test_perform_git_checkpoint_exception(self, mock_create_checkpoint):
         """Test perform_git_checkpoint with exception."""
         mock_create_checkpoint.side_effect = Exception("Git error")
@@ -439,7 +439,7 @@ class TestSessionLifecycleManagerSessionInitialization:
     """Test SessionLifecycleManager session initialization."""
 
     @patch("os.chdir")
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_initialize_session_success(
         self, mock_is_git_repo, mock_chdir, tmp_path
     ):
@@ -485,7 +485,7 @@ class TestSessionLifecycleManagerSessionInitialization:
                         assert "claude_directory" in result
 
     @patch("os.chdir")
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_initialize_session_exception(self, mock_is_git_repo, mock_chdir):
         """Test initialize_session with exception."""
         mock_is_git_repo.return_value = True
@@ -503,7 +503,7 @@ class TestSessionLifecycleManagerSessionInitialization:
 class TestSessionLifecycleManagerCheckpoint:
     """Test SessionLifecycleManager session checkpoint."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_checkpoint_session_success(self, mock_is_git_repo, tmp_path):
         """Test checkpoint_session with successful operation."""
         mock_is_git_repo.return_value = True
@@ -545,7 +545,7 @@ class TestSessionLifecycleManagerCheckpoint:
                         assert "git_output" in result
                         assert "timestamp" in result
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_checkpoint_session_exception(self, mock_is_git_repo, tmp_path):
         """Test checkpoint_session with exception."""
         mock_is_git_repo.return_value = True
@@ -568,7 +568,7 @@ class TestSessionLifecycleManagerCheckpoint:
 class TestSessionLifecycleManagerSessionEnd:
     """Test SessionLifecycleManager session end."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_end_session_success(self, mock_is_git_repo, tmp_path):
         """Test end_session with successful operation."""
         mock_is_git_repo.return_value = True
@@ -609,7 +609,7 @@ class TestSessionLifecycleManagerSessionEnd:
                         assert result["summary"]["final_quality_score"] == 90
                         assert "handoff_documentation" in result["summary"]
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_end_session_exception(self, mock_is_git_repo, tmp_path):
         """Test end_session with exception."""
         mock_is_git_repo.return_value = True
@@ -774,7 +774,7 @@ class TestSessionLifecycleManagerHandoffDocumentation:
 class TestSessionLifecycleManagerSessionStatus:
     """Test SessionLifecycleManager session status."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     @patch("shutil.which")
     async def test_get_session_status_success(
         self, mock_which, mock_is_git_repo, tmp_path
@@ -827,7 +827,7 @@ class TestSessionLifecycleManagerSessionStatus:
                     assert result["system_health"]["uv_available"] is True
                     assert result["system_health"]["git_repository"] is True
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_get_session_status_exception(self, mock_is_git_repo):
         """Test get_session_status with exception."""
         mock_is_git_repo.return_value = True

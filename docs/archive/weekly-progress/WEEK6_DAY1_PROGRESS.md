@@ -26,11 +26,11 @@ ______________________________________________________________________
 
 **Issue:** `configure()` used `Path.home()` which doesn't respect `HOME` environment variable in tests.
 
-**Fix:** Updated `session_mgmt_mcp/di/__init__.py` to use `os.path.expanduser("~")` for environment-aware path resolution.
+**Fix:** Updated `session_buddy/di/__init__.py` to use `os.path.expanduser("~")` for environment-aware path resolution.
 
 **Files Changed:**
 
-- `session_mgmt_mcp/di/__init__.py` (3 locations)
+- `session_buddy/di/__init__.py` (3 locations)
 
 **Test Impact:**
 
@@ -218,5 +218,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 6 Day 1 - Architecture Improvements

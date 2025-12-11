@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from session_mgmt_mcp.crackerjack_integration import (
+from session_buddy.crackerjack_integration import (
     CrackerjackIntegration,
     CrackerjackResult,
 )
@@ -435,7 +435,7 @@ class TestMCPToolIntegration:
     def test_crackerjack_integration_can_be_imported(self):
         """Test that CrackerjackIntegration can be imported in MCP tools."""
         # This test catches import errors
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+        from session_buddy.crackerjack_integration import CrackerjackIntegration
 
         # Should be able to instantiate
         integration = CrackerjackIntegration()

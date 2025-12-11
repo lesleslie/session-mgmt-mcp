@@ -24,7 +24,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_init_with_default_path(self) -> None:
         """Should initialize with default database path."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         kg = KnowledgeGraphDatabase()
 
@@ -35,7 +35,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_init_with_custom_path(self, tmp_path: Path) -> None:
         """Should initialize with custom database path."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "custom_kg.duckdb")
         kg = KnowledgeGraphDatabase(db_path=db_path)
@@ -46,7 +46,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_context_manager_sync(self, tmp_path: Path) -> None:
         """Should support synchronous context manager."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "sync_kg.duckdb")
 
@@ -57,7 +57,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_context_manager_async(self, tmp_path: Path) -> None:
         """Should support asynchronous context manager."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "async_kg.duckdb")
 
@@ -68,7 +68,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_close_connection(self, tmp_path: Path) -> None:
         """Should close database connection gracefully."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "close_kg.duckdb")
         kg = KnowledgeGraphDatabase(db_path=db_path)
@@ -82,7 +82,7 @@ class TestKnowledgeGraphInitialization:
     @pytest.mark.asyncio
     async def test_close_handles_no_connection(self) -> None:
         """Should handle close() when no connection exists."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         kg = KnowledgeGraphDatabase()
         kg.close()  # Should not raise
@@ -96,7 +96,7 @@ class TestKnowledgeGraphEntityOperations:
     @pytest.mark.asyncio
     async def test_create_entity_basic(self, tmp_path: Path) -> None:
         """Should create entity with basic information."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "entities.duckdb")
 
@@ -114,7 +114,7 @@ class TestKnowledgeGraphEntityOperations:
     @pytest.mark.asyncio
     async def test_get_entity_by_id(self, tmp_path: Path) -> None:
         """Should retrieve entity by ID."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "get_entity.duckdb")
 
@@ -134,7 +134,7 @@ class TestKnowledgeGraphEntityOperations:
     @pytest.mark.asyncio
     async def test_find_entity_by_name(self, tmp_path: Path) -> None:
         """Should find entity by name."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "find_entity.duckdb")
 
@@ -154,7 +154,7 @@ class TestKnowledgeGraphEntityOperations:
     @pytest.mark.asyncio
     async def test_search_entities_by_type(self, tmp_path: Path) -> None:
         """Should search entities by type."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "search_type.duckdb")
 
@@ -179,7 +179,7 @@ class TestKnowledgeGraphEntityOperations:
     @pytest.mark.asyncio
     async def test_add_observation_to_entity(self, tmp_path: Path) -> None:
         """Should add observation to existing entity."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "observations.duckdb")
 
@@ -208,7 +208,7 @@ class TestKnowledgeGraphRelations:
     @pytest.mark.asyncio
     async def test_create_relation_between_entities(self, tmp_path: Path) -> None:
         """Should create relation between two entities."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "relations.duckdb")
 
@@ -233,7 +233,7 @@ class TestKnowledgeGraphRelations:
     @pytest.mark.asyncio
     async def test_get_relationships_for_entity(self, tmp_path: Path) -> None:
         """Should retrieve all relationships for an entity."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "get_rels.duckdb")
 
@@ -257,7 +257,7 @@ class TestKnowledgeGraphRelations:
     @pytest.mark.asyncio
     async def test_find_path_between_entities(self, tmp_path: Path) -> None:
         """Should find path between two entities."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "path.duckdb")
 
@@ -283,7 +283,7 @@ class TestKnowledgeGraphStats:
     @pytest.mark.asyncio
     async def test_get_stats_empty_graph(self, tmp_path: Path) -> None:
         """Should return stats for empty graph."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "stats_empty.duckdb")
 
@@ -299,7 +299,7 @@ class TestKnowledgeGraphStats:
     @pytest.mark.asyncio
     async def test_get_stats_with_data(self, tmp_path: Path) -> None:
         """Should return accurate stats with data."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "stats_data.duckdb")
 
@@ -321,7 +321,7 @@ class TestKnowledgeGraphErrorHandling:
     @pytest.mark.asyncio
     async def test_get_nonexistent_entity(self, tmp_path: Path) -> None:
         """Should return None for nonexistent entity."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "nonexistent.duckdb")
 
@@ -333,7 +333,7 @@ class TestKnowledgeGraphErrorHandling:
     @pytest.mark.asyncio
     async def test_find_nonexistent_entity_by_name(self, tmp_path: Path) -> None:
         """Should return None for nonexistent entity name."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "find_nonexistent.duckdb")
 
@@ -345,7 +345,7 @@ class TestKnowledgeGraphErrorHandling:
     @pytest.mark.asyncio
     async def test_create_relation_with_missing_entity(self, tmp_path: Path) -> None:
         """Should handle relation creation with missing entities."""
-        from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
         db_path = str(tmp_path / "missing_entity.duckdb")
 
@@ -361,8 +361,8 @@ class TestKnowledgeGraphErrorHandling:
     @pytest.mark.asyncio
     async def test_duckdb_unavailable_handling(self) -> None:
         """Should handle missing DuckDB gracefully."""
-        with patch("session_mgmt_mcp.knowledge_graph_db.DUCKDB_AVAILABLE", False):
-            from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+        with patch("session_buddy.knowledge_graph_db.DUCKDB_AVAILABLE", False):
+            from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
             KnowledgeGraphDatabase()
 

@@ -1,7 +1,7 @@
 # Test Improvement Plan for Session-Mgmt-MCP
 
 ## Overview
-This document outlines the improvements to be made to the test suite for the session-mgmt-mcp project. The goal is to enhance test coverage, add more robust testing patterns, and improve overall test quality.
+This document outlines the improvements to be made to the test suite for the session-buddy project. The goal is to enhance test coverage, add more robust testing patterns, and improve overall test quality.
 
 ## Current Test Infrastructure Analysis
 - Comprehensive fixture setup in `conftest.py`

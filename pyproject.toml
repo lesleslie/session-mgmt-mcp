@@ -5,7 +5,7 @@ requires = [
 ]
 
 [project]
-name = "session-mgmt-mcp"
+name = "session-buddy"
 version = "0.9.9"
 description = "MCP server for Claude session management and conversation memory"
 readme = "README.md"
@@ -62,15 +62,15 @@ dependencies = [
 file = "LICENSE"
 
 [project.urls]
-Homepage = "https://github.com/lesleslie/session-mgmt-mcp"
-Issues = "https://github.com/lesleslie/session-mgmt-mcp/issues"
-Repository = "https://github.com/lesleslie/session-mgmt-mcp"
+Homepage = "https://github.com/lesleslie/session-buddy"
+Issues = "https://github.com/lesleslie/session-buddy/issues"
+Repository = "https://github.com/lesleslie/session-buddy"
 
 [project.scripts]
-session-mgmt-mcp = "session_mgmt_mcp.server:main"
-run-quality-checks = "session_mgmt_mcp.scripts.quality:run_checks"
+session-buddy = "session_buddy.server:main"
+run-quality-checks = "session_buddy.scripts.quality:run_checks"
 
-[tool.session-mgmt-mcp]
+[tool.session-buddy]
 mcp_http_port = 8678
 mcp_http_host = "127.0.0.1"
 websocket_monitor_port = 8677
@@ -251,7 +251,7 @@ ignore-words-list = "crate,uptodate,nd,nin"
 [tool.pytest]
 minversion = "7.0"
 addopts = [
-    "--cov=session_mgmt_mcp",
+    "--cov=session_buddy",
     "--cov-report=term",
     "--tb=short",
     "--strict-markers",
@@ -259,7 +259,7 @@ addopts = [
 ]
 testpaths = [
     "tests",
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 python_files = [
     "test_*.py",
@@ -315,10 +315,10 @@ max_time = 5.0
 
 [tool.coverage.run]
 source = [
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 omit = [
-    "session_mgmt_mcp/__main__.py",
+    "session_buddy/__main__.py",
     "tests/*",
     "*/test_*.py",
     "*_test.py",
@@ -369,7 +369,7 @@ output = "coverage.xml"
 
 [tool.pyright]
 include = [
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 exclude = [
     "tests",
@@ -410,7 +410,7 @@ skips = [
 ]
 target = [
     "tests",
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 
 [tool.vulture]
@@ -427,7 +427,7 @@ ignore_names = [
 make_whitelist = true
 min_confidence = 80
 paths = [
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 sort_by_size = true
 
@@ -452,7 +452,7 @@ sections = [
     "dependencies",
 ]
 paths = [
-    "session_mgmt_mcp",
+    "session_buddy",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [

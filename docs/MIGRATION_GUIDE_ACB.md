@@ -46,7 +46,7 @@ Look in your configuration or code for:
 
 ```python
 # Old style (still works):
-from session_mgmt_mcp.backends import RedisStorage, S3Storage, LocalFileStorage
+from session_buddy.backends import RedisStorage, S3Storage, LocalFileStorage
 
 storage = RedisStorage(config)  # ⚠️ Deprecated
 storage = S3Storage(config)  # ⚠️ Deprecated
@@ -89,7 +89,7 @@ config = {
 **Before** (old backends):
 
 ```python
-from session_mgmt_mcp.backends import S3Storage
+from session_buddy.backends import S3Storage
 
 storage = S3Storage({"bucket_name": "my-sessions", "region": "us-east-1"})
 ```
@@ -97,7 +97,7 @@ storage = S3Storage({"bucket_name": "my-sessions", "region": "us-east-1"})
 **After** (new ACB adapters):
 
 ```python
-from session_mgmt_mcp.adapters import ServerlessStorageAdapter
+from session_buddy.adapters import ServerlessStorageAdapter
 
 storage = ServerlessStorageAdapter(
     config={"bucket_name": "my-sessions", "region": "us-east-1"},
@@ -120,7 +120,7 @@ pytest tests/integration/test_serverless_storage.py -v
 **Test your specific backend**:
 
 ```python
-from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+from session_buddy.serverless_mode import ServerlessConfigManager
 
 # Test backend availability
 config = ServerlessConfigManager.load_config()
@@ -161,12 +161,12 @@ backends:
 
 ```python
 # Before:
-from session_mgmt_mcp.backends import LocalFileStorage
+from session_buddy.backends import LocalFileStorage
 
 storage = LocalFileStorage({"storage_dir": "~/.claude/data"})
 
 # After:
-from session_mgmt_mcp.adapters import ServerlessStorageAdapter
+from session_buddy.adapters import ServerlessStorageAdapter
 
 storage = ServerlessStorageAdapter(
     config={"local_path": "~/.claude/data"}, backend="file"
@@ -181,7 +181,7 @@ storage = ServerlessStorageAdapter(
 storage_backend: s3
 backends:
   s3:
-    bucket_name: session-mgmt-mcp
+    bucket_name: session-buddy
     region: us-east-1
     # Old S3 backend required explicit AWS credentials
 ```
@@ -192,7 +192,7 @@ backends:
 storage_backend: s3
 backends:
   s3:
-    bucket_name: ${S3_BUCKET:session-mgmt-mcp}
+    bucket_name: ${S3_BUCKET:session-buddy}
     endpoint_url: ${S3_ENDPOINT:}
     access_key_id: ${S3_ACCESS_KEY:}
     secret_access_key: ${S3_SECRET_KEY:}
@@ -348,13 +348,13 @@ buckets = {
 **Solution**:
 
 ```python
-from session_mgmt_mcp.di import configure
+from session_buddy.di import configure
 
 # Initialize DI first
 configure(force=True)
 
 # Then use adapters
-from session_mgmt_mcp.adapters import KnowledgeGraphDatabaseAdapter
+from session_buddy.adapters import KnowledgeGraphDatabaseAdapter
 
 async with KnowledgeGraphDatabaseAdapter() as kg:
     # Now it works!
@@ -368,7 +368,7 @@ async with KnowledgeGraphDatabaseAdapter() as kg:
 
 ```python
 # Test backend availability
-from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+from session_buddy.serverless_mode import ServerlessConfigManager
 
 config = ServerlessConfigManager.load_config()
 results = await ServerlessConfigManager.test_storage_backends(config)
@@ -430,7 +430,7 @@ backends:
 ### Pattern: Fallback Backends
 
 ```python
-from session_mgmt_mcp.serverless_mode import ServerlessConfigManager
+from session_buddy.serverless_mode import ServerlessConfigManager
 
 config = ServerlessConfigManager.load_config()
 
@@ -451,7 +451,7 @@ except Exception:
 ### Pattern: Custom Storage Paths
 
 ```python
-from session_mgmt_mcp.adapters import ServerlessStorageAdapter
+from session_buddy.adapters import ServerlessStorageAdapter
 
 # Development: local file storage
 dev_storage = ServerlessStorageAdapter(
@@ -487,8 +487,8 @@ pytest tests/integration/test_serverless_storage.py -v
 ### End-to-End Test
 
 ```python
-from session_mgmt_mcp.serverless_mode import ServerlessSessionManager
-from session_mgmt_mcp.adapters import ServerlessStorageAdapter
+from session_buddy.serverless_mode import ServerlessSessionManager
+from session_buddy.adapters import ServerlessStorageAdapter
 
 
 async def test_e2e():
@@ -536,7 +536,7 @@ If you need to rollback to old backends:
 storage_backend: s3  # Will show deprecation warning
 backends:
   s3:
-    bucket_name: session-mgmt-mcp
+    bucket_name: session-buddy
     region: us-east-1
 ```
 

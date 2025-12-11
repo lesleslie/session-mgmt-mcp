@@ -103,7 +103,7 @@ class TestServerlessConfigManager:
 #### Coverage Analysis
 
 ```
-session_mgmt_mcp/serverless_mode.py    577  330  114  16  40.96%
+session_buddy/serverless_mode.py    577  330  114  16  40.96%
 ```
 
 **Lines Covered:**
@@ -214,7 +214,7 @@ class TestMemoryOptimizer:
 #### Coverage Analysis
 
 ```
-session_mgmt_mcp/memory_optimizer.py    294   86   98  18  64.80%
+session_buddy/memory_optimizer.py    294   86   98  18  64.80%
 ```
 
 **Lines Covered:**
@@ -540,7 +540,7 @@ assert "error" in summary.lower() or "file" in summary.lower()
 
 ```bash
 pytest tests/unit/test_memory_optimizer.py \
-  --cov=session_mgmt_mcp/memory_optimizer \
+  --cov=session_buddy/memory_optimizer \
   --cov-report=term-missing
 ```
 
@@ -723,7 +723,7 @@ ______________________________________________________________________
 
 **Created**: 2025-10-28
 **Author**: Claude Code + Les
-**Project**: session-mgmt-mcp
+**Project**: session-buddy
 **Phase**: Week 5 Day 3 - Serverless Mode & Memory Optimizer Coverage
 **Git Commit**: b1eca524
 **Status**: ✅ Complete - Ready for Week 5 Day 4

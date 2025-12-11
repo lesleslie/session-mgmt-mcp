@@ -1,4 +1,4 @@
-# Memori + session-mgmt-mcp Integration Pathways
+# Memori + session-buddy Integration Pathways
 
 **Document Version:** 1.0
 **Date:** January 19, 2025
@@ -8,7 +8,7 @@ ______________________________________________________________________
 
 ## Executive Summary
 
-This document provides **three detailed integration pathways** for combining the strengths of [Memori](https://github.com/GibsonAI/Memori) (generic LLM memory engine) with session-mgmt-mcp (Claude Code development workflow automation). Each pathway eliminates overlap while maximizing complementary benefits.
+This document provides **three detailed integration pathways** for combining the strengths of [Memori](https://github.com/GibsonAI/Memori) (generic LLM memory engine) with session-buddy (Claude Code development workflow automation). Each pathway eliminates overlap while maximizing complementary benefits.
 
 ### Quick Comparison
 
@@ -30,7 +30,7 @@ ______________________________________________________________________
 
 ### Strategy
 
-**Native implementation** of Memori's superior patterns (Conscious Agent, LLM-powered entity extraction, memory categorization) within session-mgmt-mcp, eliminating ALL overlap while preserving session-mgmt's unique strengths.
+**Native implementation** of Memori's superior patterns (Conscious Agent, LLM-powered entity extraction, memory categorization) within session-buddy, eliminating ALL overlap while preserving session-mgmt's unique strengths.
 
 ### Component Integration Matrix
 
@@ -49,7 +49,7 @@ ______________________________________________________________________
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│            session-mgmt-mcp (Enhanced)                     │
+│            session-buddy (Enhanced)                     │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │  ╔══════════════════════════════════════════════════════╗ │
@@ -97,7 +97,7 @@ ______________________________________________________________________
 
 #### **Phase 1: Enhanced Memory Schema (Week 1)**
 
-**Deliverable:** `session_mgmt_mcp/memory/schema_v2.py`
+**Deliverable:** `session_buddy/memory/schema_v2.py`
 
 **Schema Changes:**
 
@@ -156,7 +156,7 @@ async def migrate_to_v2():
 
 #### **Phase 2: LLM-Powered Entity Extraction (Week 2)**
 
-**Deliverable:** `session_mgmt_mcp/memory/entity_extractor.py`
+**Deliverable:** `session_buddy/memory/entity_extractor.py`
 
 **Key Component:**
 
@@ -206,7 +206,7 @@ class ProcessedMemory(BaseModel):
 
 #### **Phase 3: Conscious Agent (Week 3-4)**
 
-**Deliverable:** `session_mgmt_mcp/memory/conscious_agent.py`
+**Deliverable:** `session_buddy/memory/conscious_agent.py`
 
 **Background Loop (Memori pattern):**
 
@@ -354,13 +354,13 @@ ______________________________________________________________________
 
 ### Strategy
 
-**Use Memori as a storage backend** for session-mgmt-mcp's memory system, leveraging Memori's battle-tested code while adding session-mgmt's unique dev workflow tools on top.
+**Use Memori as a storage backend** for session-buddy's memory system, leveraging Memori's battle-tested code while adding session-mgmt's unique dev workflow tools on top.
 
 ### Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│            session-mgmt-mcp (MCP Layer)                    │
+│            session-buddy (MCP Layer)                    │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │  ┌────────────────────────────────────────────────────┐   │
@@ -439,7 +439,7 @@ class Config:
 
 ```python
 class MemoriAdapter:
-    """Adapter to use Memori as memory backend for session-mgmt-mcp."""
+    """Adapter to use Memori as memory backend for session-buddy."""
 
     def __init__(self, config: Config):
         from memori import Memori
@@ -556,7 +556,7 @@ ______________________________________________________________________
 
 ### Strategy
 
-**Run both systems independently** with minimal integration. Memori handles generic LLM memory, session-mgmt-mcp handles Claude Code dev workflow. Use each for its strengths with light coordination.
+**Run both systems independently** with minimal integration. Memori handles generic LLM memory, session-buddy handles Claude Code dev workflow. Use each for its strengths with light coordination.
 
 ### Architecture
 
@@ -566,7 +566,7 @@ ______________________________________________________________________
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ session-mgmt-mcp MCP Server (Claude-specific)        │  │
+│  │ session-buddy MCP Server (Claude-specific)        │  │
 │  ├──────────────────────────────────────────────────────┤  │
 │  │  PRIMARY: Development workflow automation            │  │
 │  │  • Git integration, quality scoring, crackerjack     │  │
@@ -604,10 +604,10 @@ ______________________________________________________________________
 
 | Domain | Handled By | Reason |
 |--------|------------|--------|
-| **Claude Code sessions** | session-mgmt-mcp | Native MCP integration |
-| **Git workflow** | session-mgmt-mcp | Unique capability |
-| **Quality scoring** | session-mgmt-mcp | Crackerjack integration |
-| **Multi-project coordination** | session-mgmt-mcp | Unique capability |
+| **Claude Code sessions** | session-buddy | Native MCP integration |
+| **Git workflow** | session-buddy | Unique capability |
+| **Quality scoring** | session-buddy | Crackerjack integration |
+| **Multi-project coordination** | session-buddy | Unique capability |
 | **Generic LLM memory** | Memori | Multi-provider support |
 | **Other LLM projects** | Memori | LLM-agnostic |
 | **Entity extraction** | Both | session-mgmt uses Memori's approach (optional) |
@@ -622,29 +622,29 @@ ______________________________________________________________________
 # Users who want Memori for non-Claude LLM projects
 pip install memorisdk
 
-# session-mgmt-mcp remains independent
+# session-buddy remains independent
 uv sync  # No Memori dependency
 ```
 
 **Documentation:**
 
 ````markdown
-## Using session-mgmt-mcp with Memori (Optional)
+## Using session-buddy with Memori (Optional)
 
-session-mgmt-mcp and Memori can coexist:
+session-buddy and Memori can coexist:
 
-- **session-mgmt-mcp**: Claude Code session management
+- **session-buddy**: Claude Code session management
 - **Memori**: Generic LLM memory (OpenAI, Anthropic, etc.)
 
 ### When to use both:
-1. **Claude Code**: Use session-mgmt-mcp (automatic via MCP)
+1. **Claude Code**: Use session-buddy (automatic via MCP)
 2. **Other LLM projects**: Use Memori (pip install memorisdk)
 
 ### Optional Light Bridge:
 ```python
 # Share tags between systems (optional)
 from memori import Memori
-from session_mgmt_mcp import ReflectionDatabase
+from session_buddy import ReflectionDatabase
 
 # Tag synchronization (if desired)
 async def sync_tags():
@@ -691,11 +691,11 @@ class MemoriSessionBridge:
 
 **Example Workflow:**
 
-1. **Claude Code Development** (uses session-mgmt-mcp automatically):
+1. **Claude Code Development** (uses session-buddy automatically):
 
    ```bash
    # User works in Claude Code
-   # session-mgmt-mcp handles everything via MCP
+   # session-buddy handles everything via MCP
    # No manual intervention needed
    ```
 
@@ -752,7 +752,7 @@ class MemoriSessionBridge:
 **When to Choose This:**
 
 - You want Memori for non-Claude LLM projects
-- You don't want to change session-mgmt-mcp
+- You don't want to change session-buddy
 - You prefer minimal coupling
 - You're okay with duplicate storage for different use cases
 
@@ -838,7 +838,7 @@ ______________________________________________________________________
 ### Not Recommended: **Pathway 3 (Side-by-Side)** unless:
 
 - ⚠️ You need Memori **only for non-Claude LLM projects**
-- ⚠️ You want **absolutely minimal changes** to session-mgmt-mcp
+- ⚠️ You want **absolutely minimal changes** to session-buddy
 - ⚠️ You're okay with **fragmented data** and limited integration
 
 **Investment:** 1 week, ~$4k-$5k
@@ -891,7 +891,7 @@ ______________________________________________________________________
 
 ## Conclusion
 
-**Memori** and **session-mgmt-mcp** are **complementary projects** with significant synergy potential:
+**Memori** and **session-buddy** are **complementary projects** with significant synergy potential:
 
 - **40% overlap** in memory functionality (addressable via integration)
 - **60% unique features** in each project (valuable when combined)

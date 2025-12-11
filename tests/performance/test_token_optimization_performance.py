@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 
 import pytest
-from session_mgmt_mcp.token_optimizer import TokenOptimizer, optimize_search_response
+from session_buddy.token_optimizer import TokenOptimizer, optimize_search_response
 
 
 @pytest.fixture
@@ -252,7 +252,7 @@ class TestCachePerformance:
             cache_key = f"key_{i}"
 
             # Create entries with different expiration times
-            from session_mgmt_mcp.token_optimizer import ChunkResult
+            from session_buddy.token_optimizer import ChunkResult
 
             chunk_result = ChunkResult(
                 chunks=[f"chunk_{i}"],

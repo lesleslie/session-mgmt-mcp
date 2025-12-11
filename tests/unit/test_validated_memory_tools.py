@@ -24,7 +24,7 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_with_valid_params(self) -> None:
         """Should store reflection with valid parameters."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
@@ -34,11 +34,11 @@ class TestStoreReflectionValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -55,12 +55,12 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_with_empty_content_fails_validation(self) -> None:
         """Should reject empty content with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             result = await _store_reflection_validated_impl(
@@ -75,12 +75,12 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_with_invalid_tags_fails_validation(self) -> None:
         """Should reject invalid tag format with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             # Tags with spaces should fail validation
@@ -96,7 +96,7 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_without_tags(self) -> None:
         """Should store reflection without tags."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
@@ -105,11 +105,11 @@ class TestStoreReflectionValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -126,12 +126,12 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_when_tools_not_available(self) -> None:
         """Should return error when reflection tools not available."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=False,
         ):
             result = await _store_reflection_validated_impl(
@@ -145,7 +145,7 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_database_error(self) -> None:
         """Should handle database errors gracefully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
@@ -154,11 +154,11 @@ class TestStoreReflectionValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -172,7 +172,7 @@ class TestStoreReflectionValidated:
     @pytest.mark.asyncio
     async def test_store_reflection_truncates_long_content_in_output(self) -> None:
         """Should truncate long content in success message."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _store_reflection_validated_impl,
         )
 
@@ -183,11 +183,11 @@ class TestStoreReflectionValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -212,7 +212,7 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_with_valid_params(self) -> None:
         """Should perform quick search with valid parameters."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
@@ -230,11 +230,11 @@ class TestQuickSearchValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -252,12 +252,12 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_with_empty_query_fails_validation(self) -> None:
         """Should reject empty query with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             result = await _quick_search_validated_impl(
@@ -272,12 +272,12 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_with_invalid_min_score_fails_validation(self) -> None:
         """Should reject invalid min_score with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             # Score > 1.0 should fail
@@ -294,7 +294,7 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_with_no_results(self) -> None:
         """Should handle no search results gracefully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
@@ -303,11 +303,11 @@ class TestQuickSearchValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -323,12 +323,12 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_when_tools_not_available(self) -> None:
         """Should return error when reflection tools not available."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=False,
         ):
             result = await _quick_search_validated_impl(
@@ -342,7 +342,7 @@ class TestQuickSearchValidated:
     @pytest.mark.asyncio
     async def test_quick_search_truncates_long_content(self) -> None:
         """Should truncate long content in results."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _quick_search_validated_impl,
         )
 
@@ -362,11 +362,11 @@ class TestQuickSearchValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -390,7 +390,7 @@ class TestSearchByFileValidated:
     @pytest.mark.asyncio
     async def test_search_by_file_with_valid_path(self) -> None:
         """Should search for file conversations successfully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_file_validated_impl,
         )
 
@@ -408,11 +408,11 @@ class TestSearchByFileValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -429,12 +429,12 @@ class TestSearchByFileValidated:
     @pytest.mark.asyncio
     async def test_search_by_file_with_empty_path_fails_validation(self) -> None:
         """Should reject empty file path with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_file_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             result = await _search_by_file_validated_impl(
@@ -449,7 +449,7 @@ class TestSearchByFileValidated:
     @pytest.mark.asyncio
     async def test_search_by_file_with_no_results(self) -> None:
         """Should handle no file conversation results gracefully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_file_validated_impl,
         )
 
@@ -458,11 +458,11 @@ class TestSearchByFileValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -478,12 +478,12 @@ class TestSearchByFileValidated:
     @pytest.mark.asyncio
     async def test_search_by_file_when_tools_not_available(self) -> None:
         """Should return error when reflection tools not available."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_file_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=False,
         ):
             result = await _search_by_file_validated_impl(
@@ -504,7 +504,7 @@ class TestSearchByConceptValidated:
     @pytest.mark.asyncio
     async def test_search_by_concept_with_valid_params(self) -> None:
         """Should search for concept conversations successfully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_concept_validated_impl,
         )
 
@@ -523,11 +523,11 @@ class TestSearchByConceptValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -545,12 +545,12 @@ class TestSearchByConceptValidated:
     @pytest.mark.asyncio
     async def test_search_by_concept_with_empty_concept_fails_validation(self) -> None:
         """Should reject empty concept with validation error."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_concept_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=True,
         ):
             result = await _search_by_concept_validated_impl(
@@ -566,7 +566,7 @@ class TestSearchByConceptValidated:
     @pytest.mark.asyncio
     async def test_search_by_concept_with_no_results(self) -> None:
         """Should handle no concept results gracefully."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_concept_validated_impl,
         )
 
@@ -575,11 +575,11 @@ class TestSearchByConceptValidated:
 
         with (
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._get_reflection_database",
+                "session_buddy.tools.validated_memory_tools._get_reflection_database",
                 return_value=mock_db,
             ),
             patch(
-                "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+                "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
                 return_value=True,
             ),
         ):
@@ -596,12 +596,12 @@ class TestSearchByConceptValidated:
     @pytest.mark.asyncio
     async def test_search_by_concept_when_tools_not_available(self) -> None:
         """Should return error when reflection tools not available."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _search_by_concept_validated_impl,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools._check_reflection_tools_available",
+            "session_buddy.tools.validated_memory_tools._check_reflection_tools_available",
             return_value=False,
         ):
             result = await _search_by_concept_validated_impl(
@@ -622,7 +622,7 @@ class TestHelperFunctions:
 
     def test_format_file_search_header(self) -> None:
         """Should format file search header correctly."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_file_search_header,
         )
 
@@ -634,7 +634,7 @@ class TestHelperFunctions:
 
     def test_format_file_search_result(self) -> None:
         """Should format single file search result."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_file_search_result,
         )
 
@@ -654,7 +654,7 @@ class TestHelperFunctions:
 
     def test_format_file_search_result_truncates_long_content(self) -> None:
         """Should truncate long content in file search results."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_file_search_result,
         )
 
@@ -676,7 +676,7 @@ class TestHelperFunctions:
 
     def test_format_file_search_results_with_results(self) -> None:
         """Should format complete file search results."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_file_search_results,
         )
 
@@ -695,7 +695,7 @@ class TestHelperFunctions:
 
     def test_format_file_search_results_with_no_results(self) -> None:
         """Should format file search with no results."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_file_search_results,
         )
 
@@ -707,7 +707,7 @@ class TestHelperFunctions:
 
     def test_format_validated_concept_result(self) -> None:
         """Should format validated concept result."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_validated_concept_result,
         )
 
@@ -729,7 +729,7 @@ class TestHelperFunctions:
 
     def test_format_validated_concept_result_without_files(self) -> None:
         """Should format concept result without including files."""
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        from session_buddy.tools.validated_memory_tools import (
             _format_validated_concept_result,
         )
 
@@ -758,8 +758,8 @@ class TestAvailabilityChecking:
     def test_check_reflection_tools_available_when_installed(self) -> None:
         """Should return True when reflection tools are available."""
         # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
 
@@ -773,8 +773,8 @@ class TestAvailabilityChecking:
     def test_check_reflection_tools_available_when_not_installed(self) -> None:
         """Should return False when reflection tools not available."""
         # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
 
@@ -788,8 +788,8 @@ class TestAvailabilityChecking:
     def test_check_reflection_tools_available_caches_result(self) -> None:
         """Should cache availability check result."""
         # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _check_reflection_tools_available,
         )
 
@@ -809,8 +809,8 @@ class TestAvailabilityChecking:
     async def test_get_reflection_database_when_available(self) -> None:
         """Should get reflection database when available."""
         # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _get_reflection_database,
         )
 
@@ -819,7 +819,7 @@ class TestAvailabilityChecking:
         mock_db = AsyncMock()
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools.resolve_reflection_database",
+            "session_buddy.tools.validated_memory_tools.resolve_reflection_database",
             return_value=mock_db,
         ):
             result = await _get_reflection_database()
@@ -830,15 +830,15 @@ class TestAvailabilityChecking:
     async def test_get_reflection_database_when_not_available(self) -> None:
         """Should raise ImportError when database not available."""
         # Reset global state
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _get_reflection_database,
         )
 
         module._reflection_tools_available = None
 
         with patch(
-            "session_mgmt_mcp.tools.validated_memory_tools.resolve_reflection_database",
+            "session_buddy.tools.validated_memory_tools.resolve_reflection_database",
             return_value=None,
         ):
             with pytest.raises(ImportError, match="Reflection tools not available"):
@@ -848,8 +848,8 @@ class TestAvailabilityChecking:
     async def test_get_reflection_database_when_previously_failed(self) -> None:
         """Should raise immediately when previously failed."""
         # Set global flag to indicate previous failure
-        import session_mgmt_mcp.tools.validated_memory_tools as module
-        from session_mgmt_mcp.tools.validated_memory_tools import (
+        import session_buddy.tools.validated_memory_tools as module
+        from session_buddy.tools.validated_memory_tools import (
             _get_reflection_database,
         )
 
@@ -868,7 +868,7 @@ class TestValidationExamples:
     @pytest.mark.asyncio
     async def test_example_valid_calls_structure(self) -> None:
         """Should have example_valid_calls method."""
-        from session_mgmt_mcp.tools.validated_memory_tools import ValidationExamples
+        from session_buddy.tools.validated_memory_tools import ValidationExamples
 
         assert hasattr(ValidationExamples, "example_valid_calls")
         assert callable(ValidationExamples.example_valid_calls)
@@ -876,7 +876,7 @@ class TestValidationExamples:
     @pytest.mark.asyncio
     async def test_example_validation_errors_structure(self) -> None:
         """Should have example_validation_errors method."""
-        from session_mgmt_mcp.tools.validated_memory_tools import ValidationExamples
+        from session_buddy.tools.validated_memory_tools import ValidationExamples
 
         assert hasattr(ValidationExamples, "example_validation_errors")
         assert callable(ValidationExamples.example_validation_errors)
@@ -890,14 +890,14 @@ class TestMigrationGuide:
 
     def test_migration_guide_has_before_method(self) -> None:
         """Should have before_migration method."""
-        from session_mgmt_mcp.tools.validated_memory_tools import MigrationGuide
+        from session_buddy.tools.validated_memory_tools import MigrationGuide
 
         assert hasattr(MigrationGuide, "before_migration")
         assert callable(MigrationGuide.before_migration)
 
     def test_migration_guide_has_after_method(self) -> None:
         """Should have after_migration method."""
-        from session_mgmt_mcp.tools.validated_memory_tools import MigrationGuide
+        from session_buddy.tools.validated_memory_tools import MigrationGuide
 
         assert hasattr(MigrationGuide, "after_migration")
         assert callable(MigrationGuide.after_migration)

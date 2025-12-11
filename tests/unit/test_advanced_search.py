@@ -9,11 +9,11 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from session_mgmt_mcp.advanced_search import (
+from session_buddy.advanced_search import (
     AdvancedSearchEngine,
     SearchFilter,
 )
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 class TestAdvancedSearchEngine:

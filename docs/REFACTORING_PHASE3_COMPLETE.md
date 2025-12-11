@@ -14,28 +14,28 @@ Phase 3 successfully eliminated duplicate error handling, database resolution, a
 
 Created 4 reusable utility modules that became the foundation for all subsequent refactoring:
 
-**session_mgmt_mcp/utils/error_handlers.py** (200 lines)
+**session_buddy/utils/error_handlers.py** (200 lines)
 
 - Generic error handling wrappers
 - `handle_tool_errors()` for consistent exception handling
 - `_get_logger()` shared across all tools
 - `DatabaseUnavailableError` and `ValidationError` classes
 
-**session_mgmt_mcp/utils/database_helpers.py** (220 lines)
+**session_buddy/utils/database_helpers.py** (220 lines)
 
 - Database resolution utilities
 - `require_reflection_database()` with helpful error messages
 - `require_knowledge_graph()` for graph operations
 - Eliminated 72+ duplicate resolution patterns
 
-**session_mgmt_mcp/utils/messages.py** (280 lines)
+**session_buddy/utils/messages.py** (280 lines)
 
 - Consistent message formatting
 - `ToolMessages` class with static methods for common messages
 - `not_available()`, `operation_failed()`, `success()` formatters
 - Eliminated 63+ duplicate error messages
 
-**session_mgmt_mcp/utils/tool_wrapper.py** (330 lines)
+**session_buddy/utils/tool_wrapper.py** (330 lines)
 
 - High-level tool execution wrappers
 - `execute_database_tool()` for reflection database operations

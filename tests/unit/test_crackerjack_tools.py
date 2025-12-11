@@ -20,10 +20,10 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_valid_command_executes(self) -> None:
         """Should execute valid command successfully."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+            "session_buddy.tools.crackerjack_tools._execute_crackerjack_command_impl"
         ) as mock_impl:
             mock_impl.return_value = "Success"
             result = await execute_crackerjack_command(command="test")
@@ -34,7 +34,7 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_invalid_command_with_flags_returns_error(self) -> None:
         """Should reject commands starting with flags."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         result = await execute_crackerjack_command(command="--ai-fix -t")
 
@@ -45,7 +45,7 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_unknown_command_suggests_alternative(self) -> None:
         """Should suggest correct command for typos."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         result = await execute_crackerjack_command(
             command="tests"
@@ -58,7 +58,7 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_ai_fix_flag_in_args_returns_error(self) -> None:
         """Should reject --ai-fix in args parameter."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         result = await execute_crackerjack_command(
             command="test", args="--ai-fix --verbose"
@@ -71,7 +71,7 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_valid_commands_accepted(self) -> None:
         """Should accept all valid command names."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         valid_commands = [
             "test",
@@ -84,7 +84,7 @@ class TestExecuteCrackerjackCommand:
         ]
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+            "session_buddy.tools.crackerjack_tools._execute_crackerjack_command_impl"
         ) as mock_impl:
             mock_impl.return_value = "Success"
 
@@ -95,10 +95,10 @@ class TestExecuteCrackerjackCommand:
     @pytest.mark.asyncio
     async def test_ai_agent_mode_parameter(self) -> None:
         """Should pass ai_agent_mode to implementation."""
-        from session_mgmt_mcp.tools.crackerjack_tools import execute_crackerjack_command
+        from session_buddy.tools.crackerjack_tools import execute_crackerjack_command
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._execute_crackerjack_command_impl"
+            "session_buddy.tools.crackerjack_tools._execute_crackerjack_command_impl"
         ) as mock_impl:
             mock_impl.return_value = "Success"
 
@@ -115,10 +115,10 @@ class TestCrackerjackRun:
     @pytest.mark.asyncio
     async def test_run_calls_implementation(self) -> None:
         """Should call implementation function."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_run
+        from session_buddy.tools.crackerjack_tools import crackerjack_run
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._crackerjack_run_impl"
+            "session_buddy.tools.crackerjack_tools._crackerjack_run_impl"
         ) as mock_impl:
             mock_impl.return_value = "Result"
 
@@ -134,11 +134,11 @@ class TestCrackerjackHistory:
     @pytest.mark.asyncio
     async def test_history_calls_implementation(self) -> None:
         """Should call get_crackerjack_results_history."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_history
+        from session_buddy.tools.crackerjack_tools import crackerjack_history
 
         # crackerjack_history just wraps get_crackerjack_results_history
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -151,12 +151,12 @@ class TestCrackerjackHistory:
     @pytest.mark.asyncio
     async def test_get_crackerjack_results_history_calls_implementation(self) -> None:
         """Should call reflection database for history."""
-        from session_mgmt_mcp.tools.crackerjack_tools import (
+        from session_buddy.tools.crackerjack_tools import (
             get_crackerjack_results_history,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -175,10 +175,10 @@ class TestCrackerjackMetrics:
     @pytest.mark.asyncio
     async def test_metrics_calls_implementation(self) -> None:
         """Should call get_crackerjack_quality_metrics."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_metrics
+        from session_buddy.tools.crackerjack_tools import crackerjack_metrics
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -191,12 +191,12 @@ class TestCrackerjackMetrics:
     @pytest.mark.asyncio
     async def test_quality_metrics_implementation(self) -> None:
         """Should calculate quality metrics from history."""
-        from session_mgmt_mcp.tools.crackerjack_tools import (
+        from session_buddy.tools.crackerjack_tools import (
             get_crackerjack_quality_metrics,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -215,10 +215,10 @@ class TestCrackerjackPatterns:
     @pytest.mark.asyncio
     async def test_patterns_calls_implementation(self) -> None:
         """Should call analyze_crackerjack_test_patterns."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_patterns
+        from session_buddy.tools.crackerjack_tools import crackerjack_patterns
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -231,12 +231,12 @@ class TestCrackerjackPatterns:
     @pytest.mark.asyncio
     async def test_analyze_test_patterns_implementation(self) -> None:
         """Should analyze test failure patterns."""
-        from session_mgmt_mcp.tools.crackerjack_tools import (
+        from session_buddy.tools.crackerjack_tools import (
             analyze_crackerjack_test_patterns,
         )
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -255,7 +255,7 @@ class TestCrackerjackHelp:
     @pytest.mark.asyncio
     async def test_help_returns_comprehensive_guide(self) -> None:
         """Should return help documentation."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_help
+        from session_buddy.tools.crackerjack_tools import crackerjack_help
 
         result = await crackerjack_help()
 
@@ -270,10 +270,10 @@ class TestQualityTrends:
     @pytest.mark.asyncio
     async def test_quality_trends_analyzes_history(self) -> None:
         """Should analyze quality trends over time."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_quality_trends
+        from session_buddy.tools.crackerjack_tools import crackerjack_quality_trends
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db_instance.search_conversations = AsyncMock(return_value=[])
@@ -290,7 +290,7 @@ class TestHealthCheck:
     @pytest.mark.asyncio
     async def test_health_check_returns_status(self) -> None:
         """Should return health check status."""
-        from session_mgmt_mcp.tools.crackerjack_tools import crackerjack_health_check
+        from session_buddy.tools.crackerjack_tools import crackerjack_health_check
 
         result = await crackerjack_health_check()
 
@@ -304,10 +304,10 @@ class TestQualityMonitor:
     @pytest.mark.asyncio
     async def test_quality_monitor_returns_insights(self) -> None:
         """Should return quality monitoring insights."""
-        from session_mgmt_mcp.tools.crackerjack_tools import quality_monitor
+        from session_buddy.tools.crackerjack_tools import quality_monitor
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools._get_reflection_db"
+            "session_buddy.tools.crackerjack_tools._get_reflection_db"
         ) as mock_db:
             mock_db_instance = AsyncMock()
             mock_db.return_value = mock_db_instance
@@ -322,7 +322,7 @@ class TestHelperFunctions:
 
     def test_suggest_command_finds_closest_match(self) -> None:
         """Should suggest closest matching command."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _suggest_command
+        from session_buddy.tools.crackerjack_tools import _suggest_command
 
         valid_commands = {"test", "lint", "check", "format"}
 
@@ -332,7 +332,7 @@ class TestHelperFunctions:
 
     def test_build_execution_metadata_creates_dict(self) -> None:
         """Should build metadata dictionary."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _build_execution_metadata
+        from session_buddy.tools.crackerjack_tools import _build_execution_metadata
 
         # Create mock result and metrics objects
         mock_result = MagicMock()
@@ -358,7 +358,7 @@ class TestFormatting:
 
     def test_format_basic_result_formats_output(self) -> None:
         """Should format execution result with status."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _format_basic_result
+        from session_buddy.tools.crackerjack_tools import _format_basic_result
 
         # _format_basic_result expects a result object with .stdout attribute
         mock_result = MagicMock()
@@ -380,10 +380,10 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_get_reflection_db_returns_none_when_unavailable(self) -> None:
         """Should return None when database is unavailable."""
-        from session_mgmt_mcp.tools.crackerjack_tools import _get_reflection_db
+        from session_buddy.tools.crackerjack_tools import _get_reflection_db
 
         with patch(
-            "session_mgmt_mcp.tools.crackerjack_tools.resolve_reflection_database"
+            "session_buddy.tools.crackerjack_tools.resolve_reflection_database"
         ) as mock_resolve:
             # Function returns None when resolve_reflection_database returns None
             mock_resolve.return_value = None

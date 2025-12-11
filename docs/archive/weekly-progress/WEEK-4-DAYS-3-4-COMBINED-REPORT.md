@@ -79,7 +79,7 @@ TestKnowledgeGraphErrorHandling:       # 4 tests - Robustness
 
 #### 1. DuckDB CASCADE Constraint Bug
 
-**File:** `session_mgmt_mcp/knowledge_graph_db.py` (lines 182-184)
+**File:** `session_buddy/knowledge_graph_db.py` (lines 182-184)
 
 **Problem:**
 
@@ -112,7 +112,7 @@ FOREIGN KEY (to_entity) REFERENCES kg_entities(id)
 
 #### 2. SessionLogger Missing critical() Method
 
-**File:** `session_mgmt_mcp/utils/logging.py` (lines 82-86)
+**File:** `session_buddy/utils/logging.py` (lines 82-86)
 
 **Problem:**
 
@@ -350,7 +350,7 @@ ______________________________________________________________________
 @pytest.mark.asyncio
 async def test_context_manager_async(self, tmp_path: Path) -> None:
     """Should support asynchronous context manager."""
-    from session_mgmt_mcp.knowledge_graph_db import KnowledgeGraphDatabase
+    from session_buddy.knowledge_graph_db import KnowledgeGraphDatabase
 
     db_path = str(tmp_path / "async_kg.duckdb")
 
@@ -391,7 +391,7 @@ async def test_create_entity_basic(self, tmp_path: Path) -> None:
 ```text
 def test_stream_generation_options_immutable(self) -> None:
     """Should be frozen/immutable dataclass."""
-    from session_mgmt_mcp.llm_providers import StreamGenerationOptions
+    from session_buddy.llm_providers import StreamGenerationOptions
 
     options = StreamGenerationOptions(temperature=0.5)
 
@@ -411,7 +411,7 @@ def test_stream_generation_options_immutable(self) -> None:
 @pytest.mark.asyncio
 async def test_is_available_with_api_key(self) -> None:
     """Should check availability based on API key."""
-    from session_mgmt_mcp.llm_providers import OpenAIProvider
+    from session_buddy.llm_providers import OpenAIProvider
 
     # With API key
     provider = OpenAIProvider({"api_key": "sk-test123"})
@@ -670,8 +670,8 @@ coverage run -m pytest tests/unit/test_llm_providers.py --no-cov -v
 coverage run -m pytest tests/unit/test_knowledge_graph_db.py tests/unit/test_llm_providers.py --no-cov -v
 
 # Check specific module coverage
-coverage report --include="session_mgmt_mcp/knowledge_graph_db.py"
-coverage report --include="session_mgmt_mcp/llm_providers.py"
+coverage report --include="session_buddy/knowledge_graph_db.py"
+coverage report --include="session_buddy/llm_providers.py"
 ```
 
 ### Coverage Measurement
@@ -710,13 +710,13 @@ ______________________________________________________________________
 
 ### Production Code Changes
 
-1. **session_mgmt_mcp/utils/logging.py** (lines 82-86 added)
+1. **session_buddy/utils/logging.py** (lines 82-86 added)
 
    - Added: `critical()` method for SessionLogger
    - Impact: Fixed shutdown manager critical logging
    - Pattern: Structured logging with context support
 
-1. **session_mgmt_mcp/knowledge_graph_db.py** (lines 182-184 modified)
+1. **session_buddy/knowledge_graph_db.py** (lines 182-184 modified)
 
    - Removed: `ON DELETE CASCADE` clauses from foreign keys
    - Added: Comment explaining DuckDB limitation
@@ -859,5 +859,5 @@ ______________________________________________________________________
 **Previous Checkpoint:** `a4199637` - Week 4 Day 3 - Knowledge graph tests + resource cleanup fixes
 **Generated:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 4 - Test Coverage Expansion

@@ -253,10 +253,10 @@ async def execute_database_tool(
 
 Create new utility modules:
 
-- `session_mgmt_mcp/utils/error_handlers.py` - Generic error handling
-- `session_mgmt_mcp/utils/database_helpers.py` - Database resolution utilities
-- `session_mgmt_mcp/utils/messages.py` - Consistent message formatting
-- `session_mgmt_mcp/utils/tool_wrapper.py` - Generic tool execution wrappers
+- `session_buddy/utils/error_handlers.py` - Generic error handling
+- `session_buddy/utils/database_helpers.py` - Database resolution utilities
+- `session_buddy/utils/messages.py` - Consistent message formatting
+- `session_buddy/utils/tool_wrapper.py` - Generic tool execution wrappers
 
 **Estimated Lines**: +200 lines of reusable utilities
 
@@ -361,7 +361,7 @@ pytest tests/unit/test_memory_tools.py -v
 pytest
 
 # Check coverage
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # Verify no regressions
 pytest --durations=20

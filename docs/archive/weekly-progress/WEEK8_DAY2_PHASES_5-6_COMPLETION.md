@@ -105,7 +105,7 @@ def test_create_checkpoint_commit_message_format(self, tmp_git_repo: Path):
     readme.write_text("# Modified for checkpoint test\n")
 
     success, commit_hash, output = create_checkpoint_commit(
-        tmp_git_repo, "session-mgmt-mcp", 75
+        tmp_git_repo, "session-buddy", 75
     )
 
     assert success is True
@@ -121,7 +121,7 @@ def test_create_checkpoint_commit_message_format(self, tmp_git_repo: Path):
 
     commit_msg = result.stdout
     assert "checkpoint:" in commit_msg.lower()
-    assert "session-mgmt-mcp" in commit_msg
+    assert "session-buddy" in commit_msg
     assert "75/100" in commit_msg
 ```
 
@@ -198,8 +198,8 @@ Test core session management functionality for session initialization, state tra
 **Strategic Mocking at Module Boundaries**:
 
 ```python
-@patch("session_mgmt_mcp.utils.git_operations.create_checkpoint_commit")
-@patch("session_mgmt_mcp.server.calculate_quality_score")
+@patch("session_buddy.utils.git_operations.create_checkpoint_commit")
+@patch("session_buddy.server.calculate_quality_score")
 async def test_checkpoint_session_creates_commit(
     self, mock_server_calc: AsyncMock, mock_commit: Mock, tmp_git_repo: Path
 ):
@@ -279,8 +279,8 @@ async def test_read_previous_session_info_with_valid_file(self, tmp_path: Path):
 
 #### 4. Mock Patch AttributeError
 
-**Problem**: Patched wrong module path `session_mgmt_mcp.core.session_manager.calculate_quality_score_v2`.
-**Fix**: Changed to `session_mgmt_mcp.server.calculate_quality_score` since method delegates to server.
+**Problem**: Patched wrong module path `session_buddy.core.session_manager.calculate_quality_score_v2`.
+**Fix**: Changed to `session_buddy.server.calculate_quality_score` since method delegates to server.
 
 #### 5. Return Type Mismatch
 
@@ -382,8 +382,8 @@ assert "final_quality_score" in result.get("summary", {})
 
 ### Read (for context)
 
-- `session_mgmt_mcp/core/session_manager.py` (to understand API and return types)
-- `session_mgmt_mcp/utils/git_operations.py` (to understand git operation implementations)
+- `session_buddy/core/session_manager.py` (to understand API and return types)
+- `session_buddy/utils/git_operations.py` (to understand git operation implementations)
 
 ## Conclusion
 

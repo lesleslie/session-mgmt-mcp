@@ -91,7 +91,7 @@ ______________________________________________________________________
 
 ### 1. ACBCacheStorage Class (254 lines)
 
-**Location:** `session_mgmt_mcp/serverless_mode.py:746-997`
+**Location:** `session_buddy/serverless_mode.py:746-997`
 
 **Key Methods:**
 
@@ -557,6 +557,6 @@ ______________________________________________________________________
 
 **Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Day 3 - Serverless Mode Refactoring
 **Status:** ✅ Complete - ACB Cache Integration Successful

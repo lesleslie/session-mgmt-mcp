@@ -201,7 +201,7 @@ async def fast_temp_db():
 ```toml
 [tool.pytest]
 addopts = [
-    "--cov=session_mgmt_mcp",
+    "--cov=session_buddy",
     "--cov-report=term",
     "--tb=short",
     "--durations=20",  # Show 20 slowest tests
@@ -301,7 +301,7 @@ pytest tests/unit/test_optimized_examples.py -v
 pytest --durations=20
 
 # With coverage
-pytest -n auto --cov=session_mgmt_mcp --cov-report=term-missing
+pytest -n auto --cov=session_buddy --cov-report=term-missing
 ```
 
 ### Writing Optimized Tests

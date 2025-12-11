@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.utils.logging_utils import SessionLogger
+from session_buddy.utils.logging_utils import SessionLogger
 
 
 @pytest.fixture

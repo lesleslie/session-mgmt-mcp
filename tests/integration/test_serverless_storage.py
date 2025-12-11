@@ -12,11 +12,11 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.adapters.serverless_storage_adapter import (
+from session_buddy.adapters.serverless_storage_adapter import (
     ServerlessStorageAdapter,
     create_serverless_storage,
 )
-from session_mgmt_mcp.backends.base import SessionState
+from session_buddy.backends.base import SessionState
 
 
 class TestServerlessStorageAdapterBasics:

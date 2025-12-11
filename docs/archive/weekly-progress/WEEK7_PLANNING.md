@@ -66,10 +66,10 @@ claude_dir = depends.get_sync(CLAUDE_DIR_KEY)  # ❌ String key "paths.claude_di
 
 According to ACB specialist review (4/10 score):
 
-1. **`session_mgmt_mcp/di/__init__.py`** - Uses string keys for paths
-1. **`session_mgmt_mcp/utils/instance_managers.py`** - Mixed key types
-1. **`session_mgmt_mcp/server_core.py`** - Manual singleton management
-1. **`session_mgmt_mcp/core.py`** (SessionLifecycleManager) - Manual initialization
+1. **`session_buddy/di/__init__.py`** - Uses string keys for paths
+1. **`session_buddy/utils/instance_managers.py`** - Mixed key types
+1. **`session_buddy/server_core.py`** - Manual singleton management
+1. **`session_buddy/core.py`** (SessionLifecycleManager) - Manual initialization
 
 ______________________________________________________________________
 
@@ -102,7 +102,7 @@ config = depends.get_sync(PathsConfig)
 **1. Create Type-Safe Configuration Class**
 
 ```python
-# session_mgmt_mcp/di/config.py
+# session_buddy/di/config.py
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -131,7 +131,7 @@ class SessionPaths:
 **2. Update DI Configuration**
 
 ```text
-# session_mgmt_mcp/di/__init__.py
+# session_buddy/di/__init__.py
 def configure(*, force: bool = False) -> None:
     """Register default dependencies for the session-mgmt MCP stack."""
     global _configured
@@ -154,7 +154,7 @@ def configure(*, force: bool = False) -> None:
 **3. Update Instance Managers**
 
 ```text
-# session_mgmt_mcp/utils/instance_managers.py
+# session_buddy/utils/instance_managers.py
 def _resolve_claude_dir() -> Path:
     """Resolve claude directory via type-safe DI."""
     with suppress(KeyError, AttributeError, RuntimeError):
@@ -176,7 +176,7 @@ ______________________________________________________________________
 
 **Tasks:**
 
-1. Create `session_mgmt_mcp/di/config.py` with `SessionPaths` dataclass
+1. Create `session_buddy/di/config.py` with `SessionPaths` dataclass
 1. Add comprehensive unit tests for `SessionPaths`
 1. Verify frozen dataclass immutability
 1. Test `from_home()` factory method with various inputs
@@ -188,7 +188,7 @@ ______________________________________________________________________
 
 **Tasks:**
 
-1. Update `session_mgmt_mcp/di/__init__.py` to use `SessionPaths`
+1. Update `session_buddy/di/__init__.py` to use `SessionPaths`
 1. Replace all `CLAUDE_DIR_KEY` references with `SessionPaths`
 1. Update `_register_*` functions to accept `Path` parameters
 1. Update tests to use new pattern
@@ -443,11 +443,11 @@ ______________________________________________________________________
 - **ACB Framework Documentation:** `/Users/les/Projects/acb/`
 - **Week 6 Summary:** `docs/WEEK6_SUMMARY.md`
 - **Agent Reviews:** Week 5 end-of-phase reviews
-- **Current DI Code:** `session_mgmt_mcp/di/__init__.py`
+- **Current DI Code:** `session_buddy/di/__init__.py`
 
 ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Planning (Day 0)

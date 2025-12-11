@@ -27,7 +27,7 @@ class TestDetectOtherMCPServers:
             # Mock successful crackerjack --version
             mock_run.return_value = Mock(returncode=0)
 
-            from session_mgmt_mcp.server_core import _detect_other_mcp_servers
+            from session_buddy.server_core import _detect_other_mcp_servers
 
             result = _detect_other_mcp_servers()
 
@@ -42,7 +42,7 @@ class TestDetectOtherMCPServers:
             # Mock FileNotFoundError (crackerjack not in PATH)
             mock_run.side_effect = FileNotFoundError()
 
-            from session_mgmt_mcp.server_core import _detect_other_mcp_servers
+            from session_buddy.server_core import _detect_other_mcp_servers
 
             result = _detect_other_mcp_servers()
 
@@ -54,7 +54,7 @@ class TestDetectOtherMCPServers:
             # Mock failed command
             mock_run.return_value = Mock(returncode=1)
 
-            from session_mgmt_mcp.server_core import _detect_other_mcp_servers
+            from session_buddy.server_core import _detect_other_mcp_servers
 
             result = _detect_other_mcp_servers()
 
@@ -66,7 +66,7 @@ class TestDetectOtherMCPServers:
             # Mock timeout
             mock_run.side_effect = subprocess.TimeoutExpired("crackerjack", 5)
 
-            from session_mgmt_mcp.server_core import _detect_other_mcp_servers
+            from session_buddy.server_core import _detect_other_mcp_servers
 
             result = _detect_other_mcp_servers()
 
@@ -78,7 +78,7 @@ class TestGenerateServerGuidance:
 
     def test_generate_guidance_with_crackerjack(self) -> None:
         """Should provide guidance when crackerjack is detected."""
-        from session_mgmt_mcp.server_core import _generate_server_guidance
+        from session_buddy.server_core import _generate_server_guidance
 
         detected = {"crackerjack": True}
         guidance = _generate_server_guidance(detected)
@@ -90,7 +90,7 @@ class TestGenerateServerGuidance:
 
     def test_generate_guidance_without_crackerjack(self) -> None:
         """Should provide basic guidance when no servers detected."""
-        from session_mgmt_mcp.server_core import _generate_server_guidance
+        from session_buddy.server_core import _generate_server_guidance
 
         detected = {"crackerjack": False}
         guidance = _generate_server_guidance(detected)
@@ -111,7 +111,7 @@ class TestAnalyzeProjectContext:
         (tmp_path / "tests").mkdir()
         (tmp_path / "README.md").write_text("# Test Project\n")
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -126,7 +126,7 @@ class TestAnalyzeProjectContext:
     @pytest.mark.asyncio
     async def test_analyze_minimal_project(self, tmp_path: Path) -> None:
         """Should handle minimal project with only directory."""
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -145,7 +145,7 @@ class TestAnalyzeProjectContext:
         (tmp_path / "uv.lock").write_text("# UV lock file\n")
         (tmp_path / "requirements.txt").write_text("fastmcp>=2.0\n")
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -157,7 +157,7 @@ class TestAnalyzeProjectContext:
         """Should detect .mcp.json configuration."""
         (tmp_path / ".mcp.json").write_text('{"mcpServers": {}}\n')
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -168,7 +168,7 @@ class TestAnalyzeProjectContext:
         """Should return all False for nonexistent directory."""
         nonexistent = tmp_path / "does_not_exist"
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(nonexistent)
 
@@ -184,7 +184,7 @@ class TestAnalyzeProjectContext:
         test_dir.chmod(0o000)  # No permissions
 
         try:
-            from session_mgmt_mcp.server_core import analyze_project_context
+            from session_buddy.server_core import analyze_project_context
 
             # Mock the .exists() check to raise PermissionError
             with patch.object(
@@ -204,7 +204,7 @@ class TestAnalyzeProjectContext:
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "tests").mkdir()
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -216,7 +216,7 @@ class TestAnalyzeProjectContext:
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs" / "index.md").write_text("# Documentation\n")
 
-        from session_mgmt_mcp.server_core import analyze_project_context
+        from session_buddy.server_core import analyze_project_context
 
         result = await analyze_project_context(tmp_path)
 
@@ -233,12 +233,12 @@ class TestAutoSetupGitWorkingDirectory:
         git_dir = tmp_path / ".git"
         git_dir.mkdir()
 
-        from session_mgmt_mcp.utils.logging import SessionLogger
+        from session_buddy.utils.logging import SessionLogger
 
         logger = SessionLogger(tmp_path / "logs")
 
-        with patch("session_mgmt_mcp.server_core.Path.cwd", return_value=tmp_path):
-            from session_mgmt_mcp.server_core import auto_setup_git_working_directory
+        with patch("session_buddy.server_core.Path.cwd", return_value=tmp_path):
+            from session_buddy.server_core import auto_setup_git_working_directory
 
             # Should not raise error
             await auto_setup_git_working_directory(logger)
@@ -246,12 +246,12 @@ class TestAutoSetupGitWorkingDirectory:
     @pytest.mark.asyncio
     async def test_auto_setup_not_in_git_repo(self, tmp_path: Path) -> None:
         """Should handle non-git directory gracefully."""
-        from session_mgmt_mcp.utils.logging import SessionLogger
+        from session_buddy.utils.logging import SessionLogger
 
         logger = SessionLogger(tmp_path / "logs")
 
-        with patch("session_mgmt_mcp.server_core.Path.cwd", return_value=tmp_path):
-            from session_mgmt_mcp.server_core import auto_setup_git_working_directory
+        with patch("session_buddy.server_core.Path.cwd", return_value=tmp_path):
+            from session_buddy.server_core import auto_setup_git_working_directory
 
             # Should not raise error even without .git
             await auto_setup_git_working_directory(logger)
@@ -264,13 +264,13 @@ class TestFormatConversationSummary:
     async def test_format_empty_conversation(self) -> None:
         """Should handle empty conversation history."""
         with patch(
-            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+            "session_buddy.reflection_tools.get_reflection_database"
         ) as mock_db:
             mock_reflection = MagicMock()
             mock_reflection.search_conversations.return_value = []
             mock_db.return_value = mock_reflection
 
-            from session_mgmt_mcp.server_core import _format_conversation_summary
+            from session_buddy.server_core import _format_conversation_summary
 
             summary = await _format_conversation_summary()
 
@@ -282,7 +282,7 @@ class TestFormatConversationSummary:
     async def test_format_conversation_with_results(self) -> None:
         """Should format conversation results."""
         with patch(
-            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+            "session_buddy.reflection_tools.get_reflection_database"
         ) as mock_db:
             # Mock conversation results
             mock_reflection = MagicMock()
@@ -292,7 +292,7 @@ class TestFormatConversationSummary:
             ]
             mock_db.return_value = mock_reflection
 
-            from session_mgmt_mcp.server_core import _format_conversation_summary
+            from session_buddy.server_core import _format_conversation_summary
 
             summary = await _format_conversation_summary()
 
@@ -309,12 +309,12 @@ class TestFormatConversationSummary:
     async def test_format_conversation_database_unavailable(self) -> None:
         """Should handle missing reflection database."""
         with patch(
-            "session_mgmt_mcp.reflection_tools.get_reflection_database"
+            "session_buddy.reflection_tools.get_reflection_database"
         ) as mock_db:
             # Mock database import error
             mock_db.side_effect = ImportError("Database not available")
 
-            from session_mgmt_mcp.server_core import _format_conversation_summary
+            from session_buddy.server_core import _format_conversation_summary
 
             summary = await _format_conversation_summary()
 

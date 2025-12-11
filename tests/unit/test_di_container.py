@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from acb.depends import depends
-from session_mgmt_mcp.core import SessionLifecycleManager
-from session_mgmt_mcp.core.permissions import SessionPermissionsManager
-from session_mgmt_mcp.di import SessionPaths, configure, reset
-from session_mgmt_mcp.utils.logging import SessionLogger
+from session_buddy.core import SessionLifecycleManager
+from session_buddy.core.permissions import SessionPermissionsManager
+from session_buddy.di import SessionPaths, configure, reset
+from session_buddy.utils.logging import SessionLogger
 
 if TYPE_CHECKING:
     import pytest

@@ -14,7 +14,7 @@ from typing import get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
-from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+from session_buddy.crackerjack_integration import CrackerjackIntegration
 
 
 class TestCommandRunnerProtocol:
@@ -161,7 +161,7 @@ class TestAsyncMethodCompatibility:
 
     async def test_execute_crackerjack_command_return_type(self):
         """Test async method returns CrackerjackResult."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         integration = CrackerjackIntegration()
 
@@ -243,7 +243,7 @@ class TestMCPToolCompatibility:
         """Test that integration can be imported in MCP tools."""
         # This test catches import-time errors
         try:
-            from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+            from session_buddy.crackerjack_integration import CrackerjackIntegration
 
             integration = CrackerjackIntegration()
             assert integration is not None
@@ -252,7 +252,7 @@ class TestMCPToolCompatibility:
 
     def test_methods_dont_raise_attribute_errors(self):
         """Test critical methods exist and don't raise AttributeError."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+        from session_buddy.crackerjack_integration import CrackerjackIntegration
 
         integration = CrackerjackIntegration()
 
@@ -332,7 +332,7 @@ class TestErrorHandlingProtocol:
 
     async def test_async_method_error_handling(self):
         """Test async method handles errors appropriately."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         integration = CrackerjackIntegration()
 
@@ -353,7 +353,7 @@ class TestErrorHandlingProtocol:
 
     async def test_async_method_general_exception_handling(self):
         """Test async method handles general exceptions."""
-        from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+        from session_buddy.crackerjack_integration import CrackerjackResult
 
         integration = CrackerjackIntegration()
 
@@ -482,7 +482,7 @@ class TestRegressionPreventionTests:
 
         # Async method should return CrackerjackResult
         async def test_async():
-            from session_mgmt_mcp.crackerjack_integration import CrackerjackResult
+            from session_buddy.crackerjack_integration import CrackerjackResult
 
             with patch("asyncio.create_subprocess_exec") as mock_create:
                 mock_process = Mock()

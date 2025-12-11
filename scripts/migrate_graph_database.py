@@ -211,7 +211,7 @@ async def _handle_dry_run_graph(entities, relationships):
 
 async def _migrate_to_new_database(entities, relationships, verbose: bool) -> None:
     """Write data to the new database using the adapter."""
-    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    from session_buddy.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter,
     )
 
@@ -279,7 +279,7 @@ async def _migrate_to_new_database(entities, relationships, verbose: bool) -> No
 
 async def _validate_graph_migration(entities, relationships, verbose: bool) -> None:
     """Validate the graph migration."""
-    from session_mgmt_mcp.adapters.knowledge_graph_adapter import (
+    from session_buddy.adapters.knowledge_graph_adapter import (
         KnowledgeGraphDatabaseAdapter,
     )
 

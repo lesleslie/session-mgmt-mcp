@@ -159,13 +159,13 @@ pytest tests/unit/test_reflection_database_comprehensive.py -x --tb=short
 
 ```bash
 # Run full test suite and measure new coverage
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # Create tests for:
-# - session_mgmt_mcp/server.py
-# - session_mgmt_mcp/tools/session_tools.py
-# - session_mgmt_mcp/tools/memory_tools.py
-# - session_mgmt_mcp/core/session_manager.py
+# - session_buddy/server.py
+# - session_buddy/tools/session_tools.py
+# - session_buddy/tools/memory_tools.py
+# - session_buddy/core/session_manager.py
 ```
 
 ### 3. **Medium-term (Next 8 hours)**
@@ -182,7 +182,7 @@ pytest tests/unit/test_reflection_database_comprehensive.py -v
 
 # Run with coverage
 pytest tests/unit/test_reflection_database_comprehensive.py \
-  --cov=session_mgmt_mcp \
+  --cov=session_buddy \
   --cov-report=term-missing
 
 # Run specific failing test
@@ -194,7 +194,7 @@ pytest tests/unit/test_*_comprehensive.py \
   tests/unit/test_*_property_based.py -v
 
 # Quick coverage check
-pytest --cov=session_mgmt_mcp -q
+pytest --cov=session_buddy -q
 ```
 
 ## Key Metrics

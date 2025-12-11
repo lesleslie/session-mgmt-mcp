@@ -16,7 +16,7 @@ Day 3 addressed the bevy async event loop limitation discovered during Day 2. Wh
 
 **Files Modified:**
 
-- `session_mgmt_mcp/utils/instance_managers.py`
+- `session_buddy/utils/instance_managers.py`
 - `tests/unit/test_instance_managers.py`
 
 **Problem:**
@@ -79,7 +79,7 @@ test_serverless_manager_uses_config PASSED
 
 ### ✅ Fixed Module-Level DI Resolution
 
-**File Modified:** `session_mgmt_mcp/tools/session_tools.py`
+**File Modified:** `session_buddy/tools/session_tools.py`
 
 **Problem:**
 The `_get_session_manager()` function was called at module level (line 82), triggering `depends.get_sync()` during import:
@@ -107,7 +107,7 @@ This caused 4 test files to fail during collection:
 ```
 ERROR collecting tests/unit/test_agent_analyzer.py
 bevy.injection_types.DependencyResolutionError: No handler found that can handle dependency:
-<class 'session_mgmt_mcp.core.session_manager.SessionLifecycleManager'>
+<class 'session_buddy.core.session_manager.SessionLifecycleManager'>
 ```
 
 **Solution:**
@@ -245,13 +245,13 @@ ______________________________________________________________________
 
 ### Files Modified (Production Code)
 
-1. **`session_mgmt_mcp/utils/instance_managers.py`** (169 lines)
+1. **`session_buddy/utils/instance_managers.py`** (169 lines)
 
    - Updated 5 async functions to use direct container access
    - Added comprehensive docstrings explaining the bevy limitation
    - Removed problematic `depends.get_sync()` calls
 
-1. **`session_mgmt_mcp/tools/session_tools.py`** (1 function, ~15 lines)
+1. **`session_buddy/tools/session_tools.py`** (1 function, ~15 lines)
 
    - Updated `_get_session_manager()` to use direct container access
    - Added import for `get_container` from bevy
@@ -285,13 +285,13 @@ ______________________________________________________________________
 
 ### Production Code (2 files)
 
-1. **`session_mgmt_mcp/utils/instance_managers.py`**
+1. **`session_buddy/utils/instance_managers.py`**
 
    - Lines 28-169: Updated all 5 async functions
    - Added `from bevy import get_container` import
    - Added comprehensive docstrings
 
-1. **`session_mgmt_mcp/tools/session_tools.py`**
+1. **`session_buddy/tools/session_tools.py`**
 
    - Lines 17-18: Added `get_container` import
    - Lines 71-87: Updated `_get_session_manager()` function
@@ -428,5 +428,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Day 3 - Bevy Async Event Loop Fix ✅ Core Objectives Complete

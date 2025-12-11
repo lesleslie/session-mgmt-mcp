@@ -5,8 +5,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from session_mgmt_mcp.utils.logging import SessionLogger
-from session_mgmt_mcp.worktree_manager import WorktreeManager
+from session_buddy.utils.logging import SessionLogger
+from session_buddy.worktree_manager import WorktreeManager
 
 
 class TestWorktreeManagerInitialization:
@@ -29,7 +29,7 @@ class TestWorktreeManagerInitialization:
 class TestWorktreeManagerListWorktrees:
     """Test WorktreeManager list_worktrees method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_list_worktrees_non_git_repo(self, mock_is_git_repo):
         """Test list_worktrees with non-git repository."""
         mock_is_git_repo.return_value = False
@@ -43,9 +43,9 @@ class TestWorktreeManagerListWorktrees:
             assert result["error"] == "Not a git repository"
             assert result["worktrees"] == []
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.list_worktrees")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.list_worktrees")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_list_worktrees_success(
         self, mock_get_worktree_info, mock_list_worktrees, mock_is_git_repo
     ):
@@ -76,14 +76,14 @@ class TestWorktreeManagerListWorktrees:
             assert "current_worktree" in result
             assert "total_count" in result
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_list_worktrees_exception(self, mock_is_git_repo):
         """Test list_worktrees with exception."""
         mock_is_git_repo.return_value = True
 
         manager = WorktreeManager()
         with patch(
-            "session_mgmt_mcp.worktree_manager.list_worktrees",
+            "session_buddy.worktree_manager.list_worktrees",
             side_effect=Exception("Test error"),
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -97,7 +97,7 @@ class TestWorktreeManagerListWorktrees:
 class TestWorktreeManagerCreateWorktree:
     """Test WorktreeManager create_worktree method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_create_worktree_non_git_repo(self, mock_is_git_repo):
         """Test create_worktree with non-git repository."""
         mock_is_git_repo.return_value = False
@@ -113,7 +113,7 @@ class TestWorktreeManagerCreateWorktree:
             assert result["success"] is False
             assert "not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_create_worktree_target_exists(self, mock_is_git_repo):
         """Test create_worktree when target path already exists."""
         mock_is_git_repo.return_value = True
@@ -130,9 +130,9 @@ class TestWorktreeManagerCreateWorktree:
             assert result["success"] is False
             assert "already exists" in result["error"]
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_create_worktree_success(
         self, mock_get_worktree_info, mock_subprocess_run, mock_is_git_repo
     ):
@@ -162,7 +162,7 @@ class TestWorktreeManagerCreateWorktree:
             assert result["worktree_path"] == str(new_path)
             assert result["branch"] == "feature-branch"
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_create_worktree_subprocess_error(
         self, mock_subprocess_run, mock_is_git_repo
@@ -186,7 +186,7 @@ class TestWorktreeManagerCreateWorktree:
             assert result["success"] is False
             assert "Git error" in result["error"]
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_create_worktree_general_exception(
         self, mock_subprocess_run, mock_is_git_repo
@@ -206,9 +206,9 @@ class TestWorktreeManagerCreateWorktree:
             assert result["success"] is False
             assert "Unexpected error" in result["error"]
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_create_worktree_with_create_branch(
         self, mock_get_worktree_info, mock_subprocess_run, mock_is_git_repo
     ):
@@ -245,7 +245,7 @@ class TestWorktreeManagerCreateWorktree:
 class TestWorktreeManagerRemoveWorktree:
     """Test WorktreeManager remove_worktree method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_remove_worktree_non_git_repo(self, mock_is_git_repo):
         """Test remove_worktree with non-git repository."""
         mock_is_git_repo.return_value = False
@@ -259,7 +259,7 @@ class TestWorktreeManagerRemoveWorktree:
             assert result["success"] is False
             assert "not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_remove_worktree_success(self, mock_subprocess_run, mock_is_git_repo):
         """Test remove_worktree with successful operation."""
@@ -275,7 +275,7 @@ class TestWorktreeManagerRemoveWorktree:
             assert result["success"] is True
             assert result["removed_path"] == str(worktree_path)
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_remove_worktree_with_force(
         self, mock_subprocess_run, mock_is_git_repo
@@ -297,7 +297,7 @@ class TestWorktreeManagerRemoveWorktree:
 
             assert result["success"] is True
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_remove_worktree_subprocess_error(
         self, mock_subprocess_run, mock_is_git_repo
@@ -323,7 +323,7 @@ class TestWorktreeManagerRemoveWorktree:
 class TestWorktreeManagerPruneWorktrees:
     """Test WorktreeManager prune_worktrees method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_prune_worktrees_non_git_repo(self, mock_is_git_repo):
         """Test prune_worktrees with non-git repository."""
         mock_is_git_repo.return_value = False
@@ -336,7 +336,7 @@ class TestWorktreeManagerPruneWorktrees:
             assert result["success"] is False
             assert "not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_prune_worktrees_success(self, mock_subprocess_run, mock_is_git_repo):
         """Test prune_worktrees with successful operation."""
@@ -356,7 +356,7 @@ class TestWorktreeManagerPruneWorktrees:
             assert result["success"] is True
             assert result["pruned_count"] == 2
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_prune_worktrees_no_pruning_needed(
         self, mock_subprocess_run, mock_is_git_repo
@@ -374,7 +374,7 @@ class TestWorktreeManagerPruneWorktrees:
             assert result["pruned_count"] == 0
             assert "No worktrees to prune" in result["output"]
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     @patch("subprocess.run")
     async def test_prune_worktrees_subprocess_error(
         self, mock_subprocess_run, mock_is_git_repo
@@ -399,7 +399,7 @@ class TestWorktreeManagerPruneWorktrees:
 class TestWorktreeManagerGetWorktreeStatus:
     """Test WorktreeManager get_worktree_status method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_get_worktree_status_non_git_repo(self, mock_is_git_repo):
         """Test get_worktree_status with non-git repository."""
         mock_is_git_repo.return_value = False
@@ -412,8 +412,8 @@ class TestWorktreeManagerGetWorktreeStatus:
             assert result["success"] is False
             assert "not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_get_worktree_status_no_worktree_info(
         self, mock_get_worktree_info, mock_is_git_repo
     ):
@@ -429,9 +429,9 @@ class TestWorktreeManagerGetWorktreeStatus:
             assert result["success"] is False
             assert "worktree info" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
-    @patch("session_mgmt_mcp.worktree_manager.list_worktrees")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.list_worktrees")
     async def test_get_worktree_status_success(
         self, mock_list_worktrees, mock_get_worktree_info, mock_is_git_repo
     ):
@@ -541,7 +541,7 @@ class TestWorktreeManagerSessionCheck:
 class TestWorktreeManagerSwitchContext:
     """Test WorktreeManager switch_worktree_context method."""
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_switch_worktree_context_source_not_git_repo(self, mock_is_git_repo):
         """Test switch_worktree_context with non-git source path."""
         mock_is_git_repo.side_effect = [False, True]  # Source not git, target is git
@@ -558,7 +558,7 @@ class TestWorktreeManagerSwitchContext:
             assert result["success"] is False
             assert "source path is not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.is_git_repository")
     async def test_switch_worktree_context_target_not_git_repo(self, mock_is_git_repo):
         """Test switch_worktree_context with non-git target path."""
         mock_is_git_repo.side_effect = [True, False]  # Source is git, target not git
@@ -578,8 +578,8 @@ class TestWorktreeManagerSwitchContext:
             assert result["success"] is False
             assert "target path is not a git repository" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_switch_worktree_context_worktree_info_failure(
         self, mock_get_worktree_info, mock_is_git_repo
     ):
@@ -603,8 +603,8 @@ class TestWorktreeManagerSwitchContext:
             assert result["success"] is False
             assert "worktree information" in result["error"].lower()
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     @patch("os.chdir")
     async def test_switch_worktree_context_success(
         self, mock_chdir, mock_get_worktree_info, mock_is_git_repo
@@ -646,8 +646,8 @@ class TestWorktreeManagerSwitchContext:
                     assert "switched" in result["message"].lower()
                     mock_chdir.assert_called_once_with(to_path)
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     @patch("os.chdir")
     async def test_switch_worktree_context_session_preservation_failure(
         self, mock_chdir, mock_get_worktree_info, mock_is_git_repo
@@ -690,8 +690,8 @@ class TestWorktreeManagerSwitchContext:
                 assert "session preservation failed" in result["message"].lower()
                 mock_chdir.assert_called_once_with(to_path)
 
-    @patch("session_mgmt_mcp.worktree_manager.is_git_repository")
-    @patch("session_mgmt_mcp.worktree_manager.get_worktree_info")
+    @patch("session_buddy.worktree_manager.is_git_repository")
+    @patch("session_buddy.worktree_manager.get_worktree_info")
     async def test_switch_worktree_context_general_exception(
         self, mock_get_worktree_info, mock_is_git_repo
     ):

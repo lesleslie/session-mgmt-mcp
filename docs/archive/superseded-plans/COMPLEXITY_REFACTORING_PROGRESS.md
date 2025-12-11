@@ -11,7 +11,7 @@
 
 ### 1. `OllamaProvider::is_available()` (16 → ~10)
 
-**File**: `session_mgmt_mcp/llm_providers.py:699`
+**File**: `session_buddy/llm_providers.py:699`
 **Original Complexity**: 16
 **Strategy**: Extract HTTP client logic into separate methods
 
@@ -29,7 +29,7 @@
 
 ### 2. `OllamaProvider::stream_generate()` (17 → ~10)
 
-**File**: `session_mgmt_mcp/llm_providers.py:641`
+**File**: `session_buddy/llm_providers.py:641`
 **Original Complexity**: 17
 **Strategy**: Extract streaming logic into separate async generators
 
@@ -47,7 +47,7 @@
 
 ### 3. `_get_knowledge_graph_stats_impl()` (16 → ~8)
 
-**File**: `session_mgmt_mcp/tools/knowledge_graph_tools.py:374`
+**File**: `session_buddy/tools/knowledge_graph_tools.py:374`
 **Original Complexity**: 16
 **Strategy**: Extract formatting logic into pure functions
 
@@ -65,7 +65,7 @@
 
 ### 4. `cleanup_http_clients()` (17 → ~10)
 
-**File**: `session_mgmt_mcp/resource_cleanup.py:82`
+**File**: `session_buddy/resource_cleanup.py:82`
 **Original Complexity**: 17
 **Strategy**: Extract adapter-level and client-level close methods
 
@@ -83,7 +83,7 @@
 
 ### 5. `_search_entities_impl()` (17 → ~10)
 
-**File**: `session_mgmt_mcp/tools/knowledge_graph_tools.py:207`
+**File**: `session_buddy/tools/knowledge_graph_tools.py:207`
 **Original Complexity**: 17
 **Strategy**: Extract result formatting into pure function
 
@@ -100,7 +100,7 @@
 
 ### 6. `validate_llm_api_keys_at_startup()` (20 → ~10)
 
-**File**: `session_mgmt_mcp/llm_providers.py:1127`
+**File**: `session_buddy/llm_providers.py:1127`
 **Original Complexity**: 20
 **Strategy**: Extract per-provider logic and validation strategies
 
@@ -119,7 +119,7 @@
 
 ### 7. `ShutdownManager::shutdown()` (21 → ~10)
 
-**File**: `session_mgmt_mcp/shutdown_manager.py:226`
+**File**: `session_buddy/shutdown_manager.py:226`
 **Original Complexity**: 21
 **Strategy**: Extract task execution, error handling, and finalization
 
@@ -138,7 +138,7 @@
 
 ### 8. `_reflection_stats_impl()` (21 → ~8)
 
-**File**: `session_mgmt_mcp/tools/memory_tools.py:473`
+**File**: `session_buddy/tools/memory_tools.py:473`
 **Original Complexity**: 21
 **Strategy**: Extract format-specific stat processing
 
@@ -156,7 +156,7 @@
 
 ### 9. `server.py::main()` (24 → ~10)
 
-**File**: `session_mgmt_mcp/server.py:439`
+**File**: `session_buddy/server.py:439`
 **Original Complexity**: 24
 **Strategy**: Extract initialization phases and UI display logic
 

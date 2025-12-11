@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 import duckdb
-from session_mgmt_mcp.memory.schema_v2 import SCHEMA_V2_SQL
+from session_buddy.memory.schema_v2 import SCHEMA_V2_SQL
 
 
 def test_schema_v2_tables_create(tmp_path: t.Any) -> None:

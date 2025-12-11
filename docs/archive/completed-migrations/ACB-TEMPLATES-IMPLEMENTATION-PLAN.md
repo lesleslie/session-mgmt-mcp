@@ -491,7 +491,7 @@ python -m pytest tests/adapters/templates/ -v
 ### 4. Use in Session-Mgmt-MCP
 
 ```bash
-cd /Users/les/Projects/session-mgmt-mcp
+cd /Users/les/Projects/session-buddy
 # Update pyproject.toml to use local ACB
 uv add --editable /Users/les/Projects/acb
 ```
@@ -549,7 +549,7 @@ ______________________________________________________________________
 
    - Update dependency to ACB 0.26.0
    - Begin Phase 3.1 implementation
-   - Create session-mgmt-mcp templates
+   - Create session-buddy templates
 
 1. **Optional: Notify FastBlocks**
 

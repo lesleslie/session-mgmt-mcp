@@ -30,7 +30,7 @@ ______________________________________________________________________
 
 1. **Add Deprecation Warnings to Constants** (~30 minutes)
 
-   - File: `session_mgmt_mcp/di/constants.py`
+   - File: `session_buddy/di/constants.py`
    - Add `warnings.warn()` calls for `CLAUDE_DIR_KEY`, `LOGS_DIR_KEY`, `COMMANDS_DIR_KEY`
    - Suggest migration to `SessionPaths` in warning messages
 
@@ -169,5 +169,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 Days 4-5 Planning

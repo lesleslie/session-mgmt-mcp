@@ -17,8 +17,8 @@ Key features include:
 ## Project Structure
 
 ```
-session-mgmt-mcp/
-├── session_mgmt_mcp/           # Main Python package
+session-buddy/
+├── session_buddy/           # Main Python package
 │   ├── core/                   # Core session management functionality
 │   ├── tools/                  # Individual MCP tool implementations
 │   ├── utils/                  # Utility functions (git operations, logging)
@@ -46,8 +46,8 @@ session-mgmt-mcp/
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/lesleslie/session-mgmt-mcp.git
-   cd session-mgmt-mcp
+   git clone https://github.com/lesleslie/session-buddy.git
+   cd session-buddy
    ```
 
 1. Install dependencies using UV (recommended):
@@ -71,10 +71,10 @@ Add to your project's `.mcp.json` file:
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/path/to/session-mgmt-mcp"
+        "PYTHONPATH": "/path/to/session-buddy"
       }
     }
   }
@@ -87,7 +87,7 @@ Alternative using script entry point (if installed with pip/uv):
 {
   "mcpServers": {
     "session-mgmt": {
-      "command": "session-mgmt-mcp",
+      "command": "session-buddy",
       "args": [],
       "env": {}
     }
@@ -100,9 +100,9 @@ Alternative using script entry point (if installed with pip/uv):
 For development:
 
 ```bash
-python -m session_mgmt_mcp.server
+python -m session_buddy.server
 # or
-session-mgmt-mcp
+session-buddy
 ```
 
 ## Development Conventions
@@ -134,7 +134,7 @@ Install optional dependencies for semantic search:
 # Ensure all dependencies are installed (embeddings are included by default)
 uv sync
 # or
-pip install session-mgmt-mcp
+pip install session-buddy
 ```
 
 ## Available MCP Tools
@@ -197,19 +197,19 @@ uv run pytest
 Run tests with coverage:
 
 ```bash
-uv run pytest --cov=session_mgmt_mcp
+uv run pytest --cov=session_buddy
 ```
 
 ## Troubleshooting
 
 Common issues:
 
-- Memory not working: Ensure all dependencies are installed with `uv sync` or `pip install session-mgmt-mcp`
+- Memory not working: Ensure all dependencies are installed with `uv sync` or `pip install session-buddy`
 - Path errors: Ensure `cwd` and `PYTHONPATH` are set correctly in `.mcp.json`
 - Permission issues: Use `/session-mgmt:permissions` to trust operations
 
 Debug mode:
 
 ```bash
-PYTHONPATH=/path/to/session-mgmt-mcp python -m session_mgmt_mcp.server --debug
+PYTHONPATH=/path/to/session-buddy python -m session_buddy.server --debug
 ```

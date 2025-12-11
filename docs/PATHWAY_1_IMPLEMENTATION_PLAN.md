@@ -27,7 +27,7 @@ ______________________________________________________________________
 
 ## Overview
 
-Implement native Memori-inspired patterns (Conscious Agent, multi-provider entity extraction, memory categorization) within session-mgmt-mcp while preserving superior ONNX vector search and development workflow tools.
+Implement native Memori-inspired patterns (Conscious Agent, multi-provider entity extraction, memory categorization) within session-buddy while preserving superior ONNX vector search and development workflow tools.
 
 ### Key Features
 
@@ -123,7 +123,7 @@ ______________________________________________________________________
 
 ### Deliverables
 
-- `session_mgmt_mcp/config/feature_flags.py`
+- `session_buddy/config/feature_flags.py`
 - `docs/MIGRATION_STRATEGY.md`
 - `docs/API_KEY_SETUP.md`
 - Test plan document
@@ -265,8 +265,8 @@ else:
 
 ### Deliverables
 
-- `session_mgmt_mcp/memory/schema_v2.py`
-- `session_mgmt_mcp/memory/migration.py`
+- `session_buddy/memory/schema_v2.py`
+- `session_buddy/memory/migration.py`
 - `tests/unit/test_schema_v2.py`
 - `tests/unit/test_migration.py`
 
@@ -406,9 +406,9 @@ class Config:
 
 ### Deliverables
 
-- `session_mgmt_mcp/memory/entity_extractor.py`
-- `session_mgmt_mcp/memory/llm_providers.py`
-- `session_mgmt_mcp/memory/processed_memory.py` (Pydantic models)
+- `session_buddy/memory/entity_extractor.py`
+- `session_buddy/memory/llm_providers.py`
+- `session_buddy/memory/processed_memory.py` (Pydantic models)
 - `tests/unit/test_entity_extraction.py`
 - `tests/unit/test_providers.py`
 
@@ -497,8 +497,8 @@ priority_score = (
 
 ### Deliverables
 
-- `session_mgmt_mcp/memory/conscious_agent.py`
-- `session_mgmt_mcp/memory/priority_scoring.py`
+- `session_buddy/memory/conscious_agent.py`
+- `session_buddy/memory/priority_scoring.py`
 - `tests/unit/test_conscious_agent.py`
 - `tests/integration/test_memory_tiers.py`
 
@@ -572,8 +572,8 @@ CRITICAL_FILE_PATTERNS = {
 
 ### Deliverables
 
-- `session_mgmt_mcp/app_monitor.py` (enhanced)
-- `session_mgmt_mcp/memory/file_context.py`
+- `session_buddy/app_monitor.py` (enhanced)
+- `session_buddy/memory/file_context.py`
 - `tests/integration/test_filesystem_extraction.py`
 
 ______________________________________________________________________
@@ -873,7 +873,7 @@ async def rollback_migration(backup_id: str) -> dict:
 
 ### Automatic Migration
 
-session-mgmt-mcp will **automatically detect and migrate** your existing
+session-buddy will **automatically detect and migrate** your existing
 data when you upgrade to the new version. No manual intervention required.
 
 **What happens during migration:**

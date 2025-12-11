@@ -3,7 +3,7 @@
 **Version:** 1.0.0
 **Date:** 2025-10-28
 **Status:** Active - Week 3 Day 1
-**Scope:** mcp-common foundation + session-mgmt-mcp + 8 other MCP servers
+**Scope:** mcp-common foundation + session-buddy + 8 other MCP servers
 
 ______________________________________________________________________
 
@@ -65,7 +65,7 @@ ______________________________________________________________________
 **14 Test Collection Errors** blocking all validation:
 
 ```
-session_mgmt_mcp/tests/integration/test_monitoring.py::TestMonitoringTools
+session_buddy/tests/integration/test_monitoring.py::TestMonitoringTools
 ERROR - DI container missing SessionLogger registration
 ```
 
@@ -82,7 +82,7 @@ During Phase 2.7 DI refactoring, SessionLogger registration was moved but tests 
 
 ```python
 # OLD (working):
-from session_mgmt_mcp.server import SessionLogger
+from session_buddy.server import SessionLogger
 
 logger = SessionLogger()
 
@@ -241,14 +241,14 @@ ______________________________________________________________________
 
 **Week 11: Coverage Push**
 
-- [ ] session-mgmt-mcp: 60% → 75% coverage
+- [ ] session-buddy: 60% → 75% coverage
 - [ ] Add property-based tests (Hypothesis)
 - [ ] Add chaos tests (error injection)
 - [ ] Add performance regression tests
 
 **Week 12: Quality Refinement**
 
-- [ ] session-mgmt-mcp: 75% → 85%+ coverage
+- [ ] session-buddy: 75% → 85%+ coverage
 - [ ] Fix all mypy type errors (126 → 0)
 - [ ] Resolve all ruff lint warnings
 - [ ] Quality score: 70 → 85+
@@ -511,7 +511,7 @@ ______________________________________________________________________
 **This Plan Supersedes:**
 
 - `/Users/les/Projects/mcp-common/IMPLEMENTATION_PLAN.md` (10-week)
-- `/Users/les/Projects/session-mgmt-mcp/docs/SESSION-MGMT-MCP-COMPREHENSIVE-IMPROVEMENT-PLAN.md` (16-week)
+- `/Users/les/Projects/session-buddy/docs/SESSION-MGMT-MCP-COMPREHENSIVE-IMPROVEMENT-PLAN.md` (16-week)
 
 **Preserved Plans** (Still Valid):
 

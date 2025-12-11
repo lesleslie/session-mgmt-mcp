@@ -23,7 +23,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_openai_api_key_and_env(self) -> None:
         """Should return OpenAI API key and environment variable name."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test123"}):
             api_key, env_var = _get_provider_api_key_and_env("openai")
@@ -33,7 +33,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_openai_api_key_when_not_set(self) -> None:
         """Should return None when OpenAI API key not set."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         with patch.dict(os.environ, {}, clear=True):
             api_key, env_var = _get_provider_api_key_and_env("openai")
@@ -43,7 +43,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_gemini_api_key_from_gemini_api_key(self) -> None:
         """Should return Gemini API key from GEMINI_API_KEY."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-test-key"}):
             api_key, env_var = _get_provider_api_key_and_env("gemini")
@@ -53,7 +53,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_gemini_api_key_from_google_api_key(self) -> None:
         """Should return Gemini API key from GOOGLE_API_KEY when GEMINI_API_KEY not set."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         with patch.dict(os.environ, {"GOOGLE_API_KEY": "google-test-key"}, clear=True):
             api_key, env_var = _get_provider_api_key_and_env("gemini")
@@ -63,7 +63,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_gemini_api_key_prefers_gemini_api_key(self) -> None:
         """Should prefer GEMINI_API_KEY over GOOGLE_API_KEY when both set."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         with patch.dict(
             os.environ, {"GEMINI_API_KEY": "gemini-key", "GOOGLE_API_KEY": "google-key"}
@@ -75,7 +75,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_unknown_provider(self) -> None:
         """Should return None for unknown providers."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         api_key, env_var = _get_provider_api_key_and_env("unknown_provider")
 
@@ -84,7 +84,7 @@ class TestGetProviderApiKeyAndEnv:
 
     def test_get_ollama_provider(self) -> None:
         """Should return None for Ollama (local service, no API key)."""
-        from session_mgmt_mcp.llm_providers import _get_provider_api_key_and_env
+        from session_buddy.llm_providers import _get_provider_api_key_and_env
 
         api_key, env_var = _get_provider_api_key_and_env("ollama")
 
@@ -100,7 +100,7 @@ class TestGetConfiguredProviders:
 
     def test_get_configured_providers_with_openai(self) -> None:
         """Should return OpenAI when OPENAI_API_KEY is set."""
-        from session_mgmt_mcp.llm_providers import _get_configured_providers
+        from session_buddy.llm_providers import _get_configured_providers
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}, clear=True):
             providers = _get_configured_providers()
@@ -110,7 +110,7 @@ class TestGetConfiguredProviders:
 
     def test_get_configured_providers_with_gemini(self) -> None:
         """Should return Gemini when GEMINI_API_KEY is set."""
-        from session_mgmt_mcp.llm_providers import _get_configured_providers
+        from session_buddy.llm_providers import _get_configured_providers
 
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-test"}, clear=True):
             providers = _get_configured_providers()
@@ -120,7 +120,7 @@ class TestGetConfiguredProviders:
 
     def test_get_configured_providers_with_google_api_key(self) -> None:
         """Should return Gemini when GOOGLE_API_KEY is set."""
-        from session_mgmt_mcp.llm_providers import _get_configured_providers
+        from session_buddy.llm_providers import _get_configured_providers
 
         with patch.dict(os.environ, {"GOOGLE_API_KEY": "google-test"}, clear=True):
             providers = _get_configured_providers()
@@ -129,7 +129,7 @@ class TestGetConfiguredProviders:
 
     def test_get_configured_providers_with_both(self) -> None:
         """Should return both providers when both API keys are set."""
-        from session_mgmt_mcp.llm_providers import _get_configured_providers
+        from session_buddy.llm_providers import _get_configured_providers
 
         with patch.dict(
             os.environ, {"OPENAI_API_KEY": "sk-test", "GEMINI_API_KEY": "gemini-test"}
@@ -142,7 +142,7 @@ class TestGetConfiguredProviders:
 
     def test_get_configured_providers_with_none(self) -> None:
         """Should return empty list when no API keys are set."""
-        from session_mgmt_mcp.llm_providers import _get_configured_providers
+        from session_buddy.llm_providers import _get_configured_providers
 
         with patch.dict(os.environ, {}, clear=True):
             providers = _get_configured_providers()
@@ -159,7 +159,7 @@ class TestValidateProviderBasic:
 
     def test_validate_short_api_key_warns(self, capsys: pytest.CaptureFixture) -> None:
         """Should warn when API key is shorter than 16 characters."""
-        from session_mgmt_mcp.llm_providers import _validate_provider_basic
+        from session_buddy.llm_providers import _validate_provider_basic
 
         status = _validate_provider_basic("openai", "short-key")
 
@@ -172,7 +172,7 @@ class TestValidateProviderBasic:
         self, capsys: pytest.CaptureFixture
     ) -> None:
         """Should not warn when API key is long enough."""
-        from session_mgmt_mcp.llm_providers import _validate_provider_basic
+        from session_buddy.llm_providers import _validate_provider_basic
 
         status = _validate_provider_basic("openai", "sk-" + "x" * 40)
 
@@ -183,7 +183,7 @@ class TestValidateProviderBasic:
 
     def test_validate_returns_basic_check_status(self) -> None:
         """Should always return 'basic_check' status."""
-        from session_mgmt_mcp.llm_providers import _validate_provider_basic
+        from session_buddy.llm_providers import _validate_provider_basic
 
         status = _validate_provider_basic("gemini", "x" * 32)
 
@@ -200,15 +200,15 @@ class TestValidateProviderWithSecurity:
         self, capsys: pytest.CaptureFixture
     ) -> None:
         """Should validate API key using security module when available."""
-        from session_mgmt_mcp.llm_providers import SECURITY_AVAILABLE
+        from session_buddy.llm_providers import SECURITY_AVAILABLE
 
         if not SECURITY_AVAILABLE:
             pytest.skip("Security module not available")
 
-        from session_mgmt_mcp.llm_providers import _validate_provider_with_security
+        from session_buddy.llm_providers import _validate_provider_with_security
 
         # Mock validator to avoid actual API key validation
-        with patch("session_mgmt_mcp.llm_providers.APIKeyValidator") as mock_validator:
+        with patch("session_buddy.llm_providers.APIKeyValidator") as mock_validator:
             mock_instance = MagicMock()
             mock_instance.validate.return_value = None  # Success (no exception)
             mock_validator.return_value = mock_instance
@@ -223,14 +223,14 @@ class TestValidateProviderWithSecurity:
 
     def test_validate_with_security_failure_exits(self) -> None:
         """Should exit on validation failure."""
-        from session_mgmt_mcp.llm_providers import SECURITY_AVAILABLE
+        from session_buddy.llm_providers import SECURITY_AVAILABLE
 
         if not SECURITY_AVAILABLE:
             pytest.skip("Security module not available")
 
-        from session_mgmt_mcp.llm_providers import _validate_provider_with_security
+        from session_buddy.llm_providers import _validate_provider_with_security
 
-        with patch("session_mgmt_mcp.llm_providers.APIKeyValidator") as mock_validator:
+        with patch("session_buddy.llm_providers.APIKeyValidator") as mock_validator:
             mock_instance = MagicMock()
             mock_instance.validate.side_effect = ValueError("Invalid API key format")
             mock_validator.return_value = mock_instance
@@ -251,7 +251,7 @@ class TestValidateLlmApiKeysAtStartup:
         self, capsys: pytest.CaptureFixture
     ) -> None:
         """Should warn when no providers are configured."""
-        from session_mgmt_mcp.llm_providers import validate_llm_api_keys_at_startup
+        from session_buddy.llm_providers import validate_llm_api_keys_at_startup
 
         with patch.dict(os.environ, {}, clear=True):
             result = validate_llm_api_keys_at_startup()
@@ -262,7 +262,7 @@ class TestValidateLlmApiKeysAtStartup:
 
     def test_validate_with_security_module(self, capsys: pytest.CaptureFixture) -> None:
         """Should use security module when available."""
-        from session_mgmt_mcp.llm_providers import (
+        from session_buddy.llm_providers import (
             SECURITY_AVAILABLE,
             validate_llm_api_keys_at_startup,
         )
@@ -272,7 +272,7 @@ class TestValidateLlmApiKeysAtStartup:
 
         with (
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-" + "x" * 40}),
-            patch("session_mgmt_mcp.llm_providers.APIKeyValidator") as mock_validator,
+            patch("session_buddy.llm_providers.APIKeyValidator") as mock_validator,
         ):
             mock_instance = MagicMock()
             mock_instance.validate.return_value = None
@@ -287,11 +287,11 @@ class TestValidateLlmApiKeysAtStartup:
         self, capsys: pytest.CaptureFixture
     ) -> None:
         """Should use basic validation when security module unavailable."""
-        from session_mgmt_mcp.llm_providers import validate_llm_api_keys_at_startup
+        from session_buddy.llm_providers import validate_llm_api_keys_at_startup
 
         with (
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-" + "x" * 40}),
-            patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
+            patch("session_buddy.llm_providers.SECURITY_AVAILABLE", False),
         ):
             result = validate_llm_api_keys_at_startup()
 
@@ -300,7 +300,7 @@ class TestValidateLlmApiKeysAtStartup:
 
     def test_validate_empty_api_key_exits(self) -> None:
         """Should exit when API key is empty or whitespace."""
-        from session_mgmt_mcp.llm_providers import validate_llm_api_keys_at_startup
+        from session_buddy.llm_providers import validate_llm_api_keys_at_startup
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "   "}):
             with pytest.raises(SystemExit) as exc_info:
@@ -310,7 +310,7 @@ class TestValidateLlmApiKeysAtStartup:
 
     def test_validate_multiple_providers(self, capsys: pytest.CaptureFixture) -> None:
         """Should validate all configured providers."""
-        from session_mgmt_mcp.llm_providers import validate_llm_api_keys_at_startup
+        from session_buddy.llm_providers import validate_llm_api_keys_at_startup
 
         with (
             patch.dict(
@@ -320,7 +320,7 @@ class TestValidateLlmApiKeysAtStartup:
                     "GEMINI_API_KEY": "gem-" + "y" * 40,
                 },
             ),
-            patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
+            patch("session_buddy.llm_providers.SECURITY_AVAILABLE", False),
         ):
             result = validate_llm_api_keys_at_startup()
 
@@ -338,7 +338,7 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_openai_api_key_with_security(self) -> None:
         """Should mask OpenAI API key using security module."""
-        from session_mgmt_mcp.llm_providers import (
+        from session_buddy.llm_providers import (
             SECURITY_AVAILABLE,
             get_masked_api_key,
         )
@@ -348,7 +348,7 @@ class TestGetMaskedApiKey:
 
         with (
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test1234567890"}),
-            patch("session_mgmt_mcp.llm_providers.APIKeyValidator") as mock_validator,
+            patch("session_buddy.llm_providers.APIKeyValidator") as mock_validator,
         ):
             mock_validator.mask_key.return_value = "sk-...7890"
 
@@ -359,11 +359,11 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_openai_api_key_without_security(self) -> None:
         """Should mask OpenAI API key using fallback method."""
-        from session_mgmt_mcp.llm_providers import get_masked_api_key
+        from session_buddy.llm_providers import get_masked_api_key
 
         with (
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test1234567890"}),
-            patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
+            patch("session_buddy.llm_providers.SECURITY_AVAILABLE", False),
         ):
             result = get_masked_api_key("openai")
 
@@ -371,11 +371,11 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_gemini_api_key(self) -> None:
         """Should mask Gemini API key."""
-        from session_mgmt_mcp.llm_providers import get_masked_api_key
+        from session_buddy.llm_providers import get_masked_api_key
 
         with (
             patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-key-12345"}),
-            patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
+            patch("session_buddy.llm_providers.SECURITY_AVAILABLE", False),
         ):
             result = get_masked_api_key("gemini")
 
@@ -383,7 +383,7 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_api_key_for_ollama(self) -> None:
         """Should return N/A for Ollama (local service)."""
-        from session_mgmt_mcp.llm_providers import get_masked_api_key
+        from session_buddy.llm_providers import get_masked_api_key
 
         result = get_masked_api_key("ollama")
 
@@ -391,7 +391,7 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_api_key_when_not_set(self) -> None:
         """Should return *** when API key not set."""
-        from session_mgmt_mcp.llm_providers import get_masked_api_key
+        from session_buddy.llm_providers import get_masked_api_key
 
         with patch.dict(os.environ, {}, clear=True):
             result = get_masked_api_key("openai")
@@ -400,11 +400,11 @@ class TestGetMaskedApiKey:
 
     def test_get_masked_api_key_short_key(self) -> None:
         """Should return *** for very short keys."""
-        from session_mgmt_mcp.llm_providers import get_masked_api_key
+        from session_buddy.llm_providers import get_masked_api_key
 
         with (
             patch.dict(os.environ, {"OPENAI_API_KEY": "abc"}),
-            patch("session_mgmt_mcp.llm_providers.SECURITY_AVAILABLE", False),
+            patch("session_buddy.llm_providers.SECURITY_AVAILABLE", False),
         ):
             result = get_masked_api_key("openai")
 
@@ -420,7 +420,7 @@ class TestOllamaProviderHelperFunctions:
     @pytest.mark.asyncio
     async def test_check_with_aiohttp_success(self) -> None:
         """Should check availability using aiohttp and return True on success."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -455,7 +455,7 @@ class TestOllamaProviderHelperFunctions:
     @pytest.mark.asyncio
     async def test_check_with_aiohttp_failure(self) -> None:
         """Should check availability using aiohttp and return False on failure."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -486,7 +486,7 @@ class TestOllamaProviderHelperFunctions:
     @pytest.mark.asyncio
     async def test_check_with_aiohttp_connection_error(self) -> None:
         """Should return False when connection fails."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -501,7 +501,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_extract_chunk_content_valid_json(self) -> None:
         """Should extract content from valid JSON chunk."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -513,7 +513,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_extract_chunk_content_empty_line(self) -> None:
         """Should return None for empty line."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -523,7 +523,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_extract_chunk_content_invalid_json(self) -> None:
         """Should return None for invalid JSON."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -533,7 +533,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_extract_chunk_content_missing_message(self) -> None:
         """Should return None when message field is missing."""
-        from session_mgmt_mcp.llm_providers import OllamaProvider
+        from session_buddy.llm_providers import OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
 
@@ -543,7 +543,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_prepare_stream_data_basic(self) -> None:
         """Should prepare streaming data with basic options."""
-        from session_mgmt_mcp.llm_providers import LLMMessage, OllamaProvider
+        from session_buddy.llm_providers import LLMMessage, OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
         messages = [LLMMessage(role="user", content="Hello")]
@@ -557,7 +557,7 @@ class TestOllamaProviderHelperFunctions:
 
     def test_prepare_stream_data_with_max_tokens(self) -> None:
         """Should include num_predict when max_tokens provided."""
-        from session_mgmt_mcp.llm_providers import LLMMessage, OllamaProvider
+        from session_buddy.llm_providers import LLMMessage, OllamaProvider
 
         provider = OllamaProvider({"base_url": "http://localhost:11434"})
         messages = [LLMMessage(role="user", content="Hello")]

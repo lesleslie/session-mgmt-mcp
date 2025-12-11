@@ -6,7 +6,7 @@ This document provides comprehensive guidance on testing the Session Management 
 
 ```bash
 # Run full test suite with coverage
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # Quick smoke tests (exclude slow tests)
 pytest -m "not slow"
@@ -17,7 +17,7 @@ pytest tests/integration/             # Integration tests only
 pytest -m performance                 # Performance tests only
 
 # Coverage with fail threshold
-pytest --cov=session_mgmt_mcp --cov-fail-under=85
+pytest --cov=session_buddy --cov-fail-under=85
 ```
 
 **Coverage Targets:**
@@ -461,7 +461,7 @@ ______________________________________________________________________
 
 ```bash
 # Generate HTML coverage report
-pytest --cov=session_mgmt_mcp --cov-report=html
+pytest --cov=session_buddy --cov-report=html
 
 # Open coverage report
 open htmlcov/index.html

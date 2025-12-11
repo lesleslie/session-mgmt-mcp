@@ -19,7 +19,7 @@ class TestPydanticModels:
 
     def test_project_group_creation(self) -> None:
         """Should create ProjectGroup with required fields."""
-        from session_mgmt_mcp.multi_project_coordinator import ProjectGroup
+        from session_buddy.multi_project_coordinator import ProjectGroup
 
         group = ProjectGroup(
             id="group-1",
@@ -37,7 +37,7 @@ class TestPydanticModels:
 
     def test_project_dependency_types(self) -> None:
         """Should validate ProjectDependency types."""
-        from session_mgmt_mcp.multi_project_coordinator import ProjectDependency
+        from session_buddy.multi_project_coordinator import ProjectDependency
 
         # Valid dependency types
         for dep_type in ["uses", "extends", "references", "shares_code"]:
@@ -52,7 +52,7 @@ class TestPydanticModels:
 
     def test_session_link_types(self) -> None:
         """Should validate SessionLink types."""
-        from session_mgmt_mcp.multi_project_coordinator import SessionLink
+        from session_buddy.multi_project_coordinator import SessionLink
 
         # Valid link types
         for link_type in ["related", "continuation", "reference", "dependency"]:
@@ -72,7 +72,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_create_project_group(self) -> None:
         """Should create project group in database."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -94,7 +94,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_add_project_dependency(self) -> None:
         """Should add project dependency relationship."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -117,7 +117,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_link_sessions(self) -> None:
         """Should create session link between projects."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -139,7 +139,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_get_project_groups_empty(self) -> None:
         """Should return empty list when no groups exist."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -156,7 +156,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_get_project_dependencies_with_direction(self) -> None:
         """Should filter dependencies by direction."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -188,7 +188,7 @@ class TestMultiProjectCoordinatorCRUD:
     @pytest.mark.asyncio
     async def test_get_session_links(self) -> None:
         """Should retrieve all links for a session."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -221,7 +221,7 @@ class TestCachingBehavior:
     @pytest.mark.asyncio
     async def test_cache_groups_on_retrieval(self) -> None:
         """Should cache project groups after retrieval."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -253,7 +253,7 @@ class TestCachingBehavior:
     @pytest.mark.asyncio
     async def test_cache_population_on_create(self) -> None:
         """Should populate cache when creating new group."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -282,7 +282,7 @@ class TestCrossProjectSearch:
     @pytest.mark.asyncio
     async def test_find_related_conversations(self) -> None:
         """Should search across related projects."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -318,7 +318,7 @@ class TestCrossProjectSearch:
     @pytest.mark.asyncio
     async def test_dependency_aware_ranking(self) -> None:
         """Should rank results based on project dependencies."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -358,7 +358,7 @@ class TestInsightsAndAnalytics:
     @pytest.mark.asyncio
     async def test_get_cross_project_insights(self) -> None:
         """Should generate insights across related projects."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -389,7 +389,7 @@ class TestInsightsAndAnalytics:
     @pytest.mark.asyncio
     async def test_pattern_detection(self) -> None:
         """Should detect patterns across projects."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -424,7 +424,7 @@ class TestInsightsAndAnalytics:
     @pytest.mark.asyncio
     async def test_collaboration_opportunities(self) -> None:
         """Should provide insights structure."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -459,7 +459,7 @@ class TestCleanupOperations:
     @pytest.mark.asyncio
     async def test_cleanup_old_links(self) -> None:
         """Should remove old session links."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -487,7 +487,7 @@ class TestCleanupOperations:
     @pytest.mark.asyncio
     async def test_cleanup_respects_threshold(self) -> None:
         """Should only cleanup links older than threshold."""
-        from session_mgmt_mcp.multi_project_coordinator import MultiProjectCoordinator
+        from session_buddy.multi_project_coordinator import MultiProjectCoordinator
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()

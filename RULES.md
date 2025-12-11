@@ -51,7 +51,7 @@
 
   - Structure projects with clear separation of concerns
   - Follow standard package layout conventions
-  - Use [pyproject.toml](https://github.com/lesleslie/session-mgmt-mcp/blob/main/pyproject.toml) for all configuration
+  - Use [pyproject.toml](https://github.com/lesleslie/session-buddy/blob/main/pyproject.toml) for all configuration
   - **Modular Architecture**: Use protocol-based dependency injection
     - Core orchestration layer: `WorkflowOrchestrator`, `AsyncWorkflowOrchestrator`
     - Coordinator layer: `SessionCoordinator`, `PhaseCoordinator`
@@ -136,7 +136,7 @@ def _should_process(self, data: dict) -> bool:
 
   - Always use `uv run` to execute tools within the project's virtual environment
   - Run pytest with `uv run pytest` instead of calling pytest directly
-  - Execute tools like pyright, ruff, and session-mgmt-mcp through UV: `uv run pyright`
+  - Execute tools like pyright, ruff, and session-buddy through UV: `uv run pyright`
   - Ensures consistent tool versions and environment isolation
 
 - **Pre-Commit Hook Configuration**
@@ -230,8 +230,8 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **Code Quality Validation**
 
-  - Code should pass all quality checks when run through session-mgmt-mcp
-  - The ultimate goal is to run `python -m session-mgmt-mcp -x -t` without any errors
+  - Code should pass all quality checks when run through session-buddy
+  - The ultimate goal is to run `python -m session-buddy -x -t` without any errors
   - This validates proper typing, formatting, linting, and test success
   - Consider code incomplete until it passes this validation
 
@@ -359,7 +359,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
   - Use standard orchestrator for MCP compatibility (not advanced orchestrator)
   - WebSocket progress reporting requires proper iteration boundaries
   - Real-time progress available at `ws://localhost:8675/ws/progress/{job_id}`
-  - MCP tools: `execute_session-mgmt-mcp`, `get_job_progress`, `get_comprehensive_status`
+  - MCP tools: `execute_session-buddy`, `get_job_progress`, `get_comprehensive_status`
 
 ## AI Assistant Self-Maintenance
 
@@ -368,7 +368,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
   - AI assistants should update CLAUDE.md and RULES.md weekly or after pre-commit failures
   - Learn from new Refurb rules (FURB codes), Pyright errors (reportXxx), and Complexipy thresholds
   - Add newly discovered error patterns to documentation with code examples
-  - Test all documentation updates by running `python -m session-mgmt-mcp --comprehensive`
+  - Test all documentation updates by running `python -m session-buddy --comprehensive`
   - Prioritize frequently occurring error patterns as **CRITICAL** standards
 
 - **Self-Learning Protocol**

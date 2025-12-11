@@ -17,8 +17,8 @@ The Session Management MCP server integrates directly with Claude Code through t
 1. **Install the MCP server**:
 
    ```bash
-   git clone https://github.com/lesleslie/session-mgmt-mcp.git
-   cd session-mgmt-mcp
+   git clone https://github.com/lesleslie/session-buddy.git
+   cd session-buddy
    uv sync
    ```
 
@@ -29,10 +29,10 @@ The Session Management MCP server integrates directly with Claude Code through t
      "mcpServers": {
        "session-mgmt": {
          "command": "python",
-         "args": ["-m", "session_mgmt_mcp.server"],
-         "cwd": "/absolute/path/to/session-mgmt-mcp",
+         "args": ["-m", "session_buddy.server"],
+         "cwd": "/absolute/path/to/session-buddy",
          "env": {
-           "PYTHONPATH": "/absolute/path/to/session-mgmt-mcp"
+           "PYTHONPATH": "/absolute/path/to/session-buddy"
          }
        }
      }
@@ -94,7 +94,7 @@ Create `.git/hooks/pre-commit`:
 if command -v python >/dev/null 2>&1; then
     python -c "
 import asyncio
-from session_mgmt_mcp.server import create_checkpoint
+from session_buddy.server import create_checkpoint
 asyncio.run(create_checkpoint())
 " 2>/dev/null || echo "Session checkpoint skipped (MCP server not available)"
 fi
@@ -145,7 +145,7 @@ Deep integration with the Crackerjack Python project management tool.
 #### Quality Assessment
 
 ```python
-from session_mgmt_mcp.crackerjack_integration import CrackerjackIntegration
+from session_buddy.crackerjack_integration import CrackerjackIntegration
 
 
 class QualityMonitor:
@@ -178,8 +178,8 @@ Add Crackerjack as an additional MCP server:
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/path/to/session-mgmt-mcp"
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/path/to/session-buddy"
     },
     "crackerjack": {
       "command": "uvx",
@@ -232,7 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
   "sessionMgmt.autoInit": true,
   "sessionMgmt.checkpointInterval": 30,
   "sessionMgmt.qualityThreshold": 80,
-  "sessionMgmt.mcpServerPath": "/path/to/session-mgmt-mcp"
+  "sessionMgmt.mcpServerPath": "/path/to/session-buddy"
 }
 ```
 
@@ -290,15 +290,15 @@ jobs:
 
     - name: Install Session Management MCP
       run: |
-        git clone https://github.com/lesleslie/session-mgmt-mcp.git /tmp/session-mgmt-mcp
-        cd /tmp/session-mgmt-mcp
+        git clone https://github.com/lesleslie/session-buddy.git /tmp/session-buddy
+        cd /tmp/session-buddy
         pip install -e .
 
     - name: Initialize Session
       run: |
         python -c "
         import asyncio
-        from session_mgmt_mcp.tools.session_tools import init
+        from session_buddy.tools.session_tools import init
 
         async def run():
             result = await init(working_directory='.')
@@ -315,7 +315,7 @@ jobs:
       run: |
         python -c "
         import asyncio
-        from session_mgmt_mcp.tools.memory_tools import store_reflection
+        from session_buddy.tools.memory_tools import store_reflection
 
         async def store():
             await store_reflection(
@@ -341,7 +341,7 @@ pipeline {
                     sh '''
                     python -c "
                     import asyncio
-                    from session_mgmt_mcp.tools.session_tools import init
+                    from session_buddy.tools.session_tools import init
 
                     async def jenkins_init():
                         result = await init(working_directory='.')
@@ -358,7 +358,7 @@ pipeline {
             steps {
                 script {
                     def qualityScore = sh(
-                        script: 'python -c "from session_mgmt_mcp import get_quality_score; print(get_quality_score())"',
+                        script: 'python -c "from session_buddy import get_quality_score; print(get_quality_score())"',
                         returnStdout: true
                     ).trim().toFloat()
 
@@ -375,7 +375,7 @@ pipeline {
             sh '''
             python -c "
             import asyncio
-            from session_mgmt_mcp.tools.session_tools import end
+            from session_buddy.tools.session_tools import end
             asyncio.run(end())
             "
             '''
@@ -571,7 +571,7 @@ class ReflectionRequest(BaseModel):
 async def search_conversations(request: SearchRequest):
     """Search conversations via REST API."""
     try:
-        from session_mgmt_mcp.tools.memory_tools import reflect_on_past
+        from session_buddy.tools.memory_tools import reflect_on_past
 
         result = await reflect_on_past(
             query=request.query,
@@ -589,7 +589,7 @@ async def search_conversations(request: SearchRequest):
 async def store_reflection(request: ReflectionRequest):
     """Store reflection via REST API."""
     try:
-        from session_mgmt_mcp.tools.memory_tools import store_reflection
+        from session_buddy.tools.memory_tools import store_reflection
 
         result = await store_reflection(content=request.content, tags=request.tags)
 
@@ -626,7 +626,7 @@ class Query:
         self, query: str, limit: int = 10, min_score: float = 0.7
     ) -> list[SearchResult]:
         """Search conversations via GraphQL."""
-        from session_mgmt_mcp.tools.memory_tools import reflect_on_past
+        from session_buddy.tools.memory_tools import reflect_on_past
 
         result = await reflect_on_past(query=query, limit=limit, min_score=min_score)
 
@@ -646,7 +646,7 @@ class Mutation:
     @strawberry.field
     async def store_reflection(self, content: str, tags: list[str] = []) -> bool:
         """Store reflection via GraphQL."""
-        from session_mgmt_mcp.tools.memory_tools import store_reflection
+        from session_buddy.tools.memory_tools import store_reflection
 
         result = await store_reflection(content=content, tags=tags)
         return result.get("success", False)
@@ -822,7 +822,7 @@ class DiscordBot(commands.Bot):
     @commands.command(name="session")
     async def session_status(self, ctx):
         """Get current session status."""
-        from session_mgmt_mcp.tools.session_tools import status
+        from session_buddy.tools.session_tools import status
 
         result = await status()
 
@@ -846,7 +846,7 @@ class DiscordBot(commands.Bot):
     @commands.command(name="search")
     async def search_conversations(self, ctx, *, query: str):
         """Search conversation history."""
-        from session_mgmt_mcp.tools.memory_tools import quick_search
+        from session_buddy.tools.memory_tools import quick_search
 
         result = await quick_search(query=query)
 
@@ -882,7 +882,7 @@ Create pytest fixtures for testing with the MCP server:
 ```python
 import pytest
 import asyncio
-from session_mgmt_mcp.server import mcp
+from session_buddy.server import mcp
 
 
 @pytest.fixture(scope="session")
@@ -1038,7 +1038,7 @@ Complete stack deployment:
 version: '3.8'
 
 services:
-  session-mgmt-mcp:
+  session-buddy:
     build: .
     ports:
       - "8000:8000"
@@ -1108,20 +1108,20 @@ volumes:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: session-mgmt-mcp
+  name: session-buddy
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: session-mgmt-mcp
+      app: session-buddy
   template:
     metadata:
       labels:
-        app: session-mgmt-mcp
+        app: session-buddy
     spec:
       containers:
       - name: session-mgmt
-        image: session-mgmt-mcp:latest
+        image: session-buddy:latest
         ports:
         - containerPort: 8000
         env:
@@ -1158,7 +1158,7 @@ metadata:
   name: session-mgmt-service
 spec:
   selector:
-    app: session-mgmt-mcp
+    app: session-buddy
   ports:
   - port: 80
     targetPort: 8000

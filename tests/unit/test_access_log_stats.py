@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import duckdb
 import pytest
-from session_mgmt_mcp.memory.schema_v2 import SCHEMA_V2_SQL
-from session_mgmt_mcp.tools.access_log_tools import register_access_log_tools
+from session_buddy.memory.schema_v2 import SCHEMA_V2_SQL
+from session_buddy.tools.access_log_tools import register_access_log_tools
 
 
 class DummyMCP:
@@ -25,7 +25,7 @@ class DummyMCP:
 async def test_access_log_stats_reports_top_and_provider(
     tmp_path: t.Any, monkeypatch: t.Any
 ) -> None:
-    from session_mgmt_mcp import settings as settings_mod
+    from session_buddy import settings as settings_mod
 
     db_path = tmp_path / "stats.duckdb"
 

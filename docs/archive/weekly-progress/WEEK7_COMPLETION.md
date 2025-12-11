@@ -21,10 +21,10 @@ ______________________________________________________________________
 
 | File | Type | Lines | Status |
 |------|------|-------|--------|
-| `session_mgmt_mcp/di/config.py` | New | 99 | ✅ Complete |
-| `session_mgmt_mcp/di/__init__.py` | Modified | 136 | ✅ Complete |
-| `session_mgmt_mcp/utils/instance_managers.py` | Modified | 169 | ✅ Complete |
-| `session_mgmt_mcp/tools/session_tools.py` | Modified | ~15 | ✅ Complete |
+| `session_buddy/di/config.py` | New | 99 | ✅ Complete |
+| `session_buddy/di/__init__.py` | Modified | 136 | ✅ Complete |
+| `session_buddy/utils/instance_managers.py` | Modified | 169 | ✅ Complete |
+| `session_buddy/tools/session_tools.py` | Modified | ~15 | ✅ Complete |
 
 ### Test Artifacts
 
@@ -411,5 +411,5 @@ ______________________________________________________________________
 
 **Completed:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 7 - ACB DI Refactoring ✅ COMPLETE

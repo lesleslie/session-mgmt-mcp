@@ -18,7 +18,7 @@ class TestConversationDataclasses:
 
     def test_conversation_data_initialization(self) -> None:
         """Should create ConversationData with required fields."""
-        from session_mgmt_mcp.memory_optimizer import ConversationData
+        from session_buddy.memory_optimizer import ConversationData
 
         conv = ConversationData(
             id="conv-1",
@@ -35,7 +35,7 @@ class TestConversationDataclasses:
 
     def test_compression_results_structure(self) -> None:
         """Should create CompressionResults with stats."""
-        from session_mgmt_mcp.memory_optimizer import CompressionResults
+        from session_buddy.memory_optimizer import CompressionResults
 
         results = CompressionResults(
             status="success",
@@ -58,7 +58,7 @@ class TestConversationSummarizer:
 
     def test_extractive_summarization(self) -> None:
         """Should extract important sentences from conversation."""
-        from session_mgmt_mcp.memory_optimizer import ConversationSummarizer
+        from session_buddy.memory_optimizer import ConversationSummarizer
 
         summarizer = ConversationSummarizer()
         content = """
@@ -76,7 +76,7 @@ class TestConversationSummarizer:
 
     def test_template_based_summarization(self) -> None:
         """Should create summary using templates based on content patterns."""
-        from session_mgmt_mcp.memory_optimizer import ConversationSummarizer
+        from session_buddy.memory_optimizer import ConversationSummarizer
 
         summarizer = ConversationSummarizer()
         content = """
@@ -98,7 +98,7 @@ class TestConversationSummarizer:
 
     def test_keyword_based_summarization(self) -> None:
         """Should extract keywords from conversation."""
-        from session_mgmt_mcp.memory_optimizer import ConversationSummarizer
+        from session_buddy.memory_optimizer import ConversationSummarizer
 
         summarizer = ConversationSummarizer()
         content = """
@@ -119,7 +119,7 @@ class TestConversationSummarizer:
 
     def test_summarize_conversation_with_strategy(self) -> None:
         """Should use specified summarization strategy."""
-        from session_mgmt_mcp.memory_optimizer import ConversationSummarizer
+        from session_buddy.memory_optimizer import ConversationSummarizer
 
         summarizer = ConversationSummarizer()
         content = "Test conversation with function implementation and error handling."
@@ -132,7 +132,7 @@ class TestConversationSummarizer:
 
     def test_summarize_conversation_invalid_strategy_fallback(self) -> None:
         """Should fall back to template_based for invalid strategy."""
-        from session_mgmt_mcp.memory_optimizer import ConversationSummarizer
+        from session_buddy.memory_optimizer import ConversationSummarizer
 
         summarizer = ConversationSummarizer()
         content = "Test conversation content."
@@ -148,7 +148,7 @@ class TestConversationClusterer:
 
     def test_cluster_conversations_by_project(self) -> None:
         """Should cluster conversations from same project."""
-        from session_mgmt_mcp.memory_optimizer import ConversationClusterer
+        from session_buddy.memory_optimizer import ConversationClusterer
 
         clusterer = ConversationClusterer()
         conversations = [
@@ -185,7 +185,7 @@ class TestConversationClusterer:
 
     def test_calculate_similarity_same_project(self) -> None:
         """Should give higher similarity for same project."""
-        from session_mgmt_mcp.memory_optimizer import ConversationClusterer
+        from session_buddy.memory_optimizer import ConversationClusterer
 
         clusterer = ConversationClusterer()
         conv1 = {
@@ -205,7 +205,7 @@ class TestConversationClusterer:
 
     def test_calculate_similarity_time_proximity(self) -> None:
         """Should give higher similarity for temporally close conversations."""
-        from session_mgmt_mcp.memory_optimizer import ConversationClusterer
+        from session_buddy.memory_optimizer import ConversationClusterer
 
         clusterer = ConversationClusterer()
         now = datetime.now()
@@ -230,7 +230,7 @@ class TestRetentionPolicyManager:
 
     def test_calculate_importance_score_with_code(self) -> None:
         """Should give higher importance to conversations with code."""
-        from session_mgmt_mcp.memory_optimizer import RetentionPolicyManager
+        from session_buddy.memory_optimizer import RetentionPolicyManager
 
         manager = RetentionPolicyManager()
         conversation = {
@@ -244,7 +244,7 @@ class TestRetentionPolicyManager:
 
     def test_calculate_importance_score_with_errors(self) -> None:
         """Should give higher importance to error-related conversations."""
-        from session_mgmt_mcp.memory_optimizer import RetentionPolicyManager
+        from session_buddy.memory_optimizer import RetentionPolicyManager
 
         manager = RetentionPolicyManager()
         conversation = {
@@ -258,7 +258,7 @@ class TestRetentionPolicyManager:
 
     def test_get_conversations_for_retention_recent_kept(self) -> None:
         """Should keep recent conversations regardless of importance."""
-        from session_mgmt_mcp.memory_optimizer import RetentionPolicyManager
+        from session_buddy.memory_optimizer import RetentionPolicyManager
 
         manager = RetentionPolicyManager()
         now = datetime.now()
@@ -279,7 +279,7 @@ class TestRetentionPolicyManager:
 
     def test_get_conversations_for_retention_old_consolidated(self) -> None:
         """Should consolidate old low-importance conversations."""
-        from session_mgmt_mcp.memory_optimizer import RetentionPolicyManager
+        from session_buddy.memory_optimizer import RetentionPolicyManager
 
         manager = RetentionPolicyManager()
         old_date = datetime.now() - timedelta(days=60)
@@ -309,7 +309,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_compress_memory_no_database(self) -> None:
         """Should return error when database unavailable."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         mock_db.conn = None
@@ -323,7 +323,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_compress_memory_no_conversations(self) -> None:
         """Should handle case with no conversations."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -339,7 +339,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_compress_memory_dry_run(self) -> None:
         """Should perform dry run without modifying data."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         mock_db.conn = MagicMock()
@@ -378,7 +378,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_get_compression_stats(self) -> None:
         """Should return compression statistics."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         optimizer = MemoryOptimizer(mock_db)
@@ -396,7 +396,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_set_retention_policy_valid(self) -> None:
         """Should update retention policy with valid values."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         optimizer = MemoryOptimizer(mock_db)
@@ -410,7 +410,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_set_retention_policy_invalid_max_age(self) -> None:
         """Should reject invalid max_age_days."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         optimizer = MemoryOptimizer(mock_db)
@@ -423,7 +423,7 @@ class TestMemoryOptimizer:
     @pytest.mark.asyncio
     async def test_set_retention_policy_invalid_max_conversations(self) -> None:
         """Should reject invalid max_conversations."""
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         mock_db = MagicMock()
         optimizer = MemoryOptimizer(mock_db)

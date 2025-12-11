@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from session_mgmt_mcp.adapters.reflection_adapter import (
+from session_buddy.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
 
@@ -189,7 +189,7 @@ Unicode: ñáéíóú 中文 🚀
         """Test security aspects of session permissions."""
         # This test would require access to the session management system
         # For now, we'll just verify that the module loads properly
-        from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+        from session_buddy.core.session_manager import SessionLifecycleManager
 
         manager = SessionLifecycleManager()
 
@@ -199,7 +199,7 @@ Unicode: ñáéíóú 中文 🚀
 
             # Mock git repository status
             with patch(
-                "session_mgmt_mcp.core.session_manager.is_git_repository",
+                "session_buddy.core.session_manager.is_git_repository",
                 return_value=True,
             ):
                 with patch("os.chdir"):

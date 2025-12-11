@@ -74,13 +74,13 @@ ______________________________________________________________________
 
 **Complexity Reduction**:
 
-- Refactored `format_quality_results()` in `session_mgmt_mcp/core/session_manager.py`
+- Refactored `format_quality_results()` in `session_buddy/core/session_manager.py`
 - Extracted `_format_trust_score()` helper method
 - Reduced complexity from 16 to ≤10 (meets \<15 threshold)
 
 **Type-Checking Fixes**:
 
-- Added `# noqa: F401` to TYPE_CHECKING imports in `session_mgmt_mcp/di/__init__.py`
+- Added `# noqa: F401` to TYPE_CHECKING imports in `session_buddy/di/__init__.py`
 - Properly suppressed unused import warnings for type-only imports
 
 **Pre-Commit Quality Gates**:
@@ -134,8 +134,8 @@ ______________________________________________________________________
 
 ### Code Quality Fixes
 
-4. `session_mgmt_mcp/core/session_manager.py` - Extracted `_format_trust_score()` helper
-1. `session_mgmt_mcp/di/__init__.py` - Added noqa annotations
+4. `session_buddy/core/session_manager.py` - Extracted `_format_trust_score()` helper
+1. `session_buddy/di/__init__.py` - Added noqa annotations
 
 ______________________________________________________________________
 

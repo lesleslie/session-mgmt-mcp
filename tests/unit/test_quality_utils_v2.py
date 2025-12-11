@@ -12,7 +12,7 @@ import typing as t
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from session_mgmt_mcp.utils.quality_utils_v2 import (
+from session_buddy.utils.quality_utils_v2 import (
     CodeQualityScore,
     DevVelocityScore,
     ProjectHealthScore,
@@ -30,7 +30,7 @@ if t.TYPE_CHECKING:
 class TestCalculateQualityScoreV2:
     """Test main quality score calculation function."""
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
     async def test_calculate_quality_score_v2_with_perfect_metrics(
         self, mock_metrics: AsyncMock, tmp_path: Path
     ):
@@ -106,7 +106,7 @@ class TestCalculateQualityScoreV2:
         # Verify recommendations list
         assert isinstance(result.recommendations, list)
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
     async def test_calculate_quality_score_v2_with_poor_metrics(
         self, mock_metrics: AsyncMock, tmp_path: Path
     ):
@@ -131,7 +131,7 @@ class TestCalculateQualityScoreV2:
         assert result.total_score < 50
         assert len(result.recommendations) > 2
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
     async def test_calculate_quality_score_v2_with_no_metrics(
         self, mock_metrics: AsyncMock, tmp_path: Path
     ):
@@ -151,13 +151,13 @@ class TestCalculateQualityScoreV2:
 class TestCodeQualityCalculation:
     """Test code quality component (40 points max)."""
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_type_coverage")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_type_coverage")
     async def test_code_quality_with_perfect_scores(
         self, mock_type_coverage: AsyncMock, mock_metrics: AsyncMock, tmp_path: Path
     ):
         """Code quality with perfect metrics returns 40 points."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_code_quality
+        from session_buddy.utils.quality_utils_v2 import _calculate_code_quality
 
         mock_metrics.return_value = {
             "code_coverage": 100,
@@ -175,13 +175,13 @@ class TestCodeQualityCalculation:
         assert result.complexity_score == 5.0  # 100 complexity * 5
         assert result.total == 40.0
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_type_coverage")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_type_coverage")
     async def test_code_quality_with_low_coverage(
         self, mock_type_coverage: AsyncMock, mock_metrics: AsyncMock, tmp_path: Path
     ):
         """Code quality with low test coverage returns reduced score."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_code_quality
+        from session_buddy.utils.quality_utils_v2 import _calculate_code_quality
 
         mock_metrics.return_value = {
             "code_coverage": 50,
@@ -199,13 +199,13 @@ class TestCodeQualityCalculation:
         assert result.complexity_score == 3.5  # 70 * 5 / 100
         assert result.total == 25.0
 
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_crackerjack_metrics")
-    @patch("session_mgmt_mcp.utils.quality_utils_v2._get_type_coverage")
+    @patch("session_buddy.utils.quality_utils_v2._get_crackerjack_metrics")
+    @patch("session_buddy.utils.quality_utils_v2._get_type_coverage")
     async def test_code_quality_with_no_metrics(
         self, mock_type_coverage: AsyncMock, mock_metrics: AsyncMock, tmp_path: Path
     ):
         """Code quality with no metrics uses fallback defaults."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_code_quality
+        from session_buddy.utils.quality_utils_v2 import _calculate_code_quality
 
         mock_metrics.return_value = {}
         mock_type_coverage.return_value = 30.0
@@ -226,7 +226,7 @@ class TestProjectHealthCalculation:
 
     async def test_project_health_with_perfect_setup(self, tmp_path: Path):
         """Project health with all tooling returns high score."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_project_health
+        from session_buddy.utils.quality_utils_v2 import _calculate_project_health
 
         # Perfect tooling setup
         (tmp_path / "pyproject.toml").write_text("[project]\n")
@@ -301,7 +301,7 @@ class TestProjectHealthCalculation:
 
     async def test_project_health_with_minimal_setup(self, tmp_path: Path):
         """Project health with minimal setup returns low score."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_project_health
+        from session_buddy.utils.quality_utils_v2 import _calculate_project_health
 
         # Only pyproject.toml
         (tmp_path / "pyproject.toml").write_text("[project]\n")
@@ -320,7 +320,7 @@ class TestTrustScoreCalculation:
 
     def test_trust_score_with_perfect_environment(self):
         """Trust score with perfect environment returns 100."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_trust_score
+        from session_buddy.utils.quality_utils_v2 import _calculate_trust_score
 
         result = _calculate_trust_score(
             permissions_count=4, session_available=True, tool_count=10
@@ -334,7 +334,7 @@ class TestTrustScoreCalculation:
 
     def test_trust_score_with_no_trust(self):
         """Trust score with no trust returns minimal score."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _calculate_trust_score
+        from session_buddy.utils.quality_utils_v2 import _calculate_trust_score
 
         result = _calculate_trust_score(
             permissions_count=0, session_available=False, tool_count=0
@@ -353,7 +353,7 @@ class TestRecommendationGeneration:
 
     def test_recommendations_for_excellent_quality(self):
         """Recommendations for excellent quality include maintenance message."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import (
+        from session_buddy.utils.quality_utils_v2 import (
             _generate_recommendations_v2,
         )
 
@@ -385,7 +385,7 @@ class TestRecommendationGeneration:
 
     def test_recommendations_for_poor_quality(self):
         """Recommendations for poor quality include critical issues."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import (
+        from session_buddy.utils.quality_utils_v2 import (
             _generate_recommendations_v2,
         )
 
@@ -423,7 +423,7 @@ class TestTypeCoverageCalculation:
 
     async def test_type_coverage_from_crackerjack_metrics(self, tmp_path: Path):
         """Type coverage uses Crackerjack data when available."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _get_type_coverage
+        from session_buddy.utils.quality_utils_v2 import _get_type_coverage
 
         metrics = {"type_coverage": 87.5}
 
@@ -434,7 +434,7 @@ class TestTypeCoverageCalculation:
 
     async def test_type_coverage_with_pyright_config(self, tmp_path: Path):
         """Type coverage estimates 70% when pyright configured."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _get_type_coverage
+        from session_buddy.utils.quality_utils_v2 import _get_type_coverage
 
         (tmp_path / "pyrightconfig.json").write_text("{}")
 
@@ -445,7 +445,7 @@ class TestTypeCoverageCalculation:
 
     async def test_type_coverage_with_no_type_checker(self, tmp_path: Path):
         """Type coverage returns 30% default when no type checker."""
-        from session_mgmt_mcp.utils.quality_utils_v2 import _get_type_coverage
+        from session_buddy.utils.quality_utils_v2 import _get_type_coverage
 
         result = await _get_type_coverage(tmp_path, {})
 

@@ -2,7 +2,7 @@
 
 **Phase 2.7 - Week 7 Day 6** (January 2025)
 
-This document tracks bugs discovered in the ACB (Asynchronous Component Base) framework during the migration of session-mgmt-mcp from direct DuckDB connections to ACB adapters.
+This document tracks bugs discovered in the ACB (Asynchronous Component Base) framework during the migration of session-buddy from direct DuckDB connections to ACB adapters.
 
 ## Bug #1: Graph Adapter SSL Property Shadowing
 
@@ -38,7 +38,7 @@ ______________________________________________________________________
 
 ## Bug #2: Vector Search Array Dimension Type Cast
 
-**Status:** ✅ RESOLVED (Fixed in ACB - session-mgmt-mcp/Phase 2.7)
+**Status:** ✅ RESOLVED (Fixed in ACB - session-buddy/Phase 2.7)
 
 **Component:** `acb/adapters/vector/duckdb.py`
 
@@ -111,7 +111,7 @@ def _build_search_query(
 - Fallback query returns `score=0.0` for all results
 - Semantic search completely non-functional
 
-**Fix Applied** (session-mgmt-mcp/Phase 2.7):
+**Fix Applied** (session-buddy/Phase 2.7):
 
 Modified `_build_search_query()` in `/Users/les/Projects/acb/acb/adapters/vector/duckdb.py`:
 
@@ -158,8 +158,8 @@ def _build_search_query(
 # Test that fixed ACB search() method returns proper scores
 python3 -c "
 import asyncio
-from session_mgmt_mcp.di import configure
-from session_mgmt_mcp.adapters.reflection_adapter import ReflectionDatabaseAdapter
+from session_buddy.di import configure
+from session_buddy.adapters.reflection_adapter import ReflectionDatabaseAdapter
 
 configure(force=True)
 
@@ -195,7 +195,7 @@ ______________________________________________________________________
 - **2 bugs discovered** during ACB adapter migration (Phase 2.7)
 - **2 bugs resolved** ✅
   - Graph adapter SSL property shadowing (fixed in ACB)
-  - Vector search array dimension casting (fixed in ACB - session-mgmt-mcp/Phase 2.7)
+  - Vector search array dimension casting (fixed in ACB - session-buddy/Phase 2.7)
 
 **Impact on Migration:**
 Both critical bugs have been resolved, allowing full ACB adapter integration:

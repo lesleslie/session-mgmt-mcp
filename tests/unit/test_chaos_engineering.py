@@ -44,10 +44,10 @@ class TestSystemResilience:
 
     async def test_embedding_system_failure_resilience(self):
         """Test that system continues to work when embedding system fails."""
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Create database with embeddings disabled
-        with patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", False):
+        with patch("session_buddy.reflection_tools.ONNX_AVAILABLE", False):
             async with DatabaseTestHelper.temp_reflection_db() as db:
                 # Should still be able to store conversations without embeddings
                 conv_id = await db.store_conversation(
@@ -70,7 +70,7 @@ class TestSystemResilience:
         import gc
 
         import psutil
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Get initial memory usage
         initial_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
@@ -102,7 +102,7 @@ class TestSystemResilience:
         """Test system behavior under concurrent access."""
         import asyncio
 
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         async with DatabaseTestHelper.temp_reflection_db() as db:
             # Create many concurrent operations
@@ -127,10 +127,10 @@ class TestSystemResilience:
 
     async def test_dependency_availability_resilience(self):
         """Test system behavior when dependencies are not available."""
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Test with missing dependencies
-        with patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", False):
+        with patch("session_buddy.reflection_tools.ONNX_AVAILABLE", False):
             # Should still initialize without error
             async with DatabaseTestHelper.temp_reflection_db() as db:
                 # Basic functionality should still work
@@ -154,7 +154,7 @@ class TestSystemResilience:
         with patch(
             "duckdb.connect", side_effect=Exception("Cannot access database file")
         ):
-            from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+            from session_buddy.reflection_tools import ReflectionDatabase
 
             # Try to create database with mocked failures
             db = ReflectionDatabase(
@@ -175,7 +175,7 @@ class TestErrorRecovery:
         import tempfile
         from pathlib import Path
 
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test.duckdb"
@@ -211,10 +211,10 @@ class TestErrorRecovery:
     async def test_service_degradation_graceful_failover(self):
         """Test graceful degradation when services are unavailable."""
         # Test that the system degrades gracefully when external services fail
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
 
         # Simulate ONNX not available (embeddings disabled)
-        with patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", False):
+        with patch("session_buddy.reflection_tools.ONNX_AVAILABLE", False):
             async with DatabaseTestHelper.temp_reflection_db() as db:
                 # System should still work without semantic search
                 conv_id = await db.store_conversation(

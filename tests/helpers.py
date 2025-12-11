@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import duckdb
 import numpy as np
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 class TestDataFactory:
@@ -321,7 +321,7 @@ class MockingHelper:
     def patch_system_dependencies():
         """Create patches for system dependencies that might not be available."""
         return patch.multiple(
-            "session_mgmt_mcp.reflection_tools",
+            "session_buddy.reflection_tools",
             ONNX_AVAILABLE=True,  # Default to True for tests
         )
 

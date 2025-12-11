@@ -1,0 +1,593 @@
+"""Reflection database adapter using ACB vector adapter.
+
+Provides a compatibility layer that maintains the existing ReflectionDatabase API
+while using ACB's vector adapter for storage and retrieval.
+
+Phase 2.7 Day 5: Vector adapter migration
+"""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import json
+import time
+import typing as t
+from contextlib import suppress
+from datetime import UTC, datetime
+from pathlib import Path
+
+# Import ACB vector adapter
+from acb.adapters.vector.duckdb import Vector
+from acb.depends import depends
+
+# Embedding system imports
+try:
+    import onnxruntime as ort
+    from transformers import AutoTokenizer
+
+    ONNX_AVAILABLE = True
+except ImportError:
+    ONNX_AVAILABLE = False
+
+import numpy as np
+
+if t.TYPE_CHECKING:
+    from types import TracebackType
+
+
+class ReflectionDatabaseAdapter:
+    """Manages conversation memory and reflection using ACB vector adapter.
+
+    This adapter wraps ACB's Vector adapter while maintaining the original
+    ReflectionDatabase API for backward compatibility. It handles:
+    - Local ONNX embedding generation (all-MiniLM-L6-v2, 384 dimensions)
+    - Vector storage and retrieval via ACB adapter
+    - Graceful fallback to text search when embeddings unavailable
+    - Async/await patterns consistent with existing code
+
+    The ACB vector adapter is registered via dependency injection in di/__init__.py
+    and provides connection pooling, transaction management, and optimized vector
+    similarity search.
+
+    Example:
+        >>> async with ReflectionDatabaseAdapter() as db:
+        >>>     conv_id = await db.store_conversation("content", {"project": "foo"})
+        >>>     results = await db.search_conversations("query")
+
+    """
+
+    def __init__(self, collection_name: str = "default") -> None:
+        """Initialize adapter with optional collection name.
+
+        Args:
+            collection_name: Name of the vector collection to use.
+                           Default "default" collection will be created automatically.
+
+        """
+        self.collection_name = collection_name
+        self.vector_adapter: Vector | None = None
+        self.onnx_session: ort.InferenceSession | None = None
+        self.tokenizer: t.Any = None
+        self.embedding_dim = 384  # all-MiniLM-L6-v2 dimension
+
+    def __enter__(self) -> t.Self:
+        """Sync context manager entry (not recommended - use async)."""
+        msg = "Use 'async with' instead of 'with' for ReflectionDatabaseAdapter"
+        raise RuntimeError(msg)
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Sync context manager exit."""
+
+    async def __aenter__(self) -> t.Self:
+        """Async context manager entry."""
+        await self.initialize()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Async context manager exit with cleanup."""
+        self.close()  # Sync close is sufficient, ACB handles async cleanup
+
+    def close(self) -> None:
+        """Close adapter connections (sync version for compatibility)."""
+        # ACB adapter handles connection pooling, no explicit close needed
+        # Keep method for API compatibility
+
+    def __del__(self) -> None:
+        """Destructor to ensure cleanup."""
+        # ACB handles cleanup via dependency injection lifecycle
+
+    async def initialize(self) -> None:
+        """Initialize vector adapter and embedding models.
+
+        Retrieves the ACB Vector adapter from the DI container and initializes
+        the ONNX embedding model for local text-to-vector conversion.
+        """
+        # Get vector adapter from DI container
+        try:
+            self.vector_adapter = depends.get_sync(Vector)
+        except (KeyError, AttributeError, RuntimeError) as e:
+            msg = (
+                "Vector adapter not registered in DI container. "
+                "Ensure configure() was called in di/__init__.py"
+            )
+            raise RuntimeError(msg) from e
+
+        # Initialize adapter schema if needed (deferred from configure())
+        if hasattr(self.vector_adapter, "_schema_initialized"):
+            if not self.vector_adapter._schema_initialized:
+                await self.vector_adapter.init()
+                self.vector_adapter._schema_initialized = True
+
+        # Ensure default collection exists
+        with suppress(Exception):
+            # Collection may already exist, continue if it does
+            await self.vector_adapter.create_collection(
+                name=self.collection_name,
+                dimension=self.embedding_dim,
+                distance_metric="cosine",
+            )
+
+        # Initialize ONNX embedding model (same as original ReflectionDatabase)
+        if ONNX_AVAILABLE:
+            try:
+                # Load tokenizer with revision pinning for security
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    "sentence-transformers/all-MiniLM-L6-v2",
+                    revision="7dbbc90392e2f80f3d3c277d6e90027e55de9125",
+                )
+
+                # Try to load ONNX model
+                model_path = Path.home() / ".claude/all-MiniLM-L6-v2/onnx/model.onnx"
+                if not model_path.exists():
+                    self.onnx_session = None
+                else:
+                    self.onnx_session = ort.InferenceSession(str(model_path))
+                    self.embedding_dim = 384
+            except Exception:
+                self.onnx_session = None
+
+    def _get_adapter(self) -> Vector:
+        """Get vector adapter, raising error if not initialized."""
+        if self.vector_adapter is None:
+            msg = "Vector adapter not initialized. Call initialize() first"
+            raise RuntimeError(msg)
+        return self.vector_adapter
+
+    async def get_embedding(self, text: str) -> list[float]:
+        """Generate embedding for text using local ONNX model.
+
+        Args:
+            text: Input text to embed
+
+        Returns:
+            384-dimensional embedding vector as list of floats
+
+        Raises:
+            RuntimeError: If no embedding model is available
+
+        """
+        if self.onnx_session and self.tokenizer:
+            # Type narrowing: onnx_session is guaranteed non-None here
+            onnx_session = self.onnx_session
+            tokenizer = self.tokenizer
+
+            def _get_embedding() -> list[float]:
+                # Tokenize text
+                encoded = tokenizer(
+                    text,
+                    truncation=True,
+                    padding=True,
+                    return_tensors="np",
+                )
+
+                # Run ONNX inference
+                outputs = onnx_session.run(
+                    None,
+                    {
+                        "input_ids": encoded["input_ids"],
+                        "attention_mask": encoded["attention_mask"],
+                        "token_type_ids": encoded.get(
+                            "token_type_ids",
+                            np.zeros_like(encoded["input_ids"]),
+                        ),
+                    },
+                )
+
+                # Mean pooling
+                embeddings = outputs[0]
+                attention_mask = encoded["attention_mask"]
+                masked_embeddings = embeddings * np.expand_dims(attention_mask, axis=-1)
+                summed = np.sum(masked_embeddings, axis=1)
+                counts = np.sum(attention_mask, axis=1, keepdims=True)
+                mean_pooled = summed / counts
+
+                # Normalize
+                norms = np.linalg.norm(mean_pooled, axis=1, keepdims=True)
+                normalized = mean_pooled / norms
+
+                # Convert to float32 to match DuckDB FLOAT type
+                result: list[float] = normalized[0].astype(np.float32).tolist()
+                return result
+
+            return await asyncio.get_event_loop().run_in_executor(None, _get_embedding)
+
+        msg = "No embedding model available"
+        raise RuntimeError(msg)
+
+    async def store_conversation(self, content: str, metadata: dict[str, t.Any]) -> str:
+        """Store conversation with optional embedding.
+
+        Args:
+            content: Conversation text content
+            metadata: Dictionary with project, timestamp, and other metadata
+
+        Returns:
+            Unique conversation ID (MD5 hash)
+
+        """
+        conversation_id = hashlib.md5(
+            f"{content}_{time.time()}".encode(),
+            usedforsecurity=False,
+        ).hexdigest()
+
+        # Generate embedding if available
+        embedding: list[float] | None = None
+        if ONNX_AVAILABLE and self.onnx_session:
+            try:
+                embedding = await self.get_embedding(content)
+            except Exception:
+                embedding = None  # Fallback to no embedding
+
+        # Prepare metadata with required fields
+        vector_metadata = {
+            "id": conversation_id,
+            "content": content,
+            "project": metadata.get("project"),
+            "timestamp": datetime.now(UTC).isoformat(),
+            "metadata": json.dumps(metadata),
+            "type": "conversation",
+        }
+
+        # Store in ACB vector adapter using VectorDocument
+        from acb.adapters.vector._base import VectorDocument
+
+        adapter = self._get_adapter()
+        if embedding:
+            doc = VectorDocument(
+                id=conversation_id,
+                vector=embedding,
+                metadata=vector_metadata,
+            )
+        else:
+            # Store metadata only (no vector) for text search fallback
+            # ACB adapter requires vectors, so we'll use a zero vector as placeholder
+            zero_vector = [0.0] * self.embedding_dim
+            doc = VectorDocument(
+                id=conversation_id,
+                vector=zero_vector,
+                metadata=vector_metadata,
+            )
+
+        await adapter.insert(
+            collection=self.collection_name,
+            documents=[doc],
+        )
+
+        return conversation_id
+
+    async def store_reflection(
+        self,
+        content: str,
+        tags: list[str] | None = None,
+    ) -> str:
+        """Store reflection/insight with optional embedding.
+
+        Args:
+            content: Reflection text content
+            tags: Optional list of tags for categorization
+
+        Returns:
+            Unique reflection ID
+
+        """
+        reflection_id = hashlib.md5(
+            f"reflection_{content}_{time.time()}".encode(),
+            usedforsecurity=False,
+        ).hexdigest()
+
+        # Generate embedding if available
+        embedding: list[float] | None = None
+        if ONNX_AVAILABLE and self.onnx_session:
+            try:
+                embedding = await self.get_embedding(content)
+            except Exception:
+                embedding = None
+
+        # Prepare metadata
+        vector_metadata = {
+            "id": reflection_id,
+            "content": content,
+            "tags": tags or [],
+            "timestamp": datetime.now(UTC).isoformat(),
+            "type": "reflection",
+        }
+
+        # Store in ACB vector adapter using VectorDocument
+        from acb.adapters.vector._base import VectorDocument
+
+        adapter = self._get_adapter()
+        if embedding:
+            doc = VectorDocument(
+                id=reflection_id,
+                vector=embedding,
+                metadata=vector_metadata,
+            )
+        else:
+            # Use zero vector placeholder for text-only storage
+            zero_vector = [0.0] * self.embedding_dim
+            doc = VectorDocument(
+                id=reflection_id,
+                vector=zero_vector,
+                metadata=vector_metadata,
+            )
+
+        await adapter.insert(
+            collection=self.collection_name,
+            documents=[doc],
+        )
+
+        return reflection_id
+
+    async def search_conversations(
+        self,
+        query: str,
+        limit: int = 5,
+        min_score: float = 0.7,
+        project: str | None = None,
+    ) -> list[dict[str, t.Any]]:
+        """Search conversations by semantic similarity with text fallback.
+
+        Args:
+            query: Search query text
+            limit: Maximum number of results to return
+            min_score: Minimum similarity score threshold (0.0-1.0)
+            project: Optional project filter
+
+        Returns:
+            List of conversation results with content, score, timestamp, project
+
+        """
+        if ONNX_AVAILABLE and self.onnx_session:
+            return await self._semantic_search_conversations(
+                query, limit, min_score, project
+            )
+        # Fallback to text search (when ONNX unavailable or search failed)
+        # This is a simplified version - in production you'd want to use
+        # the original text search logic from ReflectionDatabase
+        return await self._text_search_conversations(query, limit, project)
+
+    async def _semantic_search_conversations(
+        self,
+        query: str,
+        limit: int,
+        min_score: float,
+        project: str | None,
+    ) -> list[dict[str, t.Any]]:
+        """Perform semantic search using embeddings."""
+        query_embedding = await self.get_embedding(query)
+        try:
+            adapter = self._get_adapter()
+
+            # Build filter for project if specified
+            filter_dict = {"type": "conversation"}
+            if project:
+                filter_dict["project"] = project
+
+            # Search using ACB vector adapter
+            search_results = await adapter.search(
+                collection=self.collection_name,
+                query_vector=query_embedding,
+                limit=limit,
+                filter_expr=filter_dict,
+            )
+
+            # Convert ACB results to original format
+            # search_results is a list of VectorSearchResult objects (Pydantic BaseModel)
+            results = []
+            to_log: list[str] = []
+            for result in search_results:
+                # Access attributes directly (not .get() - it's a Pydantic model)
+                score = result.score
+                if score >= min_score:
+                    meta = result.metadata
+                    from contextlib import suppress
+
+                    with suppress(Exception):
+                        to_log.append(str(result.id))  # type: ignore[attr-defined]
+                    results.append(
+                        {
+                            "content": meta.get("content", ""),
+                            "score": float(score),
+                            "timestamp": meta.get("timestamp"),
+                            "project": meta.get("project"),
+                            "metadata": (
+                                json.loads(meta.get("metadata", "{}"))
+                                if isinstance(meta.get("metadata"), str)
+                                else meta.get("metadata", {})
+                            ),
+                        },
+                    )
+            # Log access for top results (best-effort)
+            self._log_accesses(to_log)
+            return results
+        except Exception:
+            # If semantic search fails, fallback to text search
+            return await self._text_search_conversations(query, limit, project)
+
+    def _log_accesses(self, conv_ids: list[str]) -> None:
+        """Helper to log memory accesses."""
+        from contextlib import suppress
+
+        with suppress(Exception):
+            from session_buddy.memory.persistence import (
+                log_memory_access as _log_access,
+            )
+
+            for conv_id in conv_ids:
+                _log_access(conv_id, access_type="search")
+
+    async def _text_search_conversations(
+        self,
+        query: str,
+        limit: int,
+        project: str | None,
+    ) -> list[dict[str, t.Any]]:
+        """Fallback text search for conversations.
+
+        This is a simplified implementation. For production use, you would
+        want to implement full text search using DuckDB's FTS capabilities
+        or migrate the original text search logic.
+        """
+        # TODO: Implement full text search fallback using ACB adapter's raw SQL access
+        # For now, return empty results with a warning
+        return []
+
+    async def search_reflections(
+        self,
+        query: str,
+        limit: int = 5,
+        min_score: float = 0.7,
+    ) -> list[dict[str, t.Any]]:
+        """Search stored reflections by semantic similarity with text fallback.
+
+        Args:
+            query: Search query text
+            limit: Maximum number of results to return
+            min_score: Minimum similarity score threshold (0.0-1.0)
+
+        Returns:
+            List of reflection results with content, score, timestamp, tags
+
+        """
+        if ONNX_AVAILABLE and self.onnx_session:
+            with suppress(Exception):
+                query_embedding = await self.get_embedding(query)
+                adapter = self._get_adapter()
+
+                # Search reflections only
+                search_results = await adapter.search(
+                    collection=self.collection_name,
+                    query_vector=query_embedding,
+                    limit=limit,
+                    filter_expr={"type": "reflection"},
+                )
+
+                # Convert ACB results to original format
+                # search_results is a list of VectorSearchResult objects (Pydantic BaseModel)
+                results = []
+                for result in search_results:
+                    # Access attributes directly (not .get() - it's a Pydantic model)
+                    score = result.score
+                    if score >= min_score:
+                        meta = result.metadata
+                        results.append(
+                            {
+                                "content": meta.get("content", ""),
+                                "score": float(score),
+                                "timestamp": meta.get("timestamp"),
+                                "tags": meta.get("tags", []),
+                                "metadata": {"type": "reflection"},
+                            },
+                        )
+
+                return results
+
+        # Fallback to text search
+        return []
+
+    async def get_stats(self) -> dict[str, t.Any]:
+        """Get statistics about stored conversations and reflections.
+
+        Returns:
+            Dictionary with counts and other statistics
+
+        """
+        adapter = self._get_adapter()
+
+        try:
+            # Get direct database access
+            client = await adapter.get_client()
+            table_name = f"vectors.{self.collection_name}"
+
+            # Check if table exists
+            collections = await adapter.list_collections()
+            if self.collection_name not in collections:
+                return {
+                    "total_vectors": 0,
+                    "conversations": 0,
+                    "reflections": 0,
+                    "dimension": self.embedding_dim,
+                    "distance_metric": "cosine",
+                }
+
+            # Get total count
+            # Build SQL safely - table_name is internal constant, not user input
+            total_result = client.execute(
+                "SELECT COUNT(*) FROM " + table_name,
+            ).fetchone()
+            total_count = total_result[0] if total_result else 0
+
+            # Count by type using JSON metadata
+            conv_result = client.execute(
+                "SELECT COUNT(*) FROM "
+                + table_name
+                + " WHERE json_extract_string(metadata, '$.type') = 'conversation'",
+            ).fetchone()
+            conv_count = conv_result[0] if conv_result else 0
+
+            refl_result = client.execute(
+                "SELECT COUNT(*) FROM "
+                + table_name
+                + " WHERE json_extract_string(metadata, '$.type') = 'reflection'",
+            ).fetchone()
+            refl_count = refl_result[0] if refl_result else 0
+
+            return {
+                "total_vectors": total_count,
+                "conversations": conv_count,
+                "reflections": refl_count,
+                "dimension": self.embedding_dim,
+                "distance_metric": "cosine",
+            }
+
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def reset_database(self) -> None:
+        """Reset the database by deleting and recreating the collection.
+
+        WARNING: This deletes all stored conversations and reflections!
+        """
+        adapter = self._get_adapter()
+
+        with suppress(Exception):
+            # Delete existing collection (might not exist, continue if so)
+            await adapter.delete_collection(self.collection_name)
+
+        # Recreate collection
+        await adapter.create_collection(
+            name=self.collection_name,
+            dimension=self.embedding_dim,
+            distance_metric="cosine",
+        )

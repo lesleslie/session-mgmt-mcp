@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from session_mgmt_mcp.settings import get_settings
+from session_buddy.settings import get_settings
 
 
 def test_settings_defaults_present() -> None:

@@ -1,7 +1,7 @@
 # Server.py Decomposition Architecture Plan
 
-**Project:** session-mgmt-mcp
-**Current File:** `session_mgmt_mcp/server.py` (3,962 lines, 148+ functions/classes)
+**Project:** session-buddy
+**Current File:** `session_buddy/server.py` (3,962 lines, 148+ functions/classes)
 **Goal:** Decompose into focused, maintainable modules following ACB patterns
 **Target:** 4 modules (~1000 lines each) with clear boundaries
 
@@ -118,7 +118,7 @@ ______________________________________________________________________
 
 ### Module 1: Core Server & Initialization
 
-**File:** `session_mgmt_mcp/server_core.py`
+**File:** `session_buddy/server_core.py`
 **Size:** ~900 lines
 **Responsibility:** MCP server initialization, configuration, and core infrastructure
 
@@ -138,7 +138,7 @@ class MCPServerCore:
     """NEW: Core MCP server wrapper with lifecycle management"""
 
     def __init__(self):
-        self.mcp = FastMCP("session-mgmt-mcp", lifespan=self.session_lifecycle)
+        self.mcp = FastMCP("session-buddy", lifespan=self.session_lifecycle)
         self.logger: SessionLogger
         self.permissions: SessionPermissionsManager
         self.config: dict[str, Any]
@@ -197,7 +197,7 @@ ______________________________________________________________________
 
 ### Module 2: Quality Engine & Analysis
 
-**File:** `session_mgmt_mcp/quality_engine.py`
+**File:** `session_buddy/quality_engine.py`
 **Size:** ~1100 lines
 **Responsibility:** Quality scoring, context analysis, and intelligence generation
 
@@ -305,7 +305,7 @@ ______________________________________________________________________
 
 ### Module 3: Advanced Features Hub
 
-**File:** `session_mgmt_mcp/advanced_features.py`
+**File:** `session_buddy/advanced_features.py`
 **Size:** ~1000 lines
 **Responsibility:** Multi-project coordination, worktree management, scheduling, advanced search
 
@@ -412,7 +412,7 @@ ______________________________________________________________________
 
 ### Module 4: Utilities & Formatting
 
-**File:** `session_mgmt_mcp/utils/server_helpers.py`
+**File:** `session_buddy/utils/server_helpers.py`
 **Size:** ~900 lines
 **Responsibility:** Display formatting, validation, helper functions
 
@@ -513,10 +513,10 @@ ______________________________________________________________________
 1. **Create new module files**
 
    ```bash
-   touch session_mgmt_mcp/server_core.py
-   touch session_mgmt_mcp/quality_engine.py
-   touch session_mgmt_mcp/advanced_features.py
-   touch session_mgmt_mcp/utils/server_helpers.py
+   touch session_buddy/server_core.py
+   touch session_buddy/quality_engine.py
+   touch session_buddy/advanced_features.py
+   touch session_buddy/utils/server_helpers.py
    ```
 
 1. **Add module docstrings and basic structure**
@@ -528,7 +528,7 @@ ______________________________________________________________________
 1. **Update `__init__.py` files**
 
    ```python
-   # session_mgmt_mcp/__init__.py
+   # session_buddy/__init__.py
    from .server_core import MCPServerCore
    from .quality_engine import QualityEngine
    from .advanced_features import AdvancedFeaturesHub
@@ -555,7 +555,7 @@ ______________________________________________________________________
    - Example:
      ```text
      # server.py (temporary bridge)
-     from session_mgmt_mcp.utils.server_helpers import _format_worktree_status
+     from session_buddy.utils.server_helpers import _format_worktree_status
 
      # Old code still works via import
      ```
@@ -570,7 +570,7 @@ ______________________________________________________________________
 1. **Update imports in server.py**
 
    ```text
-   from session_mgmt_mcp.utils.server_helpers import (
+   from session_buddy.utils.server_helpers import (
        _format_worktree_status,
        _setup_claude_directory,
        # ... all moved functions
@@ -580,7 +580,7 @@ ______________________________________________________________________
 1. **Run comprehensive tests**
 
    ```bash
-   pytest tests/ -v --cov=session_mgmt_mcp/utils/server_helpers.py
+   pytest tests/ -v --cov=session_buddy/utils/server_helpers.py
    ```
 
 **Success Criteria:**
@@ -615,7 +615,7 @@ ______________________________________________________________________
 
    ```python
    # server.py
-   from session_mgmt_mcp.quality_engine import QualityEngine
+   from session_buddy.quality_engine import QualityEngine
 
    quality_engine = QualityEngine(session_logger)
 
@@ -629,7 +629,7 @@ ______________________________________________________________________
 
    ```python
    # core/session_manager.py
-   from session_mgmt_mcp.quality_engine import QualityEngine
+   from session_buddy.quality_engine import QualityEngine
 
 
    class SessionLifecycleManager:
@@ -694,13 +694,13 @@ ______________________________________________________________________
 
    ```python
    # server.py
-   from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
+   from session_buddy.advanced_features import AdvancedFeaturesHub
 
    features_hub = AdvancedFeaturesHub(session_logger)
    await features_hub.initialize()
 
    # Register advanced tools
-   from session_mgmt_mcp.tools.advanced_tools import register_advanced_tools
+   from session_buddy.tools.advanced_tools import register_advanced_tools
 
    register_advanced_tools(mcp, features_hub)
    ```
@@ -726,7 +726,7 @@ ______________________________________________________________________
            self.logger = SessionLogger(Path.home() / ".claude" / "logs")
            self.permissions = SessionPermissionsManager(Path.home() / ".claude")
            self.config = self._load_config()
-           self.mcp = FastMCP("session-mgmt-mcp", lifespan=self.session_lifecycle)
+           self.mcp = FastMCP("session-buddy", lifespan=self.session_lifecycle)
 
        async def session_lifecycle(self, app: Any) -> AsyncGenerator[None]:
            """FastMCP lifespan handler"""
@@ -769,7 +769,7 @@ ______________________________________________________________________
 
    ```python
    # server.py (now ~200 lines)
-   from session_mgmt_mcp.server_core import MCPServerCore
+   from session_buddy.server_core import MCPServerCore
 
    # Create server instance
    server_core = MCPServerCore()
@@ -800,7 +800,7 @@ ______________________________________________________________________
 
    ```python
    # core/session_manager.py
-   from session_mgmt_mcp.server_core import MCPServerCore
+   from session_buddy.server_core import MCPServerCore
 
 
    class SessionLifecycleManager:
@@ -841,7 +841,7 @@ import warnings
                DeprecationWarning,
                stacklevel=2
            )
-           from session_mgmt_mcp.server_core import ...
+           from session_buddy.server_core import ...
            return ...
        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 ```
@@ -850,16 +850,16 @@ import warnings
 
    ```bash
    # Find all imports of moved components
-   grep -r "from session_mgmt_mcp.server import" session_mgmt_mcp/
+   grep -r "from session_buddy.server import" session_buddy/
 
    # Update to new module locations
-   sed -i 's/from session_mgmt_mcp.server import SessionLogger/from session_mgmt_mcp.server_core import SessionLogger/g' session_mgmt_mcp/**/*.py
+   sed -i 's/from session_buddy.server import SessionLogger/from session_buddy.server_core import SessionLogger/g' session_buddy/**/*.py
    ```
 
 1. **Run full test suite**
 
    ```bash
-   pytest tests/ -v --cov=session_mgmt_mcp --cov-report=term-missing --cov-fail-under=85
+   pytest tests/ -v --cov=session_buddy --cov-report=term-missing --cov-fail-under=85
    ```
 
 1. **Run quality checks**
@@ -1010,7 +1010,7 @@ ______________________________________________________________________
 - Dependency injection to break cycles
 - Run import analysis after each phase:
   ```bash
-  python -c "import session_mgmt_mcp.server_core; print('✅ No circular deps')"
+  python -c "import session_buddy.server_core; print('✅ No circular deps')"
   ```
 
 #### 3. **Test Coverage Regression**
@@ -1218,21 +1218,21 @@ async def test_advanced_features_integration():
 ```python
 def test_server_py_imports_still_work():
     """Test old imports from server.py still work"""
-    from session_mgmt_mcp.server import SessionLogger, SessionPermissionsManager
+    from session_buddy.server import SessionLogger, SessionPermissionsManager
 
     assert SessionLogger is not None
 
 
 def test_mcp_variable_accessible():
     """Test mcp variable accessible from server module"""
-    from session_mgmt_mcp.server import mcp
+    from session_buddy.server import mcp
 
     assert mcp is not None
 
 
 async def test_calculate_quality_score_callable():
     """Test calculate_quality_score function still callable"""
-    from session_mgmt_mcp.server import calculate_quality_score
+    from session_buddy.server import calculate_quality_score
 
     result = await calculate_quality_score()
     assert "total_score" in result
@@ -1304,11 +1304,11 @@ ______________________________________________________________________
 **Rollback:** Delete new module files, restore server.py to original
 
 ```bash
-git checkout HEAD -- session_mgmt_mcp/server.py
-rm session_mgmt_mcp/server_core.py
-rm session_mgmt_mcp/quality_engine.py
-rm session_mgmt_mcp/advanced_features.py
-rm session_mgmt_mcp/utils/server_helpers.py
+git checkout HEAD -- session_buddy/server.py
+rm session_buddy/server_core.py
+rm session_buddy/quality_engine.py
+rm session_buddy/advanced_features.py
+rm session_buddy/utils/server_helpers.py
 pytest tests/ -v  # Verify rollback success
 ```
 
@@ -1342,7 +1342,7 @@ git revert <phase-5-commits>
 
 ```bash
 git reset --hard <pre-migration-commit>
-pytest tests/ -v --cov=session_mgmt_mcp --cov-fail-under=85
+pytest tests/ -v --cov=session_buddy --cov-fail-under=85
 # Verify full functionality restored
 ```
 
@@ -1418,19 +1418,19 @@ ______________________________________________________________________
 
 ```text
 # Internal (20+ modules)
-from session_mgmt_mcp.reflection_tools import ...
-from session_mgmt_mcp.core.session_manager import ...
-from session_mgmt_mcp.tools import ...
-from session_mgmt_mcp.utils import ...
-from session_mgmt_mcp.multi_project_coordinator import ...
-from session_mgmt_mcp.advanced_search import ...
-from session_mgmt_mcp.app_monitor import ...
-from session_mgmt_mcp.llm_providers import ...
-from session_mgmt_mcp.serverless_mode import ...
-from session_mgmt_mcp.natural_scheduler import ...
-from session_mgmt_mcp.interruption_manager import ...
-from session_mgmt_mcp.worktree_manager import ...
-from session_mgmt_mcp.crackerjack_integration import ...
+from session_buddy.reflection_tools import ...
+from session_buddy.core.session_manager import ...
+from session_buddy.tools import ...
+from session_buddy.utils import ...
+from session_buddy.multi_project_coordinator import ...
+from session_buddy.advanced_search import ...
+from session_buddy.app_monitor import ...
+from session_buddy.llm_providers import ...
+from session_buddy.serverless_mode import ...
+from session_buddy.natural_scheduler import ...
+from session_buddy.interruption_manager import ...
+from session_buddy.worktree_manager import ...
+from session_buddy.crackerjack_integration import ...
 
 # External (10+ modules)
 from fastmcp import FastMCP
@@ -1448,11 +1448,11 @@ import shutil
 
 ```text
 from fastmcp import FastMCP
-from session_mgmt_mcp.quality_engine import QualityEngine
-from session_mgmt_mcp.advanced_features import AdvancedFeaturesHub
-from session_mgmt_mcp.utils.git_operations import ...
-from session_mgmt_mcp.utils.server_helpers import ...
-from session_mgmt_mcp.reflection_tools import ...
+from session_buddy.quality_engine import QualityEngine
+from session_buddy.advanced_features import AdvancedFeaturesHub
+from session_buddy.utils.git_operations import ...
+from session_buddy.utils.server_helpers import ...
+from session_buddy.reflection_tools import ...
 import tomli
 import logging
 import asyncio
@@ -1461,9 +1461,9 @@ import asyncio
 #### quality_engine.py imports
 
 ```text
-from session_mgmt_mcp.utils.quality_utils_v2 import ...
-from session_mgmt_mcp.reflection_tools import ...
-from session_mgmt_mcp.utils.git_operations import ...
+from session_buddy.utils.quality_utils_v2 import ...
+from session_buddy.reflection_tools import ...
+from session_buddy.utils.git_operations import ...
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
@@ -1472,23 +1472,23 @@ from dataclasses import dataclass
 #### advanced_features.py imports
 
 ```text
-from session_mgmt_mcp.multi_project_coordinator import ...
-from session_mgmt_mcp.advanced_search import ...
-from session_mgmt_mcp.natural_scheduler import ...
-from session_mgmt_mcp.interruption_manager import ...
-from session_mgmt_mcp.worktree_manager import ...
-from session_mgmt_mcp.app_monitor import ...
-from session_mgmt_mcp.llm_providers import ...
-from session_mgmt_mcp.serverless_mode import ...
+from session_buddy.multi_project_coordinator import ...
+from session_buddy.advanced_search import ...
+from session_buddy.natural_scheduler import ...
+from session_buddy.interruption_manager import ...
+from session_buddy.worktree_manager import ...
+from session_buddy.app_monitor import ...
+from session_buddy.llm_providers import ...
+from session_buddy.serverless_mode import ...
 from typing import TYPE_CHECKING
 ```
 
 #### utils/server_helpers.py imports
 
 ```text
-from session_mgmt_mcp.utils.format_utils import ...
-from session_mgmt_mcp.utils.quality_utils import ...
-from session_mgmt_mcp.reflection_tools import ...
+from session_buddy.utils.format_utils import ...
+from session_buddy.utils.quality_utils import ...
+from session_buddy.reflection_tools import ...
 from pathlib import Path
 from datetime import datetime
 ```
@@ -1617,7 +1617,7 @@ async def calculate_quality_score() -> dict[str, Any]:
 
 # After (quality_engine.py with ACB)
 from acb import injectable, Depends
-from session_mgmt_mcp.server_core import SessionLogger
+from session_buddy.server_core import SessionLogger
 
 
 @injectable

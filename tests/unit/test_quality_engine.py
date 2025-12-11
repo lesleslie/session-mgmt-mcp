@@ -21,7 +21,7 @@ class TestQualityScoreCalculation:
     @pytest.mark.asyncio
     async def test_calculate_quality_score_returns_dict(self, tmp_path: Path) -> None:
         """Should return dictionary with quality score and details."""
-        from session_mgmt_mcp.quality_engine import calculate_quality_score
+        from session_buddy.quality_engine import calculate_quality_score
 
         result = await calculate_quality_score(project_dir=tmp_path)
 
@@ -32,7 +32,7 @@ class TestQualityScoreCalculation:
     @pytest.mark.asyncio
     async def test_calculate_quality_score_with_no_project(self) -> None:
         """Should handle None project_dir gracefully."""
-        from session_mgmt_mcp.quality_engine import calculate_quality_score
+        from session_buddy.quality_engine import calculate_quality_score
 
         result = await calculate_quality_score(project_dir=None)
 
@@ -42,7 +42,7 @@ class TestQualityScoreCalculation:
     @pytest.mark.asyncio
     async def test_calculate_quality_score_with_nonexistent_path(self) -> None:
         """Should handle nonexistent project directory."""
-        from session_mgmt_mcp.quality_engine import calculate_quality_score
+        from session_buddy.quality_engine import calculate_quality_score
 
         nonexistent = Path("/nonexistent/path/to/project")
         result = await calculate_quality_score(project_dir=nonexistent)
@@ -55,8 +55,8 @@ class TestQualityScoreCalculation:
         self, tmp_path: Path
     ) -> None:
         """Should use quality_utils_v2 for scoring."""
-        from session_mgmt_mcp.quality_engine import calculate_quality_score
-        from session_mgmt_mcp.utils.quality_utils_v2 import (
+        from session_buddy.quality_engine import calculate_quality_score
+        from session_buddy.utils.quality_utils_v2 import (
             CodeQualityScore,
             DevVelocityScore,
             ProjectHealthScore,
@@ -101,7 +101,7 @@ class TestQualityScoreCalculation:
         )
 
         with patch(
-            "session_mgmt_mcp.quality_engine.calculate_quality_score_v2"
+            "session_buddy.quality_engine.calculate_quality_score_v2"
         ) as mock_v2:
             mock_v2.return_value = mock_result
             await calculate_quality_score(project_dir=tmp_path)
@@ -115,7 +115,7 @@ class TestCompactionAnalysis:
 
     def test_should_suggest_compact_returns_tuple(self) -> None:
         """Should return (bool, str) tuple."""
-        from session_mgmt_mcp.quality_engine import should_suggest_compact
+        from session_buddy.quality_engine import should_suggest_compact
 
         result = should_suggest_compact()
 
@@ -126,14 +126,14 @@ class TestCompactionAnalysis:
 
     def test_should_suggest_compact_with_large_project(self, tmp_path: Path) -> None:
         """Should suggest compaction for large projects."""
-        from session_mgmt_mcp.quality_engine import should_suggest_compact
+        from session_buddy.quality_engine import should_suggest_compact
 
         # Create 60 Python files to trigger large project heuristic
         for i in range(60):
             (tmp_path / f"file_{i}.py").write_text("# Python file\n")
 
         with patch(
-            "session_mgmt_mcp.quality_engine._count_significant_files"
+            "session_buddy.quality_engine._count_significant_files"
         ) as mock_count:
             mock_count.return_value = 60
 
@@ -145,13 +145,13 @@ class TestCompactionAnalysis:
 
     def test_should_suggest_compact_with_small_project(self, tmp_path: Path) -> None:
         """Should not suggest compaction for small projects."""
-        from session_mgmt_mcp.quality_engine import should_suggest_compact
+        from session_buddy.quality_engine import should_suggest_compact
 
         # Create minimal project
         (tmp_path / "main.py").write_text("# Main file\n")
 
         with patch(
-            "session_mgmt_mcp.quality_engine._count_significant_files"
+            "session_buddy.quality_engine._count_significant_files"
         ) as mock_count:
             mock_count.return_value = 1
 
@@ -164,11 +164,11 @@ class TestCompactionAnalysis:
     @pytest.mark.asyncio
     async def test_perform_strategic_compaction_returns_list(self) -> None:
         """Should return list of compaction results."""
-        from session_mgmt_mcp.quality_engine import perform_strategic_compaction
+        from session_buddy.quality_engine import perform_strategic_compaction
 
         # Mock filesystem operations to prevent timeout
         with patch(
-            "session_mgmt_mcp.utils.file_utils._cleanup_temp_files"
+            "session_buddy.utils.file_utils._cleanup_temp_files"
         ) as mock_cleanup:
             mock_cleanup.return_value = "✅ Cleaned 0 temporary files (0.0 MB)"
 
@@ -184,10 +184,10 @@ class TestCompactionAnalysis:
         self,
     ) -> None:
         """Should include reflection database optimization."""
-        from session_mgmt_mcp.quality_engine import perform_strategic_compaction
+        from session_buddy.quality_engine import perform_strategic_compaction
 
         with patch(
-            "session_mgmt_mcp.quality_engine._optimize_reflection_database"
+            "session_buddy.quality_engine._optimize_reflection_database"
         ) as mock_optimize:
             mock_optimize.return_value = "✅ Database optimized"
 
@@ -203,7 +203,7 @@ class TestProjectHeuristics:
 
     def test_count_significant_files_with_python_project(self, tmp_path: Path) -> None:
         """Should count Python files correctly."""
-        from session_mgmt_mcp.quality_engine import _count_significant_files
+        from session_buddy.quality_engine import _count_significant_files
 
         # Create Python files
         (tmp_path / "main.py").write_text("# Main\n")
@@ -216,7 +216,7 @@ class TestProjectHeuristics:
 
     def test_count_significant_files_ignores_hidden_files(self, tmp_path: Path) -> None:
         """Should ignore files in hidden directories."""
-        from session_mgmt_mcp.quality_engine import _count_significant_files
+        from session_buddy.quality_engine import _count_significant_files
 
         # Create hidden directory with files
         hidden_dir = tmp_path / ".hidden"
@@ -235,7 +235,7 @@ class TestProjectHeuristics:
         self, tmp_path: Path
     ) -> None:
         """Should count files from multiple programming languages."""
-        from session_mgmt_mcp.quality_engine import _count_significant_files
+        from session_buddy.quality_engine import _count_significant_files
 
         # Create files in different languages
         (tmp_path / "script.py").write_text("# Python\n")
@@ -250,7 +250,7 @@ class TestProjectHeuristics:
 
     def test_count_significant_files_stops_at_threshold(self, tmp_path: Path) -> None:
         """Should stop counting after threshold (performance optimization)."""
-        from session_mgmt_mcp.quality_engine import _count_significant_files
+        from session_buddy.quality_engine import _count_significant_files
 
         # Create 100 files
         for i in range(100):
@@ -263,7 +263,7 @@ class TestProjectHeuristics:
 
     def test_check_git_activity_with_no_git(self, tmp_path: Path) -> None:
         """Should return None for non-git projects."""
-        from session_mgmt_mcp.quality_engine import _check_git_activity
+        from session_buddy.quality_engine import _check_git_activity
 
         result = _check_git_activity(tmp_path)
 
@@ -271,7 +271,7 @@ class TestProjectHeuristics:
 
     def test_check_git_activity_with_git_repo(self, tmp_path: Path) -> None:
         """Should return commit and file counts for git repos."""
-        from session_mgmt_mcp.quality_engine import _check_git_activity
+        from session_buddy.quality_engine import _check_git_activity
 
         # Create .git directory
         git_dir = tmp_path / ".git"
@@ -298,7 +298,7 @@ class TestWorkflowAnalysis:
         self, tmp_path: Path
     ) -> None:
         """Should return dictionary with workflow analysis."""
-        from session_mgmt_mcp.quality_engine import analyze_project_workflow_patterns
+        from session_buddy.quality_engine import analyze_project_workflow_patterns
 
         result = await analyze_project_workflow_patterns(tmp_path)
 
@@ -313,7 +313,7 @@ class TestWorkflowAnalysis:
         self, tmp_path: Path
     ) -> None:
         """Should detect Python project characteristics."""
-        from session_mgmt_mcp.quality_engine import analyze_project_workflow_patterns
+        from session_buddy.quality_engine import analyze_project_workflow_patterns
 
         # Create Python project files
         (tmp_path / "setup.py").write_text("# Setup\n")
@@ -326,7 +326,7 @@ class TestWorkflowAnalysis:
 
     def test_generate_workflow_recommendations_returns_list(self) -> None:
         """Should generate recommendations based on project characteristics."""
-        from session_mgmt_mcp.quality_engine import _generate_workflow_recommendations
+        from session_buddy.quality_engine import _generate_workflow_recommendations
 
         # Use actual characteristic keys from the function
         characteristics = {
@@ -350,7 +350,7 @@ class TestConversationAnalysis:
     @pytest.mark.asyncio
     async def test_summarize_current_conversation_returns_dict(self) -> None:
         """Should return summary dictionary."""
-        from session_mgmt_mcp.quality_engine import summarize_current_conversation
+        from session_buddy.quality_engine import summarize_current_conversation
 
         result = await summarize_current_conversation()
 
@@ -365,7 +365,7 @@ class TestConversationAnalysis:
     @pytest.mark.asyncio
     async def test_analyze_conversation_flow_returns_dict(self) -> None:
         """Should return conversation flow analysis."""
-        from session_mgmt_mcp.quality_engine import analyze_conversation_flow
+        from session_buddy.quality_engine import analyze_conversation_flow
 
         result = await analyze_conversation_flow()
 
@@ -375,7 +375,7 @@ class TestConversationAnalysis:
     @pytest.mark.asyncio
     async def test_analyze_memory_patterns_returns_dict(self) -> None:
         """Should return memory pattern analysis."""
-        from session_mgmt_mcp.quality_engine import analyze_memory_patterns
+        from session_buddy.quality_engine import analyze_memory_patterns
 
         mock_db = MagicMock()
         result = await analyze_memory_patterns(mock_db, conv_count=10)
@@ -389,7 +389,7 @@ class TestTokenUsageAnalysis:
     @pytest.mark.asyncio
     async def test_analyze_token_usage_patterns_returns_dict(self) -> None:
         """Should return token usage analysis."""
-        from session_mgmt_mcp.quality_engine import analyze_token_usage_patterns
+        from session_buddy.quality_engine import analyze_token_usage_patterns
 
         result = await analyze_token_usage_patterns()
 
@@ -399,7 +399,7 @@ class TestTokenUsageAnalysis:
     @pytest.mark.asyncio
     async def test_analyze_context_usage_returns_list(self) -> None:
         """Should return list of context usage recommendations."""
-        from session_mgmt_mcp.quality_engine import analyze_context_usage
+        from session_buddy.quality_engine import analyze_context_usage
 
         result = await analyze_context_usage()
 
@@ -411,7 +411,7 @@ class TestTokenUsageAnalysis:
     @pytest.mark.asyncio
     async def test_analyze_advanced_context_metrics_returns_dict(self) -> None:
         """Should return advanced context metrics."""
-        from session_mgmt_mcp.quality_engine import analyze_advanced_context_metrics
+        from session_buddy.quality_engine import analyze_advanced_context_metrics
 
         result = await analyze_advanced_context_metrics()
 
@@ -425,7 +425,7 @@ class TestSessionIntelligence:
     @pytest.mark.asyncio
     async def test_generate_session_intelligence_returns_dict(self) -> None:
         """Should return session intelligence summary."""
-        from session_mgmt_mcp.quality_engine import generate_session_intelligence
+        from session_buddy.quality_engine import generate_session_intelligence
 
         result = await generate_session_intelligence()
 
@@ -439,7 +439,7 @@ class TestSessionIntelligence:
     @pytest.mark.asyncio
     async def test_monitor_proactive_quality_returns_dict(self) -> None:
         """Should return proactive quality monitoring results."""
-        from session_mgmt_mcp.quality_engine import monitor_proactive_quality
+        from session_buddy.quality_engine import monitor_proactive_quality
 
         result = await monitor_proactive_quality()
 
@@ -452,7 +452,7 @@ class TestHelperFunctions:
 
     def test_get_default_compaction_reason_returns_string(self) -> None:
         """Should return default compaction reason."""
-        from session_mgmt_mcp.quality_engine import _get_default_compaction_reason
+        from session_buddy.quality_engine import _get_default_compaction_reason
 
         result = _get_default_compaction_reason()
 
@@ -461,7 +461,7 @@ class TestHelperFunctions:
 
     def test_get_fallback_compaction_reason_returns_string(self) -> None:
         """Should return fallback compaction reason."""
-        from session_mgmt_mcp.quality_engine import _get_fallback_compaction_reason
+        from session_buddy.quality_engine import _get_fallback_compaction_reason
 
         result = _get_fallback_compaction_reason()
 
@@ -470,7 +470,7 @@ class TestHelperFunctions:
 
     def test_generate_session_tags_returns_list(self) -> None:
         """Should generate tags based on quality score."""
-        from session_mgmt_mcp.quality_engine import _generate_session_tags
+        from session_buddy.quality_engine import _generate_session_tags
 
         tags = _generate_session_tags(quality_score=85.0)
 
@@ -480,7 +480,7 @@ class TestHelperFunctions:
 
     def test_generate_session_tags_for_high_quality(self) -> None:
         """Should generate positive tags for high quality scores."""
-        from session_mgmt_mcp.quality_engine import _generate_session_tags
+        from session_buddy.quality_engine import _generate_session_tags
 
         tags = _generate_session_tags(quality_score=95.0)
 
@@ -489,7 +489,7 @@ class TestHelperFunctions:
 
     def test_generate_session_tags_for_low_quality(self) -> None:
         """Should generate improvement tags for low quality scores."""
-        from session_mgmt_mcp.quality_engine import _generate_session_tags
+        from session_buddy.quality_engine import _generate_session_tags
 
         tags = _generate_session_tags(quality_score=30.0)
 

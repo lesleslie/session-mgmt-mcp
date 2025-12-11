@@ -100,7 +100,7 @@ ______________________________________________________________________
 ### Current Architecture (Problematic)
 
 ```python
-# session_mgmt_mcp/serverless_mode.py
+# session_buddy/serverless_mode.py
 
 
 class SessionStorage(ABC):
@@ -125,7 +125,7 @@ class SessionStorage(ABC):
 ### New Architecture (ACB-Based)
 
 ```python
-# session_mgmt_mcp/serverless_mode.py
+# session_buddy/serverless_mode.py
 
 from acb.adapters.cache import CacheBase  # Import ACB base
 from acb.depends import depends
@@ -505,5 +505,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Day 3 - Serverless Mode Refactoring

@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 from tests.fixtures import mock_lifecycle_manager, tmp_git_repo
 
 
@@ -141,7 +141,7 @@ class TestSessionProjectContextAnalysis:
 class TestSessionQualityScoring:
     """Test quality score calculation."""
 
-    @patch("session_mgmt_mcp.server.calculate_quality_score")
+    @patch("session_buddy.server.calculate_quality_score")
     async def test_calculate_quality_score_delegates_to_server(
         self, mock_server_calc: AsyncMock, tmp_path: Path
     ):
@@ -166,8 +166,8 @@ class TestSessionQualityScoring:
 class TestSessionCheckpointOperations:
     """Test checkpoint session operations."""
 
-    @patch("session_mgmt_mcp.utils.git_operations.create_checkpoint_commit")
-    @patch("session_mgmt_mcp.server.calculate_quality_score")
+    @patch("session_buddy.utils.git_operations.create_checkpoint_commit")
+    @patch("session_buddy.server.calculate_quality_score")
     async def test_checkpoint_session_creates_commit(
         self, mock_server_calc: AsyncMock, mock_commit: Mock, tmp_git_repo: Path
     ):
@@ -201,8 +201,8 @@ class TestSessionCheckpointOperations:
 class TestSessionEndOperations:
     """Test session end and cleanup."""
 
-    @patch("session_mgmt_mcp.utils.git_operations.create_checkpoint_commit")
-    @patch("session_mgmt_mcp.server.calculate_quality_score")
+    @patch("session_buddy.utils.git_operations.create_checkpoint_commit")
+    @patch("session_buddy.server.calculate_quality_score")
     async def test_end_session_performs_final_assessment(
         self, mock_server_calc: AsyncMock, mock_commit: Mock, tmp_git_repo: Path
     ):

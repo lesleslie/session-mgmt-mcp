@@ -25,7 +25,7 @@
 **Root Cause**: Missing module imports and improper async handling in CLI
 **Files Affected**:
 
-- `session_mgmt_mcp/cli.py:40-140` (command handlers)
+- `session_buddy/cli.py:40-140` (command handlers)
 - `tests/unit/test_cli.py` (if exists)
 
 ### 3. Dependency Injection Container Issues (20% of failures)
@@ -34,8 +34,8 @@
 **Root Cause**: Missing or misconfigured DI setup in tests
 **Files Affected**:
 
-- `session_mgmt_mcp/core/di_container.py` (needs creation/fix)
-- `session_mgmt_mcp/core/instance_manager.py` (needs creation/fix)
+- `session_buddy/core/di_container.py` (needs creation/fix)
+- `session_buddy/core/instance_manager.py` (needs creation/fix)
 
 ### 4. Tool Registration Failures (15% of failures)
 
@@ -44,7 +44,7 @@
 **Files Affected**:
 
 - `tests/conftest.py:24-58` (MockFastMCP class)
-- `session_mgmt_mcp/tools/*.py` (tool registration)
+- `session_buddy/tools/*.py` (tool registration)
 
 ## Priority 1: Critical Fixes (Quick Wins)
 
@@ -74,15 +74,15 @@ async def initialized_db():
 ### Fix 2: CLI Module Dependencies (Effort: 1 hour)
 
 ```python
-# File: session_mgmt_mcp/cli.py:40 - Add missing imports
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
-from session_mgmt_mcp.server import mcp, permissions_manager
+# File: session_buddy/cli.py:40 - Add missing imports
+from session_buddy.core.session_manager import SessionLifecycleManager
+from session_buddy.server import mcp, permissions_manager
 ```
 
 **Files to Update**:
 
-- `session_mgmt_mcp/cli.py:8-20` - Add missing imports
-- `session_mgmt_mcp/cli.py:100-200` - Fix async command handlers
+- `session_buddy/cli.py:8-20` - Add missing imports
+- `session_buddy/cli.py:100-200` - Fix async command handlers
 
 ### Fix 3: Mock MCP Server Enhancement (Effort: 1 hour)
 
@@ -114,9 +114,9 @@ class MockFastMCP:
 
 **Untested Critical Functions**:
 
-- `session_mgmt_mcp/core/session_manager.py:82-150` - calculate_quality_score
-- `session_mgmt_mcp/core/session_manager.py:200-250` - handoff documentation
-- `session_mgmt_mcp/utils/git_operations.py` - All git operations
+- `session_buddy/core/session_manager.py:82-150` - calculate_quality_score
+- `session_buddy/core/session_manager.py:200-250` - handoff documentation
+- `session_buddy/utils/git_operations.py` - All git operations
 
 **New Test Files Needed**:
 
@@ -130,9 +130,9 @@ tests/unit/test_quality_scoring.py      # 20+ tests
 
 **Untested Critical Functions**:
 
-- `session_mgmt_mcp/tools/memory_tools.py` - All MCP tool functions
-- `session_mgmt_mcp/tools/search_tools.py` - Advanced search functions
-- `session_mgmt_mcp/reflection_tools.py:200-400` - Vector search operations
+- `session_buddy/tools/memory_tools.py` - All MCP tool functions
+- `session_buddy/tools/search_tools.py` - Advanced search functions
+- `session_buddy/reflection_tools.py:200-400` - Vector search operations
 
 **New Test Files Needed**:
 
@@ -146,8 +146,8 @@ tests/unit/test_vector_operations.py    # 15+ tests
 
 **Untested Critical Functions**:
 
-- `session_mgmt_mcp/tools/crackerjack_tools.py` - All command execution
-- `session_mgmt_mcp/crackerjack_integration.py` - Progress parsing
+- `session_buddy/tools/crackerjack_tools.py` - All command execution
+- `session_buddy/crackerjack_integration.py` - Progress parsing
 
 **New Test Files Needed**:
 
@@ -236,7 +236,7 @@ class IntegrationTestBase:
 ```python
 # tests/unit/test_session_manager.py
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 
 
 class TestSessionManager:
@@ -259,7 +259,7 @@ class TestSessionManager:
 ```python
 # tests/unit/test_memory_tools.py
 import pytest
-from session_mgmt_mcp.tools.memory_tools import store_reflection
+from session_buddy.tools.memory_tools import store_reflection
 
 
 class TestMemoryTools:
@@ -293,10 +293,10 @@ pytest tests/unit/ -xvs
 pytest tests/integration/ -xvs
 
 # 4. Check coverage improvement
-pytest --cov=session_mgmt_mcp --cov-report=term-missing
+pytest --cov=session_buddy --cov-report=term-missing
 
 # 5. Run all tests with parallel execution
-pytest -n auto --cov=session_mgmt_mcp
+pytest -n auto --cov=session_buddy
 ```
 
 ## Success Metrics

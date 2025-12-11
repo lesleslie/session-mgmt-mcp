@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 
 
 @pytest.mark.asyncio

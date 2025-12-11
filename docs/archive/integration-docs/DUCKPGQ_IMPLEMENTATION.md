@@ -7,7 +7,7 @@ ______________________________________________________________________
 
 ## Overview
 
-Adding semantic memory (knowledge graph) to session-mgmt-mcp using:
+Adding semantic memory (knowledge graph) to session-buddy using:
 
 - **DuckDB + DuckPGQ** extension (no external database required!)
 - **Separate database file**: `~/.claude/data/knowledge_graph.duckdb`
@@ -21,7 +21,7 @@ ______________________________________________________________________
 ### Dual Memory System
 
 ```
-session-mgmt-mcp Memory System
+session-buddy Memory System
 ├── Episodic Memory (reflection.duckdb)
 │   ├── conversations (vector search)
 │   ├── reflections
@@ -81,7 +81,7 @@ FROM GRAPH_TABLE (knowledge_graph
 SELECT *
 FROM GRAPH_TABLE (knowledge_graph
     MATCH (start:Project)-[path:*1..3]->(end:Technology)
-    WHERE start.name = 'session-mgmt-mcp'
+    WHERE start.name = 'session-buddy'
       AND end.name = 'ACB'
     COLUMNS (start.name AS from, end.name AS to, path)
 );
@@ -93,7 +93,7 @@ ______________________________________________________________________
 
 ### 1. KnowledgeGraphDatabase Class
 
-**File**: `session_mgmt_mcp/knowledge_graph_db.py`
+**File**: `session_buddy/knowledge_graph_db.py`
 
 **Key Methods**:
 
@@ -105,7 +105,7 @@ ______________________________________________________________________
 
 ### 2. MCP Tools (10 total)
 
-**File**: `session_mgmt_mcp/tools/knowledge_graph_tools.py`
+**File**: `session_buddy/tools/knowledge_graph_tools.py`
 
 1. `create_entity` - Create node
 1. `create_relation` - Create edge
@@ -120,7 +120,7 @@ ______________________________________________________________________
 
 ### 3. Auto Entity Extraction
 
-**File**: `session_mgmt_mcp/extractors/entity_extractor.py`
+**File**: `session_buddy/extractors/entity_extractor.py`
 
 Automatically extracts entities from conversations using:
 

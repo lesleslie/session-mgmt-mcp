@@ -6,13 +6,13 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 
 
 class TestSessionWorkflows:
     """Test complete session workflows."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_complete_session_workflow(self, mock_is_git_repo):
         """Test a complete session workflow: init -> checkpoint -> end."""
         mock_is_git_repo.return_value = True
@@ -81,7 +81,7 @@ class TestSessionWorkflows:
                     assert handoff_file.exists()
                     assert handoff_file.suffix == ".md"
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_with_git_operations(self, mock_is_git_repo):
         """Test session workflow with git operations."""
         mock_is_git_repo.return_value = True
@@ -123,7 +123,7 @@ class TestSessionWorkflows:
 
                 # Create a checkpoint (should handle git status)
                 with patch(
-                    "session_mgmt_mcp.core.session_manager.create_checkpoint_commit"
+                    "session_buddy.core.session_manager.create_checkpoint_commit"
                 ) as mock_checkpoint:
                     mock_checkpoint.return_value = (
                         True,
@@ -141,7 +141,7 @@ class TestSessionWorkflows:
                 end_result = await manager.end_session()
                 assert end_result["success"] is True
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_status_check(self, mock_is_git_repo):
         """Test session status checking."""
         mock_is_git_repo.return_value = True
@@ -222,7 +222,7 @@ class TestSessionWorkflows:
         if context.get("has_pyproject_toml"):
             (temp_dir / "uv.lock").write_text("# UV lockfile\n")
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_quality_scoring(self, mock_is_git_repo):
         """Test session quality scoring logic with V2 algorithm."""
         manager = SessionLifecycleManager(logger=Mock())
@@ -304,7 +304,7 @@ class TestSessionWorkflows:
                 "shutil.which",
                 return_value="/usr/local/bin/uv" if test_case["uv_available"] else None,
             ):
-                with patch("session_mgmt_mcp.server.permissions_manager") as mock_perms:
+                with patch("session_buddy.server.permissions_manager") as mock_perms:
                     mock_perms.trusted_operations = {"op1", "op2"} if i < 2 else set()
 
                     # Pass temp_dir to quality scoring
@@ -331,7 +331,7 @@ class TestSessionWorkflows:
                             f"Test case {i}: Expected max score {test_case['expected_max_score']}, got {quality_result['total_score']}"
                         )
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_with_previous_handoff(self, mock_is_git_repo):
         """Test session initialization with previous handoff file."""
         mock_is_git_repo.return_value = True
@@ -408,7 +408,7 @@ class TestSessionErrorHandling:
         assert result["success"] is False
         assert "error" in result
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_with_permissions_error(self, mock_is_git_repo):
         """Test session handling of permissions errors."""
         mock_is_git_repo.return_value = True
@@ -430,7 +430,7 @@ class TestSessionErrorHandling:
                 assert result["success"] is False
                 assert "error" in result
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_with_handoff_write_error(self, mock_is_git_repo):
         """Test session handling of handoff file write errors."""
         mock_is_git_repo.return_value = True
@@ -473,7 +473,7 @@ class TestSessionErrorHandling:
 class TestSessionCrossPlatform:
     """Test session functionality across different environments."""
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_in_different_environments(self, mock_is_git_repo):
         """Test session behavior with different environment configurations (V2 algorithm)."""
         mock_is_git_repo.return_value = True
@@ -517,7 +517,7 @@ class TestSessionCrossPlatform:
                 ):
                     with patch("shutil.which", return_value=env["which_result"]):
                         with patch(
-                            "session_mgmt_mcp.server.permissions_manager"
+                            "session_buddy.server.permissions_manager"
                         ) as mock_perms:
                             mock_perms.trusted_operations = set()
 
@@ -533,7 +533,7 @@ class TestSessionCrossPlatform:
                             assert quality_result["version"] == "2.0"
                             assert 0 <= quality_result["total_score"] <= 100
 
-    @patch("session_mgmt_mcp.core.session_manager.is_git_repository")
+    @patch("session_buddy.core.session_manager.is_git_repository")
     async def test_session_with_different_project_types(self, mock_is_git_repo):
         """Test session with different types of projects."""
         mock_is_git_repo.return_value = True

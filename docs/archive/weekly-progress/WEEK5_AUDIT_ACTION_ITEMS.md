@@ -67,7 +67,7 @@ ______________________________________________________________________
 **What's Good:**
 
 - ✅ ACBCacheStorage adapter exists (serverless_mode.py)
-- ✅ DI infrastructure present (session_mgmt_mcp/di/)
+- ✅ DI infrastructure present (session_buddy/di/)
 - ✅ Pydantic models used throughout
 
 ### 2. Testing Patterns Quality: **7/10** ⚠️ NEEDS IMPROVEMENT

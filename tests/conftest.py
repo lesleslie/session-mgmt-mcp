@@ -16,13 +16,13 @@ import pytest
 from acb.depends import depends
 from fastmcp import FastMCP
 # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
-from session_mgmt_mcp.adapters.reflection_adapter import (
+from session_buddy.adapters.reflection_adapter import (
     ReflectionDatabaseAdapter as ReflectionDatabase,
 )
 
 # Configure DI container BEFORE any other imports
 # This ensures SessionLogger and other dependencies are available
-from session_mgmt_mcp.di import configure as configure_di
+from session_buddy.di import configure as configure_di
 
 # Initialize DI container for tests - force registration to bypass async checks
 try:
@@ -244,7 +244,7 @@ def reset_di_container():
         """Helper function to clean up the DI container."""
         try:
             from bevy import get_container
-            from session_mgmt_mcp.di import SessionPaths
+            from session_buddy.di import SessionPaths
 
             container = get_container()
 
@@ -270,42 +270,42 @@ def reset_di_container():
                     # Import the class dynamically
                     try:
                         if cls == "SessionLogger":
-                            from session_mgmt_mcp.utils.logging import SessionLogger
+                            from session_buddy.utils.logging import SessionLogger
 
                             cls = SessionLogger
                         elif cls == "SessionPermissionsManager":
-                            from session_mgmt_mcp.core.permissions import (
+                            from session_buddy.core.permissions import (
                                 SessionPermissionsManager,
                             )
 
                             cls = SessionPermissionsManager
                         elif cls == "SessionLifecycleManager":
-                            from session_mgmt_mcp.core import SessionLifecycleManager
+                            from session_buddy.core import SessionLifecycleManager
 
                             cls = SessionLifecycleManager
                         elif cls == "ApplicationMonitor":
-                            from session_mgmt_mcp.app_monitor import ApplicationMonitor
+                            from session_buddy.app_monitor import ApplicationMonitor
 
                             cls = ApplicationMonitor
                         elif cls == "LLMManager":
-                            from session_mgmt_mcp.llm_providers import LLMManager
+                            from session_buddy.llm_providers import LLMManager
 
                             cls = LLMManager
                         elif cls == "ServerlessSessionManager":
-                            from session_mgmt_mcp.serverless_mode import (
+                            from session_buddy.serverless_mode import (
                                 ServerlessSessionManager,
                             )
 
                             cls = ServerlessSessionManager
                         elif cls == "ReflectionDatabase":
                             # Migration Phase 2.7: Use ReflectionDatabaseAdapter (ACB-based)
-                            from session_mgmt_mcp.adapters.reflection_adapter import (
+                            from session_buddy.adapters.reflection_adapter import (
                                 ReflectionDatabaseAdapter as ReflectionDatabase,
                             )
 
                             cls = ReflectionDatabase
                         elif cls == "InterruptionManager":
-                            from session_mgmt_mcp.interruption_manager import (
+                            from session_buddy.interruption_manager import (
                                 InterruptionManager,
                             )
 
@@ -320,7 +320,7 @@ def reset_di_container():
                     pass
 
             # Reset configuration flag
-            import session_mgmt_mcp.di as di_module
+            import session_buddy.di as di_module
 
             di_module._configured = False
 
@@ -583,7 +583,7 @@ def sample_embedding() -> np.ndarray:
 @pytest.fixture
 def mock_embeddings_disabled():
     """Fixture to disable embeddings for testing fallback behavior."""
-    with patch("session_mgmt_mcp.reflection_tools.ONNX_AVAILABLE", False):
+    with patch("session_buddy.reflection_tools.ONNX_AVAILABLE", False):
         yield
 
 

@@ -287,7 +287,7 @@ ______________________________________________________________________
 **Good Examples to Follow:**
 
 ```python
-# session_mgmt_mcp/core/session_manager.py
+# session_buddy/core/session_manager.py
 # No class-level singleton, relies on DI container
 class SessionLifecycleManager:
     def __init__(self):
@@ -316,5 +316,5 @@ ______________________________________________________________________
 **Owner:** Test Infrastructure Team
 **Created:** 2025-10-28
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 4 - Test Coverage Expansion

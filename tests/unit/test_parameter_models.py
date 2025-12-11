@@ -9,7 +9,7 @@ Following crackerjack testing patterns:
 
 import pytest
 from pydantic import ValidationError
-from session_mgmt_mcp.parameter_models import (
+from session_buddy.parameter_models import (
     CommandExecutionParams,
     ConceptSearchParams,
     CrackerjackExecutionParams,

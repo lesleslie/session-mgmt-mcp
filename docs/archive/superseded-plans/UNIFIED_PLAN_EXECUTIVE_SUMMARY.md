@@ -7,7 +7,7 @@ ______________________________________________________________________
 
 ## TL;DR
 
-**The Plans Are Compatible** - session-mgmt-mcp serves as the **pilot implementation** for mcp-common patterns, not a competing effort.
+**The Plans Are Compatible** - session-buddy serves as the **pilot implementation** for mcp-common patterns, not a competing effort.
 
 **Timeline**: 16 weeks unified plan (40% time savings vs. serial execution)
 
@@ -19,11 +19,11 @@ ______________________________________________________________________
 
 ## Key Architectural Insights
 
-### 1. session-mgmt-mcp is Phase 0 of mcp-common
+### 1. session-buddy is Phase 0 of mcp-common
 
 ```
 Role Clarification
-├── session-mgmt-mcp = Pilot / Validation Sandbox
+├── session-buddy = Pilot / Validation Sandbox
 │   ├── Tests HTTPClientAdapter with real traffic
 │   ├── Validates DI patterns (Phase 2.7)
 │   └── Proves health/shutdown patterns
@@ -122,7 +122,7 @@ Weeks 11-12: Event-driven orchestration
 Weeks 13-16: Test coverage + performance
 ```
 
-**Exit Criteria**: session-mgmt-mcp quality 95/100, world-class reference implementation
+**Exit Criteria**: session-buddy quality 95/100, world-class reference implementation
 
 ______________________________________________________________________
 
@@ -261,7 +261,7 @@ ______________________________________________________________________
 
 **Guidance**:
 
-1. ✅ session-mgmt-mcp serves as **pilot implementation** for mcp-common patterns
+1. ✅ session-buddy serves as **pilot implementation** for mcp-common patterns
 1. ✅ "Extra" work represents **strategic technical debt reduction**, not scope creep
 1. ✅ **No circular dependencies** detected with current approach
 1. ✅ **16-week unified timeline** achievable with proper work stream organization

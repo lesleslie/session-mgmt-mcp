@@ -8,7 +8,7 @@ ______________________________________________________________________
 
 ## Overview
 
-The session-mgmt-mcp server now includes a **semantic memory system** powered by DuckDB's DuckPGQ extension, which implements SQL:2023 Property Graph Queries (SQL/PGQ). This provides a knowledge graph for storing and querying entity-relationship data about projects, libraries, technologies, and concepts.
+The session-buddy server now includes a **semantic memory system** powered by DuckDB's DuckPGQ extension, which implements SQL:2023 Property Graph Queries (SQL/PGQ). This provides a knowledge graph for storing and querying entity-relationship data about projects, libraries, technologies, and concepts.
 
 ### What is DuckPGQ?
 
@@ -100,7 +100,7 @@ Create a new entity (node) in the knowledge graph.
 
 **Parameters:**
 
-- `name` (str): Entity name (e.g., "session-mgmt-mcp", "Python 3.13")
+- `name` (str): Entity name (e.g., "session-buddy", "Python 3.13")
 - `entity_type` (str): Type (e.g., "project", "language", "library", "concept")
 - `observations` (list[str], optional): Facts about this entity
 - `properties` (dict, optional): Additional structured properties
@@ -109,7 +109,7 @@ Create a new entity (node) in the knowledge graph.
 
 ```text
 create_entity(
-    name="session-mgmt-mcp",
+    name="session-buddy",
     entity_type="project",
     observations=[
         "Claude session management MCP server",
@@ -123,7 +123,7 @@ create_entity(
 **Returns:**
 
 ```
-✅ Entity 'session-mgmt-mcp' created successfully!
+✅ Entity 'session-buddy' created successfully!
 📊 Type: project
 🆔 ID: 01947e12-5678-7abc-9def-1a2b3c4d5e6f
 📝 Observations: 3
@@ -145,7 +145,7 @@ Add a fact/observation to an existing entity.
 
 ```python
 add_observation(
-    entity_name="session-mgmt-mcp", observation="Supports automatic context compaction"
+    entity_name="session-buddy", observation="Supports automatic context compaction"
 )
 ```
 
@@ -174,7 +174,7 @@ Create a relationship between two entities.
 
 ```text
 create_relation(
-    from_entity="session-mgmt-mcp",
+    from_entity="session-buddy",
     to_entity="ACB",
     relation_type="uses",
     properties={"since_version": "1.0"},
@@ -184,7 +184,7 @@ create_relation(
 **Returns:**
 
 ```
-✅ Relationship created: session-mgmt-mcp --[uses]--> ACB
+✅ Relationship created: session-buddy --[uses]--> ACB
 🆔 Relation ID: 01947e12-1234-5678-9abc-def012345678
 ⚙️ Properties: since_version
 ```
@@ -212,7 +212,7 @@ search_entities(query="session management", entity_type="project", limit=5)
 ```
 🔍 Found 2 entities matching 'session management':
 
-📌 session-mgmt-mcp (project)
+📌 session-buddy (project)
    📝 Observations: 3
    └─ Claude session management MCP server
 
@@ -236,19 +236,19 @@ Get all relationships for a specific entity.
 **Example:**
 
 ```python
-get_entity_relationships(entity_name="session-mgmt-mcp", direction="outgoing")
+get_entity_relationships(entity_name="session-buddy", direction="outgoing")
 ```
 
 **Returns:**
 
 ```
-🔗 Found 5 relationships for 'session-mgmt-mcp':
+🔗 Found 5 relationships for 'session-buddy':
 
-  session-mgmt-mcp --[uses]--> ACB
-  session-mgmt-mcp --[uses]--> FastMCP
-  session-mgmt-mcp --[uses]--> DuckDB
-  session-mgmt-mcp --[depends_on]--> Python 3.13
-  session-mgmt-mcp --[implements]--> Model Context Protocol
+  session-buddy --[uses]--> ACB
+  session-buddy --[uses]--> FastMCP
+  session-buddy --[uses]--> DuckDB
+  session-buddy --[depends_on]--> Python 3.13
+  session-buddy --[implements]--> Model Context Protocol
 ```
 
 ______________________________________________________________________
@@ -266,19 +266,19 @@ Find paths between two entities using SQL/PGQ graph queries.
 **Example:**
 
 ```python
-find_path(from_entity="session-mgmt-mcp", to_entity="Claude", max_depth=5)
+find_path(from_entity="session-buddy", to_entity="Claude", max_depth=5)
 ```
 
 **Returns:**
 
 ```
-🛤️ Found 2 path(s) from 'session-mgmt-mcp' to 'Claude':
+🛤️ Found 2 path(s) from 'session-buddy' to 'Claude':
 
 1. Path length: 3 hop(s)
-   session-mgmt-mcp ➜ ... ➜ Claude
+   session-buddy ➜ ... ➜ Claude
 
 2. Path length: 4 hop(s)
-   session-mgmt-mcp ➜ ... ➜ Claude
+   session-buddy ➜ ... ➜ Claude
 ```
 
 **Behind the scenes (SQL/PGQ query):**
@@ -340,7 +340,7 @@ Auto-extract entities from conversation context using pattern matching.
 
 **Detection Patterns:**
 
-- **Projects**: Kebab-case names (e.g., "session-mgmt-mcp", "mcp-common")
+- **Projects**: Kebab-case names (e.g., "session-buddy", "mcp-common")
 - **Libraries**: Known names (ACB, FastMCP, DuckDB, pytest, pydantic, etc.)
 - **Technologies**: Python, JavaScript, TypeScript, Docker, Kubernetes
 - **Concepts**: "dependency injection", "semantic memory", "property graph", etc.
@@ -349,7 +349,7 @@ Auto-extract entities from conversation context using pattern matching.
 
 ```text
 extract_entities_from_context(
-    context="The session-mgmt-mcp project uses ACB for dependency injection and DuckDB for semantic memory.",
+    context="The session-buddy project uses ACB for dependency injection and DuckDB for semantic memory.",
     auto_create=True,
 )
 ```
@@ -360,7 +360,7 @@ extract_entities_from_context(
 🔍 Extracted Entities from Context:
 
 📊 Project:
-   • session-mgmt-mcp
+   • session-buddy
 
 📊 Library:
    • ACB
@@ -436,7 +436,7 @@ Build a knowledge graph of your project dependencies:
 ```python
 # 1. Create project entities
 create_entity(
-    name="session-mgmt-mcp",
+    name="session-buddy",
     entity_type="project",
     observations=["Claude session management server"],
 )
@@ -449,14 +449,14 @@ create_entity(
 
 # 2. Create relationships
 create_relation(
-    from_entity="session-mgmt-mcp",
+    from_entity="session-buddy",
     to_entity="mcp-common",
     relation_type="depends_on",
     properties={"version": "2.0.0"},
 )
 
 # 3. Query dependencies
-get_entity_relationships(entity_name="session-mgmt-mcp", direction="outgoing")
+get_entity_relationships(entity_name="session-buddy", direction="outgoing")
 ```
 
 ______________________________________________________________________
@@ -492,7 +492,7 @@ create_entity(
     entity_type="concept",
     observations=[
         "Design pattern for loose coupling",
-        "Implemented via ACB in session-mgmt-mcp",
+        "Implemented via ACB in session-buddy",
     ],
 )
 
@@ -504,13 +504,13 @@ create_entity(
 
 # Link concepts to implementations
 create_relation(
-    from_entity="session-mgmt-mcp",
+    from_entity="session-buddy",
     to_entity="dependency injection",
     relation_type="implements",
 )
 
 create_relation(
-    from_entity="session-mgmt-mcp",
+    from_entity="session-buddy",
     to_entity="semantic memory",
     relation_type="implements",
 )
@@ -554,13 +554,13 @@ ______________________________________________________________________
 ```python
 # Store conversation in episodic memory
 store_reflection(
-    content="Discussed ACB integration patterns for session-mgmt-mcp",
+    content="Discussed ACB integration patterns for session-buddy",
     tags=["acb", "architecture"],
 )
 
 # Extract entities and store in knowledge graph
 extract_entities_from_context(
-    context="Discussed ACB integration patterns for session-mgmt-mcp", auto_create=True
+    context="Discussed ACB integration patterns for session-buddy", auto_create=True
 )
 
 # Link conversation to entities
@@ -572,7 +572,7 @@ extract_entities_from_context(
 ```python
 # After running crackerjack analysis
 create_entity(
-    name="session-mgmt-mcp-v2.0",
+    name="session-buddy-v2.0",
     entity_type="release",
     observations=[
         f"Test coverage: {coverage_percent}%",
@@ -587,7 +587,7 @@ ______________________________________________________________________
 
 ### Entity Naming Conventions
 
-- **Projects**: Use kebab-case (e.g., `session-mgmt-mcp`)
+- **Projects**: Use kebab-case (e.g., `session-buddy`)
 - **Libraries**: Use official name (e.g., `FastMCP`, `DuckDB`)
 - **Technologies**: Use canonical name (e.g., `Python 3.13`)
 - **Concepts**: Use lowercase with spaces (e.g., `dependency injection`)
@@ -700,7 +700,7 @@ ______________________________________________________________________
 - **DuckPGQ Documentation**: https://duckpgq.com/
 - **SQL/PGQ Standard**: ISO/IEC 9075-16:2023
 - **DuckDB Documentation**: https://duckdb.org/
-- **Implementation**: `session_mgmt_mcp/knowledge_graph_db.py`
+- **Implementation**: `session_buddy/knowledge_graph_db.py`
 
 ______________________________________________________________________
 

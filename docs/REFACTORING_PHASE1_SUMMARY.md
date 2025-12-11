@@ -8,11 +8,11 @@ Phase 1 focused on removing unused code and simplifying common patterns without 
 
 ### 1. Removed Unused Imports (server.py)
 
-**File**: `session_mgmt_mcp/server.py:71-76`
+**File**: `session_buddy/server.py:71-76`
 **Before**:
 
 ```python
-from session_mgmt_mcp.token_optimizer import (
+from session_buddy.token_optimizer import (
     get_cached_chunk,  # UNUSED
     get_token_usage_stats,  # UNUSED
     optimize_search_response,
@@ -23,7 +23,7 @@ from session_mgmt_mcp.token_optimizer import (
 **After**:
 
 ```python
-from session_mgmt_mcp.token_optimizer import (
+from session_buddy.token_optimizer import (
     optimize_search_response,
     track_token_usage,
 )
@@ -35,7 +35,7 @@ from session_mgmt_mcp.token_optimizer import (
 
 **Pattern Applied**: Replace unused exception parameters with `*_exc_info`
 
-#### File: `session_mgmt_mcp/adapters/reflection_adapter.py`
+#### File: `session_buddy/adapters/reflection_adapter.py`
 
 **Lines**: 79-89
 **Before** (12 lines):
@@ -74,7 +74,7 @@ async def __aexit__(self, *_exc_info) -> None:
 
 **Impact**: -5 lines (42% reduction in these methods)
 
-####File: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py`
+####File: `session_buddy/adapters/knowledge_graph_adapter.py`
 **Lines**: 87-97
 **Same pattern applied**
 **Impact**: -5 lines
@@ -109,9 +109,9 @@ pytest tests/unit/test_example_unit.py -v -x
 
 ### Additional Context Managers to Simplify
 
-- `session_mgmt_mcp/knowledge_graph_db.py:72-90`
-- `session_mgmt_mcp/reflection_tools.py:88-106`
-- `session_mgmt_mcp/tools/protocols.py:149`
+- `session_buddy/knowledge_graph_db.py:72-90`
+- `session_buddy/reflection_tools.py:88-106`
+- `session_buddy/tools/protocols.py:149`
 
 ### Code Duplication to Address
 

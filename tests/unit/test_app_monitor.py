@@ -20,7 +20,7 @@ class TestActivityEvent:
 
     def test_activity_event_creation(self) -> None:
         """Should create ActivityEvent with required fields."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent
+        from session_buddy.app_monitor import ActivityEvent
 
         event = ActivityEvent(
             timestamp=datetime.now().isoformat(),
@@ -42,7 +42,7 @@ class TestProjectActivityMonitor:
 
     def test_initialization(self) -> None:
         """Should initialize with project paths."""
-        from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+        from session_buddy.app_monitor import ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor(project_paths=["/test/project"])
 
@@ -53,7 +53,7 @@ class TestProjectActivityMonitor:
 
     def test_initialization_no_paths(self) -> None:
         """Should initialize with empty project paths."""
-        from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+        from session_buddy.app_monitor import ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
 
@@ -62,7 +62,7 @@ class TestProjectActivityMonitor:
 
     def test_add_activity(self) -> None:
         """Should add activity event to buffer."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+        from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
         event = ActivityEvent(
@@ -79,7 +79,7 @@ class TestProjectActivityMonitor:
 
     def test_activity_buffer_size_limit(self) -> None:
         """Should limit activity buffer size."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+        from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
 
@@ -98,7 +98,7 @@ class TestProjectActivityMonitor:
 
     def test_get_recent_activity(self) -> None:
         """Should retrieve recent activity within time window."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+        from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
 
@@ -130,7 +130,7 @@ class TestProjectActivityMonitor:
 
     def test_get_active_files(self) -> None:
         """Should identify actively worked files."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, ProjectActivityMonitor
+        from session_buddy.app_monitor import ActivityEvent, ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
 
@@ -154,9 +154,9 @@ class TestProjectActivityMonitor:
 
     def test_start_monitoring_no_watchdog(self) -> None:
         """Should return False when watchdog unavailable."""
-        from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+        from session_buddy.app_monitor import ProjectActivityMonitor
 
-        with patch("session_mgmt_mcp.app_monitor.WATCHDOG_AVAILABLE", False):
+        with patch("session_buddy.app_monitor.WATCHDOG_AVAILABLE", False):
             monitor = ProjectActivityMonitor(project_paths=["/test"])
             result = monitor.start_monitoring()
 
@@ -164,7 +164,7 @@ class TestProjectActivityMonitor:
 
     def test_stop_monitoring(self) -> None:
         """Should stop all observers."""
-        from session_mgmt_mcp.app_monitor import ProjectActivityMonitor
+        from session_buddy.app_monitor import ProjectActivityMonitor
 
         monitor = ProjectActivityMonitor()
 
@@ -186,7 +186,7 @@ class TestBrowserDocumentationMonitor:
 
     def test_initialization(self) -> None:
         """Should initialize documentation monitor."""
-        from session_mgmt_mcp.app_monitor import BrowserDocumentationMonitor
+        from session_buddy.app_monitor import BrowserDocumentationMonitor
 
         monitor = BrowserDocumentationMonitor()
 
@@ -196,7 +196,7 @@ class TestBrowserDocumentationMonitor:
 
     def test_add_browser_activity(self) -> None:
         """Should add browser activity to buffer."""
-        from session_mgmt_mcp.app_monitor import (
+        from session_buddy.app_monitor import (
             ActivityEvent,
             BrowserDocumentationMonitor,
         )
@@ -217,7 +217,7 @@ class TestBrowserDocumentationMonitor:
 
     def test_extract_documentation_context(self) -> None:
         """Should extract context from documentation URLs."""
-        from session_mgmt_mcp.app_monitor import BrowserDocumentationMonitor
+        from session_buddy.app_monitor import BrowserDocumentationMonitor
 
         monitor = BrowserDocumentationMonitor()
 
@@ -233,11 +233,11 @@ class TestBrowserDocumentationMonitor:
 
     def test_get_browser_processes(self) -> None:
         """Should return browser process information."""
-        from session_mgmt_mcp.app_monitor import BrowserDocumentationMonitor
+        from session_buddy.app_monitor import BrowserDocumentationMonitor
 
         monitor = BrowserDocumentationMonitor()
 
-        with patch("session_mgmt_mcp.app_monitor.PSUTIL_AVAILABLE", False):
+        with patch("session_buddy.app_monitor.PSUTIL_AVAILABLE", False):
             processes = monitor.get_browser_processes()
             assert isinstance(processes, list)
 
@@ -247,7 +247,7 @@ class TestApplicationFocusMonitor:
 
     def test_initialization(self) -> None:
         """Should initialize focus monitor."""
-        from session_mgmt_mcp.app_monitor import ApplicationFocusMonitor
+        from session_buddy.app_monitor import ApplicationFocusMonitor
 
         monitor = ApplicationFocusMonitor()
 
@@ -257,7 +257,7 @@ class TestApplicationFocusMonitor:
 
     def test_add_focus_event(self) -> None:
         """Should add focus event to history."""
-        from session_mgmt_mcp.app_monitor import ActivityEvent, ApplicationFocusMonitor
+        from session_buddy.app_monitor import ActivityEvent, ApplicationFocusMonitor
 
         monitor = ApplicationFocusMonitor()
 
@@ -272,11 +272,11 @@ class TestApplicationFocusMonitor:
 
     def test_get_focused_application(self) -> None:
         """Should get currently focused application."""
-        from session_mgmt_mcp.app_monitor import ApplicationFocusMonitor
+        from session_buddy.app_monitor import ApplicationFocusMonitor
 
         monitor = ApplicationFocusMonitor()
 
-        with patch("session_mgmt_mcp.app_monitor.PSUTIL_AVAILABLE", False):
+        with patch("session_buddy.app_monitor.PSUTIL_AVAILABLE", False):
             result = monitor.get_focused_application()
             # Returns None when psutil unavailable or no app focused
             assert result is None or isinstance(result, dict)
@@ -287,7 +287,7 @@ class TestActivityDatabase:
 
     def test_initialization_creates_tables(self) -> None:
         """Should create database tables on initialization."""
-        from session_mgmt_mcp.app_monitor import ActivityDatabase
+        from session_buddy.app_monitor import ActivityDatabase
 
         # Constructor automatically calls _init_database()
         db = ActivityDatabase(db_path=":memory:")
@@ -299,7 +299,7 @@ class TestActivityDatabase:
         """Should store activity event in database."""
         import tempfile
 
-        from session_mgmt_mcp.app_monitor import ActivityDatabase, ActivityEvent
+        from session_buddy.app_monitor import ActivityDatabase, ActivityEvent
 
         # Use temp file instead of :memory: to ensure persistence across operations
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -326,7 +326,7 @@ class TestApplicationMonitor:
 
     def test_initialization(self) -> None:
         """Should initialize all sub-monitors."""
-        from session_mgmt_mcp.app_monitor import ApplicationMonitor
+        from session_buddy.app_monitor import ApplicationMonitor
 
         monitor = ApplicationMonitor(
             data_dir="/tmp/test_monitor", project_paths=["/test"]
@@ -340,9 +340,9 @@ class TestApplicationMonitor:
     @pytest.mark.asyncio
     async def test_start_monitoring(self) -> None:
         """Should start all monitoring components."""
-        from session_mgmt_mcp.app_monitor import ApplicationMonitor
+        from session_buddy.app_monitor import ApplicationMonitor
 
-        with patch("session_mgmt_mcp.app_monitor.WATCHDOG_AVAILABLE", True):
+        with patch("session_buddy.app_monitor.WATCHDOG_AVAILABLE", True):
             monitor = ApplicationMonitor(
                 data_dir="/tmp/test_monitor", project_paths=["/test"]
             )
@@ -358,7 +358,7 @@ class TestApplicationMonitor:
     @pytest.mark.asyncio
     async def test_stop_monitoring(self) -> None:
         """Should stop all monitoring components."""
-        from session_mgmt_mcp.app_monitor import ApplicationMonitor
+        from session_buddy.app_monitor import ApplicationMonitor
 
         monitor = ApplicationMonitor(
             data_dir="/tmp/test_monitor", project_paths=["/test"]
@@ -372,7 +372,7 @@ class TestApplicationMonitor:
 
     def test_get_context_insights(self) -> None:
         """Should generate context insights from activity."""
-        from session_mgmt_mcp.app_monitor import ApplicationMonitor
+        from session_buddy.app_monitor import ApplicationMonitor
 
         monitor = ApplicationMonitor(
             data_dir="/tmp/test_monitor", project_paths=["/test"]

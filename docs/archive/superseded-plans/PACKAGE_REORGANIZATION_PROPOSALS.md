@@ -4,7 +4,7 @@
 
 ### Problems Identified
 
-1. **Root Directory Clutter**: 31 Python files in the root `session_mgmt_mcp/` directory
+1. **Root Directory Clutter**: 31 Python files in the root `session_buddy/` directory
 1. **Feature Fragmentation**: Related features split across multiple directories:
    - Memory/Reflection: `reflection_tools.py` (root), `memory_tools.py` (tools/), `knowledge_graph_db.py` (root), `knowledge_graph_tools.py` (tools/)
    - Search: `advanced_search.py` (root), `search_enhanced.py` (root), `search_tools.py` (tools/)
@@ -33,7 +33,7 @@ Organize by **feature domains** where each directory contains ALL code for that 
 ### Structure
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── __init__.py
 ├── __main__.py
 ├── cli.py                      # CLI entry point
@@ -172,7 +172,7 @@ Organize by **architectural layer** following ACB patterns: adapters, services, 
 ### Structure
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── __init__.py
 ├── __main__.py
 ├── cli.py
@@ -320,7 +320,7 @@ Combine **feature cohesion** with **architectural clarity**: Group by feature at
 ### Structure
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── __init__.py
 ├── __main__.py
 ├── cli.py
@@ -478,7 +478,7 @@ session_mgmt_mcp/
 ### Cons
 
 ⚠️ **More directories**: Deeper nesting (3-4 levels)
-⚠️ **Import paths longer**: e.g., `from session_mgmt_mcp.memory.adapters.reflection_db import ...`
+⚠️ **Import paths longer**: e.g., `from session_buddy.memory.adapters.reflection_db import ...`
 
 ### Migration Complexity
 
@@ -519,7 +519,7 @@ ______________________________________________________________________
 1. **Feature coherence**: No more memory code split across 4 locations
 1. **Tool organization**: From 19-file tools/ to organized per-feature tools/
 1. **Utils clarity**: From generic utils/ to specific infrastructure/ categories
-1. **Import clarity**: `from session_mgmt_mcp.memory.tools import ...` is clear
+1. **Import clarity**: `from session_buddy.memory.tools import ...` is clear
 
 ### Migration Path
 
@@ -600,7 +600,7 @@ ______________________________________________________________________
 ### Before (Current)
 
 ```
-session_mgmt_mcp/
+session_buddy/
 ├── reflection_tools.py         # 500 LOC - DuckDB + tools mixed
 ├── knowledge_graph_db.py       # 300 LOC - Graph DB logic
 ├── team_knowledge.py           # 200 LOC - Team features
@@ -617,7 +617,7 @@ session_mgmt_mcp/
 ### After (Hybrid Solution 3)
 
 ```
-session_mgmt_mcp/
+session_buddy/
 └── memory/                     # All memory code together
     ├── __init__.py
     ├── adapters/               # Data storage adapters
@@ -660,7 +660,7 @@ ______________________________________________________________________
 
 ## Questions for Discussion
 
-1. **Import path length**: Are longer paths like `from session_mgmt_mcp.memory.adapters.reflection_db` acceptable?
+1. **Import path length**: Are longer paths like `from session_buddy.memory.adapters.reflection_db` acceptable?
 1. **Tools organization**: Should MCP tools be co-located with features or in central `tools/`?
 1. **Infrastructure naming**: Is `infrastructure/` better than `utils/` or `shared/`?
 1. **Migration timing**: Should we migrate all at once or incrementally?

@@ -19,10 +19,10 @@ Location: Project root or `~/.config/claude/` directory
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/absolute/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/absolute/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/absolute/path/to/session-mgmt-mcp",
+        "PYTHONPATH": "/absolute/path/to/session-buddy",
         "SESSION_MGMT_LOG_LEVEL": "INFO",
         "SESSION_MGMT_DATA_DIR": "/custom/data/path",
         "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
@@ -40,7 +40,7 @@ Location: Project root or `~/.config/claude/` directory
   "mcpServers": {
     "session-mgmt": {
       "command": "uvx",
-      "args": ["session-mgmt-mcp"],
+      "args": ["session-buddy"],
       "env": {
         "SESSION_MGMT_LOG_LEVEL": "DEBUG"
       }
@@ -172,7 +172,7 @@ COPY . /app
 WORKDIR /app
 RUN uv sync
 
-ENTRYPOINT ["python", "-m", "session_mgmt_mcp.server"]
+ENTRYPOINT ["python", "-m", "session_buddy.server"]
 ```
 
 ### Kubernetes Configuration
@@ -191,17 +191,17 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: session-mgmt-mcp
+  name: session-buddy
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: session-mgmt-mcp
+      app: session-buddy
   template:
     spec:
       containers:
       - name: session-mgmt
-        image: session-mgmt-mcp:latest
+        image: session-buddy:latest
         envFrom:
         - configMapRef:
             name: session-mgmt-config
@@ -389,7 +389,7 @@ gpg --encrypt --recipient admin@company.com "$BACKUP_DIR.tar.gz"
 export SESSION_MGMT_LOG_LEVEL=DEBUG
 export PYTHONPATH="$PWD"
 export EMBEDDING_DEBUG=true
-python -m session_mgmt_mcp.server --debug
+python -m session_buddy.server --debug
 ```
 
 ### Performance Profiling
@@ -406,7 +406,7 @@ export PROFILING_OUTPUT_DIR=/tmp/session-mgmt-profiles/
 # Memory leak detection
 export PYTHONMALLOC=debug
 export PYTHONFAULTHANDLER=1
-python -X dev -m session_mgmt_mcp.server
+python -X dev -m session_buddy.server
 ```
 
 ## Migration Configuration

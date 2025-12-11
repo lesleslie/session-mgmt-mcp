@@ -65,7 +65,7 @@ pytest tests/unit/test_health_checks.py --no-cov -v
 
 # Measure coverage using coverage.py directly
 coverage run -m pytest tests/unit/test_health_checks.py --no-cov -q
-coverage report --include="session_mgmt_mcp/health_checks.py" -m
+coverage report --include="session_buddy/health_checks.py" -m
 ```
 
 **Benefits:**
@@ -150,15 +150,15 @@ coverage report --include="session_mgmt_mcp/health_checks.py" -m
 ```python
 # BEFORE (test was failing - didn't mock multi_project check)
 with (
-    patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
-    patch.dict("sys.modules", {"session_mgmt_mcp.server": mock_server}),
+    patch("session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
+    patch.dict("sys.modules", {"session_buddy.server": mock_server}),
     patch("builtins.__import__", side_effect=mock_import),
 ):
 
 # AFTER (test now passes - mocks find_spec to prevent multi_project detection)
 with (
-    patch("session_mgmt_mcp.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
-    patch.dict("sys.modules", {"session_mgmt_mcp.server": mock_server}),
+    patch("session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", False),
+    patch.dict("sys.modules", {"session_buddy.server": mock_server}),
     patch("builtins.__import__", side_effect=mock_import),
     patch("importlib.util.find_spec", return_value=None),  # ← NEW
 ):
@@ -370,7 +370,7 @@ pytest tests/unit/test_health_checks.py --no-cov -v
 
 # Coverage measurement (separate command)
 coverage run -m pytest tests/unit/test_health_checks.py --no-cov -q
-coverage report --include="session_mgmt_mcp/health_checks.py" -m
+coverage report --include="session_buddy/health_checks.py" -m
 ```
 
 **Alternative Solutions Considered:**
@@ -399,7 +399,7 @@ Health check systems require testing at three levels:
 
 ```python
 # Level 1: Unit (mock everything)
-@patch("session_mgmt_mcp.health_checks.get_reflection_database")
+@patch("session_buddy.health_checks.get_reflection_database")
 async def test_database_healthy(mock_db):
     mock_db.return_value.get_stats.return_value = {"count": 100}
     result = await check_database_health()
@@ -576,7 +576,7 @@ ______________________________________________________________________
 
 1. Find server_core.py tests: `find tests -name "*server_core*" -o -name "*core*"`
 1. Run tests: `pytest tests/unit/test_server_core.py --no-cov -v`
-1. Measure coverage: `coverage run -m pytest tests/unit/test_server_core.py --no-cov -q && coverage report --include="session_mgmt_mcp/server_core.py" -m`
+1. Measure coverage: `coverage run -m pytest tests/unit/test_server_core.py --no-cov -q && coverage report --include="session_buddy/server_core.py" -m`
 1. Identify gaps: Focus on quality scoring and lifecycle functions
 1. Add targeted tests to reach 50-60% coverage on server_core.py
 
@@ -600,7 +600,7 @@ pytest tests/unit/test_health_checks.py --no-cov -v
 
 # Measure coverage using coverage.py directly
 coverage run -m pytest tests/unit/test_health_checks.py --no-cov -q
-coverage report --include="session_mgmt_mcp/health_checks.py" -m
+coverage report --include="session_buddy/health_checks.py" -m
 
 # Run all confirmed passing tests for total coverage
 coverage run -m pytest tests/functional/ tests/unit/test_*.py --no-cov -q
@@ -625,7 +625,7 @@ pytest tests/unit/test_health_checks.py::TestDatabaseHealthCheck::test_database_
 ```bash
 # Measure coverage for specific module
 coverage run -m pytest tests/unit/test_health_checks.py --no-cov -q
-coverage report --include="session_mgmt_mcp/health_checks.py" -m
+coverage report --include="session_buddy/health_checks.py" -m
 
 # Measure total coverage
 coverage run -m pytest tests/functional/ tests/unit/test_*.py --no-cov -q
@@ -643,7 +643,7 @@ open htmlcov/index.html
 python -c "import beartype; print(f'Beartype version: {beartype.__version__}')"
 
 # Test module imports directly
-python -c "from session_mgmt_mcp.health_checks import ComponentHealth, HealthStatus; print('✅ Imports work')"
+python -c "from session_buddy.health_checks import ComponentHealth, HealthStatus; print('✅ Imports work')"
 
 # Clear all Python caches
 rm -rf .mypy_cache .pytest_cache __pycache__ && find tests -type d -name __pycache__ -exec rm -rf {} +

@@ -18,7 +18,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 
 ## Priority 1: Critical Zero-Coverage Files (0% → 60%+)
 
-### File 1: `session_mgmt_mcp/adapters/knowledge_graph_adapter.py` (186 lines, 0%)
+### File 1: `session_buddy/adapters/knowledge_graph_adapter.py` (186 lines, 0%)
 
 **Why Critical**: Core DuckPGQ graph adapter for knowledge graph operations
 **Test Priority**: High
@@ -31,7 +31,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - Bulk operations
 - Error handling for invalid graph structures
 
-### File 2: `session_mgmt_mcp/context_manager.py` (261 lines, 0%)
+### File 2: `session_buddy/context_manager.py` (261 lines, 0%)
 
 **Why Critical**: Session context preservation during interruptions
 **Test Priority**: High
@@ -44,7 +44,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - State serialization/deserialization
 - Concurrent access safety
 
-### File 3: `session_mgmt_mcp/team_knowledge.py` (302 lines, 0%)
+### File 3: `session_buddy/team_knowledge.py` (302 lines, 0%)
 
 **Why Critical**: Team collaboration and knowledge sharing features
 **Test Priority**: Medium
@@ -57,7 +57,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - Voting and ranking system
 - Team statistics aggregation
 
-### File 4: `session_mgmt_mcp/tools/health_tools.py` (28 lines, 0%)
+### File 4: `session_buddy/tools/health_tools.py` (28 lines, 0%)
 
 **Why Critical**: System health monitoring
 **Test Priority**: High (small, easy win)
@@ -69,7 +69,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 - System resource monitoring
 - Error state detection
 
-### File 5: `session_mgmt_mcp/tools/validated_memory_tools.py` (208 lines, 0%)
+### File 5: `session_buddy/tools/validated_memory_tools.py` (208 lines, 0%)
 
 **Why Critical**: Memory validation and integrity
 **Test Priority**: High
@@ -84,7 +84,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 
 ## Priority 2: Low-Coverage Refactored Files (Complexity Fixes)
 
-### File 6: `session_mgmt_mcp/llm_providers.py` (30% → 70% target, 351 missing lines)
+### File 6: `session_buddy/llm_providers.py` (30% → 70% target, 351 missing lines)
 
 **Refactored Functions**:
 
@@ -105,7 +105,7 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 
 **Effort**: 6-8 hours
 
-### File 7: `session_mgmt_mcp/tools/knowledge_graph_tools.py` (13.68% → 60%, 239 missing lines)
+### File 7: `session_buddy/tools/knowledge_graph_tools.py` (13.68% → 60%, 239 missing lines)
 
 **Refactored Functions**:
 
@@ -127,17 +127,17 @@ Successfully completed complexity refactoring (11 functions from 16-28 → ≤15
 
 ## Priority 3: Medium-Coverage Files Needing Improvement
 
-### File 8: `session_mgmt_mcp/tools/monitoring_tools.py` (11.34% → 50%, 318 missing lines)
+### File 8: `session_buddy/tools/monitoring_tools.py` (11.34% → 50%, 318 missing lines)
 
 **Effort**: 5-7 hours
 **Focus**: App activity monitoring, file system watching, context insights
 
-### File 9: `session_mgmt_mcp/search_enhanced.py` (11.47% → 60%, 197 missing lines)
+### File 9: `session_buddy/search_enhanced.py` (11.47% → 60%, 197 missing lines)
 
 **Effort**: 4-6 hours
 **Focus**: Faceted search, aggregations, full-text indexing
 
-### File 10: `session_mgmt_mcp/tools/search_tools.py` (17.01% → 60%, 348 missing lines)
+### File 10: `session_buddy/tools/search_tools.py` (17.01% → 60%, 348 missing lines)
 
 **Effort**: 6-8 hours
 **Focus**: Advanced search capabilities, pagination, filtering

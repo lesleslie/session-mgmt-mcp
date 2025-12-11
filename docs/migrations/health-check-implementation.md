@@ -750,4 +750,4 @@ ______________________________________________________________________
 
 **Need help?** Open an issue on GitHub with the `health-checks` label.
 
-**Example implementations?** Check `session_mgmt_mcp/health_checks.py` for reference.
+**Example implementations?** Check `session_buddy/health_checks.py` for reference.

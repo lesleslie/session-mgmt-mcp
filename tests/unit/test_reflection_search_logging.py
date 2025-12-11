@@ -4,7 +4,7 @@ import typing as t
 
 import duckdb
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 @pytest.mark.asyncio
@@ -33,7 +33,7 @@ async def test_search_by_file_logs_access(monkeypatch: t.Any) -> None:
     def _mock_log(mid: str, access_type: str = "search") -> None:
         calls.append((mid, access_type))
 
-    import session_mgmt_mcp.memory.persistence as persistence_mod
+    import session_buddy.memory.persistence as persistence_mod
 
     monkeypatch.setattr(persistence_mod, "log_memory_access", _mock_log)
 

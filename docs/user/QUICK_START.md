@@ -15,22 +15,22 @@ Get up and running with the Session Management MCP server in under 5 minutes.
 
 ```bash
 # Clone and install
-git clone https://github.com/lesleslie/session-mgmt-mcp.git
-cd session-mgmt-mcp
+git clone https://github.com/lesleslie/session-buddy.git
+cd session-buddy
 uv sync
 
 # Or install with development/testing tools
 uv sync --group dev
 
 # Verify installation
-python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready to go!')"
+python -c "from session_buddy.server import mcp; print('✅ Ready to go!')"
 ```
 
 ### Option 2: With pip
 
 ```bash
 # Install from PyPI
-pip install session-mgmt-mcp
+pip install session-buddy
 ```
 
 ## Configure Claude Code
@@ -42,10 +42,10 @@ Add to your `.mcp.json` configuration:
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/path/to/session-mgmt-mcp"
+        "PYTHONPATH": "/path/to/session-buddy"
       }
     }
   }
@@ -156,17 +156,17 @@ Automatic cleanup with:
 uv sync
 
 # Or reinstall with pip
-pip install session-mgmt-mcp
+pip install session-buddy
 ```
 
 ### Server Won't Start
 
 ```bash
 # Check imports
-python -c "import session_mgmt_mcp; print('Import successful')"
+python -c "import session_buddy; print('Import successful')"
 
 # Verify path in .mcp.json
-ls /path/to/session-mgmt-mcp/session_mgmt_mcp/server.py
+ls /path/to/session-buddy/session_buddy/server.py
 ```
 
 ### No Conversations Found
@@ -183,8 +183,8 @@ ls /path/to/session-mgmt-mcp/session_mgmt_mcp/server.py
 
 ## Support
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/lesleslie/session-mgmt-mcp/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/lesleslie/session-mgmt-mcp/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/lesleslie/session-buddy/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/lesleslie/session-buddy/discussions)
 - 📖 **Documentation**: [Full Documentation](README.md)
 
 ______________________________________________________________________

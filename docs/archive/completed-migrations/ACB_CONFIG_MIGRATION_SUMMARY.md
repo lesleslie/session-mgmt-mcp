@@ -6,7 +6,7 @@
 
 ## Migration Overview
 
-Successfully migrated session-mgmt-mcp from custom Pydantic configuration to ACB Settings framework, achieving immediate benefits in maintainability, code reduction, and standardization.
+Successfully migrated session-buddy from custom Pydantic configuration to ACB Settings framework, achieving immediate benefits in maintainability, code reduction, and standardization.
 
 ### Migration Approach
 
@@ -29,12 +29,12 @@ Successfully migrated session-mgmt-mcp from custom Pydantic configuration to ACB
 
 | Action | File | Lines | Purpose |
 |--------|------|-------|---------|
-| **Created** | `session_mgmt_mcp/settings.py` | 411 | Flat ACB Settings class |
+| **Created** | `session_buddy/settings.py` | 411 | Flat ACB Settings class |
 | **Created** | `settings/session-mgmt.yaml` | 97 | Base YAML configuration |
 | **Created** | `settings/local.yaml.template` | 27 | Local overrides template |
-| **Deleted** | `session_mgmt_mcp/config.py` | -657 | Legacy nested config |
-| **Modified** | `session_mgmt_mcp/server.py` | ~10 | Import updates |
-| **Modified** | `session_mgmt_mcp/utils/reflection_utils.py` | ~20 | Flat config access |
+| **Deleted** | `session_buddy/config.py` | -657 | Legacy nested config |
+| **Modified** | `session_buddy/server.py` | ~10 | Import updates |
+| **Modified** | `session_buddy/utils/reflection_utils.py` | ~20 | Flat config access |
 | **Modified** | `.gitignore` | +1 | Ignore local.yaml |
 | **Modified** | `pyproject.toml` | ~5 | Coverage/complexity gates |
 
@@ -215,12 +215,12 @@ All 80+ settings were migrated with their constraints:
 
 ```python
 # Before
-from session_mgmt_mcp.config import get_config
+from session_buddy.config import get_config
 
 config = get_config()
 
 # After
-from session_mgmt_mcp.settings import get_settings
+from session_buddy.settings import get_settings
 
 config = get_settings()
 ```
@@ -317,8 +317,8 @@ $ pytest
 ```
 Name                                           Stmts   Miss  Cover
 ------------------------------------------------------------------
-session_mgmt_mcp/settings.py                     169     13    92.31%
-session_mgmt_mcp/utils/reflection_utils.py        96      5    94.79%
+session_buddy/settings.py                     169     13    92.31%
+session_buddy/utils/reflection_utils.py        96      5    94.79%
 ------------------------------------------------------------------
 ```
 
@@ -359,7 +359,7 @@ session_mgmt_mcp/utils/reflection_utils.py        96      5    94.79%
 
 ### 5. Developer Experience
 
-- **Single import**: `from session_mgmt_mcp.settings import get_settings`
+- **Single import**: `from session_buddy.settings import get_settings`
 - **Autocomplete friendly**: Flat structure better IDE support
 - **Clear defaults**: All in one place with type hints
 - **Local overrides**: `settings/local.yaml` for development

@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import duckdb
 import pytest
-from session_mgmt_mcp.memory.schema_v2 import SCHEMA_V2_SQL
-from session_mgmt_mcp.tools.entity_extraction_tools import register_extraction_tools
+from session_buddy.memory.schema_v2 import SCHEMA_V2_SQL
+from session_buddy.tools.entity_extraction_tools import register_extraction_tools
 
 
 class DummyMCP:
@@ -32,8 +32,8 @@ async def test_file_change_extraction_persists_with_activity_weight(
     conn.close()
 
     # Monkeypatch settings for DB path
-    import session_mgmt_mcp.memory.persistence as persistence_mod
-    from session_mgmt_mcp import settings as settings_mod
+    import session_buddy.memory.persistence as persistence_mod
+    from session_buddy import settings as settings_mod
 
     fake_settings = SimpleNamespace(
         database_path=str(db_path),
@@ -44,8 +44,8 @@ async def test_file_change_extraction_persists_with_activity_weight(
     monkeypatch.setattr(persistence_mod, "get_settings", lambda: fake_settings)
 
     # Monkeypatch feature flags to enable v2 + extraction
-    import session_mgmt_mcp.config.feature_flags as ff
-    import session_mgmt_mcp.tools.entity_extraction_tools as eet
+    import session_buddy.config.feature_flags as ff
+    import session_buddy.tools.entity_extraction_tools as eet
 
     flags = ff.FeatureFlags(
         use_schema_v2=True,

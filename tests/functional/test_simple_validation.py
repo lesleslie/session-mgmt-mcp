@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+from session_buddy.reflection_tools import ReflectionDatabase
 
 
 class TestInfrastructureValidation:
@@ -14,7 +14,7 @@ class TestInfrastructureValidation:
 
     def test_basic_imports(self):
         """Test that basic imports work."""
-        from session_mgmt_mcp.reflection_tools import ReflectionDatabase
+        from session_buddy.reflection_tools import ReflectionDatabase
         from tests.helpers import AsyncTestHelper, DatabaseTestHelper, TestDataFactory
 
         assert ReflectionDatabase is not None

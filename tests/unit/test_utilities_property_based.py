@@ -14,8 +14,8 @@ from typing import Any
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from session_mgmt_mcp.utils.logging import SessionLogger
-from session_mgmt_mcp.utils.quality_utils_v2 import QualityScoreV2
+from session_buddy.utils.logging import SessionLogger
+from session_buddy.utils.quality_utils_v2 import QualityScoreV2
 
 # =========================
 # SessionLogger Tests
@@ -358,7 +358,7 @@ class TestReflectionDatabasePropertyBased:
             db_path = tmp.name
 
         try:
-            from session_mgmt_mcp.adapters.reflection_adapter import (
+            from session_buddy.adapters.reflection_adapter import (
                 ReflectionDatabaseAdapter as ReflectionDatabase,
             )
 
@@ -414,7 +414,7 @@ class TestReflectionDatabasePropertyBased:
             db_path = tmp.name
 
         try:
-            from session_mgmt_mcp.adapters.reflection_adapter import (
+            from session_buddy.adapters.reflection_adapter import (
                 ReflectionDatabaseAdapter as ReflectionDatabase,
             )
 
@@ -477,7 +477,7 @@ class TestReflectionDatabasePropertyBased:
             db_path = tmp.name
 
         try:
-            from session_mgmt_mcp.adapters.reflection_adapter import (
+            from session_buddy.adapters.reflection_adapter import (
                 ReflectionDatabaseAdapter as ReflectionDatabase,
             )
 

@@ -8,7 +8,7 @@ Phase 2 applied the same context manager simplification pattern from Phase 1 to 
 
 ### Files Modified
 
-#### 1. `session_mgmt_mcp/knowledge_graph_db.py`
+#### 1. `session_buddy/knowledge_graph_db.py`
 
 **Lines**: 72-93
 
@@ -62,7 +62,7 @@ async def __aexit__(self, *_exc_info) -> None:
 
 **Reduction**: 11 lines (50%)
 
-#### 2. `session_mgmt_mcp/reflection_tools.py`
+#### 2. `session_buddy/reflection_tools.py`
 
 **Lines**: 88-109
 
@@ -116,7 +116,7 @@ async def __aexit__(self, *_exc_info) -> None:
 
 **Reduction**: 11 lines (50%)
 
-#### 3. `session_mgmt_mcp/tools/protocols.py`
+#### 3. `session_buddy/tools/protocols.py`
 
 **Line**: 149
 

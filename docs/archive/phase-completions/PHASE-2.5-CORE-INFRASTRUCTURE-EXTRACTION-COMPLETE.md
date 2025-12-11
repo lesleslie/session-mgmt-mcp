@@ -100,7 +100,7 @@ lifecycle_manager = SessionLifecycleManager()
 
 ```text
 # server.py imports from server_core.py
-from session_mgmt_mcp.server_core import (
+from session_buddy.server_core import (
     SessionLogger,
     SessionPermissionsManager,
     _load_mcp_config,
@@ -140,8 +140,8 @@ async def health_check() -> dict[str, Any]:
 ### 1. Syntax Validation
 
 ```bash
-✅ python -m py_compile session_mgmt_mcp/server_core.py
-✅ python -m py_compile session_mgmt_mcp/server.py
+✅ python -m py_compile session_buddy/server_core.py
+✅ python -m py_compile session_buddy/server.py
 ```
 
 ### 2. Import Verification
@@ -236,16 +236,16 @@ except ImportError:
     tomli = None
 
 # Internal imports (strategic lazy loading)
-from session_mgmt_mcp.utils.git_operations import get_git_root, is_git_repository
-from session_mgmt_mcp.advanced_features import set_connection_info
-from session_mgmt_mcp.quality_engine import summarize_current_conversation
-from session_mgmt_mcp.utils.git_operations import create_checkpoint_commit
+from session_buddy.utils.git_operations import get_git_root, is_git_repository
+from session_buddy.advanced_features import set_connection_info
+from session_buddy.quality_engine import summarize_current_conversation
+from session_buddy.utils.git_operations import create_checkpoint_commit
 ```
 
 ### Imports by server.py from server_core.py
 
 ```python
-from session_mgmt_mcp.server_core import (
+from session_buddy.server_core import (
     SessionLogger,
     SessionPermissionsManager,
     _detect_other_mcp_servers,

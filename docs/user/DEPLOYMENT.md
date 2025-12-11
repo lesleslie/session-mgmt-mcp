@@ -16,14 +16,14 @@ The Session Management MCP server can be deployed in various configurations, fro
 
 ```bash
 # Clone repository
-git clone https://github.com/lesleslie/session-mgmt-mcp.git
-cd session-mgmt-mcp
+git clone https://github.com/lesleslie/session-buddy.git
+cd session-buddy
 
 # Install with UV (recommended)
 uv sync
 
 # Verify installation
-python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready')"
+python -c "from session_buddy.server import mcp; print('✅ Ready')"
 ```
 
 #### Claude Code Configuration
@@ -34,10 +34,10 @@ python -c "from session_mgmt_mcp.server import mcp; print('✅ Ready')"
   "mcpServers": {
     "session-mgmt": {
       "command": "python",
-      "args": ["-m", "session_mgmt_mcp.server"],
-      "cwd": "/absolute/path/to/session-mgmt-mcp",
+      "args": ["-m", "session_buddy.server"],
+      "cwd": "/absolute/path/to/session-buddy",
       "env": {
-        "PYTHONPATH": "/absolute/path/to/session-mgmt-mcp",
+        "PYTHONPATH": "/absolute/path/to/session-buddy",
         "SESSION_MGMT_LOG_LEVEL": "DEBUG"
       }
     }
@@ -73,7 +73,7 @@ sudo chown -R session-mgmt:session-mgmt /opt/session-mgmt
 #### Systemd Service
 
 ```ini
-# /etc/systemd/system/session-mgmt-mcp.service
+# /etc/systemd/system/session-buddy.service
 [Unit]
 Description=Session Management MCP Server
 After=network.target
@@ -88,7 +88,7 @@ Environment=SESSION_MGMT_DATA_DIR=/opt/session-mgmt/data
 Environment=SESSION_MGMT_LOG_DIR=/opt/session-mgmt/logs
 Environment=SESSION_MGMT_LOG_LEVEL=INFO
 Environment=PYTHONPATH=/opt/session-mgmt/app
-ExecStart=/opt/session-mgmt/app/.venv/bin/python -m session_mgmt_mcp.server
+ExecStart=/opt/session-mgmt/app/.venv/bin/python -m session_buddy.server
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
 Restart=on-failure
@@ -124,7 +124,7 @@ LOG_DIR="/opt/session-mgmt/logs"
 echo "🚀 Deploying Session Management MCP Server"
 
 # Stop service if running
-sudo systemctl stop session-mgmt-mcp || true
+sudo systemctl stop session-buddy || true
 
 # Backup current deployment
 if [ -d "$APP_DIR" ]; then
@@ -133,7 +133,7 @@ fi
 
 # Deploy new version
 sudo rm -rf "$APP_DIR"
-sudo -u session-mgmt git clone https://github.com/lesleslie/session-mgmt-mcp.git "$APP_DIR"
+sudo -u session-mgmt git clone https://github.com/lesleslie/session-buddy.git "$APP_DIR"
 sudo -u session-mgmt bash -c "cd $APP_DIR && uv sync"
 
 # Set permissions
@@ -146,16 +146,16 @@ sudo chown -R session-mgmt:session-mgmt "$DATA_DIR" "$LOG_DIR"
 
 # Reload and start service
 sudo systemctl daemon-reload
-sudo systemctl enable session-mgmt-mcp
-sudo systemctl start session-mgmt-mcp
+sudo systemctl enable session-buddy
+sudo systemctl start session-buddy
 
 # Health check
 sleep 5
-if sudo systemctl is-active --quiet session-mgmt-mcp; then
+if sudo systemctl is-active --quiet session-buddy; then
     echo "✅ Deployment successful"
 else
     echo "❌ Deployment failed"
-    sudo journalctl -u session-mgmt-mcp --lines=20
+    sudo journalctl -u session-buddy --lines=20
     exit 1
 fi
 ```
@@ -207,13 +207,13 @@ ENV PYTHONPATH=/app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import session_mgmt_mcp.server; print('healthy')" || exit 1
+    CMD python -c "import session_buddy.server; print('healthy')" || exit 1
 
 # Expose port (if needed for API mode)
 EXPOSE 8000
 
 # Start server
-ENTRYPOINT ["python", "-m", "session_mgmt_mcp.server"]
+ENTRYPOINT ["python", "-m", "session_buddy.server"]
 ```
 
 #### Docker Compose
@@ -225,7 +225,7 @@ version: '3.8'
 services:
   session-mgmt:
     build: .
-    container_name: session-mgmt-mcp
+    container_name: session-buddy
     restart: unless-stopped
     environment:
       - SESSION_MGMT_DATA_DIR=/data
@@ -240,7 +240,7 @@ services:
     networks:
       - session-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import session_mgmt_mcp.server; print('healthy')"]
+      test: ["CMD", "python", "-c", "import session_buddy.server; print('healthy')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -413,10 +413,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: session-mgmt-mcp
+  name: session-buddy
   namespace: session-mgmt
   labels:
-    app: session-mgmt-mcp
+    app: session-buddy
 spec:
   replicas: 3
   strategy:
@@ -426,11 +426,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: session-mgmt-mcp
+      app: session-buddy
   template:
     metadata:
       labels:
-        app: session-mgmt-mcp
+        app: session-buddy
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
@@ -443,7 +443,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: session-mgmt
-        image: session-mgmt-mcp:latest
+        image: session-buddy:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -513,7 +513,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - session-mgmt-mcp
+                  - session-buddy
               topologyKey: kubernetes.io/hostname
 ```
 
@@ -527,7 +527,7 @@ metadata:
   name: session-mgmt-service
   namespace: session-mgmt
   labels:
-    app: session-mgmt-mcp
+    app: session-buddy
 spec:
   type: ClusterIP
   ports:
@@ -540,7 +540,7 @@ spec:
     protocol: TCP
     name: metrics
   selector:
-    app: session-mgmt-mcp
+    app: session-buddy
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -583,7 +583,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: session-mgmt-mcp
+    name: session-buddy
   minReplicas: 3
   maxReplicas: 10
   metrics:
@@ -636,7 +636,7 @@ kubectl apply -f k8s/hpa.yaml
 
 # Wait for deployment
 echo "⏳ Waiting for deployment to be ready..."
-kubectl wait --for=condition=available --timeout=300s deployment/session-mgmt-mcp -n $NAMESPACE
+kubectl wait --for=condition=available --timeout=300s deployment/session-buddy -n $NAMESPACE
 
 # Show status
 echo "📋 Deployment status:"
@@ -652,7 +652,7 @@ if curl -f http://localhost:8080/health; then
     echo "✅ Kubernetes deployment successful"
 else
     echo "❌ Health check failed"
-    kubectl logs -n $NAMESPACE -l app=session-mgmt-mcp --tail=20
+    kubectl logs -n $NAMESPACE -l app=session-buddy --tail=20
 fi
 
 kill $PORT_FORWARD_PID
@@ -664,7 +664,7 @@ kill $PORT_FORWARD_PID
 
 ```json
 {
-  "family": "session-mgmt-mcp",
+  "family": "session-buddy",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
@@ -674,7 +674,7 @@ kill $PORT_FORWARD_PID
   "containerDefinitions": [
     {
       "name": "session-mgmt",
-      "image": "your-account.dkr.ecr.region.amazonaws.com/session-mgmt-mcp:latest",
+      "image": "your-account.dkr.ecr.region.amazonaws.com/session-buddy:latest",
       "essential": true,
       "portMappings": [
         {
@@ -707,7 +707,7 @@ kill $PORT_FORWARD_PID
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/session-mgmt-mcp",
+          "awslogs-group": "/ecs/session-buddy",
           "awslogs-region": "us-west-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -715,7 +715,7 @@ kill $PORT_FORWARD_PID
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "python -c 'import session_mgmt_mcp.server; print(\"healthy\")'"
+          "python -c 'import session_buddy.server; print(\"healthy\")'"
         ],
         "interval": 30,
         "timeout": 5,
@@ -744,7 +744,7 @@ kill $PORT_FORWARD_PID
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: session-mgmt-mcp
+  name: session-buddy
   namespace: default
   annotations:
     run.googleapis.com/ingress: all
@@ -762,7 +762,7 @@ spec:
       containerConcurrency: 100
       timeoutSeconds: 300
       containers:
-      - image: gcr.io/project-id/session-mgmt-mcp:latest
+      - image: gcr.io/project-id/session-buddy:latest
         ports:
         - containerPort: 8000
         env:
@@ -832,7 +832,7 @@ spec:
     "template": {
       "containers": [
         {
-          "image": "registry.azurecr.io/session-mgmt-mcp:latest",
+          "image": "registry.azurecr.io/session-buddy:latest",
           "name": "session-mgmt",
           "env": [
             {
@@ -896,7 +896,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'session-mgmt-mcp'
+  - job_name: 'session-buddy'
     static_configs:
       - targets: ['localhost:9090']
     metrics_path: /metrics
@@ -938,7 +938,7 @@ groups:
           description: "Memory usage is {{ $value }}MB"
 
       - alert: ServiceDown
-        expr: up{job="session-mgmt-mcp"} == 0
+        expr: up{job="session-buddy"} == 0
         for: 1m
         labels:
           severity: critical
@@ -1132,7 +1132,7 @@ fi
 echo "🚨 Starting disaster recovery process"
 
 # Stop service
-sudo systemctl stop session-mgmt-mcp
+sudo systemctl stop session-buddy
 
 # Create recovery directory
 mkdir -p "$RECOVERY_DIR"
@@ -1150,15 +1150,15 @@ tar -xzf "$BACKUP_FILE" -C "$DATA_DIR"
 chown -R session-mgmt:session-mgmt "$DATA_DIR"
 
 # Start service
-sudo systemctl start session-mgmt-mcp
+sudo systemctl start session-buddy
 
 # Health check
 sleep 10
-if sudo systemctl is-active --quiet session-mgmt-mcp; then
+if sudo systemctl is-active --quiet session-buddy; then
     echo "✅ Disaster recovery successful"
 else
     echo "❌ Disaster recovery failed - check logs"
-    sudo journalctl -u session-mgmt-mcp --lines=50
+    sudo journalctl -u session-buddy --lines=50
     exit 1
 fi
 ```
@@ -1253,14 +1253,14 @@ if __name__ == "__main__":
 
 ```bash
 # Check service status
-sudo systemctl status session-mgmt-mcp
+sudo systemctl status session-buddy
 
 # View logs
-sudo journalctl -u session-mgmt-mcp -f
+sudo journalctl -u session-buddy -f
 
 # Check permissions
 ls -la /opt/session-mgmt/
-sudo -u session-mgmt python -c "import session_mgmt_mcp; print('OK')"
+sudo -u session-mgmt python -c "import session_buddy; print('OK')"
 ```
 
 #### Memory Issues
@@ -1272,7 +1272,7 @@ ps aux | grep session-mgmt
 
 # Adjust memory limits
 export MAX_MEMORY_MB=1024
-sudo systemctl restart session-mgmt-mcp
+sudo systemctl restart session-buddy
 ```
 
 #### Database Connection Issues
@@ -1299,7 +1299,7 @@ conn.close()
 echo "🔍 Session Management MCP Health Check"
 
 # Service status
-if systemctl is-active --quiet session-mgmt-mcp; then
+if systemctl is-active --quiet session-buddy; then
     echo "✅ Service is running"
 else
     echo "❌ Service is not running"

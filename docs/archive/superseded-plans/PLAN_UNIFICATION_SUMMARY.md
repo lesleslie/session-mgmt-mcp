@@ -19,7 +19,7 @@ Two overlapping implementation plans created confusion and risk of duplicate wor
 │  ├─ Integration across 9 MCP servers                        │
 │  └─ Phases 1-7 (documentation complete, implementation TBD) │
 │                                                             │
-│  session-mgmt-mcp (16 weeks)                                │
+│  session-buddy (16 weeks)                                │
 │  ├─ Standalone improvements                                 │
 │  ├─ ACB integration (direct usage)                          │
 │  └─ Phases 1-4 (Phase 1-2 complete, Phase 2.7 in progress) │
@@ -79,7 +79,7 @@ ______________________________________________________________________
 │  ✅ Phase 3: Security hardening complete                    │
 │  🔲 Phase 4-7: Implementation remaining                     │
 │                                                             │
-│  session-mgmt-mcp: 37.5% complete                           │
+│  session-buddy: 37.5% complete                           │
 │  █████████░░░░░░░░░░░░░░░░░░░                              │
 │  ✅ Phase 1: Partial (coverage, complexity)                 │
 │  ✅ Phase 2: Server decomposition COMPLETE                  │
@@ -420,7 +420,7 @@ ______________________________________________________________________
 
 ## Quality Trajectory
 
-### session-mgmt-mcp Quality Evolution
+### session-buddy Quality Evolution
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -488,7 +488,7 @@ ______________________________________________________________________
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ session-mgmt-mcp LOC Trajectory                             │
+│ session-buddy LOC Trajectory                             │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │ 30K ┤ ●                                                     │
@@ -714,8 +714,8 @@ ______________________________________________________________________
 **Prepared by:** Documentation Specialist
 **Documents Created:**
 
-1. `/Users/les/Projects/session-mgmt-mcp/docs/UNIFIED_IMPLEMENTATION_ROADMAP.md` (Comprehensive 13-week plan)
-1. `/Users/les/Projects/session-mgmt-mcp/docs/IMPLEMENTATION_PLAN_ANALYSIS.md` (Detailed conflict analysis)
-1. `/Users/les/Projects/session-mgmt-mcp/docs/PLAN_UNIFICATION_SUMMARY.md` (This executive summary)
+1. `/Users/les/Projects/session-buddy/docs/UNIFIED_IMPLEMENTATION_ROADMAP.md` (Comprehensive 13-week plan)
+1. `/Users/les/Projects/session-buddy/docs/IMPLEMENTATION_PLAN_ANALYSIS.md` (Detailed conflict analysis)
+1. `/Users/les/Projects/session-buddy/docs/PLAN_UNIFICATION_SUMMARY.md` (This executive summary)
 
 **Status:** READY FOR STAKEHOLDER APPROVAL

@@ -43,7 +43,7 @@ ______________________________________________________________________
 **Fix Applied:**
 
 ```python
-# Before: session_mgmt_mcp/di/__init__.py
+# Before: session_buddy/di/__init__.py
 claude_dir = Path.home() / ".claude"
 
 # After:
@@ -52,7 +52,7 @@ claude_dir = Path(os.path.expanduser("~")) / ".claude"
 
 **Files Modified:**
 
-- `session_mgmt_mcp/di/__init__.py` (3 locations)
+- `session_buddy/di/__init__.py` (3 locations)
 - `tests/unit/test_di_container.py` (2 tests - singleton reset ordering)
 - `tests/unit/test_instance_managers.py` (3 tests - singleton reset ordering)
 
@@ -265,7 +265,7 @@ ______________________________________________________________________
 
 ### Modified Files
 
-5. **`session_mgmt_mcp/di/__init__.py`** (3 locations)
+5. **`session_buddy/di/__init__.py`** (3 locations)
 
    - Environment-aware path resolution
 
@@ -435,5 +435,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 6 Days 1-2 Complete

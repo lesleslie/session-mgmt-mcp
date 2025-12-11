@@ -202,8 +202,8 @@ ______________________________________________________________________
 
 | Criterion | Target | How to Measure |
 |-----------|--------|----------------|
-| server.py coverage | ≥70% | `coverage report session_mgmt_mcp/server.py` |
-| server_core.py coverage | ≥70% | `coverage report session_mgmt_mcp/server_core.py` |
+| server.py coverage | ≥70% | `coverage report session_buddy/server.py` |
+| server_core.py coverage | ≥70% | `coverage report session_buddy/server_core.py` |
 | New tests passing | 100% | All new tests pass |
 | No regressions | ≥980 passing | Full suite test count maintained |
 | Test execution time | \<5min | New tests complete quickly |
@@ -277,5 +277,5 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 8 Day 2 Planning

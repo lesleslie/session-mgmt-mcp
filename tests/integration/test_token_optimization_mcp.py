@@ -8,11 +8,11 @@ import pytest
 
 
 # Test-local wrappers delegating to server functions.
-# These wrappers allow tests to patch session_mgmt_mcp.server symbols while
+# These wrappers allow tests to patch session_buddy.server symbols while
 # invoking local call sites for readability.
 async def get_cached_chunk(cache_key: str, chunk_index: int):
     # Defer import to avoid early DI configuration
-    from session_mgmt_mcp.server import (
+    from session_buddy.server import (
         get_cached_chunk as _server_get_cached_chunk,
     )
 
@@ -23,10 +23,10 @@ async def get_token_usage_stats(hours: int = 24):
     # If optimizer is reported available by the server, delegate to the
     # token_optimizer module (so tests can patch it directly). Otherwise, use
     # the server fallback implementation which reflects availability flags.
-    from session_mgmt_mcp.server import TOKEN_OPTIMIZER_AVAILABLE
+    from session_buddy.server import TOKEN_OPTIMIZER_AVAILABLE
 
     if TOKEN_OPTIMIZER_AVAILABLE:
-        from session_mgmt_mcp.token_optimizer import (
+        from session_buddy.token_optimizer import (
             get_token_usage_stats as _token_get_token_usage_stats,
         )
 
@@ -91,7 +91,7 @@ async def format_memory_optimization_results(results: dict, dry_run: bool) -> st
 async def optimize_memory_usage(
     strategy: str = "auto", max_age_days: int = 30, dry_run: bool = True
 ):
-    from session_mgmt_mcp.server import (
+    from session_buddy.server import (
         REFLECTION_TOOLS_AVAILABLE,
         TOKEN_OPTIMIZER_AVAILABLE,
     )
@@ -104,7 +104,7 @@ async def optimize_memory_usage(
 
     try:
         # Resolve reflection DB via server helper
-        from session_mgmt_mcp.server import get_reflection_database
+        from session_buddy.server import get_reflection_database
 
         db = await get_reflection_database()
 
@@ -112,7 +112,7 @@ async def optimize_memory_usage(
         policy = await get_memory_optimization_policy(strategy, max_age_days)
 
         # Run optimizer
-        from session_mgmt_mcp.memory_optimizer import MemoryOptimizer
+        from session_buddy.memory_optimizer import MemoryOptimizer
 
         optimizer = MemoryOptimizer(db)
         results = await optimizer.compress_memory(policy=policy, dry_run=dry_run)
@@ -179,14 +179,14 @@ class TestReflectOnPastOptimization:
         """Test reflect_on_past with token optimization enabled."""
         # Create the reflect_on_past function with mocked dependencies
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
-            patch("session_mgmt_mcp.server.track_token_usage") as mock_track,
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.optimize_search_response") as mock_optimize,
+            patch("session_buddy.server.track_token_usage") as mock_track,
         ):
             # Import after patches are applied to avoid DI configuration issues
-            from session_mgmt_mcp.server import reflect_on_past
+            from session_buddy.server import reflect_on_past
 
             mock_get_db.return_value = mock_reflection_db
             mock_optimize.return_value = (
@@ -217,13 +217,13 @@ class TestReflectOnPastOptimization:
     async def test_reflect_on_past_optimization_disabled(self, mock_reflection_db):
         """Test reflect_on_past with token optimization disabled."""
         # Import here to avoid early DI configuration
-        from session_mgmt_mcp.server import reflect_on_past
+        from session_buddy.server import reflect_on_past
 
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.optimize_search_response") as mock_optimize,
         ):
             mock_get_db.return_value = mock_reflection_db
 
@@ -243,14 +243,14 @@ class TestReflectOnPastOptimization:
     ):
         """Test error handling when optimization fails."""
         # Import here to avoid early DI configuration
-        from session_mgmt_mcp.server import reflect_on_past
+        from session_buddy.server import reflect_on_past
 
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
-            patch("session_mgmt_mcp.server.session_logger") as mock_logger,
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.optimize_search_response") as mock_optimize,
+            patch("session_buddy.server.session_logger") as mock_logger,
         ):
             mock_get_db.return_value = mock_reflection_db
             mock_optimize.side_effect = Exception("Optimization failed")
@@ -271,13 +271,13 @@ class TestReflectOnPastOptimization:
     ):
         """Test when token optimizer is not available."""
         # Import here to avoid early DI configuration
-        from session_mgmt_mcp.server import reflect_on_past
+        from session_buddy.server import reflect_on_past
 
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", False),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.optimize_search_response") as mock_optimize,
         ):
             mock_get_db.return_value = mock_reflection_db
 
@@ -298,9 +298,9 @@ class TestCachedChunkRetrieval:
     async def test_get_cached_chunk_success(self):
         """Test successful chunk retrieval."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+                "session_buddy.server.get_cached_chunk", new_callable=AsyncMock
             ) as mock_get_chunk,
         ):
             mock_get_chunk.return_value = "📄 Chunk 1 of 3\n--------------------\nTest content\n\nMore chunks available..."
@@ -316,9 +316,9 @@ class TestCachedChunkRetrieval:
     async def test_get_cached_chunk_not_found(self):
         """Test chunk retrieval when chunk not found."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+                "session_buddy.server.get_cached_chunk", new_callable=AsyncMock
             ) as mock_get_chunk,
         ):
             mock_get_chunk.return_value = "❌ Chunk not found or expired."
@@ -330,7 +330,7 @@ class TestCachedChunkRetrieval:
     @pytest.mark.asyncio
     async def test_get_cached_chunk_optimizer_unavailable(self):
         """Test chunk retrieval when token optimizer unavailable."""
-        with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
+        with patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await get_cached_chunk("test_key", 1)
 
             # Fallback returns None when optimizer is unavailable
@@ -340,9 +340,9 @@ class TestCachedChunkRetrieval:
     async def test_get_cached_chunk_last_chunk(self):
         """Test retrieving the last chunk."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+                "session_buddy.server.get_cached_chunk", new_callable=AsyncMock
             ) as mock_get_chunk,
         ):
             mock_get_chunk.return_value = (
@@ -362,9 +362,9 @@ class TestTokenUsageStats:
     async def test_get_token_usage_stats_success(self):
         """Test successful token usage stats retrieval."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                "session_buddy.token_optimizer.get_token_usage_stats",
                 new_callable=AsyncMock,
             ) as mock_get_stats,
         ):
@@ -396,9 +396,9 @@ class TestTokenUsageStats:
     async def test_get_token_usage_stats_no_data(self):
         """Test token usage stats when no data available."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                "session_buddy.token_optimizer.get_token_usage_stats",
                 new_callable=AsyncMock,
             ) as mock_get_stats,
         ):
@@ -413,7 +413,7 @@ class TestTokenUsageStats:
     @pytest.mark.asyncio
     async def test_get_token_usage_stats_optimizer_unavailable(self):
         """Test token usage stats when optimizer unavailable."""
-        with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
+        with patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await get_token_usage_stats()
 
             # Fallback returns a status dict when optimizer is unavailable
@@ -423,9 +423,9 @@ class TestTokenUsageStats:
     async def test_get_token_usage_stats_error_handling(self):
         """Test error handling in token usage stats."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.token_optimizer.get_token_usage_stats",
+                "session_buddy.token_optimizer.get_token_usage_stats",
                 new_callable=AsyncMock,
             ) as mock_get_stats,
         ):
@@ -460,11 +460,11 @@ class TestOptimizeMemoryUsage:
         }
 
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
             patch(
-                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+                "session_buddy.memory_optimizer.MemoryOptimizer"
             ) as mock_optimizer_class,
         ):
             # Mock MemoryOptimizer
@@ -503,11 +503,11 @@ class TestOptimizeMemoryUsage:
         }
 
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
             patch(
-                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+                "session_buddy.memory_optimizer.MemoryOptimizer"
             ) as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
@@ -536,7 +536,7 @@ class TestOptimizeMemoryUsage:
     @pytest.mark.asyncio
     async def test_optimize_memory_usage_dependencies_unavailable(self):
         """Test memory optimization when dependencies unavailable."""
-        with patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", False):
+        with patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", False):
             result = await optimize_memory_usage()
 
             assert (
@@ -545,8 +545,8 @@ class TestOptimizeMemoryUsage:
             )
 
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", False),
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", False),
         ):
             result = await optimize_memory_usage()
 
@@ -559,9 +559,9 @@ class TestOptimizeMemoryUsage:
     async def test_optimize_memory_usage_error_handling(self):
         """Test error handling in memory optimization."""
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
         ):
             mock_get_db.side_effect = Exception("Database error")
 
@@ -575,11 +575,11 @@ class TestOptimizeMemoryUsage:
         mock_error_results = {"error": "Database not available"}
 
         with (
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
             patch(
-                "session_mgmt_mcp.memory_optimizer.MemoryOptimizer"
+                "session_buddy.memory_optimizer.MemoryOptimizer"
             ) as mock_optimizer_class,
         ):
             mock_db = AsyncMock()
@@ -602,15 +602,15 @@ class TestOptimizationIntegration:
         """Test complete optimization workflow."""
         # Step 1: Search with optimization
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
             patch(
-                "session_mgmt_mcp.server.optimize_search_response",
+                "session_buddy.server.optimize_search_response",
                 new_callable=AsyncMock,
             ) as mock_optimize,
             patch(
-                "session_mgmt_mcp.server.track_token_usage", new_callable=AsyncMock
+                "session_buddy.server.track_token_usage", new_callable=AsyncMock
             ) as mock_track,
         ):
             mock_get_db.return_value = mock_reflection_db
@@ -641,7 +641,7 @@ class TestOptimizationIntegration:
 
             # Step 2: Retrieve additional chunks
             with patch(
-                "session_mgmt_mcp.server.get_cached_chunk", new_callable=AsyncMock
+                "session_buddy.server.get_cached_chunk", new_callable=AsyncMock
             ) as mock_get_chunk:
                 mock_chunk_data = {
                     "chunk": [mock_reflection_db.search_conversations.return_value[1]],
@@ -660,10 +660,10 @@ class TestOptimizationIntegration:
     async def test_optimization_fallback_behavior(self, mock_reflection_db):
         """Test fallback behavior when optimization fails."""
         with (
-            patch("session_mgmt_mcp.server.get_reflection_database") as mock_get_db,
-            patch("session_mgmt_mcp.server.TOKEN_OPTIMIZER_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.REFLECTION_TOOLS_AVAILABLE", True),
-            patch("session_mgmt_mcp.server.optimize_search_response") as mock_optimize,
+            patch("session_buddy.server.get_reflection_database") as mock_get_db,
+            patch("session_buddy.server.TOKEN_OPTIMIZER_AVAILABLE", True),
+            patch("session_buddy.server.REFLECTION_TOOLS_AVAILABLE", True),
+            patch("session_buddy.server.optimize_search_response") as mock_optimize,
         ):
             mock_get_db.return_value = mock_reflection_db
             mock_optimize.side_effect = Exception("Optimization failed")

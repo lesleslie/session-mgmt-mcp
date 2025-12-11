@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from session_mgmt_mcp.core.session_manager import SessionLifecycleManager
+from session_buddy.core.session_manager import SessionLifecycleManager
 
 
 class TestSessionManagerEdgeCases:
@@ -108,7 +108,7 @@ class TestSessionManagerEdgeCases:
 
         # Mock git repository check to return False
         with patch(
-            "session_mgmt_mcp.core.session_manager.is_git_repository",
+            "session_buddy.core.session_manager.is_git_repository",
             return_value=False,
         ):
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -212,7 +212,7 @@ class TestSessionManagerEdgeCases:
 
         # Mock git operations to raise exceptions
         with patch(
-            "session_mgmt_mcp.core.session_manager.create_checkpoint_commit"
+            "session_buddy.core.session_manager.create_checkpoint_commit"
         ) as mock_commit:
             mock_commit.side_effect = Exception("Git operation failed")
 

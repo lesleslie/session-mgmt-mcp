@@ -175,12 +175,12 @@ Properly handled optional dependencies:
 
 ```text
 # watchdog for file monitoring
-with patch("session_mgmt_mcp.app_monitor.WATCHDOG_AVAILABLE", False):
+with patch("session_buddy.app_monitor.WATCHDOG_AVAILABLE", False):
     result = monitor.start_monitoring()
     assert result is False
 
 # psutil for process information
-with patch("session_mgmt_mcp.app_monitor.PSUTIL_AVAILABLE", False):
+with patch("session_buddy.app_monitor.PSUTIL_AVAILABLE", False):
     result = monitor.get_focused_application()
     assert result is None
 ```
@@ -431,6 +431,6 @@ ______________________________________________________________________
 
 **Created:** 2025-10-29
 **Author:** Claude Code + Les
-**Project:** session-mgmt-mcp
+**Project:** session-buddy
 **Phase:** Week 5 Testing Complete
 **Commit:** feat: Week 5 Day 4-5 complete (see git log)

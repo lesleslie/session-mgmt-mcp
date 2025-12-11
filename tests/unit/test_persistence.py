@@ -4,9 +4,9 @@ import typing as t
 from types import SimpleNamespace
 
 import duckdb
-from session_mgmt_mcp.memory.entity_extractor import ProcessedMemory
-from session_mgmt_mcp.memory.persistence import insert_processed_memory
-from session_mgmt_mcp.memory.schema_v2 import SCHEMA_V2_SQL
+from session_buddy.memory.entity_extractor import ProcessedMemory
+from session_buddy.memory.persistence import insert_processed_memory
+from session_buddy.memory.schema_v2 import SCHEMA_V2_SQL
 
 
 def test_insert_processed_memory_inserts_all(
@@ -17,7 +17,7 @@ def test_insert_processed_memory_inserts_all(
     fake_settings = SimpleNamespace(database_path=str(db_path))
 
     # Patch the symbol used inside persistence module
-    import session_mgmt_mcp.memory.persistence as persistence_mod
+    import session_buddy.memory.persistence as persistence_mod
 
     monkeypatch.setattr(persistence_mod, "get_settings", lambda: fake_settings)
 

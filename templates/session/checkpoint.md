@@ -67,4 +67,4 @@ _No specific recommendations at this time._
 
 ______________________________________________________________________
 
-_Checkpoint created by session-mgmt-mcp {{ version }}_
+_Checkpoint created by session-buddy {{ version }}_

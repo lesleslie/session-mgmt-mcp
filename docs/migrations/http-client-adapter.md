@@ -232,7 +232,7 @@ class APIClient:
 Add HTTP client cleanup to shutdown handler:
 
 ```python
-from session_mgmt_mcp.shutdown_manager import get_shutdown_manager
+from session_buddy.shutdown_manager import get_shutdown_manager
 from acb.depends import depends
 from mcp_common.adapters.http.client import HTTPClientAdapter
 

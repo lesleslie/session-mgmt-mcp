@@ -13,7 +13,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from session_mgmt_mcp.adapters import (
+from session_buddy.adapters import (
     DEFAULT_SESSION_BUCKET,
     SessionStorageAdapter,
     get_default_storage_adapter,
@@ -301,7 +301,7 @@ class TestAdapterInitialization:
     def mock_get_storage_adapter(self):
         """Mock get_storage_adapter function."""
         with patch(
-            "session_mgmt_mcp.adapters.storage_registry.get_storage_adapter"
+            "session_buddy.adapters.storage_registry.get_storage_adapter"
         ) as mock:
             mock_adapter = AsyncMock()
             mock_adapter.init = AsyncMock()
@@ -346,7 +346,7 @@ class TestDefaultStorageAdapter:
         assert isinstance(adapter, SessionStorageAdapter)
         assert adapter.backend == "file"
 
-    @patch("session_mgmt_mcp.adapters.session_storage_adapter.depends")
+    @patch("session_buddy.adapters.session_storage_adapter.depends")
     def test_get_default_storage_adapter_from_config(self, mock_depends):
         """Test get_default_storage_adapter uses config if available."""
         # Mock config with storage settings

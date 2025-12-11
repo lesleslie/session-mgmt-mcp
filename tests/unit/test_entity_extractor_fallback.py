@@ -4,7 +4,7 @@ import json
 import typing as t
 
 import pytest
-from session_mgmt_mcp.memory.entity_extractor import EntityExtractionEngine
+from session_buddy.memory.entity_extractor import EntityExtractionEngine
 
 
 @pytest.mark.asyncio

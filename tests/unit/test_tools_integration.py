@@ -3,12 +3,12 @@
 from datetime import datetime, timedelta
 
 import pytest
-from session_mgmt_mcp.tools.agent_analyzer import AgentAnalyzer, AgentType
-from session_mgmt_mcp.tools.quality_metrics import (
+from session_buddy.tools.agent_analyzer import AgentAnalyzer, AgentType
+from session_buddy.tools.quality_metrics import (
     QualityMetrics,
     QualityMetricsExtractor,
 )
-from session_mgmt_mcp.tools.recommendation_engine import RecommendationEngine
+from session_buddy.tools.recommendation_engine import RecommendationEngine
 
 
 class MockReflectionDatabase:
@@ -294,7 +294,7 @@ class TestEndToEndWorkflow:
         ]
 
         # Convert dict to AgentRecommendation for adjustment
-        from session_mgmt_mcp.tools.agent_analyzer import AgentRecommendation
+        from session_buddy.tools.agent_analyzer import AgentRecommendation
 
         recommendations = [
             AgentRecommendation(

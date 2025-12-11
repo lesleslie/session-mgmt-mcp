@@ -20,7 +20,7 @@ uv add "../mcp-common"
 
 ### 2. Updated OllamaProvider Class
 
-**Location**: `session_mgmt_mcp/llm_providers.py`
+**Location**: `session_buddy/llm_providers.py`
 
 **Imports** (lines 18-24):
 
@@ -198,7 +198,7 @@ ______________________________________________________________________
 
 ```bash
 uv run python -c "
-from session_mgmt_mcp.llm_providers import OllamaProvider
+from session_buddy.llm_providers import OllamaProvider
 import asyncio
 
 async def test():
@@ -216,7 +216,7 @@ asyncio.run(test())
 ### Syntax Validation
 
 ```bash
-uv run python -m py_compile session_mgmt_mcp/llm_providers.py
+uv run python -m py_compile session_buddy/llm_providers.py
 # ✅ Syntax validation passed
 ```
 
@@ -224,7 +224,7 @@ uv run python -m py_compile session_mgmt_mcp/llm_providers.py
 
 ```bash
 uv run python -c "
-from session_mgmt_mcp.llm_providers import OllamaProvider
+from session_buddy.llm_providers import OllamaProvider
 from mcp_common import HTTPClientAdapter, HTTPClientSettings
 print('✅ All imports successful')
 "
@@ -258,7 +258,7 @@ ______________________________________________________________________
 ## References
 
 - **mcp-common HTTPClientAdapter**: `/Users/les/Projects/mcp-common/mcp_common/adapters/http/client.py`
-- **OllamaProvider**: `session_mgmt_mcp/llm_providers.py` (lines 459-655)
+- **OllamaProvider**: `session_buddy/llm_providers.py` (lines 459-655)
 - **httpx Streaming API**: https://www.python-httpx.org/advanced/#streaming-responses
 - **Performance Benchmarks**: 11x improvement measured against per-request clients
 

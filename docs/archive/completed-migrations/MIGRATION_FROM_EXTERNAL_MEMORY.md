@@ -22,13 +22,13 @@ From external memory JSONL files:
 **Entity format:**
 
 ```json
-{"type":"entity","name":"session-mgmt-mcp","entityType":"project","observations":["MCP server","Session management","DuckDB storage"]}
+{"type":"entity","name":"session-buddy","entityType":"project","observations":["MCP server","Session management","DuckDB storage"]}
 ```
 
 **Relation format:**
 
 ```json
-{"type":"relation","from":"session-mgmt-mcp","to":"ACB","relationType":"uses"}
+{"type":"relation","from":"session-buddy","to":"ACB","relationType":"uses"}
 ```
 
 ______________________________________________________________________

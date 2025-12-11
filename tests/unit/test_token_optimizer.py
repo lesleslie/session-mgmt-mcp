@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-from session_mgmt_mcp.token_optimizer import (
+from session_buddy.token_optimizer import (
     ChunkResult,
     TokenOptimizer,
     TokenUsageMetrics,

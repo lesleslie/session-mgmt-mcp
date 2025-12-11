@@ -4,7 +4,7 @@ import sqlite3
 import typing as t
 from pathlib import Path
 
-from session_mgmt_mcp.app_monitor import IDEFileHandler, ProjectActivityMonitor
+from session_buddy.app_monitor import IDEFileHandler, ProjectActivityMonitor
 
 
 def test_persistent_dedupe(tmp_path: t.Any) -> None:

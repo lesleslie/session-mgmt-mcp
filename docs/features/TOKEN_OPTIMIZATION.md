@@ -1,6 +1,6 @@
 # Token Optimization Features
 
-This document describes the comprehensive token optimization system implemented in the session-mgmt-mcp server to reduce token usage and costs while maintaining functionality.
+This document describes the comprehensive token optimization system implemented in the session-buddy server to reduce token usage and costs while maintaining functionality.
 
 ## Overview
 
@@ -8,7 +8,7 @@ The token optimization system provides multiple strategies to reduce token consu
 
 ## Core Components
 
-### 1. TokenOptimizer Class (`session_mgmt_mcp/token_optimizer.py`)
+### 1. TokenOptimizer Class (`session_buddy/token_optimizer.py`)
 
 The main optimization engine that provides:
 

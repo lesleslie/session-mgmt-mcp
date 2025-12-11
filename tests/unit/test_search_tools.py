@@ -7,7 +7,7 @@ Tests the MCP tools for searching reflections and conversations.
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from session_mgmt_mcp.reflection_tools import (
+from session_buddy.reflection_tools import (
     get_reflection_database,
 )
 
@@ -19,7 +19,7 @@ class TestGetReflectionDatabase:
         """Test successful database initialization."""
         # Mock the ReflectionDatabase class that's imported inside the function
         with patch(
-            "session_mgmt_mcp.reflection_tools.ReflectionDatabase"
+            "session_buddy.reflection_tools.ReflectionDatabase"
         ) as mock_reflection_db:
             mock_db_instance = AsyncMock()
             mock_reflection_db.return_value = mock_db_instance
@@ -34,7 +34,7 @@ class TestGetReflectionDatabase:
     async def test_get_reflection_database_import_error(self):
         """Test database initialization when import fails."""
         with patch(
-            "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
+            "session_buddy.reflection_tools.ReflectionDatabase",
             side_effect=ImportError,
         ):
             result = await get_reflection_database()
@@ -43,7 +43,7 @@ class TestGetReflectionDatabase:
     async def test_get_reflection_database_general_exception(self):
         """Test database initialization when general exception occurs."""
         with patch(
-            "session_mgmt_mcp.reflection_tools.ReflectionDatabase",
+            "session_buddy.reflection_tools.ReflectionDatabase",
             side_effect=Exception,
         ):
             result = await get_reflection_database()
