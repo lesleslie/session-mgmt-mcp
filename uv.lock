@@ -675,7 +675,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.45.2"
+version = "0.46.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "acb" },
@@ -692,6 +692,7 @@ dependencies = [
     { name = "hypothesis" },
     { name = "jinja2" },
     { name = "keyring" },
+    { name = "linkcheckmd" },
     { name = "mcp" },
     { name = "mcp-common" },
     { name = "mdformat" },
@@ -719,7 +720,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "scipy-stubs" },
-    { name = "session-mgmt-mcp" },
+    { name = "session-buddy" },
     { name = "skylos" },
     { name = "structlog" },
     { name = "textual" },
@@ -737,9 +738,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/ac/c6761b8ce224452904b11cad138543b993056aaf5ce8537cded7604813ec/crackerjack-0.45.2.tar.gz", hash = "sha256:21b985321b1f0089377491cba3deee7cdc7472cd6a655375b9246fda3391a86e", size = 2069214, upload-time = "2025-12-09T20:31:41.731Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/04/40fd8c0cbce4f80c92c8d0508927db0ea1916f1416ed9372244f9b2b219a/crackerjack-0.46.0.tar.gz", hash = "sha256:f7a3d00626b1e2eccffd765719be662ec8e673aa74587578c47d1c07a56f1f26", size = 2072456, upload-time = "2025-12-11T18:24:45.737Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/ba/72ddf5b0d4c2a7331a1c97ea9f20f90d2080af36291ccadebca78ebd4b63/crackerjack-0.45.2-py3-none-any.whl", hash = "sha256:87e5f089655a267f30d5f2862196a6094af5006c7a4d1047a952d62f3ae99adf", size = 1337020, upload-time = "2025-12-09T20:31:37.99Z" },
+    { url = "https://files.pythonhosted.org/packages/22/cf/bad636c5bc50a8726fde915bc95c94b54e1146e12e56f469add921a17411/crackerjack-0.46.0-py3-none-any.whl", hash = "sha256:e43536f11df3331432679a0fc11a060526fb42957ba9bd0a547a8fd7561fee6b", size = 1341769, upload-time = "2025-12-11T18:24:40.767Z" },
 ]
 
 [[package]]
@@ -1864,6 +1865,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/40/71/d89bb0e71b1415453
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/40/791891d4c0c4dab4c5e187c17261cedc26285fd41541577f900470a45a4d/license_expression-30.4.4-py3-none-any.whl", hash = "sha256:421788fdcadb41f049d2dc934ce666626265aeccefddd25e162a26f23bcbf8a4", size = 120615, upload-time = "2025-07-22T11:13:31.217Z" },
 ]
+
+[[package]]
+name = "linkcheckmd"
+version = "1.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/ea/34da82a2c946699e18275b19a97464046f1193299c42401ae7b088108eed/linkcheckmd-1.4.0.tar.gz", hash = "sha256:3a539c9a4e11697fc7fcc269d379accf93c8cccbf971f3cea0bae40912d9f609", size = 10760, upload-time = "2021-02-28T02:50:22.504Z" }
 
 [[package]]
 name = "linkify-it-py"
@@ -3643,7 +3653,7 @@ wheels = [
 
 [[package]]
 name = "session-buddy"
-version = "0.9.9"
+version = "0.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "acb" },
@@ -3756,40 +3766,6 @@ test = [
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-]
-
-[[package]]
-name = "session-mgmt-mcp"
-version = "0.9.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "acb" },
-    { name = "aiocache" },
-    { name = "bevy" },
-    { name = "crackerjack" },
-    { name = "duckdb" },
-    { name = "fastapi" },
-    { name = "fastmcp" },
-    { name = "httpx" },
-    { name = "jinja2" },
-    { name = "jinja2-async-environment" },
-    { name = "logly" },
-    { name = "mcp-common" },
-    { name = "numpy" },
-    { name = "onnxruntime" },
-    { name = "psutil" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "rich" },
-    { name = "structlog" },
-    { name = "tiktoken" },
-    { name = "tomli" },
-    { name = "transformers" },
-    { name = "typer" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/92/13/2b346d9b54f3d80a0d6db5bcf86f19c0fc2f3d3b41d55164368fb0c50a22/session_mgmt_mcp-0.9.9.tar.gz", hash = "sha256:036a0ea4775c65e9ce2afea5152c6d6b1431ea41d012110ad13304fce340086a", size = 1412807, upload-time = "2025-12-09T21:47:11.417Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9d/3a/285d1769b48e0409cbefb71e71227036814d853670aabdcdcb14ca0a9528/session_mgmt_mcp-0.9.9-py3-none-any.whl", hash = "sha256:8eb07b0b768062403893224429b83ade084a5e300b2352889fd65de6694ce3d4", size = 404434, upload-time = "2025-12-09T21:47:08.81Z" },
 ]
 
 [[package]]
@@ -4277,11 +4253,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.1"
+version = "2.6.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5e/1d/0f3a93cca1ac5e8287842ed4eebbd0f7a991315089b1a0b01c7788aa7b63/urllib3-2.6.1.tar.gz", hash = "sha256:5379eb6e1aba4088bae84f8242960017ec8d8e3decf30480b3a1abdaa9671a3f", size = 432678, upload-time = "2025-12-08T15:25:26.773Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/24/a2a2ed9addd907787d7aa0355ba36a6cadf1768b934c652ea78acbd59dcd/urllib3-2.6.2.tar.gz", hash = "sha256:016f9c98bb7e98085cb2b4b17b87d2c702975664e4f060c6532e64d1c1a5e797", size = 432930, upload-time = "2025-12-11T15:56:40.252Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/56/190ceb8cb10511b730b564fb1e0293fa468363dbad26145c34928a60cb0c/urllib3-2.6.1-py3-none-any.whl", hash = "sha256:e67d06fe947c36a7ca39f4994b08d73922d40e6cca949907be05efa6fd75110b", size = 131138, upload-time = "2025-12-08T15:25:25.51Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/b9/4095b668ea3678bf6a0af005527f39de12fb026516fb3df17495a733b7f8/urllib3-2.6.2-py3-none-any.whl", hash = "sha256:ec21cddfe7724fc7cb4ba4bea7aa8e2ef36f607a4bab81aa6ce42a13dc3f03dd", size = 131182, upload-time = "2025-12-11T15:56:38.584Z" },
 ]
 
 [[package]]
