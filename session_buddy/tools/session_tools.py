@@ -122,7 +122,7 @@ def _create_session_shortcuts() -> dict[str, Any]:
 description: Start session management for current project
 ---
 
-Please use the `mcp__session-mgmt__start` tool to initialize session management for the current project.
+Please use the `mcp__session-buddy__start` tool to initialize session management for the current project.
 
 This will:
 1. Set up session tracking for the git repository
@@ -139,7 +139,7 @@ argument-hint: [checkpoint-name]
 description: Create a session checkpoint with progress summary
 ---
 
-Please use the `mcp__session-mgmt__checkpoint` tool to create a session checkpoint.
+Please use the `mcp__session-buddy__checkpoint` tool to create a session checkpoint.
 
 This command will:
 1. Create a checkpoint of the current development session
@@ -157,7 +157,7 @@ The tool will analyze the working directory and provide comprehensive quality me
 description: End current session with cleanup and summary
 ---
 
-Please use the `mcp__session-mgmt__end` tool to gracefully end the current session.
+Please use the `mcp__session-buddy__end` tool to gracefully end the current session.
 
 This will:
 1. Create a final checkpoint of all work completed

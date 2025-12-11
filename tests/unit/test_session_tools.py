@@ -234,9 +234,7 @@ class TestStartTool:
         """Should return formatted initialization output."""
         from session_buddy.tools.session_tools import _start_impl
 
-        with patch(
-            "session_buddy.tools.session_tools.session_manager"
-        ) as mock_manager:
+        with patch("session_buddy.tools.session_tools.session_manager") as mock_manager:
             mock_manager.initialize_session = AsyncMock(
                 return_value={
                     "success": True,
@@ -277,9 +275,7 @@ class TestCheckpointTool:
         """Should perform checkpoint and return formatted output."""
         from session_buddy.tools.session_tools import _checkpoint_impl
 
-        with patch(
-            "session_buddy.tools.session_tools.session_manager"
-        ) as mock_manager:
+        with patch("session_buddy.tools.session_tools.session_manager") as mock_manager:
             mock_manager.current_project = "test-project"
             mock_manager.checkpoint_session = AsyncMock(
                 return_value={
@@ -310,9 +306,7 @@ class TestEndTool:
         """Should end session and return formatted output."""
         from session_buddy.tools.session_tools import _end_impl
 
-        with patch(
-            "session_buddy.tools.session_tools.session_manager"
-        ) as mock_manager:
+        with patch("session_buddy.tools.session_tools.session_manager") as mock_manager:
             mock_manager.end_session = AsyncMock(
                 return_value={
                     "success": True,
@@ -341,9 +335,7 @@ class TestStatusTool:
         """Should return comprehensive session status."""
         from session_buddy.tools.session_tools import _status_impl
 
-        with patch(
-            "session_buddy.tools.session_tools.session_manager"
-        ) as mock_manager:
+        with patch("session_buddy.tools.session_tools.session_manager") as mock_manager:
             mock_manager.get_session_status = AsyncMock(
                 return_value={
                     "success": True,

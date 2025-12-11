@@ -263,9 +263,7 @@ class TestFormatConversationSummary:
     @pytest.mark.asyncio
     async def test_format_empty_conversation(self) -> None:
         """Should handle empty conversation history."""
-        with patch(
-            "session_buddy.reflection_tools.get_reflection_database"
-        ) as mock_db:
+        with patch("session_buddy.reflection_tools.get_reflection_database") as mock_db:
             mock_reflection = MagicMock()
             mock_reflection.search_conversations.return_value = []
             mock_db.return_value = mock_reflection
@@ -281,9 +279,7 @@ class TestFormatConversationSummary:
     @pytest.mark.asyncio
     async def test_format_conversation_with_results(self) -> None:
         """Should format conversation results."""
-        with patch(
-            "session_buddy.reflection_tools.get_reflection_database"
-        ) as mock_db:
+        with patch("session_buddy.reflection_tools.get_reflection_database") as mock_db:
             # Mock conversation results
             mock_reflection = MagicMock()
             mock_reflection.search_conversations.return_value = [
@@ -308,9 +304,7 @@ class TestFormatConversationSummary:
     @pytest.mark.asyncio
     async def test_format_conversation_database_unavailable(self) -> None:
         """Should handle missing reflection database."""
-        with patch(
-            "session_buddy.reflection_tools.get_reflection_database"
-        ) as mock_db:
+        with patch("session_buddy.reflection_tools.get_reflection_database") as mock_db:
             # Mock database import error
             mock_db.side_effect = ImportError("Database not available")
 

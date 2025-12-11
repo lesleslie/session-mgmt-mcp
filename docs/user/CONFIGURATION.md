@@ -1,4 +1,4 @@
-# Configuration Reference
+# Session Buddy - Configuration Reference
 
 Complete configuration guide for the Session Management MCP server with advanced setup options.
 

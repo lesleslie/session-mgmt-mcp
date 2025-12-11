@@ -866,9 +866,9 @@ async def session_welcome() -> str:
     output.extend(
         (
             "\n🔧 Use other session-mgmt tools for:",
-            "   • /session-mgmt:status - Detailed project health",
-            "   • /session-mgmt:checkpoint - Mid-session quality check",
-            "   • /session-mgmt:end - Graceful session cleanup",
+            "   • /session-buddy:status - Detailed project health",
+            "   • /session-buddy:checkpoint - Mid-session quality check",
+            "   • /session-buddy:end - Graceful session cleanup",
         )
     )
 

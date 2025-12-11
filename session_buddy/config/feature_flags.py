@@ -2,8 +2,8 @@
 Feature flags for Memori-inspired features and staged rollout.
 
 Flags default to False for safe rollouts and can be enabled via:
-- Environment variables (e.g., SESSION_MGMT_USE_SCHEMA_V2=true)
-- YAML settings (settings/session-mgmt.yaml or local.yaml)
+- Environment variables (e.g., SESSION_BUDDY_USE_SCHEMA_V2=true)
+- YAML settings (settings/session-buddy.yaml or local.yaml)
 
 Usage:
     from session_buddy.config.feature_flags import get_feature_flags

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Session lifecycle management for session-mgmt-mcp.
+"""Session lifecycle management for session-buddy.
 
 This module handles session initialization, quality assessment, checkpoints,
 and cleanup operations.

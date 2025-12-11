@@ -1,15 +1,15 @@
-"""ACB-based unified settings for Session Management MCP Server.
+"""ACB-based unified settings for Session Buddy MCP Server.
 
 Configuration Loading:
     Settings are loaded from YAML files with layered priority:
     1. settings/local.yaml (highest - local overrides, gitignored)
-    2. settings/session-mgmt.yaml (base configuration)
-    3. Environment variables SESSION_MGMT_*
+    2. settings/session-buddy.yaml (base configuration)
+    3. Environment variables SESSION_BUDDY_*
     4. Defaults from this class (lowest)
 
 Settings Directory Structure:
     settings/
-    ├── session-mgmt.yaml    # Base configuration (committed)
+    ├── session-buddy.yaml   # Base configuration (committed)
     └── local.yaml           # Local overrides (gitignored)
 """
 
@@ -22,7 +22,7 @@ from pydantic import Field, field_validator
 
 
 class SessionMgmtSettings(Settings):  # type: ignore[misc]
-    """Unified ACB Settings for session-mgmt-mcp.
+    """Unified ACB Settings for session-buddy.
 
     All configuration consolidated into a single flat structure
     for ACB compatibility and simplicity.
@@ -279,7 +279,7 @@ class SessionMgmtSettings(Settings):  # type: ignore[misc]
         description="Enable logging to file",
     )
     log_file_path: str = Field(
-        default="~/.claude/logs/session-mgmt.log",
+        default="~/.claude/logs/session-buddy.log",
         description="Path to log file",
     )
     log_file_max_size: int = Field(

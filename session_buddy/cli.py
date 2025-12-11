@@ -25,8 +25,8 @@ from acb.console import console
 from mcp_common.ui import ServerPanels
 
 app = typer.Typer(
-    name="session-mgmt-mcp",
-    help="Session Management MCP Server - CLI matching crackerjack pattern",
+    name="session-buddy",
+    help="Session Buddy MCP Server - CLI matching crackerjack pattern",
     no_args_is_help=True,
 )
 
@@ -35,7 +35,7 @@ DEFAULT_FALSE = False
 
 
 def find_server_processes() -> list[psutil.Process]:
-    """Find running session-mgmt-mcp server processes."""
+    """Find running session-buddy server processes."""
     processes = []
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
@@ -46,9 +46,9 @@ def find_server_processes() -> list[psutil.Process]:
             )
             cmdline_str = " ".join(cmdline)
 
-            # Look for various patterns that indicate a session-mgmt-mcp server
+            # Look for various patterns that indicate a session-buddy server
             is_session_mcp = (
-                "session_buddy" in cmdline_str or "session-mgmt-mcp" in cmdline_str
+                "session_buddy" in cmdline_str or "session-buddy" in cmdline_str
             )
 
             # Check if it's running a server (various ways to start)
@@ -361,7 +361,7 @@ def show_config() -> None:
             with pyproject_path.open("rb") as f:
                 data = tomli.load(f)
 
-            config = data.get("tool", {}).get("session-mgmt-mcp", {})
+            config = data.get("tool", {}).get("session-buddy", {})
             items["HTTP Port"] = str(config.get("mcp_http_port", 8678))
             items["HTTP Host"] = config.get("mcp_http_host", "127.0.0.1")
             items["WebSocket Port"] = str(config.get("websocket_monitor_port", 8677))

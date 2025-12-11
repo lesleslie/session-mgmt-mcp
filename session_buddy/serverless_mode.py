@@ -168,7 +168,7 @@ class ServerlessConfigManager:
                     "key_prefix": "session_mgmt:",
                 },
                 "s3": {
-                    "bucket_name": "session-mgmt-mcp",
+                    "bucket_name": "session-buddy",
                     "region": "us-east-1",
                     "key_prefix": "sessions/",
                 },

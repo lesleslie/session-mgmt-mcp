@@ -142,9 +142,7 @@ class TestFileSystemHealthCheck:
         claude_dir.chmod(0o444)
 
         try:
-            with patch(
-                "session_buddy.health_checks.Path.home", return_value=tmp_path
-            ):
+            with patch("session_buddy.health_checks.Path.home", return_value=tmp_path):
                 result = await check_file_system_health()
 
                 assert result.name == "file_system"
@@ -181,9 +179,7 @@ class TestDependenciesHealthCheck:
         mock_server.MULTI_PROJECT_AVAILABLE = True
 
         with (
-            patch(
-                "session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
-            ),
+            patch("session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True),
             patch.dict(
                 "sys.modules",
                 {"onnxruntime": MagicMock(), "session_buddy.server": mock_server},
@@ -245,9 +241,7 @@ class TestDependenciesHealthCheck:
     async def test_dependencies_some_available(self) -> None:
         """Should return DEGRADED when some dependencies available."""
         with (
-            patch(
-                "session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True
-            ),
+            patch("session_buddy.utils.quality_utils_v2.CRACKERJACK_AVAILABLE", True),
             patch.dict("sys.modules", clear=True),  # Clear all modules
         ):
             result = await check_dependencies_health()

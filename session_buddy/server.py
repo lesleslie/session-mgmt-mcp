@@ -218,7 +218,7 @@ async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
 _mcp_config = _load_mcp_config()
 
 # Initialize MCP server with lifespan
-mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
+mcp = FastMCP("session-buddy", lifespan=session_lifecycle)
 
 # Add rate limiting middleware (Phase 3 Security Hardening)
 if RATE_LIMITING_AVAILABLE:

@@ -47,17 +47,17 @@ Once configured, these slash commands become available in Claude Code:
 
 ```bash
 # Session Management
-/session-mgmt:start             # Initialize session with project analysis
-/session-mgmt:checkpoint        # Mid-session quality assessment
-/session-mgmt:end              # Complete session cleanup
-/session-mgmt:status           # Current session status
+/session-buddy:start             # Initialize session with project analysis
+/session-buddy:checkpoint        # Mid-session quality assessment
+/session-buddy:end              # Complete session cleanup
+/session-buddy:status           # Current session status
 
 # Memory & Search
-/session-mgmt:reflect_on_past   # Search conversation history
-/session-mgmt:store_reflection  # Save important insights
-/session-mgmt:quick_search     # Fast overview search
-/session-mgmt:search_by_file   # Find file-specific conversations
-/session-mgmt:search_by_concept # Search by development concepts
+/session-buddy:reflect_on_past   # Search conversation history
+/session-buddy:store_reflection  # Save important insights
+/session-buddy:quick_search     # Fast overview search
+/session-buddy:search_by_file   # Find file-specific conversations
+/session-buddy:search_by_concept # Search by development concepts
 ```
 
 ## Development Tool Integration
@@ -69,7 +69,7 @@ The MCP server provides intelligent Git integration with automatic checkpointing
 #### Automatic Checkpoint Commits
 
 ```python
-# Automatic checkpoint commits during /session-mgmt:checkpoint
+# Automatic checkpoint commits during /session-buddy:checkpoint
 commit_message = f"""checkpoint: {project_name} (quality: {score}/100)
 
 Session: {session_id}

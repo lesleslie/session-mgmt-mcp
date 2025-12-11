@@ -26,7 +26,7 @@ _configured = False
 
 
 def configure(*, force: bool = False) -> None:
-    """Register default dependencies for the session-mgmt MCP stack.
+    """Register default dependencies for the session-buddy MCP stack.
 
     This function sets up the dependency injection container with type-safe
     configuration and singleton instances for the session management system.
@@ -134,7 +134,7 @@ def _register_logger(logs_dir: Path, force: bool) -> None:
             logger_instance.addHandler(handler)
     except Exception:
         # Fallback: use a temp logs directory under the system temp path
-        tmp_logs = Path(tempfile.gettempdir()) / "session-mgmt-mcp" / "logs"
+        tmp_logs = Path(tempfile.gettempdir()) / "session-buddy" / "logs"
         tmp_logs.mkdir(parents=True, exist_ok=True)
         depends.set(LOGS_DIR_KEY, tmp_logs)
         log_file = (
@@ -190,7 +190,7 @@ def _register_session_logger(logs_dir: Path, force: bool) -> None:
     try:
         session_logger = SessionLogger(logs_dir)
     except Exception:
-        tmp_logs = Path(tempfile.gettempdir()) / "session-mgmt-mcp" / "logs"
+        tmp_logs = Path(tempfile.gettempdir()) / "session-buddy" / "logs"
         tmp_logs.mkdir(parents=True, exist_ok=True)
         depends.set(LOGS_DIR_KEY, tmp_logs)
         session_logger = SessionLogger(tmp_logs)

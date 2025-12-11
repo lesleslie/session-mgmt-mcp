@@ -531,10 +531,10 @@ def _add_crackerjack_integration_info(output: list[str]) -> None:
             (
                 "\n🔧 Crackerjack Integration (Enhanced):",
                 "\n🎯 RECOMMENDED COMMANDS (Enhanced with Memory & Analytics):",
-                "• /session-mgmt:crackerjack-run <command> - Smart execution with insights",
-                "• /session-mgmt:crackerjack-history - View trends and patterns",
-                "• /session-mgmt:crackerjack-metrics - Quality metrics over time",
-                "• /session-mgmt:crackerjack-patterns - Test failure analysis",
-                "• /session-mgmt:crackerjack-help - Complete command guide",
+                "• /session-buddy:crackerjack-run <command> - Smart execution with insights",
+                "• /session-buddy:crackerjack-history - View trends and patterns",
+                "• /session-buddy:crackerjack-metrics - Quality metrics over time",
+                "• /session-buddy:crackerjack-patterns - Test failure analysis",
+                "• /session-buddy:crackerjack-help - Complete command guide",
             )
         )

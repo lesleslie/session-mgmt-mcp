@@ -100,9 +100,7 @@ class TestNaturalReminderTools:
         """Should list user reminders."""
         from session_buddy.advanced_features import list_user_reminders
 
-        with patch(
-            "session_buddy.natural_scheduler.list_user_reminders"
-        ) as mock_list:
+        with patch("session_buddy.natural_scheduler.list_user_reminders") as mock_list:
             mock_list.return_value = [{"id": "1", "title": "Reminder 1"}]
 
             with patch(

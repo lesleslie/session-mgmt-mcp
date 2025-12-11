@@ -1,4 +1,4 @@
-# Deployment Guide
+# Session Buddy - Deployment Guide
 
 Comprehensive deployment strategies for the Session Management MCP server across different environments and platforms.
 

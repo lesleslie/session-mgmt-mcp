@@ -128,7 +128,7 @@ async def session_lifecycle(app: Any) -> AsyncGenerator[None]:
 
 
 # Initialize MCP server with lifespan
-mcp = FastMCP("session-mgmt-mcp", lifespan=session_lifecycle)
+mcp = FastMCP("session-buddy", lifespan=session_lifecycle)
 
 # Register modularized tools
 from session_buddy.tools import register_memory_tools, register_session_tools
@@ -187,10 +187,10 @@ async def session_welcome() -> str:
 
     output.extend(
         (
-            "\n🔧 Use other session-mgmt tools for:",
-            "   • /session-mgmt:status - Detailed project health",
-            "   • /session-mgmt:checkpoint - Mid-session quality check",
-            "   • /session-mgmt:end - Graceful session cleanup",
+            "\n🔧 Use other session-buddy tools for:",
+            "   • /session-buddy:status - Detailed project health",
+            "   • /session-buddy:checkpoint - Mid-session quality check",
+            "   • /session-buddy:end - Graceful session cleanup",
         )
     )
 
@@ -548,7 +548,7 @@ async def quality_monitor() -> str:
 def run_server() -> None:
     """Run the optimized MCP server."""
     try:
-        logger.info("Starting optimized session-mgmt-mcp server")
+        logger.info("Starting optimized session-buddy server")
 
         # Log the modular structure
         logger.info(

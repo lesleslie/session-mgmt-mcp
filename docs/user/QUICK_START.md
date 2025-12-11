@@ -1,4 +1,4 @@
-# Session Management MCP - Quick Start Guide
+# Session Buddy - Quick Start Guide
 
 Get up and running with the Session Management MCP server in under 5 minutes.
 
@@ -59,7 +59,7 @@ Add to your `.mcp.json` configuration:
 ### 1. Initialize Your Session
 
 ```
-/session-mgmt:start
+/session-buddy:start
 ```
 
 This single command:
@@ -80,7 +80,7 @@ Code, debug, and develop as usual. The MCP server silently:
 ### 3. Get Smart Recommendations
 
 ```
-/session-mgmt:checkpoint
+/session-buddy:checkpoint
 ```
 
 Every 30-45 minutes, get:
@@ -92,7 +92,7 @@ Every 30-45 minutes, get:
 ### 4. Search Your History
 
 ```
-/session-mgmt:reflect_on_past how did I implement authentication last week?
+/session-buddy:reflect_on_past how did I implement authentication last week?
 ```
 
 Instantly find:
@@ -104,7 +104,7 @@ Instantly find:
 ### 5. End Gracefully
 
 ```
-/session-mgmt:end
+/session-buddy:end
 ```
 
 Automatic cleanup with:
@@ -117,11 +117,11 @@ Automatic cleanup with:
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/session-mgmt:start` | Full session setup | Start of every session |
-| `/session-mgmt:checkpoint` | Quality monitoring | Every 30-45 minutes |
-| `/session-mgmt:reflect_on_past` | Search conversations | When you need past context |
-| `/session-mgmt:store_reflection` | Save important insights | After solving tough problems |
-| `/session-mgmt:end` | Session cleanup | End of every session |
+| `/session-buddy:start` | Full session setup | Start of every session |
+| `/session-buddy:checkpoint` | Quality monitoring | Every 30-45 minutes |
+| `/session-buddy:reflect_on_past` | Search conversations | When you need past context |
+| `/session-buddy:store_reflection` | Save important insights | After solving tough problems |
+| `/session-buddy:end` | Session cleanup | End of every session |
 
 ## Power User Features
 
@@ -142,9 +142,9 @@ Automatic cleanup with:
 ### Advanced Search
 
 ```
-/session-mgmt:quick_search Redis caching strategies
-/session-mgmt:search_by_file src/auth/middleware.py
-/session-mgmt:search_by_concept "error handling patterns"
+/session-buddy:quick_search Redis caching strategies
+/session-buddy:search_by_file src/auth/middleware.py
+/session-buddy:search_by_concept "error handling patterns"
 ```
 
 ## Troubleshooting
@@ -171,7 +171,7 @@ ls /path/to/session-buddy/session_buddy/server.py
 
 ### No Conversations Found
 
-- Run `/session-mgmt:start` first to initialize the database
+- Run `/session-buddy:start` first to initialize the database
 - Check `~/.claude/data/` directory exists and is writable
 
 ## What's Next?
@@ -189,4 +189,4 @@ ls /path/to/session-buddy/session_buddy/server.py
 
 ______________________________________________________________________
 
-**Ready to supercharge your Claude Code sessions?** Run `/session-mgmt:start` and experience the difference! 🚀
+**Ready to supercharge your Claude Code sessions?** Run `/session-buddy:start` and experience the difference! 🚀

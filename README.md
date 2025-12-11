@@ -1,4 +1,6 @@
-# Session Management MCP Server
+# Session Buddy
+
+A Session Management MCP Server for Claude Code
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
@@ -142,26 +144,26 @@ Once configured, the following slash commands become available in Claude Code:
 
 **Primary Session Commands:**
 
-- `/session-mgmt:start` - Full session initialization
-- `/session-mgmt:checkpoint` - Quality monitoring checkpoint with scoring
-- `/session-mgmt:end` - Complete session cleanup with learning capture
-- `/session-mgmt:status` - Current status overview with health checks
+- `/session-buddy:start` - Full session initialization
+- `/session-buddy:checkpoint` - Quality monitoring checkpoint with scoring
+- `/session-buddy:end` - Complete session cleanup with learning capture
+- `/session-buddy:status` - Current status overview with health checks
 
 **Auto-Generated Shortcuts:**
-After running `/session-mgmt:start` once, these shortcuts are automatically created:
+After running `/session-buddy:start` once, these shortcuts are automatically created:
 
-- `/start` → `/session-mgmt:start`
-- `/checkpoint [name]` → `/session-mgmt:checkpoint`
-- `/end` → `/session-mgmt:end`
+- `/start` → `/session-buddy:start`
+- `/checkpoint [name]` → `/session-buddy:checkpoint`
+- `/end` → `/session-buddy:end`
 
 > These shortcuts are created in `~/.claude/commands/` and work across all projects
 
 **Memory & Search Commands:**
 
-- `/session-mgmt:reflect_on_past` - Search past conversations with semantic similarity
-- `/session-mgmt:store_reflection` - Store important insights with tagging
-- `/session-mgmt:quick_search` - Fast search with overview results
-- `/session-mgmt:permissions` - Manage trusted operations
+- `/session-buddy:reflect_on_past` - Search past conversations with semantic similarity
+- `/session-buddy:store_reflection` - Store important insights with tagging
+- `/session-buddy:quick_search` - Fast search with overview results
+- `/session-buddy:permissions` - Manage trusted operations
 
 For running the server directly in development mode:
 
@@ -196,11 +198,11 @@ This server manages its data locally in the user's home directory:
 
 ## Recommended Session Workflow
 
-1. **Initialize Session**: `/session-mgmt:start` - Sets up project context, dependencies, and memory system
-1. **Monitor Progress**: `/session-mgmt:checkpoint` (every 30-45 minutes) - Quality scoring and optimization
-1. **Search Past Work**: `/session-mgmt:reflect_on_past` - Find relevant past conversations and solutions
-1. **Store Important Insights**: `/session-mgmt:store_reflection` - Capture key learnings for future sessions
-1. **End Session**: `/session-mgmt:end` - Final assessment, learning capture, and cleanup
+1. **Initialize Session**: `/session-buddy:start` - Sets up project context, dependencies, and memory system
+1. **Monitor Progress**: `/session-buddy:checkpoint` (every 30-45 minutes) - Quality scoring and optimization
+1. **Search Past Work**: `/session-buddy:reflect_on_past` - Find relevant past conversations and solutions
+1. **Store Important Insights**: `/session-buddy:store_reflection` - Capture key learnings for future sessions
+1. **End Session**: `/session-buddy:end` - Final assessment, learning capture, and cleanup
 
 ## Benefits
 
@@ -212,7 +214,7 @@ This server manages its data locally in the user's home directory:
 
 ### Reduced Friction
 
-- **Single Command Setup**: One `/session-mgmt:start` sets up everything
+- **Single Command Setup**: One `/session-buddy:start` sets up everything
 - **Local Dependencies**: No external API calls or services required
 - **Intelligent Permissions**: Reduces repeated permission prompts
 - **Automated Workflows**: Structured processes for common tasks
@@ -239,7 +241,7 @@ Complete documentation is available in the [docs/](docs/) directory:
 
 - **Memory/embedding issues**: Ensure all dependencies are installed with `uv sync`
 - **Path errors**: Verify `cwd` and `PYTHONPATH` are set correctly in `.mcp.json`
-- **Permission issues**: Use `/session-mgmt:permissions` to trust operations
+- **Permission issues**: Use `/session-buddy:permissions` to trust operations
 
 **Debug Mode:**
 

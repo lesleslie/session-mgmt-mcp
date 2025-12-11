@@ -83,10 +83,10 @@ def _generate_server_guidance(detected_servers: dict[str, bool]) -> list[str]:
             [
                 "💡 CRACKERJACK INTEGRATION DETECTED:",
                 "   Enhanced commands available for better development experience:",
-                "   • Use /session-mgmt:crackerjack-run instead of /crackerjack:run",
+                "   • Use /session-buddy:crackerjack-run instead of /crackerjack:run",
                 "   • Gets memory, analytics, and intelligent insights automatically",
-                "   • View trends with /session-mgmt:crackerjack-history",
-                "   • Analyze patterns with /session-mgmt:crackerjack-patterns",
+                "   • View trends with /session-buddy:crackerjack-history",
+                "   • Analyze patterns with /session-buddy:crackerjack-patterns",
             ],
         )
 

@@ -61,9 +61,7 @@ class FeatureDetector:
     def _check_enhanced_search() -> bool:
         """Check if enhanced search is available."""
         try:
-            return (
-                importlib.util.find_spec("session_buddy.search_enhanced") is not None
-            )
+            return importlib.util.find_spec("session_buddy.search_enhanced") is not None
         except ImportError:
             return False
 
@@ -73,8 +71,7 @@ class FeatureDetector:
         try:
             # Check for the general module availability without importing unused functions
             return (
-                importlib.util.find_spec("session_buddy.tools.search_tools")
-                is not None
+                importlib.util.find_spec("session_buddy.tools.search_tools") is not None
             )
         except ImportError:
             return False
@@ -94,9 +91,7 @@ class FeatureDetector:
     def _check_advanced_search() -> bool:
         """Check if advanced search engine is available."""
         try:
-            return (
-                importlib.util.find_spec("session_buddy.advanced_search") is not None
-            )
+            return importlib.util.find_spec("session_buddy.advanced_search") is not None
         except ImportError:
             return False
 
@@ -112,9 +107,7 @@ class FeatureDetector:
     def _check_auto_context() -> bool:
         """Check if auto-context loading is available."""
         try:
-            return (
-                importlib.util.find_spec("session_buddy.context_manager") is not None
-            )
+            return importlib.util.find_spec("session_buddy.context_manager") is not None
         except ImportError:
             return False
 
@@ -123,8 +116,7 @@ class FeatureDetector:
         """Check if memory optimizer is available."""
         try:
             return (
-                importlib.util.find_spec("session_buddy.memory_optimizer")
-                is not None
+                importlib.util.find_spec("session_buddy.memory_optimizer") is not None
             )
         except ImportError:
             return False
@@ -141,9 +133,7 @@ class FeatureDetector:
     def _check_llm_providers() -> bool:
         """Check if LLM providers are available."""
         try:
-            return (
-                importlib.util.find_spec("session_buddy.llm_providers") is not None
-            )
+            return importlib.util.find_spec("session_buddy.llm_providers") is not None
         except ImportError:
             return False
 
@@ -151,9 +141,7 @@ class FeatureDetector:
     def _check_serverless_mode() -> bool:
         """Check if serverless mode is available."""
         try:
-            return (
-                importlib.util.find_spec("session_buddy.serverless_mode") is not None
-            )
+            return importlib.util.find_spec("session_buddy.serverless_mode") is not None
         except ImportError:
             return False
 

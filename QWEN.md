@@ -1,4 +1,4 @@
-# Session Management MCP Server - Qwen Context
+# Session Buddy - Qwen Context
 
 ## Project Overview
 
@@ -173,11 +173,11 @@ pip install session-buddy
 
 ## Recommended Session Workflow
 
-1. Initialize Session: `/session-mgmt:start`
-1. Monitor Progress: `/session-mgmt:checkpoint` (every 30-45 minutes)
-1. Search Past Work: `/session-mgmt:reflect_on_past`
-1. Store Important Insights: `/session-mgmt:store_reflection`
-1. End Session: `/session-mgmt:end`
+1. Initialize Session: `/session-buddy:start`
+1. Monitor Progress: `/session-buddy:checkpoint` (every 30-45 minutes)
+1. Search Past Work: `/session-buddy:reflect_on_past`
+1. Store Important Insights: `/session-buddy:store_reflection`
+1. End Session: `/session-buddy:end`
 
 ## Testing and Quality Assurance
 
@@ -206,7 +206,7 @@ Common issues:
 
 - Memory not working: Ensure all dependencies are installed with `uv sync` or `pip install session-buddy`
 - Path errors: Ensure `cwd` and `PYTHONPATH` are set correctly in `.mcp.json`
-- Permission issues: Use `/session-mgmt:permissions` to trust operations
+- Permission issues: Use `/session-buddy:permissions` to trust operations
 
 Debug mode:
 

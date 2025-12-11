@@ -1,17 +1,17 @@
-# MCP Tools Reference
+# Session Buddy - MCP Tools Reference
 
 Complete reference guide for all Session Management MCP tools. Use these slash commands directly in Claude Code for comprehensive session management and intelligent conversation memory.
 
 ## 🚀 Core Session Management
 
-### `/session-mgmt:start` - Session Initialization
+### `/session-buddy:start` - Session Initialization
 
 **Purpose**: Complete session setup with project analysis and dependency management
 
 **Usage**:
 
 ```
-/session-mgmt:start
+/session-buddy:start
 ```
 
 **What it does**:
@@ -33,14 +33,14 @@ Complete reference guide for all Session Management MCP tools. Use these slash c
 
 ______________________________________________________________________
 
-### `/session-mgmt:checkpoint` - Quality Monitoring
+### `/session-buddy:checkpoint` - Quality Monitoring
 
 **Purpose**: Mid-session quality assessment with workflow optimization
 
 **Usage**:
 
 ```
-/session-mgmt:checkpoint
+/session-buddy:checkpoint
 ```
 
 **What it does**:
@@ -62,14 +62,14 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:end` - Session Cleanup
+### `/session-buddy:end` - Session Cleanup
 
 **Purpose**: Comprehensive session termination with learning capture
 
 **Usage**:
 
 ```
-/session-mgmt:end
+/session-buddy:end
 ```
 
 **What it does**:
@@ -91,14 +91,14 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:status` - Session Overview
+### `/session-buddy:status` - Session Overview
 
 **Purpose**: Current session status with comprehensive health checks
 
 **Usage**:
 
 ```
-/session-mgmt:status
+/session-buddy:status
 ```
 
 **What it does**:
@@ -121,14 +121,14 @@ ______________________________________________________________________
 
 ## 🧠 Memory & Search System
 
-### `/session-mgmt:reflect_on_past` - Conversation Search
+### `/session-buddy:reflect_on_past` - Conversation Search
 
 **Purpose**: Semantic search through all stored conversations with intelligent ranking
 
 **Usage**:
 
 ```
-/session-mgmt:reflect_on_past [query] [--limit=10] [--project=current] [--similarity=0.7]
+/session-buddy:reflect_on_past [query] [--limit=10] [--project=current] [--similarity=0.7]
 ```
 
 **Parameters**:
@@ -141,11 +141,11 @@ ______________________________________________________________________
 **Examples**:
 
 ```
-/session-mgmt:reflect_on_past how did I implement user authentication?
+/session-buddy:reflect_on_past how did I implement user authentication?
 
-/session-mgmt:reflect_on_past Redis caching strategies --limit=5 --similarity=0.8
+/session-buddy:reflect_on_past Redis caching strategies --limit=5 --similarity=0.8
 
-/session-mgmt:reflect_on_past API error handling --project=current
+/session-buddy:reflect_on_past API error handling --project=current
 ```
 
 **What it does**:
@@ -167,14 +167,14 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:store_reflection` - Save Insights
+### `/session-buddy:store_reflection` - Save Insights
 
 **Purpose**: Store important insights and solutions for future reference
 
 **Usage**:
 
 ```
-/session-mgmt:store_reflection [content] [--tags=tag1,tag2,tag3]
+/session-buddy:store_reflection [content] [--tags=tag1,tag2,tag3]
 ```
 
 **Parameters**:
@@ -185,11 +185,11 @@ ______________________________________________________________________
 **Examples**:
 
 ```
-/session-mgmt:store_reflection "JWT refresh token rotation pattern: use sliding window expiration with Redis storage for optimal security/UX balance" --tags=auth,jwt,security,redis
+/session-buddy:store_reflection "JWT refresh token rotation pattern: use sliding window expiration with Redis storage for optimal security/UX balance" --tags=auth,jwt,security,redis
 
-/session-mgmt:store_reflection "Database migration best practice: always include rollback scripts and test on production-like data volumes"
+/session-buddy:store_reflection "Database migration best practice: always include rollback scripts and test on production-like data volumes"
 
-/session-mgmt:store_reflection "React state management: use Zustand for simple cases, Redux Toolkit for complex state with time-travel debugging" --tags=react,state,frontend
+/session-buddy:store_reflection "React state management: use Zustand for simple cases, Redux Toolkit for complex state with time-travel debugging" --tags=react,state,frontend
 ```
 
 **What it does**:
@@ -211,22 +211,22 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:quick_search` - Fast Overview Search
+### `/session-buddy:quick_search` - Fast Overview Search
 
 **Purpose**: Quick search with count and top result for rapid context assessment
 
 **Usage**:
 
 ```
-/session-mgmt:quick_search [query] [--project=current] [--similarity=0.7]
+/session-buddy:quick_search [query] [--project=current] [--similarity=0.7]
 ```
 
 **Examples**:
 
 ```
-/session-mgmt:quick_search Docker deployment strategies
+/session-buddy:quick_search Docker deployment strategies
 
-/session-mgmt:quick_search testing patterns --project=current
+/session-buddy:quick_search testing patterns --project=current
 ```
 
 **What it does**:
@@ -247,14 +247,14 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:get_more_results` - Pagination
+### `/session-buddy:get_more_results` - Pagination
 
 **Purpose**: Retrieve additional results after initial searches
 
 **Usage**:
 
 ```
-/session-mgmt:get_more_results [query] [--offset=3] [--limit=5]
+/session-buddy:get_more_results [query] [--offset=3] [--limit=5]
 ```
 
 **What it does**:
@@ -266,24 +266,24 @@ ______________________________________________________________________
 
 ## 🔍 Specialized Search Tools
 
-### `/session-mgmt:search_by_file` - File-Specific Search
+### `/session-buddy:search_by_file` - File-Specific Search
 
 **Purpose**: Find all conversations that discussed specific files
 
 **Usage**:
 
 ```
-/session-mgmt:search_by_file [file_path] [--limit=10] [--project=current]
+/session-buddy:search_by_file [file_path] [--limit=10] [--project=current]
 ```
 
 **Examples**:
 
 ```
-/session-mgmt:search_by_file src/auth/middleware.py
+/session-buddy:search_by_file src/auth/middleware.py
 
-/session-mgmt:search_by_file package.json --limit=5
+/session-buddy:search_by_file package.json --limit=5
 
-/session-mgmt:search_by_file components/UserDashboard.tsx --project=current
+/session-buddy:search_by_file components/UserDashboard.tsx --project=current
 ```
 
 **What it does**:
@@ -297,24 +297,24 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:search_by_concept` - Concept Search
+### `/session-buddy:search_by_concept` - Concept Search
 
 **Purpose**: Explore conversations about development concepts and patterns
 
 **Usage**:
 
 ```
-/session-mgmt:search_by_concept [concept] [--include_files] [--limit=10] [--project=current]
+/session-buddy:search_by_concept [concept] [--include_files] [--limit=10] [--project=current]
 ```
 
 **Examples**:
 
 ```
-/session-mgmt:search_by_concept "error handling patterns"
+/session-buddy:search_by_concept "error handling patterns"
 
-/session-mgmt:search_by_concept authentication --include_files --limit=15
+/session-buddy:search_by_concept authentication --include_files --limit=15
 
-/session-mgmt:search_by_concept "state management" --project=current
+/session-buddy:search_by_concept "state management" --project=current
 ```
 
 **What it does**:
@@ -328,14 +328,14 @@ ______________________________________________________________________
 
 ## 📊 Analytics & Insights
 
-### `/session-mgmt:search_summary` - Aggregated Insights
+### `/session-buddy:search_summary` - Aggregated Insights
 
 **Purpose**: Get high-level insights without individual result details
 
 **Usage**:
 
 ```
-/session-mgmt:search_summary [query] [--project=current] [--similarity=0.7]
+/session-buddy:search_summary [query] [--project=current] [--similarity=0.7]
 ```
 
 **What it does**:
@@ -349,14 +349,14 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### `/session-mgmt:reflection_stats` - Knowledge Base Statistics
+### `/session-buddy:reflection_stats` - Knowledge Base Statistics
 
 **Purpose**: Get comprehensive statistics about your stored knowledge
 
 **Usage**:
 
 ```
-/session-mgmt:reflection_stats
+/session-buddy:reflection_stats
 ```
 
 **What it does**:
@@ -420,7 +420,7 @@ pip install session-buddy
 
 #### "No conversations found"
 
-- Ensure you've run `/session-mgmt:start` to initialize the database
+- Ensure you've run `/session-buddy:start` to initialize the database
 - Check that `~/.claude/data/` directory exists and is writable
 
 #### "Project not detected"
@@ -433,11 +433,11 @@ pip install session-buddy
 
 - Check file permissions on `~/.claude/` directory
 - Verify MCP server configuration in `.mcp.json`
-- Use `/session-mgmt:status` to diagnose permission issues
+- Use `/session-buddy:status` to diagnose permission issues
 
 ### Performance Tips
 
-- Use `/session-mgmt:quick_search` before full searches to check relevance
+- Use `/session-buddy:quick_search` before full searches to check relevance
 - Higher similarity thresholds (0.8-0.9) for more precise results
 - Lower thresholds (0.6-0.7) for broader exploration
 - Use project filtering for large knowledge bases
@@ -449,101 +449,101 @@ pip install session-buddy
 
 **Code Quality & Testing Integration** - Deep integration with the Crackerjack development platform:
 
-- **`/session-mgmt:crackerjack_run`** - Execute crackerjack commands with real-time analytics
-- **`/session-mgmt:execute_crackerjack_command`** - Run with enhanced AI integration
-- **`/session-mgmt:crackerjack_help`** - Comprehensive command selection help
-- **`/session-mgmt:crackerjack_metrics`** - Quality metrics trends over time
-- **`/session-mgmt:crackerjack_quality_trends`** - Trend analysis with insights
-- **`/session-mgmt:crackerjack_patterns`** - Test failure pattern analysis
-- **`/session-mgmt:crackerjack_history`** - Command execution history
-- **`/session-mgmt:crackerjack_health_check`** - Integration health diagnostics
+- **`/session-buddy:crackerjack_run`** - Execute crackerjack commands with real-time analytics
+- **`/session-buddy:execute_crackerjack_command`** - Run with enhanced AI integration
+- **`/session-buddy:crackerjack_help`** - Comprehensive command selection help
+- **`/session-buddy:crackerjack_metrics`** - Quality metrics trends over time
+- **`/session-buddy:crackerjack_quality_trends`** - Trend analysis with insights
+- **`/session-buddy:crackerjack_patterns`** - Test failure pattern analysis
+- **`/session-buddy:crackerjack_history`** - Command execution history
+- **`/session-buddy:crackerjack_health_check`** - Integration health diagnostics
 
 ### LLM Provider Management (5 tools)
 
-- **`/session-mgmt:list_llm_providers`** - List available providers and models
-- **`/session-mgmt:test_llm_providers`** - Test provider availability
-- **`/session-mgmt:generate_with_llm`** - Generate text using any provider
-- **`/session-mgmt:chat_with_llm`** - Have conversations with LLMs
-- **`/session-mgmt:configure_llm_provider`** - Configure credentials and settings
+- **`/session-buddy:list_llm_providers`** - List available providers and models
+- **`/session-buddy:test_llm_providers`** - Test provider availability
+- **`/session-buddy:generate_with_llm`** - Generate text using any provider
+- **`/session-buddy:chat_with_llm`** - Have conversations with LLMs
+- **`/session-buddy:configure_llm_provider`** - Configure credentials and settings
 
 ### Serverless Session Management (8 tools)
 
 **External Storage Integration** - Redis, S3, or local storage:
 
-- **`/session-mgmt:create_serverless_session`** - Create with external storage
-- **`/session-mgmt:get_serverless_session`** - Retrieve session state
-- **`/session-mgmt:update_serverless_session`** - Update session data
-- **`/session-mgmt:delete_serverless_session`** - Remove session
-- **`/session-mgmt:list_serverless_sessions`** - List by user/project
-- **`/session-mgmt:test_serverless_storage`** - Test storage backend
-- **`/session-mgmt:cleanup_serverless_sessions`** - Remove expired sessions
-- **`/session-mgmt:configure_serverless_storage`** - Configure backends
+- **`/session-buddy:create_serverless_session`** - Create with external storage
+- **`/session-buddy:get_serverless_session`** - Retrieve session state
+- **`/session-buddy:update_serverless_session`** - Update session data
+- **`/session-buddy:delete_serverless_session`** - Remove session
+- **`/session-buddy:list_serverless_sessions`** - List by user/project
+- **`/session-buddy:test_serverless_storage`** - Test storage backend
+- **`/session-buddy:cleanup_serverless_sessions`** - Remove expired sessions
+- **`/session-buddy:configure_serverless_storage`** - Configure backends
 
 ### Team Collaboration (4 tools)
 
-- **`/session-mgmt:create_team`** - Create team for knowledge sharing
-- **`/session-mgmt:search_team_knowledge`** - Search with access control
-- **`/session-mgmt:get_team_statistics`** - Team activity metrics
-- **`/session-mgmt:vote_on_reflection`** - Vote on insights (upvote/downvote)
+- **`/session-buddy:create_team`** - Create team for knowledge sharing
+- **`/session-buddy:search_team_knowledge`** - Search with access control
+- **`/session-buddy:get_team_statistics`** - Team activity metrics
+- **`/session-buddy:vote_on_reflection`** - Vote on insights (upvote/downvote)
 
 ### Multi-Project Coordination (4 tools)
 
-- **`/session-mgmt:create_project_group`** - Group related projects
-- **`/session-mgmt:add_project_dependency`** - Define dependencies
-- **`/session-mgmt:search_across_projects`** - Cross-project search
-- **`/session-mgmt:get_project_insights`** - Cross-project insights
+- **`/session-buddy:create_project_group`** - Group related projects
+- **`/session-buddy:add_project_dependency`** - Define dependencies
+- **`/session-buddy:search_across_projects`** - Cross-project search
+- **`/session-buddy:get_project_insights`** - Cross-project insights
 
 ### Activity Monitoring (5 tools)
 
-- **`/session-mgmt:start_app_monitoring`** - Track IDE/browser activity
-- **`/session-mgmt:stop_app_monitoring`** - Stop monitoring
-- **`/session-mgmt:get_activity_summary`** - Activity summary
-- **`/session-mgmt:get_context_insights`** - Behavior insights
-- **`/session-mgmt:get_active_files`** - Recently active files
+- **`/session-buddy:start_app_monitoring`** - Track IDE/browser activity
+- **`/session-buddy:stop_app_monitoring`** - Stop monitoring
+- **`/session-buddy:get_activity_summary`** - Activity summary
+- **`/session-buddy:get_context_insights`** - Behavior insights
+- **`/session-buddy:get_active_files`** - Recently active files
 
 ### Interruption Management (7 tools)
 
-- **`/session-mgmt:start_interruption_monitoring`** - Smart detection
-- **`/session-mgmt:stop_interruption_monitoring`** - Disable monitoring
-- **`/session-mgmt:create_session_context`** - Create snapshot
-- **`/session-mgmt:preserve_current_context`** - Force preservation
-- **`/session-mgmt:restore_session_context`** - Restore context
-- **`/session-mgmt:get_interruption_history`** - Interruption history
-- **`/session-mgmt:get_interruption_statistics`** - Analytics
+- **`/session-buddy:start_interruption_monitoring`** - Smart detection
+- **`/session-buddy:stop_interruption_monitoring`** - Disable monitoring
+- **`/session-buddy:create_session_context`** - Create snapshot
+- **`/session-buddy:preserve_current_context`** - Force preservation
+- **`/session-buddy:restore_session_context`** - Restore context
+- **`/session-buddy:get_interruption_history`** - Interruption history
+- **`/session-buddy:get_interruption_statistics`** - Analytics
 
 ### Natural Language Scheduling (5 tools)
 
-- **`/session-mgmt:create_natural_reminder`** - Create from natural language
-- **`/session-mgmt:list_user_reminders`** - List pending reminders
-- **`/session-mgmt:cancel_user_reminder`** - Cancel reminder
-- **`/session-mgmt:start_reminder_service`** - Start service
-- **`/session-mgmt:stop_reminder_service`** - Stop service
+- **`/session-buddy:create_natural_reminder`** - Create from natural language
+- **`/session-buddy:list_user_reminders`** - List pending reminders
+- **`/session-buddy:cancel_user_reminder`** - Cancel reminder
+- **`/session-buddy:start_reminder_service`** - Start service
+- **`/session-buddy:stop_reminder_service`** - Stop service
 
 ### Git Worktree Management (3 tools)
 
-- **`/session-mgmt:git_worktree_add`** - Create new worktree
-- **`/session-mgmt:git_worktree_remove`** - Remove worktree
-- **`/session-mgmt:git_worktree_switch`** - Switch with context preservation
+- **`/session-buddy:git_worktree_add`** - Create new worktree
+- **`/session-buddy:git_worktree_remove`** - Remove worktree
+- **`/session-buddy:git_worktree_switch`** - Switch with context preservation
 
 ## 📚 Related Documentation
 
 ## 🧱 Migration & Schema Tools
 
-### `/session-mgmt:migration_status`
+### `/session-buddy:migration_status`
 
 Inspect schema version (v1/v2), migration history, and counts.
 
-### `/session-mgmt:trigger_migration`
+### `/session-buddy:trigger_migration`
 
 Run v1 → v2 migration (supports `--create_backup_first` and `--dry_run`).
 
-### `/session-mgmt:rollback_migration`
+### `/session-buddy:rollback_migration`
 
 Restore the database from a previous backup path.
 
 ## 📥 Extraction & Persistence
 
-### `/session-mgmt:extract_and_store_memory`
+### `/session-buddy:extract_and_store_memory`
 
 Multi-provider extraction (OpenAI→Anthropic→Gemini→pattern) and persistence into v2 tables.
 
@@ -551,27 +551,27 @@ Parameters include `activity_score` (0–1) to blend with LLM importance (70/30)
 
 ## 🧠 Conscious Agent
 
-### `/session-mgmt:start_conscious_agent` / `/session-mgmt:stop_conscious_agent`
+### `/session-buddy:start_conscious_agent` / `/session-buddy:stop_conscious_agent`
 
 Start/stop background optimization (analysis, promotions/demotions).
 
-### `/session-mgmt:force_conscious_analysis`
+### `/session-buddy:force_conscious_analysis`
 
 Run one-time analysis; returns promoted/demoted counts.
 
 ## 📊 Access Metrics
 
-### `/session-mgmt:access_log_stats`
+### `/session-buddy:access_log_stats`
 
 Inspect recent access activity with breakdowns `by_type` and `by_provider` and top memory candidates.
 
 ## 🧩 Feature Flags & Rollout
 
-### `/session-mgmt:feature_flags_status`
+### `/session-buddy:feature_flags_status`
 
 Show current feature flags for schema_v2, extraction, providers, agent, and filesystem integration.
 
-### `/session-mgmt:rollout_plan`
+### `/session-buddy:rollout_plan`
 
 Staged enablement plan with daily steps and rollback guidance.
 
@@ -586,4 +586,4 @@ ______________________________________________________________________
 
 *This reference covers all **70+ MCP tools** provided by session-mgmt. For implementation details, see the codebase.*
 
-**Need help?** Use `/session-mgmt:status` to diagnose issues or check [GitHub Issues](https://github.com/lesleslie/session-buddy/issues) for support.
+**Need help?** Use `/session-buddy:status` to diagnose issues or check [GitHub Issues](https://github.com/lesleslie/session-buddy/issues) for support.

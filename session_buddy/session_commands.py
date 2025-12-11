@@ -42,7 +42,7 @@ This command will:
   • UV package cache cleanup
 
 **RECOMMENDED WORKFLOW:**
-1. Run /session-mgmt:checkpoint for comprehensive analysis
+1. Run /session-buddy:checkpoint for comprehensive analysis
 2. If checkpoint recommends context compaction, run: `/compact`
 3. Continue with optimized session context
 
@@ -214,8 +214,8 @@ Execute Crackerjack commands with comprehensive analytics, memory integration, a
 - `complexity` - Complexity analysis with refactoring recommendations
 
 **Example Usage:**
-- `/session-mgmt:crackerjack_run test` - Run tests with intelligent analysis
-- `/session-mgmt:crackerjack_run analyze` - Full quality analysis with insights
+- `/session-buddy:crackerjack_run test` - Run tests with intelligent analysis
+- `/session-buddy:crackerjack_run analyze` - Full quality analysis with insights
 
 Results include execution output, trend analysis, and actionable recommendations based on your project's history.
 """,

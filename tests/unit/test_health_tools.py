@@ -31,9 +31,7 @@ class TestGetHealthStatus:
             },
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -53,9 +51,7 @@ class TestGetHealthStatus:
             {"name": "test", "status": "healthy", "message": "OK"},
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status(ready=False)
@@ -77,9 +73,7 @@ class TestGetHealthStatus:
             {"name": "test", "status": "healthy", "message": "OK"},
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status(ready=True)
@@ -99,9 +93,7 @@ class TestGetHealthStatus:
 
         mock_components = []
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -118,9 +110,7 @@ class TestGetHealthStatus:
 
         mock_components = []
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -139,9 +129,7 @@ class TestGetHealthStatus:
             {"name": "cache", "status": "healthy", "message": "Cache OK"},
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -162,9 +150,7 @@ class TestGetHealthStatus:
             {"name": "database", "status": "degraded", "message": "DB slow"},
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status(ready=False)
@@ -185,9 +171,7 @@ class TestGetHealthStatus:
             {"name": "database", "status": "degraded", "message": "DB slow"},
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status(ready=True)
@@ -205,9 +189,7 @@ class TestGetHealthStatus:
 
         # Mock version import failure
         with (
-            patch(
-                "session_buddy.health_checks.get_all_health_checks"
-            ) as mock_checks,
+            patch("session_buddy.health_checks.get_all_health_checks") as mock_checks,
             patch.dict("sys.modules", {"session_buddy": MagicMock()}),
         ):
             mock_checks.return_value = mock_components
@@ -225,9 +207,7 @@ class TestGetHealthStatus:
 
         mock_components = []
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             time.time()
@@ -246,9 +226,7 @@ class TestGetHealthStatus:
 
         mock_components = []
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -268,9 +246,7 @@ class TestGetHealthStatus:
             for i in range(10)
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -293,9 +269,7 @@ class TestGetHealthStatus:
             },
         ]
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             result = await get_health_status()
@@ -316,9 +290,7 @@ class TestGetHealthStatus:
 
         mock_components = []
 
-        with patch(
-            "session_buddy.health_checks.get_all_health_checks"
-        ) as mock_checks:
+        with patch("session_buddy.health_checks.get_all_health_checks") as mock_checks:
             mock_checks.return_value = mock_components
 
             # Server start time should be set when module is imported

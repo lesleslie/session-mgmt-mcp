@@ -14,7 +14,7 @@ Run:
 import asyncio
 from pathlib import Path
 
-from session_mgmt_mcp.adapters.storage_registry import (
+from session_buddy.adapters.storage_registry import (
     configure_storage_buckets,
     get_default_session_buckets,
     get_storage_adapter,
